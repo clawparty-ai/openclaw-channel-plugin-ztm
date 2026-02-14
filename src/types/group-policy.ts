@@ -55,7 +55,7 @@ export interface GroupMessageCheckResult {
   /** Whether the message is allowed to be processed */
   allowed: boolean;
   /** Reason for the result */
-  reason: 'allowed' | 'denied' | 'whitelisted' | 'mention_required';
+  reason: 'allowed' | 'denied' | 'whitelisted' | 'mention_required' | 'creator';
   /** Recommended action */
   action: 'process' | 'ignore';
   /** Whether the message contained a @mention */
