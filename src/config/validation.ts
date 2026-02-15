@@ -332,7 +332,9 @@ export function validateZTMChatConfig(
   // Resolve and return validated config
   const resolvedConfig: ZTMChatConfig = {
     agentUrl: config.agentUrl!.toString().trim(),
-    permitUrl: config.permitUrl!.toString().trim(),
+    permitUrl: config.permitUrl
+      ? config.permitUrl.toString().trim()
+      : undefined,
     meshName: config.meshName!.toString().trim(),
     username: config.username!.toString().trim(),
     enableGroups: Boolean(config.enableGroups),
