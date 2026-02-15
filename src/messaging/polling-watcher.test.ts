@@ -2,11 +2,18 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import {
+  testConfig,
+  testAccountId,
+  createMockState,
+  createMockChat,
+  createChatsFailure,
+  NOW,
+} from "../test-utils/fixtures.js";
 import { mockSuccess } from "../test-utils/mocks.js";
 import { success } from "../types/common.js";
-import type { ZTMChat } from "../api/ztm-api.js";
 import { ZtmReadError } from "../types/errors.js";
+import type { ZTMChat } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
@@ -15,46 +22,6 @@ type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: stri
 
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
-
-interface MockChatOptions {
-  peer: string;
-  message: string;
-  time: number;
-  latest?: { time: number; message: string; sender: string } | null;
-}
-
-function createMockChat(
-  peerOrOptions: string | MockChatOptions,
-  message?: string,
-  time?: number
-): ZTMChat {
-  const options: MockChatOptions = typeof peerOrOptions === "string"
-    ? { peer: peerOrOptions, message: message!, time: time! }
-    : peerOrOptions;
-
-  const { peer, latest } = options;
-  return {
-    peer,
-    time: options.time,
-    updated: options.time,
-    latest: latest ?? {
-      time: options.time,
-      message: options.message,
-      sender: peer,
-    },
-  };
-}
-
-function createChatsFailure(): { ok: false; error: ZtmReadError } {
-  return {
-    ok: false,
-    error: new ZtmReadError({
-      peer: "test",
-      operation: "list",
-      cause: new Error("Network error"),
-    }),
-  };
-}
 
 vi.mock("../utils/logger.js", () => ({
   logger: {
@@ -93,30 +60,8 @@ vi.mock("../connectivity/permit.js", () => ({
 describe("Polling Watcher", () => {
   const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
 
-  let mockState: ReturnType<typeof createMockState>;
+  let mockState: AccountRuntimeState;
   let setIntervalCallback: (() => void) | null = null;
-
-  function createMockState(): AccountRuntimeState {
-    return {
-      accountId: testAccountId,
-      config: baseConfig,
-      apiClient: {
-        getChats: mockSuccess([]),
-      } as unknown as ZTMApiClient,
-      connected: true,
-      meshConnected: true,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      pendingPairings: new Map(),
-    };
-  }
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -132,7 +77,9 @@ describe("Polling Watcher", () => {
       return ref;
     }) as unknown as typeof setInterval;
 
-    mockState = createMockState();
+    mockState = createMockState(testAccountId, baseConfig, {
+      getChats: mockSuccess([]),
+    } as unknown as ZTMApiClient);
   });
 
   afterEach(() => {

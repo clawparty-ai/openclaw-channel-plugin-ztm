@@ -234,3 +234,90 @@ export function createMessages(count: number, sender = "alice"): ZTMMessage[] {
     sender,
   }));
 }
+
+// ============================================================================
+// Mock Chat Factory (for polling-watcher tests)
+// ============================================================================
+
+export interface MockChatOptions {
+  peer: string;
+  message?: string;
+  time?: number;
+  latest?: { time: number; message: string; sender: string } | null;
+}
+
+/**
+ * Create a mock ZTMChat for polling watcher tests
+ * Supports both positional args and options object for compatibility
+ */
+export function createMockChat(
+  peerOrOptions: string | MockChatOptions,
+  message?: string,
+  chatTime?: number
+): ZTMChat {
+  const options: MockChatOptions = typeof peerOrOptions === "string"
+    ? { peer: peerOrOptions, message: message!, time: chatTime! }
+    : peerOrOptions;
+
+  const time = options.time ?? NOW;
+  return {
+    peer: options.peer,
+    time,
+    updated: time,
+    latest: options.latest ?? {
+      time,
+      message: options.message ?? "Test message",
+      sender: options.peer,
+    },
+  };
+}
+
+// ============================================================================
+// Mock State Factory (for watcher tests)
+// ============================================================================
+
+import type { AccountRuntimeState } from "../types/runtime.js";
+import type { ZTMApiClient } from "../types/api.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
+import { ZtmReadError } from "../types/errors.js";
+
+/**
+ * Create a mock failure response for getChats
+ */
+export function createChatsFailure(peer = "test"): { ok: false; error: ZtmReadError } {
+  return {
+    ok: false,
+    error: new ZtmReadError({
+      peer,
+      operation: "list",
+      cause: new Error("Network error"),
+    }),
+  };
+}
+
+/**
+ * Create a mock AccountRuntimeState for testing
+ */
+export function createMockState(
+  accountId: string = testAccountId,
+  config: ZTMChatConfig = testConfig,
+  apiClient: ZTMApiClient | null = null
+): AccountRuntimeState {
+  return {
+    accountId,
+    config,
+    apiClient: apiClient as ZTMApiClient,
+    connected: true,
+    meshConnected: true,
+    lastError: null,
+    lastStartAt: new Date(),
+    lastStopAt: null,
+    lastInboundAt: null,
+    lastOutboundAt: null,
+    peerCount: 5,
+    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+    watchInterval: null,
+    watchErrorCount: 0,
+    pendingPairings: new Map(),
+  };
+}
