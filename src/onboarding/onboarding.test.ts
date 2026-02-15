@@ -3,6 +3,97 @@
 import { describe, it, expect, beforeEach, afterEach, vi, test } from "vitest";
 import { testConfig } from "../test-utils/fixtures.js";
 
+// MockPrompts class for testing wizard flows
+class MockPrompts {
+  private prompts: Record<string, unknown>;
+  private callOrder: string[] = [];
+
+  constructor(initialPrompts: Record<string, unknown> = {}) {
+    this.prompts = initialPrompts;
+  }
+
+  async ask(question: string, defaultValue?: string): Promise<string> {
+    this.callOrder.push(`ask:${question}`);
+    // Return value based on question content
+    if (question.includes("Agent URL") || question.includes("ZTM Agent")) {
+      return this.prompts.agentUrl as string || defaultValue || "http://localhost:7777";
+    }
+    if (question.includes("Permit Server") || question.includes("Permit URL") || question.includes("Permit File")) {
+      if (this.prompts.permitSource === "file" && question.includes("File")) {
+        return this.prompts.permitFilePath as string || defaultValue || "/path/to/permit.json";
+      }
+      return this.prompts.permitUrl as string || defaultValue || "https://ztm-portal.flomesh.io:7779/permit";
+    }
+    if (question.includes("Bot username") || question.includes("username")) {
+      return this.prompts.username as string || defaultValue || "test-bot";
+    }
+    return defaultValue || "";
+  }
+
+  async confirm(question: string, defaultYes?: boolean): Promise<boolean> {
+    this.callOrder.push(`confirm:${question}`);
+    if (question.includes("Save")) {
+      return this.prompts.save as boolean ?? true;
+    }
+    if (question.includes("group")) {
+      return this.prompts.enableGroups as boolean ?? false;
+    }
+    return defaultYes ?? false;
+  }
+
+  async select<T>(question: string, options: readonly T[], labels: string[]): Promise<T> {
+    this.callOrder.push(`select:${question}`);
+    // Return based on what we're selecting
+    if (question.includes("permit") || question.includes("Permit") || question.includes("obtain")) {
+      return (this.prompts.permitSource as T) || "auto";
+    }
+    if (question.includes("Policy")) {
+      return (this.prompts.dmPolicy as T) || "pairing";
+    }
+    if (question.includes("Group")) {
+      return (this.prompts.groupPolicy as T) || "allowlist";
+    }
+    return options[0];
+  }
+
+  async password(question: string): Promise<string> {
+    this.callOrder.push(`password:${question}`);
+    return this.prompts.password as string || "";
+  }
+
+  separator(): void {
+    this.callOrder.push("separator");
+  }
+
+  heading(text: string): void {
+    this.callOrder.push(`heading:${text}`);
+  }
+
+  success(text: string): void {
+    this.callOrder.push(`success:${text}`);
+  }
+
+  info(text: string): void {
+    this.callOrder.push(`info:${text}`);
+  }
+
+  warning(text: string): void {
+    this.callOrder.push(`warning:${text}`);
+  }
+
+  error(text: string): void {
+    this.callOrder.push(`error:${text}`);
+  }
+
+  close(): void {
+    this.callOrder.push("close");
+  }
+
+  getCallOrder(): string[] {
+    return this.callOrder;
+  }
+}
+
 // We'll use vi.mock at top level properly
 vi.mock("readline", () => ({
   createInterface: vi.fn().mockReturnValue({
@@ -809,6 +900,50 @@ describe("ZTMChatWizard", () => {
       const defaultPermitUrl = "https://ztm-portal.flomeshh.io:7779/permitt";
       expect(defaultPermitUrl).toContain("flomeshh.io");
       expect(defaultPermitUrl).toContain("7779");
+    });
+  });
+
+  describe("wizard permitSource flow", () => {
+    it("should ask permitSource first then permitUrl for auto mode", async () => {
+      const { ZTMChatWizard } = await import("./onboarding.js");
+
+      const mockPrompts = new MockPrompts({
+        agentUrl: "http://localhost:7777",
+        permitSource: "auto",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+        username: "test-bot",
+        dmPolicy: "pairing",
+        enableGroups: false,
+        save: true,
+      });
+
+      const wizard = new ZTMChatWizard(mockPrompts);
+      const result = await wizard.run();
+
+      expect(result).toBeDefined();
+      expect(result.config.permitSource).toBe("auto");
+      expect(result.config.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
+    });
+
+    it("should ask permitSource first then permitFilePath for file mode", async () => {
+      const { ZTMChatWizard } = await import("./onboarding.js");
+
+      const mockPrompts = new MockPrompts({
+        agentUrl: "http://localhost:7777",
+        permitSource: "file",
+        permitFilePath: "/path/to/permit.json",
+        username: "test-bot",
+        dmPolicy: "pairing",
+        enableGroups: false,
+        save: true,
+      });
+
+      const wizard = new ZTMChatWizard(mockPrompts);
+      const result = await wizard.run();
+
+      expect(result).toBeDefined();
+      expect(result.config.permitSource).toBe("file");
+      expect(result.config.permitFilePath).toBe("/path/to/permit.json");
     });
   });
 });
