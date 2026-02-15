@@ -11,6 +11,7 @@
 import { logger } from "../utils/logger.js";
 import { getMessageStateStore } from "../runtime/store.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
+import { escapeHtml } from "../utils/validation.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
@@ -78,14 +79,16 @@ export function processIncomingMessage(
     return null;
   }
 
-  // Return normalized message
+  // Return normalized message with sanitized fields
+  // Escape HTML in sender to prevent XSS when rendered in logs/UI
+  const safeSender = escapeHtml(msg.sender);
   return {
-    id: `${msg.time}-${msg.sender}`,
+    id: `${msg.time}-${safeSender}`,
     content: msg.message,
-    sender: msg.sender,
-    senderId: msg.sender,
+    sender: safeSender,
+    senderId: safeSender,
     timestamp: new Date(msg.time),
-    peer: msg.sender,
+    peer: safeSender,
   };
 }
 

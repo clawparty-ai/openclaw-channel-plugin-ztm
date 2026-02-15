@@ -20,6 +20,29 @@ export function normalizeUsername(username: string): string {
 }
 
 // ============================================
+// Input Sanitization
+// ============================================
+
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ *
+ * This provides defense-in-depth for cases where user input
+ * might be rendered in HTML contexts (logs, web UIs, etc.)
+ *
+ * @param input - The string to escape
+ * @returns HTML-escaped string
+ */
+export function escapeHtml(input: string): string {
+  if (!input) return "";
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ============================================
 // Validation Error Factory
 // ============================================
 
