@@ -207,6 +207,11 @@ vi.mock("node:path", () => ({
   join: mockPathJoin,
 }));
 
+// Mock the paths module to return a fixed permit path for testing
+vi.mock("../utils/paths.js", () => ({
+  resolvePermitPath: vi.fn(() => "/mock/permit.json"),
+}));
+
 describe("Channel Gateway", () => {
   let mockConfig: ZTMChatConfig;
   let mockState: AccountRuntimeState;

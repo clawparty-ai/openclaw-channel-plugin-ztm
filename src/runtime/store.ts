@@ -5,6 +5,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { defaultLogger, type Logger } from "../utils/logger.js";
+import { resolveStatePath, resolveZTMStateDir } from "../utils/paths.js";
 
 /**
  * FileSystem interface for dependency injection (enables testing without real I/O)
@@ -121,17 +122,11 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
     // Allow overriding the state path (useful for testing)
     // Priority: constructor param > ZTM_STATE_PATH env var > default path
+    // Uses cross-platform compatible path resolution from utils/paths.ts
     if (statePath) {
       this.statePath = statePath;
-    } else if (process.env.ZTM_STATE_PATH) {
-      this.statePath = process.env.ZTM_STATE_PATH;
     } else {
-      this.statePath = path.join(
-        process.env.HOME || "",
-        ".openclaw",
-        "ztm",
-        "state.json",
-      );
+      this.statePath = resolveStatePath();
     }
     this.stateDir = path.dirname(this.statePath);
 

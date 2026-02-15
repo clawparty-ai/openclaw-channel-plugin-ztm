@@ -26,6 +26,7 @@ import { isConfigMinimallyValid } from "../config/validation.js";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import { isSuccess } from "../types/common.js";
 import { logger } from "../utils/logger.js";
+import { resolvePermitPath } from "../utils/paths.js";
 import {
   getAllAccountStates,
   initializeRuntime,
@@ -340,8 +341,8 @@ export async function startAccountGateway(
     throw new Error(validation.errors.join("; "));
   }
 
-  const homeDir = process.env.HOME || "";
-  const permitPath = path.join(homeDir, ".openclaw", "ztm", "permit.json");
+  // Use cross-platform compatible path resolution
+  const permitPath = resolvePermitPath();
   const endpointName = `${config.username}-ep`;
 
   // Step 1: Validate connectivity for agent URL

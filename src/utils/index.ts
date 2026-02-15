@@ -16,5 +16,8 @@ export * from './validation.js';
 // Result handling utilities
 export * from './result.js';
 
+// Path resolution utilities
+export * from './paths.js';
+
 // Type exports
 export type { Result, AsyncResult, ConnectionStatus, MessageDirection, PairingStatus } from '../types/common.js';
