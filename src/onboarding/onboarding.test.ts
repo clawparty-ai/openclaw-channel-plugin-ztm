@@ -151,11 +151,11 @@ describe("ZTMChatWizard", () => {
       expect(config.dmPolicy).toBe("pairing");
     });
 
-    it("should accept permittUrl field", () => {
+    it("should accept permitUrl field", () => {
       const config = {
-        permittUrl: "https://example.com/permitt",
+        permitUrl: "https://example.com/permitt",
       };
-      expect(config.permittUrl).toContain("permitt");
+      expect(config.permitUrl).toContain("permitt");
     });
   });
 
@@ -448,7 +448,7 @@ describe("ZTMChatWizard", () => {
     it("should build complete config", () => {
       const buildConfig = (config: Record<string, unknown>) => ({
         agentUrl: config.agentUrl || "http://localhost:7777",
-        permittUrl: config.permittUrl || "https://ztm-portal.flomeshh.io:7779/permitt",
+        permitUrl: config.permitUrl || "https://ztm-portal.flomeshh.io:7779/permitt",
         meshName: config.meshName || "",
         username: config.username || "openclaw-bot",
         enableGroups: Boolean(config.enableGroups),
@@ -460,7 +460,7 @@ describe("ZTMChatWizard", () => {
 
       const result = buildConfig({
         agentUrl: "https://example.com:7777",
-        permittUrl: "https://permitt.example.com",
+        permitUrl: "https://permitt.example.com",
         meshName: "my-mesh",
         username: "my-bot",
         enableGroups: true,
@@ -469,7 +469,7 @@ describe("ZTMChatWizard", () => {
       });
 
       expect(result.agentUrl).toBe("https://example.com:7777");
-      expect(result.permittUrl).toBe("https://permitt.example.com");
+      expect(result.permitUrl).toBe("https://permitt.example.com");
       expect(result.meshName).toBe("my-mesh");
       expect(result.username).toBe("my-bot");
       expect(result.enableGroups).toBe(true);
@@ -480,7 +480,7 @@ describe("ZTMChatWizard", () => {
     it("should use defaults for missing values", () => {
       const buildConfig = (config: Record<string, unknown>) => ({
         agentUrl: config.agentUrl || "http://localhost:7777",
-        permittUrl: config.permittUrl || "https://ztm-portal.flomeshh.io:7779/permitt",
+        permitUrl: config.permitUrl || "https://ztm-portal.flomeshh.io:7779/permitt",
         meshName: config.meshName || "",
         username: config.username || "openclaw-bot",
         enableGroups: Boolean(config.enableGroups),
@@ -498,17 +498,17 @@ describe("ZTMChatWizard", () => {
       expect(result.enableGroups).toBe(false);
     });
 
-    it("should include permittUrl in config", () => {
+    it("should include permitUrl in config", () => {
       const buildConfig = (config: Record<string, unknown>) => ({
-        permittUrl: config.permittUrl || "https://ztm-portal.flomeshh.io:7779/permitt",
+        permitUrl: config.permitUrl || "https://ztm-portal.flomeshh.io:7779/permitt",
         // ... other fields
       });
 
       const result = buildConfig({
-        permittUrl: "https://custom-permitt.example.com",
+        permitUrl: "https://custom-permitt.example.com",
       });
 
-      expect(result.permittUrl).toBe("https://custom-permitt.example.com");
+      expect(result.permitUrl).toBe("https://custom-permitt.example.com");
     });
 
     it("should default dmPolicy to pairing", () => {
@@ -575,7 +575,7 @@ describe("ZTMChatWizard", () => {
     it("should serialize config to JSON", () => {
       const config = {
         agentUrl: "https://example.com:7777",
-        permittUrl: "https://example.com/permitt",
+        permitUrl: "https://example.com/permitt",
         meshName: "my-mesh",
         username: "my-bot",
         enableGroups: false,
@@ -645,7 +645,7 @@ describe("ZTMChatWizard", () => {
           agentUrl: "https://existing.example.com",
           meshName: "existing-mesh",
           username: "existing-bot",
-          permittUrl: "https://existing.example.com/permitt",
+          permitUrl: "https://existing.example.com/permitt",
         })
       );
 
@@ -744,7 +744,7 @@ describe("ZTMChatWizard", () => {
       const result = {
         config: {
           agentUrl: "https://example.com",
-          permittUrl: "https://example.com/permitt",
+          permitUrl: "https://example.com/permitt",
           meshName: "mesh",
           username: "bot",
           enableGroups: false,
@@ -886,14 +886,14 @@ describe("ZTMChatWizard", () => {
         autoReply: true,
         allowFrom: undefined,
         dmPolicy: "pairing",
-        permittUrl: "https://ztm-portal.flomeshh.io:7779/permitt",
+        permitUrl: "https://ztm-portal.flomeshh.io:7779/permitt",
       };
 
       expect(defaults.messagePath).toBe("/shared");
       expect(defaults.enableGroups).toBe(false);
       expect(defaults.autoReply).toBe(true);
       expect(defaults.dmPolicy).toBe("pairing");
-      expect(defaults.permittUrl).toContain("permitt");
+      expect(defaults.permitUrl).toContain("permitt");
     });
 
     it("should have default permitt URL", () => {
