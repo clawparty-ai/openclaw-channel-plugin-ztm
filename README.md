@@ -8,18 +8,40 @@ This plugin integrates OpenClaw with ZTM (Zero Trust Mesh) Chat, enabling decent
 flowchart TB
     subgraph ZTM["ZTM Network"]
         User["ZTM User"]
-        Mesh["P2P Mesh"]
+        Agent["ZTM Agent"]
     end
 
     subgraph OpenClaw["OpenClaw Gateway"]
         Plugin["ztm-chat Plugin"]
-        Agent["AI Agent"]
+        Dispatcher["Message Dispatcher"]
+        AgentLLM["AI Agent"]
     end
 
-    User -->|"Message"| Mesh
-    Mesh -->|"Storage API"| Plugin
-    Plugin -->|"Route"| Agent
+    subgraph Storage["Local Storage"]
+        State["Message State"]
+        Pairing["Pairing Store"]
+    end
+
+    User -->|"DM/Group Message"| Agent
+    Agent -->|"Chat App API"| Plugin
+    Plugin -->|"Route"| Dispatcher
+    Dispatcher -->|"Check Policy"| AgentLLM
+    AgentLLM -->|"Response"| Plugin
+    Plugin -->|"Chat App API"| Agent
+    Agent -->|"Deliver"| User
+
+    Plugin --> State
+    Plugin --> Pairing
 ```
+
+**Data Flow:**
+1. User sends message to ZTM Agent
+2. Plugin polls Chat App API for new messages
+3. Dispatcher checks DM/Group policy
+4. If allowed, route to AI Agent
+5. AI Agent generates response
+6. Plugin sends response via Chat App API
+7. ZTM Agent delivers to user
 
 ## Features
 
