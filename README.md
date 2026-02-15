@@ -467,20 +467,20 @@ channels:
 ```mermaid
 sequenceDiagram
     participant U as ZTM User
-    participant M as ZTM Mesh
+    participant A as ZTM Agent
     participant P as Plugin
-    participant A as AI Agent
+    participant B as AI Agent
 
-    U->>M: 1. Send DM to bot
-    M->>M: 2. Store to /shared/{user}/publish/peers/{bot}/messages/
-    P->>M: 3. Poll /shared/*/publish/peers/{bot}/messages/
-    M->>P: 4. Return new messages
+    U->>A: 1. Send DM to bot
+    A->>A: 2. Store message
+    P->>A: 3. Poll /api/meshes/{mesh}/apps/ztm/chat/api/peers/{bot}/messages
+    A->>P: 4. Return new messages
     P->>P: 5. Check DM policy (allow/deny/pairing)
     alt Policy allows
-        P->>A: 6. Route to AI agent
-        A->>P: 7. Generate response
-        P->>M: 8. Send via setFileData
-        M->>U: 9. Deliver to recipient
+        P->>B: 6. Route to AI agent
+        B->>P: 7. Generate response
+        P->>A: 8. Send via Chat App API
+        A->>U: 9. Deliver to recipient
     else Policy denied
         P->>P: 6. Ignore message
     end
@@ -491,24 +491,24 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant M as ZTM Member
-    participant G as ZTM Group
+    participant A as ZTM Agent
     participant P as Plugin
-    participant A as AI Agent
+    participant B as AI Agent
 
-    M->>G: 1. Send @mention to group
-    G->>G: 2. Store to /shared/{group}/publish/
-    P->>G: 3. Poll /shared/{group}/publish/
-    G->>P: 4. Return new messages
+    M->>A: 1. Send @mention to group
+    A->>A: 2. Store message
+    P->>A: 3. Poll Chat App API for new messages
+    A->>P: 4. Return new messages
     P->>P: 5. Get group permissions (creator/groupId)
     P->>P: 6. Check: creator? → allow
     P->>P: 7. Check: policy (open/allowlist/disabled)
     P->>P: 8. Check: allowFrom whitelist
     P->>P: 9. Check: requireMention (@{bot})
     alt All checks pass
-        P->>A: 10. Route to AI agent (with tools filter)
-        A->>P: 11. Generate response
-        P->>G: 12. Send reply to group
-        G->>M: 13. Deliver to all members
+        P->>B: 10. Route to AI agent (with tools filter)
+        B->>P: 11. Generate response
+        P->>A: 12. Send reply to group
+        A->>M: 13. Deliver to all members
     else Any check fails
         P->>P: Log and ignore message
     end
@@ -567,24 +567,25 @@ flowchart TD
 | Group (allowlist) | policy → allowFrom → requireMention | Whitelist + Mention |
 | Group (open) | policy → requireMention | Mention Check |
 
-## ZTM Agent API
+## ZTM API
 
-The plugin uses the ZTM Chat App API for messaging:
+The plugin uses the ZTM Agent API for identity/mesh operations and the Chat App API for messaging:
 
-### Base Path
+### Agent API (Identity & Mesh)
 
-```
-/api/meshes/{meshName}/apps/ztm/chat/api
-```
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/identity` | Get agent identity (certificate) |
+| GET | `/api/meshes/{meshName}` | Get mesh connection status |
+| POST | `/api/meshes/{meshName}` | Join mesh with permit data |
 
 ### Chat App API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/meshes/{meshName}` | Get mesh connection status |
 | GET | `/api/meshes/{meshName}/apps/ztm/chat/api/users` | List all users in mesh |
 | GET | `/api/meshes/{meshName}/apps/ztm/chat/api/chats` | Get all chats (DMs and groups) |
-| GET | `/api/meshes/{meshName}/apps/ztm/chat/api/peers/{peer}/messages` | Get peer messages (with since/before pagination) |
+| GET | `/api/meshes/{meshName}/apps/ztm/chat/api/peers/{peer}/messages` | Get peer messages (with since/before) |
 | POST | `/api/meshes/{meshName}/apps/ztm/chat/api/peers/{peer}/messages` | Send message to peer |
 | GET | `/api/meshes/{meshName}/apps/ztm/chat/api/groups/{creator}/{group}/messages` | Get group messages |
 | POST | `/api/meshes/{meshName}/apps/ztm/chat/api/groups/{creator}/{group}/messages` | Send message to group |
@@ -600,8 +601,16 @@ The plugin uses the ZTM Chat App API for messaging:
 ### Example API Calls
 
 ```bash
+# Get agent identity (certificate)
+curl http://localhost:7777/api/identity
+
 # Get mesh status
 curl http://localhost:7777/api/meshes/openclaw-mesh
+
+# Join mesh (with permit data)
+curl -X POST http://localhost:7777/api/meshes/openclaw-mesh \
+  -H "Content-Type: application/json" \
+  -d '{"ca":"...","agent":{"certificate":"..."},"bootstraps":["host:port"]}'
 
 # List users
 curl http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/users
@@ -634,7 +643,7 @@ curl -X POST http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/gr
 
 2. Check mesh name matches:
    ```bash
-   ztm get mesh
+   curl http://localhost:7777/api/meshes
    ```
 
 3. Check plugin logs:
@@ -667,8 +676,10 @@ npm test:watch    # Watch mode
 ### Test Coverage
 
 ```
-Test Files  43 passed (43)
-Tests  886 passed (886)
+Test Files  46 passed (46)
+Tests  932 passed (932)
+
+Coverage: 66.63% Statements | 58.66% Branches | 64.17% Functions | 67.34% Lines
 
 Coverage Areas:
 - Group Policy: Creator bypass, requireMention, allowlist, open/disabled modes
@@ -678,9 +689,10 @@ Coverage Areas:
 - Messaging: Processing, dispatch, deduplication, polling, watcher
 - Runtime: State management, pairing store, persistence
 - API: ZTM client, mesh connectivity, permit
-- Utils: Logger, retry, validation
+- Utils: Logger, retry, validation, result handling
 - Channel: Gateway, plugin, config
 - DI: Container, dependency resolution
+- Types: Result, common utilities
 ```
 
 ### Debug Logging
