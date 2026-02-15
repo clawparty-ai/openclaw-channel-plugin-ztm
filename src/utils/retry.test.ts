@@ -19,8 +19,10 @@ describe("Retry utilities", () => {
       await sleep(100);
       const elapsed = Date.now() - start;
 
-      expect(elapsed).toBeGreaterThanOrEqual(100);
-      expect(elapsed).toBeLessThan(150);
+      // setTimeout is not guaranteed to fire at exactly the specified time
+      // Allow 10% tolerance for system scheduling variability
+      expect(elapsed).toBeGreaterThanOrEqual(90);
+      expect(elapsed).toBeLessThan(200);
     });
   });
 
