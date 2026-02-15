@@ -1,10 +1,10 @@
 # ZTM Chat Channel Plugin for OpenClaw
 
-[![npm version](https://img.shields.io/npm/v/ztm-chat)](https://www.npmjs.com/package/ztm-chat)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/flomesh-io/openclaw-channel-plugin-ztm/test.yml)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/actions)
 [![Test Coverage](https://img.shields.io/badge/coverage-66%25-yellow)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6)](https://www.typescriptlang.org/)
+[![Release Version](https://img.shields.io/github/v/release/flomesh-io/openclaw-channel-plugin-ztm?sort=semver)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/releases/latest)
 
 This plugin integrates OpenClaw with ZTM (Zero Trust Mesh) Chat, enabling decentralized P2P messaging through the ZTM network.
 
