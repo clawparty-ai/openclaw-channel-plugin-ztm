@@ -141,4 +141,33 @@ describe("ZTMChatConfigSchema", () => {
       expect(result.config?.messagePath).toBe("/shared");
     });
   });
+
+  describe("permitSource configuration", () => {
+    it("should accept permitSource: auto with permitUrl", () => {
+      const config = {
+        ...testConfig,
+        agentUrl: "http://localhost:7777",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+        meshName: "test-mesh",
+        username: "test-bot",
+        permitSource: "server",
+      };
+      const result = validateZTMChatConfig(config);
+      expect(result.valid).toBe(true);
+    });
+
+    it("should accept permitSource: file with permitFilePath", () => {
+      const config = {
+        ...testConfig,
+        agentUrl: "http://localhost:7777",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+        meshName: "test-mesh",
+        username: "test-bot",
+        permitSource: "file",
+        permitFilePath: "/path/to/permit.json",
+      };
+      const result = validateZTMChatConfig(config);
+      expect(result.valid).toBe(true);
+    });
+  });
 });

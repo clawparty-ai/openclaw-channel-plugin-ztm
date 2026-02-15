@@ -56,6 +56,7 @@ describe("validateZTMChatConfig", () => {
     const result = validateZTMChatConfig({
       agentUrl: "invalid-url",
       permitUrl: "invalid-url",
+      permitSource: "server",
       meshName: "",
       username: "",
     });
@@ -217,5 +218,49 @@ describe("resolveZTMChatConfig", () => {
     expect(result.agentUrl).toBe("http://localhost:7777");
     expect(result.meshName).toBe("openclaw-mesh");
     expect(result.username).toBe("openclaw-bot");
+  });
+});
+
+describe("permitSource validation", () => {
+  it("should fail when permitSource is missing", () => {
+    const config = {
+      agentUrl: "http://localhost:7777",
+      permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+      meshName: "test-mesh",
+      username: "test-bot",
+    };
+    const result = validateZTMChatConfig(config);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ field: "permitSource" })
+    );
+  });
+
+  it("should fail when permitSource is auto but permitUrl is missing", () => {
+    const config = {
+      agentUrl: "http://localhost:7777",
+      meshName: "test-mesh",
+      username: "test-bot",
+      permitSource: "server",
+    };
+    const result = validateZTMChatConfig(config);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ field: "permitUrl" })
+    );
+  });
+
+  it("should fail when permitSource is file but permitFilePath is missing", () => {
+    const config = {
+      agentUrl: "http://localhost:7777",
+      meshName: "test-mesh",
+      username: "test-bot",
+      permitSource: "file",
+    };
+    const result = validateZTMChatConfig(config);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ field: "permitFilePath" })
+    );
   });
 });

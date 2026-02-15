@@ -15,7 +15,9 @@ interface WizardConfig extends Partial<ZTMChatConfig> {
   autoReply?: boolean;
   allowFrom?: string[];
   dmPolicy?: DMPolicy;
+  permitSource?: "server" | "file";
   permitUrl?: string;
+  permitFilePath?: string;
 }
 
 /**
@@ -153,6 +155,7 @@ export class ZTMChatWizard {
       autoReply: true,
       allowFrom: undefined,
       dmPolicy: "pairing",
+      permitSource: "server",
       permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
     };
   }
@@ -170,8 +173,8 @@ export class ZTMChatWizard {
       // Step 1: Agent URL
       await this.stepAgentUrl();
 
-      // Step 2: Permit Server URL
-      await this.stepPermitServer();
+      // Step 2: Permit Source
+      await this.stepPermitSource();
 
       // Step 3: User Selection
       await this.stepUserSelection();
@@ -220,19 +223,45 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 2: Permit Server URL
+   * Step 2: Permit Source Selection
    */
-  private async stepPermitServer(): Promise<void> {
+  private async stepPermitSource(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 2: Permit Server URL (Required)");
+    this.prompts.heading("Step 2: Permit Source (Required)");
     this.prompts.separator();
 
+    const sources = ["server", "file"] as const;
+    const sourceLabels = [
+      "Server - Request permit from permit server (requires ztm identity)",
+      "File - Use existing permit.json file",
+    ];
+
+    const permitSource = await this.prompts.select<"server" | "file">(
+      "How to obtain permit.json?",
+      sources,
+      sourceLabels
+    );
+
+    this.config.permitSource = permitSource;
+    this.prompts.success(`Permit source set to: ${permitSource}`);
+
+    // Conditionally ask for permitUrl or permitFilePath
+    if (permitSource === "server") {
+      await this.stepPermitUrl();
+    } else {
+      await this.stepPermitFilePath();
+    }
+  }
+
+  /**
+   * Step 2a: Permit Server URL (when server)
+   */
+  private async stepPermitUrl(): Promise<void> {
     const permitUrl = await this.prompts.ask(
       "Permit Server URL",
       "https://ztm-portal.flomesh.io:7779/permit"
     );
 
-    // Validate URL format (only format, not connectivity - that's handled by gateway lifecycle)
     if (!isValidUrl(permitUrl)) {
       this.prompts.error(`Invalid URL format: ${permitUrl}`);
       throw new Error("Invalid URL format");
@@ -242,11 +271,28 @@ export class ZTMChatWizard {
   }
 
   /**
+   * Step 2b: Permit File Path (when file)
+   */
+  private async stepPermitFilePath(): Promise<void> {
+    const permitFilePath = await this.prompts.ask(
+      "Permit File Path",
+      "/path/to/permit.json"
+    );
+
+    if (!permitFilePath || !permitFilePath.trim()) {
+      this.prompts.error("Permit file path is required");
+      throw new Error("Permit file path is required");
+    }
+    this.config.permitFilePath = permitFilePath;
+    this.prompts.success(`Permit file path set to: ${permitFilePath}`);
+  }
+
+  /**
    * Step 3: Select Bot Username
    */
   private async stepUserSelection(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 2: Bot Username (Required)");
+    this.prompts.heading("Step 3: Bot Username (Required)");
     this.prompts.separator();
 
     const username = await this.prompts.ask(
@@ -369,7 +415,12 @@ export class ZTMChatWizard {
     this.prompts.separator();
 
     console.log("  Agent URL:", this.config.agentUrl);
-    console.log("  Permit Server URL:", this.config.permitUrl);
+    console.log("  Permit Source:", this.config.permitSource);
+    if (this.config.permitSource === "server") {
+      console.log("  Permit Server URL:", this.config.permitUrl);
+    } else {
+      console.log("  Permit File Path:", this.config.permitFilePath);
+    }
     console.log("  Username:", this.config.username);
     console.log("  Message Path:", this.config.messagePath);
     console.log("  Auto Reply:", this.config.autoReply);
@@ -456,7 +507,9 @@ export class ZTMChatWizard {
   private buildConfig(): ZTMChatConfig & { allowFrom?: string[] } {
     return {
       agentUrl: this.config.agentUrl || "http://localhost:7777",
-      permitUrl: this.config.permitUrl || "https://ztm-portal.flomesh.io:7779/permit",
+      permitSource: (this.config.permitSource || "server") as "server" | "file",
+      permitUrl: this.config.permitUrl || "",
+      permitFilePath: this.config.permitFilePath,
       meshName: this.config.meshName || "openclaw-mesh",
       username: this.config.username || "openclaw-bot",
       enableGroups: this.config.enableGroups ?? false,
