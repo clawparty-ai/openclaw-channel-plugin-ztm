@@ -331,7 +331,7 @@ openclaw pairing approve ztm-chat <code>
 
 Configuration is stored in `openclaw.yaml` under `channels.ztm-chat`:
 
-#### Mode 1: Auto (from permit server)
+#### Mode 1: Server (from permit server)
 
 ```yaml
 channels:
@@ -340,7 +340,7 @@ channels:
     accounts:
       my-bot:
         agentUrl: "http://localhost:7777"
-        permitSource: "auto"
+        permitSource: "server"
         permitUrl: "https://ztm-portal.flomesh.io:7779/permit"
         meshName: "production-mesh"
         username: "my-bot"
@@ -408,11 +408,11 @@ channels:
 | Option | Type | Description |
 |--------|------|-------------|
 | `agentUrl` | string | ZTM Agent API URL |
-| `permitSource` | string | Permit source: `"auto"` (from permit server) or `"file"` (from local file) |
+| `permitSource` | string | Permit source: `"server"` (from permit server) or `"file"` (from local file) |
 | `meshName` | string | Name of your ZTM mesh |
 | `username` | string | Bot's ZTM username |
 
-**Required (when permitSource is "auto"):**
+**Required (when permitSource is "server"):**
 
 | Option | Type | Description |
 |--------|------|-------------|

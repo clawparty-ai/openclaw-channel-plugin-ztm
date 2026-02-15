@@ -53,11 +53,11 @@ export const ZTMChatConfigSchema = Type.Object({
     examples: ["https://ztm-portal.flomesh.io:7779/permit"],
   }),
   permitSource: Type.Union([
-    Type.Literal("auto"),
+    Type.Literal("server"),
     Type.Literal("file"),
   ], {
     title: "Permit Source",
-    description: "How to obtain permit.json: 'auto' from permit server, or 'file' from local file",
+    description: "How to obtain permit.json: 'server' from permit server, or 'file' from local file",
   }),
   permitFilePath: Type.Optional(Type.String({
     title: "Permit File Path",

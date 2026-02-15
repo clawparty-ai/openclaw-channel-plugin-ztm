@@ -45,7 +45,7 @@ class MockPrompts {
     this.callOrder.push(`select:${question}`);
     // Return based on what we're selecting
     if (question.includes("permit") || question.includes("Permit") || question.includes("obtain")) {
-      return (this.prompts.permitSource as T) || "auto";
+      return (this.prompts.permitSource as T) || "server";
     }
     if (question.includes("Policy")) {
       return (this.prompts.dmPolicy as T) || "pairing";
@@ -909,7 +909,7 @@ describe("ZTMChatWizard", () => {
 
       const mockPrompts = new MockPrompts({
         agentUrl: "http://localhost:7777",
-        permitSource: "auto",
+        permitSource: "server",
         permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
         dmPolicy: "pairing",
@@ -921,7 +921,7 @@ describe("ZTMChatWizard", () => {
       const result = await wizard.run();
 
       expect(result).toBeDefined();
-      expect(result.config.permitSource).toBe("auto");
+      expect(result.config.permitSource).toBe("server");
       expect(result.config.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     });
 

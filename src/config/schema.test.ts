@@ -150,7 +150,7 @@ describe("ZTMChatConfigSchema", () => {
         permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         meshName: "test-mesh",
         username: "test-bot",
-        permitSource: "auto",
+        permitSource: "server",
       };
       const result = validateZTMChatConfig(config);
       expect(result.valid).toBe(true);

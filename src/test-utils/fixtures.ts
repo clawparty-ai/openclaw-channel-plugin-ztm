@@ -21,7 +21,7 @@ export const ONE_HOUR_AGO = NOW - 3_600_000;
 export const testConfig: ZTMChatConfig = {
   agentUrl: "https://example.com:7777",
   permitUrl: "https://example.com/permit",
-  permitSource: "auto",
+  permitSource: "server",
   meshName: "test-mesh",
   username: "test-bot",
   dmPolicy: "pairing",

@@ -56,7 +56,7 @@ describe("validateZTMChatConfig", () => {
     const result = validateZTMChatConfig({
       agentUrl: "invalid-url",
       permitUrl: "invalid-url",
-      permitSource: "auto",
+      permitSource: "server",
       meshName: "",
       username: "",
     });
@@ -241,7 +241,7 @@ describe("permitSource validation", () => {
       agentUrl: "http://localhost:7777",
       meshName: "test-mesh",
       username: "test-bot",
-      permitSource: "auto",
+      permitSource: "server",
     };
     const result = validateZTMChatConfig(config);
     expect(result.valid).toBe(false);

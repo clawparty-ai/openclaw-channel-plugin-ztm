@@ -197,16 +197,16 @@ function validatePermitSource(
         "permitSource",
         "required",
         value,
-        "permitSource is required (must be 'auto' or 'file')"
+        "permitSource is required (must be 'server' or 'file')"
       )
     );
-  } else if (!["auto", "file"].includes(value as string)) {
+  } else if (!["server", "file"].includes(value as string)) {
     errors.push(
       validationError(
         "permitSource",
         "type_mismatch",
         value,
-        "permitSource must be 'auto' or 'file'"
+        "permitSource must be 'server' or 'file'"
       )
     );
   }
@@ -244,7 +244,7 @@ function validatePermitUrlConditional(
   const permitSource = config.permitSource;
   const value = config.permitUrl;
 
-  if (permitSource === "auto") {
+  if (permitSource === "server") {
     if (!value || typeof value !== "string" || !value.trim()) {
       errors.push(
         validationError(
@@ -330,13 +330,13 @@ export function validateZTMChatConfig(
   }
 
   // Resolve and return validated config
-  // Note: permitUrl validation ensures it's present when permitSource is "auto",
+  // Note: permitUrl validation ensures it's present when permitSource is "server",
   // so we can safely use type assertion
-  const permitSource = config.permitSource as "auto" | "file";
+  const permitSource = config.permitSource as "server" | "file";
   const resolvedConfig: ZTMChatConfig = {
     agentUrl: config.agentUrl!.toString().trim(),
     permitSource,
-    permitUrl: permitSource === "auto"
+    permitUrl: permitSource === "server"
       ? (config.permitUrl as string).toString().trim()
       : (config.permitUrl as string | undefined)?.toString().trim() ?? "",
     permitFilePath: config.permitFilePath

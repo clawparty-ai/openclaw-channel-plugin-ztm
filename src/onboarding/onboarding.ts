@@ -15,7 +15,7 @@ interface WizardConfig extends Partial<ZTMChatConfig> {
   autoReply?: boolean;
   allowFrom?: string[];
   dmPolicy?: DMPolicy;
-  permitSource?: "auto" | "file";
+  permitSource?: "server" | "file";
   permitUrl?: string;
   permitFilePath?: string;
 }
@@ -155,7 +155,7 @@ export class ZTMChatWizard {
       autoReply: true,
       allowFrom: undefined,
       dmPolicy: "pairing",
-      permitSource: "auto",
+      permitSource: "server",
       permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
     };
   }
@@ -230,13 +230,13 @@ export class ZTMChatWizard {
     this.prompts.heading("Step 2: Permit Source (Required)");
     this.prompts.separator();
 
-    const sources = ["auto", "file"] as const;
+    const sources = ["server", "file"] as const;
     const sourceLabels = [
-      "Auto - Request permit from permit server (requires ztm identity)",
+      "Server - Request permit from permit server (requires ztm identity)",
       "File - Use existing permit.json file",
     ];
 
-    const permitSource = await this.prompts.select<"auto" | "file">(
+    const permitSource = await this.prompts.select<"server" | "file">(
       "How to obtain permit.json?",
       sources,
       sourceLabels
@@ -246,7 +246,7 @@ export class ZTMChatWizard {
     this.prompts.success(`Permit source set to: ${permitSource}`);
 
     // Conditionally ask for permitUrl or permitFilePath
-    if (permitSource === "auto") {
+    if (permitSource === "server") {
       await this.stepPermitUrl();
     } else {
       await this.stepPermitFilePath();
@@ -254,7 +254,7 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 2a: Permit Server URL (when auto)
+   * Step 2a: Permit Server URL (when server)
    */
   private async stepPermitUrl(): Promise<void> {
     const permitUrl = await this.prompts.ask(
@@ -416,7 +416,7 @@ export class ZTMChatWizard {
 
     console.log("  Agent URL:", this.config.agentUrl);
     console.log("  Permit Source:", this.config.permitSource);
-    if (this.config.permitSource === "auto") {
+    if (this.config.permitSource === "server") {
       console.log("  Permit Server URL:", this.config.permitUrl);
     } else {
       console.log("  Permit File Path:", this.config.permitFilePath);
@@ -507,7 +507,7 @@ export class ZTMChatWizard {
   private buildConfig(): ZTMChatConfig & { allowFrom?: string[] } {
     return {
       agentUrl: this.config.agentUrl || "http://localhost:7777",
-      permitSource: this.config.permitSource || "auto",
+      permitSource: this.config.permitSource || "server",
       permitUrl: this.config.permitUrl,
       permitFilePath: this.config.permitFilePath,
       meshName: this.config.meshName || "openclaw-mesh",
