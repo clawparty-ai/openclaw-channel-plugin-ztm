@@ -3,14 +3,8 @@ import { defineConfig } from 'vitest/config';
 const testConfig = {
   test: {
     testTimeout: 30000, // 30 seconds default timeout
-    // Use forks pool for better mock isolation
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true, // Run all tests in a single fork
-      },
-    },
-    isolate: false, // Disable test isolation to maintain mock state
+    isolate: true, // Enable test isolation for reliable tests
   },
 };
 
