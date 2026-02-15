@@ -107,6 +107,7 @@ describe("DMPolicy Configuration", () => {
         agentUrl: testConfig.agentUrl,
         meshName: testConfig.meshName,
         permitUrl: testConfig.permitUrl,
+        permitSource: testConfig.permitSource,
         username: testConfig.username,
       });
       expect(result.valid).toBe(true);

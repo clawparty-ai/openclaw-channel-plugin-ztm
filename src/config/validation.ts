@@ -184,6 +184,90 @@ function validateApiTimeout(
 }
 
 /**
+ * Validate permitSource field
+ */
+function validatePermitSource(
+  config: Record<string, unknown>,
+  errors: ConfigValidationError[]
+): void {
+  const value = config.permitSource;
+  if (value === undefined) {
+    errors.push(
+      validationError(
+        "permitSource",
+        "required",
+        value,
+        "permitSource is required (must be 'auto' or 'file')"
+      )
+    );
+  } else if (!["auto", "file"].includes(value as string)) {
+    errors.push(
+      validationError(
+        "permitSource",
+        "type_mismatch",
+        value,
+        "permitSource must be 'auto' or 'file'"
+      )
+    );
+  }
+}
+
+/**
+ * Validate permitFilePath field (conditional)
+ */
+function validatePermitFilePath(
+  config: Record<string, unknown>,
+  errors: ConfigValidationError[]
+): void {
+  const permitSource = config.permitSource;
+  const value = config.permitFilePath;
+
+  if (permitSource === "file" && (!value || typeof value !== "string" || !value.trim())) {
+    errors.push(
+      validationError(
+        "permitFilePath",
+        "required",
+        value,
+        "permitFilePath is required when permitSource is 'file'"
+      )
+    );
+  }
+}
+
+/**
+ * Validate permitUrl field (conditional)
+ */
+function validatePermitUrlConditional(
+  config: Record<string, unknown>,
+  errors: ConfigValidationError[]
+): void {
+  const permitSource = config.permitSource;
+  const value = config.permitUrl;
+
+  if (permitSource === "auto") {
+    if (!value || typeof value !== "string" || !value.trim()) {
+      errors.push(
+        validationError(
+          "permitUrl",
+          "required",
+          value,
+          "permitUrl is required when permitSource is 'auto'"
+        )
+      );
+    } else if (!isValidUrl(value)) {
+      errors.push(
+        validationError(
+          "permitUrl",
+          "invalid_format",
+          value,
+          "permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)"
+        )
+      );
+    }
+  }
+}
+
+/**
  * Validate configuration with detailed errors using Result pattern
  *
  * @param raw - Raw configuration object to validate
@@ -225,7 +309,13 @@ export function validateZTMChatConfig(
 
   // Validate all required fields
   validateAgentUrl(config, errors);
-  validatePermitUrl(config, errors);
+  // Validate permitSource first (required)
+  validatePermitSource(config, errors);
+
+  // Conditional validations based on permitSource
+  validatePermitUrlConditional(config, errors);
+  validatePermitFilePath(config, errors);
+
   validateMeshName(config, errors);
   validateUsername(config, errors);
   validateDmPolicy(config, errors);
