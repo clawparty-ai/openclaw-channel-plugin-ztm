@@ -206,6 +206,8 @@ function startWatchLoop(
   let lastMessageTime = Date.now();
   let fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
   let messagesReceivedInCycle = false;
+  // Prevent overlapping watch loop executions
+  let isRunning = false;
 
   const ctx: WatchContext = { state, rt, messagePath, messageSemaphore };
 
@@ -225,27 +227,37 @@ function startWatchLoop(
   const WATCH_INTERVAL = 1000;
 
   const watchLoop = async (): Promise<void> => {
-    const loopStart = Date.now();
-
-    const result = await executeWatchIteration(ctx);
-
-    if (isWatchError(result)) {
-      handleWatchError(ctx.state, result.errorMessage, scheduleFullSync);
-      const elapsed = Date.now() - loopStart;
-      setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL - elapsed));
+    // Skip this iteration if previous one is still running
+    if (isRunning) {
       return;
     }
+    isRunning = true;
 
-    messagesReceivedInCycle = await processChangedPaths(
-      ctx,
-      result.items,
-      messagesReceivedInCycle,
-      scheduleFullSync
-    );
+    try {
+      const loopStart = Date.now();
 
-    state.watchErrorCount = 0;
-    const elapsed = Date.now() - loopStart;
-    setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL - elapsed));
+      const result = await executeWatchIteration(ctx);
+
+      if (isWatchError(result)) {
+        handleWatchError(ctx.state, result.errorMessage, scheduleFullSync);
+        const elapsed = Date.now() - loopStart;
+        setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL - elapsed));
+        return;
+      }
+
+      messagesReceivedInCycle = await processChangedPaths(
+        ctx,
+        result.items,
+        messagesReceivedInCycle,
+        scheduleFullSync
+      );
+
+      state.watchErrorCount = 0;
+      const elapsed = Date.now() - loopStart;
+      setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL - elapsed));
+    } finally {
+      isRunning = false;
+    }
   };
 
   watchLoop();
