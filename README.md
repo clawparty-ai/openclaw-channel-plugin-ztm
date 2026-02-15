@@ -70,7 +70,7 @@ The agent will start listening on `http://localhost:7777` by default.
 ### 3. Install Plugin
 
 ```bash
-openclaw plugins install -l ./extensions/ztm-chat
+openclaw plugins install -l .
 
 # Or install from npm (when published)
 # npm install -g @ztm/openclaw-ztm-chat
@@ -659,7 +659,6 @@ curl -X POST http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/gr
 ### Running Tests
 
 ```bash
-cd extensions/ztm-chat
 npm install
 npm test          # Run all tests
 npm test:watch    # Watch mode
@@ -669,7 +668,7 @@ npm test:watch    # Watch mode
 
 ```
 Test Files  43 passed (43)
-Tests  878 passed (878)
+Tests  886 passed (886)
 
 Coverage Areas:
 - Group Policy: Creator bypass, requireMention, allowlist, open/disabled modes
@@ -693,7 +692,7 @@ ZTM_CHAT_LOG_LEVEL=debug openclaw restart
 ## Project Structure
 
 ```
-ztm-chat/
+.
 ├── index.ts              # Plugin entry point
 ├── index.test.ts         # Plugin tests
 ├── package.json          # NPM package config
@@ -716,7 +715,8 @@ ztm-chat/
     ├── config/           # Configuration
     │   ├── schema.ts
     │   ├── defaults.ts
-    │   └── validation.ts
+    │   ├── validation.ts
+    │   └── helpers.ts
     ├── connectivity/    # Network connectivity
     │   ├── mesh.ts
     │   └── permit.ts
