@@ -311,8 +311,16 @@ async function processChangedPaths(
     return false;
   }
 
-  const peerItems = changedItems.filter(i => i.type === 'peer');
-  const groupItems = changedItems.filter(i => i.type === 'group');
+  // Single-pass classification instead of multiple filter() calls
+  const peerItems: typeof changedItems = [];
+  const groupItems: typeof changedItems = [];
+  for (const item of changedItems) {
+    if (item.type === 'peer') {
+      peerItems.push(item);
+    } else if (item.type === 'group') {
+      groupItems.push(item);
+    }
+  }
 
   logger.debug(`[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`);
 
