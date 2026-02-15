@@ -64,6 +64,27 @@ export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
   return ["default"];
 }
 
+// Dangerous property names that could lead to prototype pollution
+const DANGEROUS_PROPERTY_NAMES = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+]);
+
+/**
+ * Validate account ID to prevent path traversal and prototype pollution
+ */
+function isValidAccountId(accountId: string | undefined): boolean {
+  if (!accountId) return true; // undefined/null is valid (will use default)
+  // Check for empty or whitespace-only
+  if (accountId.trim().length === 0) return false;
+  // Check for dangerous property names
+  if (DANGEROUS_PROPERTY_NAMES.has(accountId)) return false;
+  // Check for path traversal patterns
+  if (accountId.includes("..") || accountId.includes("/") || accountId.includes("\\")) return false;
+  return true;
+}
+
 /**
  * Resolve a ZTM chat account with its configuration
  */
@@ -74,6 +95,17 @@ export function resolveZTMChatAccount({
   cfg?: OpenClawConfig;
   accountId?: string;
 }): ResolvedZTMChatAccount {
+  // Validate accountId to prevent path traversal / prototype pollution
+  if (!isValidAccountId(accountId)) {
+    // Return default account for invalid IDs
+    return {
+      accountId: "default",
+      username: "default",
+      enabled: true,
+      config: getDefaultConfig(),
+    };
+  }
+
   const channelConfig = getEffectiveChannelConfig(cfg);
   const accountKey = accountId ?? "default";
 
