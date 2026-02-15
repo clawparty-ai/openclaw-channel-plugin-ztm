@@ -330,6 +330,159 @@ async function handleInboundMessage(
 /**
  * Start account gateway implementation
  */
+// ============================================================================
+// Account Gateway Helper Functions
+// ============================================================================
+
+/**
+ * Validate connectivity to ZTM agent
+ */
+async function validateAgentConnectivity(
+  agentUrl: string,
+  ctx: { log?: { info: (...args: unknown[]) => void } }
+): Promise<void> {
+  try {
+    const agentUrlObj = new URL(agentUrl);
+    const portStr =
+      agentUrlObj.port ||
+      (agentUrlObj.protocol === "https:" ? "443" : "80");
+    const agentPort = parseInt(portStr, 10);
+    const agentConnected = await checkPortOpen(agentUrlObj.hostname, agentPort);
+    if (!agentConnected) {
+      throw new Error(`Cannot connect to ZTM agent at ${agentUrl}`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Cannot connect")) {
+      throw error;
+    }
+    throw new Error(`Invalid ZTM agent URL: ${agentUrl}`);
+  }
+}
+
+/**
+ * Load or request permit data based on configuration
+ */
+async function loadOrRequestPermit(
+  config: ZTMChatConfig,
+  permitPath: string,
+  ctx: { log?: { info: (...args: unknown[]) => void } }
+): Promise<PermitData> {
+  if (config.permitSource === "file") {
+    // Load from file
+    if (!config.permitFilePath) {
+      throw new Error("permitFilePath is required when permitSource is 'file'");
+    }
+    ctx.log?.info(`Loading permit from file: ${config.permitFilePath}...`);
+    const permitData = loadPermitFromFile(config.permitFilePath);
+    if (!permitData) {
+      throw new Error(`Failed to load permit from file: ${config.permitFilePath}`);
+    }
+    return permitData;
+  }
+
+  // Auto mode: Check if permit.json exists
+  const permitExists = fs.existsSync(permitPath);
+
+  if (!permitExists) {
+    // Step 3: Get identity from ZTM Agent API
+    ctx.log?.info("Getting identity from ZTM agent...");
+    const publicKey = await getIdentity(config.agentUrl);
+    if (!publicKey) {
+      throw new Error("Failed to get identity from ZTM agent");
+    }
+
+    // Step 4: Request permit from permit server
+    ctx.log?.info("Requesting permit from permit server...");
+    const permitData = await requestPermit(
+      config.permitUrl,
+      publicKey,
+      config.username,
+    );
+
+    if (!permitData) {
+      throw new Error("Failed to request permit from permit server");
+    }
+
+    // Step 5: Save permit data
+    if (!savePermitData(permitData, permitPath)) {
+      throw new Error("Failed to save permit data");
+    }
+
+    return permitData;
+  }
+
+  // Load existing permit
+  const permitData = loadPermitFromFile(permitPath);
+  if (!permitData) {
+    throw new Error("Failed to load existing permit data");
+  }
+  return permitData;
+}
+
+/**
+ * Join mesh if not already connected
+ */
+async function joinMeshIfNeeded(
+  config: ZTMChatConfig,
+  endpointName: string,
+  permitData: PermitData,
+  ctx: { log?: { info: (...args: unknown[]) => void } }
+): Promise<void> {
+  const preCheckClient = createZTMApiClient(config);
+  let alreadyConnected = false;
+  const preCheckResult = await preCheckClient.getMeshInfo();
+  if (isSuccess(preCheckResult)) {
+    alreadyConnected = preCheckResult.value.connected;
+  }
+
+  if (alreadyConnected) {
+    ctx.log?.info(
+      `Already connected to mesh ${config.meshName}, skipping join`,
+    );
+    return;
+  }
+
+  ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);
+  const joinSuccess = await joinMesh(
+    config.agentUrl,
+    config.meshName,
+    endpointName,
+    permitData,
+  );
+  if (!joinSuccess) {
+    throw new Error("Failed to join mesh");
+  }
+}
+
+/**
+ * Create message callback for inbound messages
+ */
+function createMessageCallback(
+  accountId: string,
+  config: ZTMChatConfig,
+  rt: ReturnType<typeof getZTMRuntime>,
+  cfg: Record<string, unknown> | undefined,
+  state: AccountRuntimeState,
+  ctx: { log?: { info: (...args: unknown[]) => void } }
+): (msg: ZTMChatMessage) => void {
+  return (msg: ZTMChatMessage) => {
+    let msgType: string;
+    if (msg.isGroup) {
+      const name = msg.groupName;
+      const id = msg.groupId;
+      msgType = name ? `group "${name}" (${id})` : `group ${id}`;
+    } else {
+      msgType = `peer "${msg.sender}"`;
+    }
+    ctx.log?.info(
+      `[${accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
+    );
+
+    // Call the local handleInboundMessage function
+    handleInboundMessage(state, rt, cfg ?? {}, config, accountId, ctx, msg);
+  };
+}
+
 export async function startAccountGateway(
   ctx: { account: { config: ZTMChatConfig; accountId: string }; log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void }; cfg?: Record<string, unknown> },
 ): Promise<() => Promise<void>> {
@@ -346,99 +499,15 @@ export async function startAccountGateway(
   const endpointName = `${config.username}-ep`;
 
   // Step 1: Validate connectivity for agent URL
-  try {
-    const agentUrlObj = new URL(config.agentUrl);
-    const portStr =
-      agentUrlObj.port ||
-      (agentUrlObj.protocol === "https:" ? "443" : "80");
-    const agentPort = parseInt(portStr, 10);
-    const agentConnected = await checkPortOpen(agentUrlObj.hostname, agentPort);
-    if (!agentConnected) {
-      throw new Error(`Cannot connect to ZTM agent at ${config.agentUrl}`);
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("Cannot connect")) {
-      throw error;
-    }
-    throw new Error(`Invalid ZTM agent URL: ${config.agentUrl}`);
-  }
+  await validateAgentConnectivity(config.agentUrl, ctx);
 
-  // Step 2: Load permit based on permitSource
-  let permitData: PermitData | null = null;
+  // Step 2-5: Load or request permit
+  const permitData = await loadOrRequestPermit(config, permitPath, ctx);
 
-  if (config.permitSource === "file") {
-    // Load from file - validate permitFilePath is provided
-    if (!config.permitFilePath) {
-      throw new Error("permitFilePath is required when permitSource is 'file'");
-    }
-    ctx.log?.info(`Loading permit from file: ${config.permitFilePath}...`);
-    permitData = loadPermitFromFile(config.permitFilePath);
-    if (!permitData) {
-      throw new Error(`Failed to load permit from file: ${config.permitFilePath}`);
-    }
-  } else {
-    // auto mode: Check if permit.json exists
-    const permitExists = fs.existsSync(permitPath);
+  // Step 6: Join mesh if needed
+  await joinMeshIfNeeded(config, endpointName, permitData, ctx);
 
-    if (!permitExists) {
-      // Step 3: Get identity from ZTM Agent API
-      ctx.log?.info("Getting identity from ZTM agent...");
-      const publicKey = await getIdentity(config.agentUrl);
-      if (!publicKey) {
-        throw new Error("Failed to get identity from ZTM agent");
-      }
-
-      // Step 4: Request permit from permit server
-      ctx.log?.info("Requesting permit from permit server...");
-      permitData = await requestPermit(
-        config.permitUrl,
-        publicKey,
-        config.username,
-      );
-
-      if (!permitData) {
-        throw new Error("Failed to request permit from permit server");
-      }
-
-      // Step 5: Save permit data
-      if (!savePermitData(permitData, permitPath)) {
-        throw new Error("Failed to save permit data");
-      }
-    } else {
-      // Load existing permit
-      permitData = loadPermitFromFile(permitPath);
-      if (!permitData) {
-        throw new Error("Failed to load existing permit data");
-      }
-    }
-  }
-
-  // Step 6: Join mesh via API (skip if already connected)
-  const preCheckClient = createZTMApiClient(config);
-  let alreadyConnected = false;
-  const preCheckResult = await preCheckClient.getMeshInfo();
-  if (isSuccess(preCheckResult)) {
-    alreadyConnected = preCheckResult.value.connected;
-  }
-
-  if (alreadyConnected) {
-    ctx.log?.info(
-      `Already connected to mesh ${config.meshName}, skipping join`,
-    );
-  } else {
-    ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);
-    const joinSuccess = await joinMesh(
-      config.agentUrl,
-      config.meshName,
-      endpointName,
-      permitData,
-    );
-    if (!joinSuccess) {
-      throw new Error("Failed to join mesh");
-    }
-  }
-
-  // Step 7: Initialize runtime (original flow)
+  // Step 7: Initialize runtime
   const initialized = await initializeRuntime(config, account.accountId);
 
   if (!initialized) {
@@ -473,22 +542,8 @@ export async function startAccountGateway(
     }
   }
 
-  // Dispatch inbound messages to the AI agent via OpenClaw's reply pipeline
-  const messageCallback = (msg: ZTMChatMessage) => {
-    let msgType: string;
-    if (msg.isGroup) {
-      const name = msg.groupName;
-      const id = msg.groupId;
-      msgType = name ? `group "${name}" (${id})` : `group ${id}`;
-    } else {
-      msgType = `peer "${msg.sender}"`;
-    }
-    ctx.log?.info(
-      `[${account.accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
-    );
-
-    void handleInboundMessage(state, rt, cfg ?? {}, config, account.accountId, ctx, msg);
-  };
+  // Setup message callback
+  const messageCallback = createMessageCallback(account.accountId, config, rt, cfg, state, ctx);
 
   state.messageCallbacks.add(messageCallback);
   await startMessageWatcher(state);
