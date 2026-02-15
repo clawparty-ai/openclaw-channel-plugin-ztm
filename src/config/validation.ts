@@ -330,20 +330,37 @@ export function validateZTMChatConfig(
   }
 
   // Resolve and return validated config
-  // Note: permitUrl validation ensures it's present when permitSource is "server",
-  // so we can safely use type assertion
-  const permitSource = config.permitSource as "server" | "file";
+  // Use defensive programming: validate fields exist even after validation pass
+  // If required fields are missing despite validation passing, return error
+  const agentUrl = config.agentUrl?.toString().trim();
+  const meshName = config.meshName?.toString().trim();
+  const username = config.username?.toString().trim();
+  if (!agentUrl || !meshName || !username) {
+    return {
+      valid: false,
+      errors: [
+        {
+          field: "root",
+          reason: "type_mismatch",
+          value: config,
+          message: "Missing required fields after validation",
+        },
+      ],
+    };
+  }
+
+  const permitSource = (config.permitSource as string) || "server";
   const resolvedConfig: ZTMChatConfig = {
-    agentUrl: config.agentUrl!.toString().trim(),
-    permitSource,
+    agentUrl,
+    permitSource: permitSource === "server" || permitSource === "file" ? permitSource : "server",
     permitUrl: permitSource === "server"
-      ? (config.permitUrl as string).toString().trim()
-      : (config.permitUrl as string | undefined)?.toString().trim() ?? "",
+      ? config.permitUrl?.toString().trim() ?? ""
+      : "",
     permitFilePath: config.permitFilePath
       ? config.permitFilePath.toString().trim()
       : undefined,
-    meshName: config.meshName!.toString().trim(),
-    username: config.username!.toString().trim(),
+    meshName,
+    username,
     enableGroups: Boolean(config.enableGroups),
     autoReply: config.autoReply !== false,
     messagePath:
