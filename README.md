@@ -331,6 +331,8 @@ openclaw pairing approve ztm-chat <code>
 
 Configuration is stored in `openclaw.yaml` under `channels.ztm-chat`:
 
+#### Mode 1: Auto (from permit server)
+
 ```yaml
 channels:
   ztm-chat:
@@ -338,7 +340,39 @@ channels:
     accounts:
       my-bot:
         agentUrl: "http://localhost:7777"
+        permitSource: "auto"
         permitUrl: "https://ztm-portal.flomesh.io:7779/permit"
+        meshName: "production-mesh"
+        username: "my-bot"
+        enableGroups: true
+        autoReply: true
+        dmPolicy: "pairing"
+        allowFrom:
+          - alice
+          - trusted-team
+        groupPolicy: "allowlist"
+        requireMention: true
+        groupPermissions:
+          alice/team:
+            creator: "alice"
+            group: "team"
+            groupPolicy: "open"
+            requireMention: false
+            allowFrom: []
+            tools:
+```
+
+#### Mode 2: File (from local permit.json)
+
+```yaml
+channels:
+  ztm-chat:
+    enabled: true
+    accounts:
+      my-bot:
+        agentUrl: "http://localhost:7777"
+        permitSource: "file"
+        permitFilePath: "/path/to/permit.json"
         meshName: "production-mesh"
         username: "my-bot"
         enableGroups: true
@@ -374,9 +408,21 @@ channels:
 | Option | Type | Description |
 |--------|------|-------------|
 | `agentUrl` | string | ZTM Agent API URL |
-| `permitUrl` | string | Permit Server URL |
+| `permitSource` | string | Permit source: `"auto"` (from permit server) or `"file"` (from local file) |
 | `meshName` | string | Name of your ZTM mesh |
 | `username` | string | Bot's ZTM username |
+
+**Required (when permitSource is "auto"):**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `permitUrl` | string | Permit Server URL |
+
+**Required (when permitSource is "file"):**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `permitFilePath` | string | Path to local permit.json file |
 
 **Optional - Basic:**
 
@@ -387,6 +433,7 @@ channels:
 | `autoReply` | boolean | `true` | Automatically reply to messages |
 | `dmPolicy` | string | `"pairing"` | DM policy: `allow`, `deny`, `pairing` |
 | `allowFrom` | string[] | `[]` | List of approved usernames |
+| `permitFilePath` | string | - | Path to permit.json file (when permitSource is `"file"`) |
 
 **Optional - Group:**
 
