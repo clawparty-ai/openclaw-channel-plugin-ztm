@@ -330,10 +330,17 @@ export function validateZTMChatConfig(
   }
 
   // Resolve and return validated config
+  // Note: permitUrl validation ensures it's present when permitSource is "auto",
+  // so we can safely use type assertion
+  const permitSource = config.permitSource as "auto" | "file";
   const resolvedConfig: ZTMChatConfig = {
     agentUrl: config.agentUrl!.toString().trim(),
-    permitUrl: config.permitUrl
-      ? config.permitUrl.toString().trim()
+    permitSource,
+    permitUrl: permitSource === "auto"
+      ? (config.permitUrl as string).toString().trim()
+      : (config.permitUrl as string | undefined)?.toString().trim() ?? "",
+    permitFilePath: config.permitFilePath
+      ? config.permitFilePath.toString().trim()
       : undefined,
     meshName: config.meshName!.toString().trim(),
     username: config.username!.toString().trim(),
