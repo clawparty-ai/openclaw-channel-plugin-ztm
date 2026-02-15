@@ -39,6 +39,7 @@ vi.mock("../utils/logger.js", () => ({
 vi.mock("./store.js", () => ({
   getMessageStateStore: vi.fn(() => ({
     flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
     getWatermark: () => -1,
     getGlobalWatermark: vi.fn(() => 0),
     setWatermark: vi.fn(),
@@ -59,6 +60,7 @@ vi.mock("./pairing-store.js", () => ({
     deletePendingPairing: vi.fn(),
     cleanupExpiredPairings: vi.fn(() => 0),
     flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   })),
   disposePairingStateStore: vi.fn(),
@@ -350,6 +352,7 @@ describe("Account Runtime State Management", () => {
       const { getMessageStateStore, disposeMessageStateStore } = await import("./store.js");
       const store = {
         flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
         getWatermark: () => -1,
         getGlobalWatermark: vi.fn(() => 0),
         setWatermark: vi.fn(),

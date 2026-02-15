@@ -19,6 +19,17 @@ const createMockFs = (initialFiles: Map<string, string> = new Map()): FileSystem
     writeFileSync: vi.fn((path: string, data: string) => {
       files.set(path, data);
     }),
+    promises: {
+      mkdir: vi.fn().mockResolvedValue(undefined),
+      readFile: vi.fn(async (path: string) => {
+        if (!files.has(path)) throw new Error(`File not found: ${path}`);
+        return files.get(path)!;
+      }),
+      writeFile: vi.fn(async (path: string, data: string) => {
+        files.set(path, data);
+      }),
+      access: vi.fn().mockResolvedValue(undefined),
+    },
   };
 };
 
@@ -260,6 +271,12 @@ describe("PairingStateStore", () => {
           throw new Error("Read error");
         }),
         writeFileSync: vi.fn(),
+        promises: {
+          mkdir: vi.fn().mockRejectedValue(new Error("mkdir error")),
+          readFile: vi.fn().mockRejectedValue(new Error("Read error")),
+          writeFile: vi.fn().mockRejectedValue(new Error("Write error")),
+          access: vi.fn().mockResolvedValue(undefined),
+        },
       };
 
       const store = createPairingStateStore("/tmp/test-pairings.json", failingFs, mockLogger as unknown as import("../utils/logger.js").Logger);
@@ -276,6 +293,12 @@ describe("PairingStateStore", () => {
         writeFileSync: vi.fn(() => {
           throw new Error("Write error");
         }),
+        promises: {
+          mkdir: vi.fn().mockRejectedValue(new Error("mkdir error")),
+          readFile: vi.fn().mockResolvedValue("{}"),
+          writeFile: vi.fn().mockRejectedValue(new Error("Write error")),
+          access: vi.fn().mockResolvedValue(undefined),
+        },
       };
 
       const store = createPairingStateStore("/tmp/test-pairings.json", failingFs, mockLogger as unknown as import("../utils/logger.js").Logger);

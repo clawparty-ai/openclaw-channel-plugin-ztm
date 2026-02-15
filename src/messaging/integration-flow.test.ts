@@ -47,6 +47,7 @@ vi.mock("../runtime/store.js", () => ({
       setFileMetadata: vi.fn(),
       setFileMetadataBulk: vi.fn(),
       flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
       dispose: vi.fn(),
     };
   }),
@@ -66,6 +67,7 @@ vi.mock("../runtime/pairing-store.js", () => {
     deletePendingPairing: vi.fn(),
     cleanupExpiredPairings: vi.fn(() => 0),
     flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   };
   return {
@@ -151,6 +153,7 @@ describe("Integration: Complete Message Flow", () => {
       deletePendingPairing: mockDeletePendingPairing,
       cleanupExpiredPairings: mockCleanupExpiredPairings,
       flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
       dispose: vi.fn(),
     });
 

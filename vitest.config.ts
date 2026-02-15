@@ -32,6 +32,9 @@ const coverageConfig = {
   perFile: true,
 };
 
+// Setup file to mock fs.promises globally
+const setupFiles = ['./src/test-utils/vitest-setup.ts'];
+
 export default defineConfig({
   ...testConfig,
   ...coverageConfig,

@@ -28,6 +28,7 @@ vi.mock("../runtime/index.js", () => ({
 vi.mock("./store.js", () => ({
   messageStateStore: {
     flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
     getWatermark: () => -1,
     setWatermark: () => {},
     setFileMetadataBulk: () => {},

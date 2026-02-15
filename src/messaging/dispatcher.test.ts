@@ -39,6 +39,7 @@ vi.mock("../runtime/store.js", () => ({
     setFileMetadata: vi.fn(),
     setFileMetadataBulk: vi.fn(),
     flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   })),
   disposeMessageStateStore: vi.fn(),

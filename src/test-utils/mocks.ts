@@ -169,6 +169,7 @@ export function createMockMessageStateStore() {
     }),
     setFileMetadataBulk: vi.fn(),
     flush: vi.fn(),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
     // Internal for testing
     _watermarks: watermarks,
@@ -190,6 +191,7 @@ export function createMockPairingStore() {
     deletePendingPairing: vi.fn((id: string) => pairings.delete(id)),
     cleanupExpiredPairings: vi.fn(() => 0),
     flush: vi.fn(),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
     _pairings: pairings,
   };

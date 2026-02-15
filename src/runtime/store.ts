@@ -15,6 +15,12 @@ export interface FileSystem {
   mkdirSync(path: string, options?: { recursive?: boolean }): void;
   readFileSync(path: string, encoding: string): string;
   writeFileSync(path: string, data: string): void;
+  promises: {
+    mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
+    readFile(path: string, encoding: string): Promise<string>;
+    writeFile(path: string, data: string): Promise<void>;
+    access(path: string): Promise<void>;
+  };
 }
 
 /**
@@ -25,6 +31,14 @@ export const nodeFs: FileSystem = {
   mkdirSync: fs.mkdirSync,
   readFileSync: (p, enc) => fs.readFileSync(p, enc as BufferEncoding),
   writeFileSync: (p, d) => fs.writeFileSync(p, d),
+  promises: {
+    mkdir: async (path: string, options?: { recursive?: boolean }) => {
+      await fs.promises.mkdir(path, options);
+    },
+    readFile: (p: string, enc: string) => fs.promises.readFile(p, enc as BufferEncoding),
+    writeFile: (p: string, d: string) => fs.promises.writeFile(p, d),
+    access: (p: string) => fs.promises.access(p),
+  },
 };
 
 export interface FileMetadata {
@@ -84,6 +98,11 @@ export interface MessageStateStore {
   flush(): void;
 
   /**
+   * Async flush for graceful shutdown
+   */
+  flushAsync(): Promise<void>;
+
+  /**
    * Dispose of resources - call on plugin unload
    */
   dispose(): void;
@@ -103,6 +122,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
   private data: MessageStateData;
   private dirty = false;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private loaded = false;
   private readonly fs: FileSystem;
   private readonly logger: Logger;
   private readonly stateDir: string;
@@ -130,17 +150,26 @@ export class MessageStateStoreImpl implements MessageStateStore {
     }
     this.stateDir = path.dirname(this.statePath);
 
-    // Ensure the config directory exists on startup to prevent write errors later
+    // Initialize with empty data - load lazily on first access
+    // This avoids blocking the event loop during startup
+    this.data = { accounts: {}, fileMetadata: {} };
+  }
+
+  /**
+   * Synchronous load for backward compatibility
+   * Loads data immediately if not already loaded
+   */
+  private load(): void {
+    if (this.loaded) return;
+
+    // Ensure directory exists
     if (!this.fs.existsSync(this.stateDir)) {
       this.fs.mkdirSync(this.stateDir, { recursive: true });
     }
-    this.data = { accounts: {}, fileMetadata: {} };
-    this.load();
-  }
 
-  private load(): void {
     try {
       if (!this.fs.existsSync(this.statePath)) {
+        this.loaded = true;
         return;
       }
 
@@ -148,6 +177,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
       const parsed = JSON.parse(content);
 
       if (!parsed || typeof parsed !== "object") {
+        this.loaded = true;
         return;
       }
 
@@ -160,6 +190,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
       // Ignore read/parse errors — start fresh
       this.logger.warn("Failed to load message state, starting fresh");
     }
+    this.loaded = true;
   }
 
   private migrateFileMetadata(parsed: Record<string, unknown>): Record<string, Record<string, FileMetadata>> {
@@ -185,10 +216,25 @@ export class MessageStateStoreImpl implements MessageStateStore {
     this.dirty = true;
     if (this.flushTimer) return;
     // Debounce writes to avoid excessive I/O during burst processing
-    this.flushTimer = setTimeout(() => {
+    this.flushTimer = setTimeout(async () => {
       this.flushTimer = null;
-      this.save();
+      await this.saveAsync();
     }, 1000);
+  }
+
+  /**
+   * Async save method to avoid blocking the event loop
+   */
+  private async saveAsync(): Promise<void> {
+    if (!this.dirty) return;
+
+    try {
+      await this.fs.promises.mkdir(this.stateDir, { recursive: true });
+      await this.fs.promises.writeFile(this.statePath, JSON.stringify(this.data, null, 2));
+      this.dirty = false;
+    } catch {
+      this.logger.warn("Failed to persist message state");
+    }
   }
 
   private save(): void {
@@ -213,13 +259,30 @@ export class MessageStateStoreImpl implements MessageStateStore {
     this.save();
   }
 
+  /** Async flush for graceful shutdown */
+  async flushAsync(): Promise<void> {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    await this.saveAsync();
+  }
+
   /** Get the last-processed message timestamp for a key under an account */
   getWatermark(accountId: string, key: string): number {
+    // Ensure data is loaded before reading (sync load to maintain backward compatibility)
+    if (!this.loaded) {
+      this.load();
+    }
     return this.data.accounts[accountId]?.[key] ?? 0;
   }
 
   /** Get the global watermark (max across all keys) for an account */
   getGlobalWatermark(accountId: string): number {
+    // Ensure data is loaded before reading
+    if (!this.loaded) {
+      this.load();
+    }
     const keys = this.data.accounts[accountId];
     if (!keys) return 0;
     return Math.max(0, ...Object.values(keys));
@@ -227,6 +290,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
   /** Update the watermark for a key (only advances forward) */
   setWatermark(accountId: string, key: string, time: number): void {
+    // Ensure data is loaded before writing
+    if (!this.loaded) {
+      this.load();
+    }
     const current = this.getWatermark(accountId, key);
     if (time <= current) return;
     if (!this.data.accounts[accountId]) {
@@ -263,11 +330,19 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
   /** Get all persisted file metadata for an account (used to seed lastSeenTimes) */
   getFileMetadata(accountId: string): Record<string, FileMetadata> {
+    // Ensure data is loaded before reading
+    if (!this.loaded) {
+      this.load();
+    }
     return this.data.fileMetadata[accountId] ?? {};
   }
 
   /** Update a file's metadata */
   setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void {
+    // Ensure data is loaded before writing
+    if (!this.loaded) {
+      this.load();
+    }
     if (!this.data.fileMetadata[accountId]) {
       this.data.fileMetadata[accountId] = {};
     }
@@ -277,6 +352,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
   /** Bulk-set file metadata (e.g. after initial scan) */
   setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void {
+    // Ensure data is loaded before writing
+    if (!this.loaded) {
+      this.load();
+    }
     if (!this.data.fileMetadata[accountId]) {
       this.data.fileMetadata[accountId] = {};
     }

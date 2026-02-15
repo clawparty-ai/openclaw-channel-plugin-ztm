@@ -93,6 +93,7 @@ vi.mock("../runtime/pairing-store.js", () => ({
     deletePendingPairing: vi.fn(),
     cleanupExpiredPairings: vi.fn(() => 0),
     flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   })),
   disposePairingStateStore: vi.fn(),
