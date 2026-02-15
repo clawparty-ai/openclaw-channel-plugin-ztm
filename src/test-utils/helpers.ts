@@ -246,6 +246,7 @@ export function minimalConfig(overrides: Partial<ZTMChatConfig> = {}): ZTMChatCo
   return {
     agentUrl: "http://localhost:7777",
     permitUrl: "http://localhost:7777/permit",
+    permitSource: "server",
     meshName: "test-mesh",
     username: "test-bot",
     dmPolicy: "pairing",
@@ -263,6 +264,7 @@ export function failingConfig(): ZTMChatConfig {
   return {
     agentUrl: "http://invalid-host:9999",
     permitUrl: "http://invalid-host:9999/permit",
+    permitSource: "server",
     meshName: "test-mesh",
     username: "test-bot",
     dmPolicy: "pairing",
@@ -283,6 +285,7 @@ export function createTestClientConfig(baseUrl: string, meshName = "test-mesh", 
   return {
     agentUrl: baseUrl,
     permitUrl: `${baseUrl}/permit`,
+    permitSource: "server",
     meshName,
     username,
     dmPolicy: "pairing",

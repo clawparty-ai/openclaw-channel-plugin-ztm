@@ -507,8 +507,8 @@ export class ZTMChatWizard {
   private buildConfig(): ZTMChatConfig & { allowFrom?: string[] } {
     return {
       agentUrl: this.config.agentUrl || "http://localhost:7777",
-      permitSource: this.config.permitSource || "server",
-      permitUrl: this.config.permitUrl,
+      permitSource: (this.config.permitSource || "server") as "server" | "file",
+      permitUrl: this.config.permitUrl || "",
       permitFilePath: this.config.permitFilePath,
       meshName: this.config.meshName || "openclaw-mesh",
       username: this.config.username || "openclaw-bot",

@@ -45,13 +45,13 @@ class MockPrompts {
     this.callOrder.push(`select:${question}`);
     // Return based on what we're selecting
     if (question.includes("permit") || question.includes("Permit") || question.includes("obtain")) {
-      return (this.prompts.permitSource as T) || "server";
+      return (this.prompts.permitSource ?? "server") as T;
     }
     if (question.includes("Policy")) {
-      return (this.prompts.dmPolicy as T) || "pairing";
+      return (this.prompts.dmPolicy ?? "pairing") as T;
     }
     if (question.includes("Group")) {
-      return (this.prompts.groupPolicy as T) || "allowlist";
+      return (this.prompts.groupPolicy ?? "allowlist") as T;
     }
     return options[0];
   }
@@ -921,8 +921,8 @@ describe("ZTMChatWizard", () => {
       const result = await wizard.run();
 
       expect(result).toBeDefined();
-      expect(result.config.permitSource).toBe("server");
-      expect(result.config.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
+      expect(result!.config.permitSource).toBe("server");
+      expect(result!.config.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     });
 
     it("should ask permitSource first then permitFilePath for file mode", async () => {
@@ -942,8 +942,8 @@ describe("ZTMChatWizard", () => {
       const result = await wizard.run();
 
       expect(result).toBeDefined();
-      expect(result.config.permitSource).toBe("file");
-      expect(result.config.permitFilePath).toBe("/path/to/permit.json");
+      expect(result!.config.permitSource).toBe("file");
+      expect(result!.config.permitFilePath).toBe("/path/to/permit.json");
     });
   });
 });
