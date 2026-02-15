@@ -61,7 +61,7 @@ export function savePermitData(permitData: unknown, permitPath: string): boolean
 /**
  * Load permit data from a local file
  */
-export async function loadPermitFromFile(filePath: string): Promise<unknown> {
+export function loadPermitFromFile(filePath: string): unknown {
   try {
     if (!fs.existsSync(filePath)) {
       logger.error(`Permit file not found: ${filePath}`);

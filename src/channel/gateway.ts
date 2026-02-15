@@ -365,9 +365,12 @@ export async function startAccountGateway(
   let permitData: unknown;
 
   if (config.permitSource === "file") {
-    // Load from file
+    // Load from file - validate permitFilePath is provided
+    if (!config.permitFilePath) {
+      throw new Error("permitFilePath is required when permitSource is 'file'");
+    }
     ctx.log?.info(`Loading permit from file: ${config.permitFilePath}...`);
-    permitData = await loadPermitFromFile(config.permitFilePath!);
+    permitData = loadPermitFromFile(config.permitFilePath);
     if (!permitData) {
       throw new Error(`Failed to load permit from file: ${config.permitFilePath}`);
     }
@@ -420,8 +423,9 @@ export async function startAccountGateway(
   } else {
     ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName}...`);
     // Use the appropriate permit path based on permitSource
+    // Note: permitFilePath was already validated above when permitSource === "file"
     const currentPermitPath = config.permitSource === "file"
-      ? config.permitFilePath!
+      ? (config.permitFilePath ?? permitPath)
       : permitPath;
     const joinSuccess = await joinMesh(
       config.meshName,
