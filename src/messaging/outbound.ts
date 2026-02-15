@@ -1,5 +1,6 @@
 // Outbound message sending for ZTM Chat
 
+import { randomBytes } from "node:crypto";
 import { logger } from "../utils/logger.js";
 import { type ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
@@ -8,7 +9,8 @@ import { ZtmSendError } from "../types/errors.js";
 import { handleResult } from "../utils/result.js";
 
 export function generateMessageId(): string {
-  return `ztm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const randomPart = randomBytes(4).toString("hex");
+  return `ztm-${Date.now()}-${randomPart}`;
 }
 
 export async function sendZTMMessage(

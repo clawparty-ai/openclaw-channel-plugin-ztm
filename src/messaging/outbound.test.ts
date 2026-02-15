@@ -84,7 +84,8 @@ describe("Outbound message functions", () => {
 
     it("should use default format 'ztm-{timestamp}-{random}'", () => {
       const id = generateMessageId();
-      expect(id).toMatch(/^ztm-\d+-[a-z0-9]{7}$/);
+      // randomBytes(4) generates 8 hex characters
+      expect(id).toMatch(/^ztm-\d+-[a-f0-9]{8}$/);
     });
 
     it("should be URL-safe", () => {
