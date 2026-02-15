@@ -78,6 +78,7 @@ export function removeAccountState(accountId: string): void {
       clearInterval(state.watchInterval);
     }
     state.messageCallbacks.clear();
+    state.pendingPairings.clear();
     accountStates.delete(accountId);
   }
 }
@@ -198,6 +199,7 @@ export async function stopRuntime(accountId: string): Promise<void> {
   }
 
   state.messageCallbacks.clear();
+  state.pendingPairings.clear();
   state.apiClient = null;
   state.connected = false;
   state.meshConnected = false;

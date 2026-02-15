@@ -189,6 +189,19 @@ describe("Account Runtime State Management", () => {
       expect(allStates.has(testAccountId)).toBe(false);
     });
 
+    it("should clear pendingPairings", () => {
+      const state = getOrCreateAccountState(testAccountId);
+      state.pendingPairings.set("alice", new Date());
+      state.pendingPairings.set("bob", new Date());
+      expect(state.pendingPairings.size).toBe(2);
+
+      removeAccountState(testAccountId);
+
+      // State should be removed
+      const allStates = getAllAccountStates();
+      expect(allStates.has(testAccountId)).toBe(false);
+    });
+
     it("should handle removing unknown account gracefully", () => {
       // Should not throw
       expect(() => removeAccountState("unknown-account")).not.toThrow();
@@ -335,6 +348,18 @@ describe("Account Runtime State Management", () => {
       await stopRuntime(testAccountId);
 
       expect(state!.messageCallbacks.size).toBe(0);
+    });
+
+    it("should clear pendingPairings", async () => {
+      await initializeRuntime(testConfig, testAccountId);
+      const state = getAllAccountStates().get(testAccountId);
+      state!.pendingPairings.set("alice", new Date());
+      state!.pendingPairings.set("bob", new Date());
+      expect(state!.pendingPairings.size).toBe(2);
+
+      await stopRuntime(testAccountId);
+
+      expect(state!.pendingPairings.size).toBe(0);
     });
 
     it("should set lastStopAt", async () => {
