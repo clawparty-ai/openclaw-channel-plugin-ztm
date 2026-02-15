@@ -44,10 +44,11 @@ export async function startMessageWatcher(
   });
 
   // Step 4: Initial sync - read all existing messages
-  await performInitialSync(state, storeAllowFrom);
+  // Get chats once and reuse for pairing requests (avoid duplicate API call)
+  const chats = await performInitialSync(state, storeAllowFrom);
 
-  // Step 5: Handle pairing requests from initial sync
-  await handleInitialPairingRequests(state, storeAllowFrom);
+  // Step 5: Handle pairing requests from initial sync (reuses chats from initialSync)
+  await handleInitialPairingRequests(state, storeAllowFrom, chats);
 
   // Step 6: Start watch loop
   startWatchLoop(state, rt, messagePath);
@@ -137,17 +138,18 @@ async function processChatMessage(
 
 /**
  * Perform initial sync of all existing messages
+ * Returns the chats for reuse by handleInitialPairingRequests
  */
 async function performInitialSync(
   state: AccountRuntimeState,
   storeAllowFrom: string[]
-): Promise<void> {
-  if (!state.apiClient) return;
+): Promise<ZTMChat[]> {
+  if (!state.apiClient) return [];
 
   const chatsResult = await state.apiClient.getChats();
   if (!isSuccess(chatsResult)) {
     logger.warn(`[${state.accountId}] Initial read failed: ${chatsResult.error?.message}`);
-    return;
+    return [];
   }
 
   const chats = chatsResult.value;
@@ -160,24 +162,20 @@ async function performInitialSync(
   }
 
   logger.info(`[${state.accountId}] Initial sync: ${chats.length} chats, ${processedCount} messages processed`);
+
+  return chats;
 }
 
 /**
  * Handle pairing requests from initial sync
+ * Reuses chats from performInitialSync to avoid duplicate API call
  */
 async function handleInitialPairingRequests(
   state: AccountRuntimeState,
-  storeAllowFrom: string[]
+  storeAllowFrom: string[],
+  chats: ZTMChat[]
 ): Promise<void> {
-  if (!state.apiClient) return;
-
-  const chatsResult = await state.apiClient.getChats();
-  if (!isSuccess(chatsResult)) {
-    logger.warn(`[${state.accountId}] Failed to get chats for pairing requests: ${chatsResult.error?.message}`);
-    return;
-  }
-
-  for (const chat of chatsResult.value) {
+  for (const chat of chats) {
     if (chat.peer && chat.peer !== state.config.username) {
       const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);
       if (check.action === "request_pairing") {
