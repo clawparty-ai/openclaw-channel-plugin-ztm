@@ -37,3 +37,6 @@ npm-debug.log*
 
 # Security Hardening
 .security-hardening/
+
+# Full Review
+.full-review/
