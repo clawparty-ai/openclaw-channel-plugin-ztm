@@ -2,14 +2,25 @@
 // Tests the complete startup flow from config validation to message dispatch
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { PermitData } from "../types/connectivity.js";
 import { testConfig } from "../test-utils/fixtures.js";
+
+// Valid PermitData for testing
+const mockPermitData: PermitData = {
+  ca: "-----BEGIN CERTIFICATE-----\ntest-ca\n-----END CERTIFICATE-----",
+  agent: {
+    certificate: "-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----",
+    privateKey: "-----BEGIN PRIVATE KEY-----\ntest-key\n-----END PRIVATE KEY-----",
+  },
+  bootstraps: ["bootstrap1.ztm.local:7777", "bootstrap2.ztm.local:7777"],
+};
 
 // Mock state containers
 const mockState = {
   fsExistsSync: true,
   checkPortOpen: true,
   getPublicKey: "test-public-key" as string | null,
-  requestPermit: { token: "test-permit-token" } as any,
+  requestPermit: mockPermitData,
   savePermit: true,
   joinMesh: true,
   preCheckConnected: false,
@@ -40,12 +51,12 @@ vi.mock("fs", () => ({
 // Mock connectivity functions
 vi.mock("../connectivity/mesh.js", () => ({
   checkPortOpen: () => Promise.resolve(mockState.checkPortOpen),
-  getPublicKeyFromIdentity: () => Promise.resolve(mockState.getPublicKey),
+  getIdentity: () => Promise.resolve(mockState.getPublicKey),
   joinMesh: () => Promise.resolve(mockState.joinMesh),
 }));
 
 vi.mock("../connectivity/permit.js", () => ({
-  requestPermit: () => Promise.resolve(mockState.requestPermit),
+  requestPermit: () => Promise.resolve(mockState.requestPermit as PermitData),
   savePermitData: () => mockState.savePermit,
 }));
 
@@ -149,7 +160,7 @@ describe("startAccount E2E Tests", () => {
     mockState.fsExistsSync = false; // permit.json doesn't exist by default
     mockState.checkPortOpen = true;
     mockState.getPublicKey = "test-public-key";
-    mockState.requestPermit = { token: "test-permit-token" };
+    mockState.requestPermit = mockPermitData;
     mockState.savePermit = true;
     mockState.joinMesh = true;
     mockState.preCheckConnected = false;
@@ -162,7 +173,7 @@ describe("startAccount E2E Tests", () => {
   describe("successful startup flow", () => {
     it("should complete all steps when starting fresh", async () => {
       const { checkPortOpen } = await import("../connectivity/mesh.js");
-      const { getPublicKeyFromIdentity } = await import("../connectivity/mesh.js");
+      const { getIdentity } = await import("../connectivity/mesh.js");
       const { requestPermit } = await import("../connectivity/permit.js");
       const { savePermitData } = await import("../connectivity/permit.js");
       const { joinMesh } = await import("../connectivity/mesh.js");
@@ -173,20 +184,25 @@ describe("startAccount E2E Tests", () => {
       const portOpen = await checkPortOpen("example.com", 7777);
       expect(portOpen).toBe(true);
 
-      // Step 2: Get public key (no permit.json exists)
-      const publicKey = await getPublicKeyFromIdentity();
+      // Step 2: Get identity (no permit.json exists)
+      const publicKey = await getIdentity("http://localhost:7777");
       expect(publicKey).toBe("test-public-key");
 
       // Step 3: Request permit
       const permit = await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
-      expect(permit).toEqual({ token: "test-permit-token" });
+      expect(permit).toEqual(mockPermitData);
 
-      // Step 4: Save permit
-      const saved = savePermitData(permit, "/test/permit.json");
+      // Step 4: Save permit (permit is guaranteed by mock)
+      const saved = savePermitData(permit!, "/test/permit.json");
       expect(saved).toBe(true);
 
-      // Step 5: Join mesh
-      const joined = await joinMesh(baseConfig.meshName, `${baseConfig.username}-ep`, "/test/permit.json");
+      // Step 5: Join mesh via API
+      const joined = await joinMesh(
+        "http://localhost:7777",
+        baseConfig.meshName,
+        `${baseConfig.username}-ep`,
+        permit!
+      );
       expect(joined).toBe(true);
 
       // Step 6: Initialize runtime
@@ -197,11 +213,11 @@ describe("startAccount E2E Tests", () => {
     it("should skip permit flow when permit.json already exists", async () => {
       mockState.fsExistsSync = true; // permit.json exists
 
-      const { getPublicKeyFromIdentity } = await import("../connectivity/mesh.js");
+      const { getIdentity } = await import("../connectivity/mesh.js");
       const { requestPermit } = await import("../connectivity/permit.js");
 
       // These should not be called when permit.json exists
-      const publicKey = await getPublicKeyFromIdentity();
+      const publicKey = await getIdentity("http://localhost:7777");
       const permit = await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
 
       // In a real flow, these wouldn't be called, but our mock still returns values
@@ -274,14 +290,14 @@ describe("startAccount E2E Tests", () => {
     it("should handle public key retrieval failure", async () => {
       mockState.getPublicKey = null;
 
-      const { getPublicKeyFromIdentity } = await import("../connectivity/mesh.js");
-      const result = await getPublicKeyFromIdentity();
+      const { getIdentity } = await import("../connectivity/mesh.js");
+      const result = await getIdentity("http://localhost:7777");
 
       expect(result).toBeNull();
     });
 
     it("should handle permit request failure", async () => {
-      mockState.requestPermit = null;
+      mockState.requestPermit = null as unknown as PermitData;
 
       const { requestPermit } = await import("../connectivity/permit.js");
       const result = await requestPermit(baseConfig.permitUrl, "key", "user");
@@ -293,7 +309,7 @@ describe("startAccount E2E Tests", () => {
       mockState.savePermit = false;
 
       const { savePermitData } = await import("../connectivity/permit.js");
-      const result = savePermitData({ token: "test" }, "/path/permit.json");
+      const result = savePermitData(mockPermitData, "/path/permit.json");
 
       expect(result).toBe(false);
     });
@@ -304,7 +320,8 @@ describe("startAccount E2E Tests", () => {
       mockState.joinMesh = false;
 
       const { joinMesh } = await import("../connectivity/mesh.js");
-      const result = await joinMesh("test-mesh", "endpoint", "/path/permit.json");
+      const mockPermit = { ca: "test-ca", agent: { certificate: "test-cert" }, bootstraps: ["hub:8888"] };
+      const result = await joinMesh("http://localhost:7777", "test-mesh", "endpoint", mockPermit);
 
       expect(result).toBe(false);
     });

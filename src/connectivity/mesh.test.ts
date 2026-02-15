@@ -1,22 +1,8 @@
-// Unit tests for Mesh connectivity functions
+// Unit tests for Mesh connectivity functions via Agent API
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "./mesh.js";
-import { mockResolved } from "../test-utils/mocks.js";
-
-// Mock state using mutable container
-const mockState = {
-  childProcessValue: null as any,
-  childProcessError: null as Error | null,
-  socketEvent: null as string | null,
-};
-
-vi.mock("child_process", () => ({
-  spawn: vi.fn(() => {
-    if (mockState.childProcessError) throw mockState.childProcessError;
-    return mockState.childProcessValue;
-  }),
-}));
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { checkPortOpen, getIdentity, joinMesh } from "./mesh.js";
+import type { PermitData } from "../types/connectivity.js";
 
 // Track event handlers for manual triggering
 const socketHandlers: Map<string, () => void> = new Map();
@@ -26,10 +12,6 @@ vi.mock("net", () => ({
     setTimeout = vi.fn((ms: number) => {});
     on = vi.fn(function(this: any, event: string, handler: () => void) {
       socketHandlers.set(event, handler);
-      // Auto-trigger if event matches mockState.socketEvent
-      if (event === mockState.socketEvent) {
-        setTimeout(handler, 0);
-      }
     });
     connect = vi.fn();
     destroy = vi.fn();
@@ -39,19 +21,16 @@ vi.mock("net", () => ({
 describe("Mesh connectivity functions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockState.childProcessValue = null;
-    mockState.childProcessError = null;
-    mockState.socketEvent = null;
     socketHandlers.clear();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    global.fetch = vi.fn();
   });
 
   describe("checkPortOpen", () => {
     it("should return true when port is open", async () => {
-      mockState.socketEvent = "connect";
+      setTimeout(() => {
+        const connectHandler = socketHandlers.get("connect");
+        if (connectHandler) connectHandler();
+      }, 10);
 
       const result = await checkPortOpen("localhost", 7777);
 
@@ -59,7 +38,10 @@ describe("Mesh connectivity functions", () => {
     });
 
     it("should return false when port is closed (timeout)", async () => {
-      mockState.socketEvent = "timeout";
+      setTimeout(() => {
+        const timeoutHandler = socketHandlers.get("timeout");
+        if (timeoutHandler) timeoutHandler();
+      }, 10);
 
       const result = await checkPortOpen("localhost", 7777);
 
@@ -67,7 +49,10 @@ describe("Mesh connectivity functions", () => {
     });
 
     it("should return false when port is closed (error)", async () => {
-      mockState.socketEvent = "error";
+      setTimeout(() => {
+        const errorHandler = socketHandlers.get("error");
+        if (errorHandler) errorHandler();
+      }, 10);
 
       const result = await checkPortOpen("localhost", 7777);
 
@@ -75,207 +60,205 @@ describe("Mesh connectivity functions", () => {
     });
 
     it("should handle various hostnames", async () => {
-      mockState.socketEvent = "connect";
-
+      // Trigger connect for first call
+      setTimeout(() => {
+        const connectHandler = socketHandlers.get("connect");
+        if (connectHandler) connectHandler();
+      }, 10);
       await checkPortOpen("example.com", 443);
-      await checkPortOpen("192.168.1.1", 8080);
 
-      // No assertion needed - just verify no errors are thrown
+      // Trigger connect for second call
+      setTimeout(() => {
+        const connectHandler = socketHandlers.get("connect");
+        if (connectHandler) connectHandler();
+      }, 10);
+      await checkPortOpen("192.168.1.1", 8080);
     });
   });
 
-  describe("getPublicKeyFromIdentity", () => {
-    it("should return public key on successful execution", async () => {
+  describe("getIdentity", () => {
+    it("should fetch identity from /api/identity", async () => {
       const mockPublicKey = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\n-----END PUBLIC KEY-----";
 
-      mockState.childProcessValue = {
-        stdout: {
-          on: vi.fn(function(this: any, event: string, handler: (data: string) => void) {
-            if (event === "data") handler(mockPublicKey);
-          }),
-        },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(0);
-        }),
-      };
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(mockPublicKey),
+      });
 
-      const result = await getPublicKeyFromIdentity();
+      const result = await getIdentity("http://localhost:7777");
 
       expect(result).toBe(mockPublicKey);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://localhost:7777/api/identity",
+        expect.objectContaining({ method: "GET" })
+      );
     });
 
-    it("should return null on non-zero exit code", async () => {
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: {
-          on: vi.fn(function(this: any, event: string, handler: (data: string) => void) {
-            if (event === "data") handler("Error: something went wrong\n");
-          }),
-        },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(1);
-        }),
-      };
+    it("should return null on API error", async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
 
-      const result = await getPublicKeyFromIdentity();
+      const result = await getIdentity("http://localhost:7777");
 
       expect(result).toBeNull();
     });
 
-    it("should return null when public key not found in output", async () => {
-      mockState.childProcessValue = {
-        stdout: {
-          on: vi.fn(function(this: any, event: string, handler: (data: string) => void) {
-            if (event === "data") handler("Some other output\nNo public key here\n");
-          }),
-        },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(0);
-        }),
-      };
+    it("should return null on invalid PEM format", async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve("invalid data"),
+      });
 
-      const result = await getPublicKeyFromIdentity();
+      const result = await getIdentity("http://localhost:7777");
 
       expect(result).toBeNull();
     });
 
-    it("should handle spawn error", async () => {
-      // Instead of throwing, return a child that emits error event
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (...args: any[]) => void) {
-          if (event === "error") {
-            setTimeout(() => handler(new Error("spawn ENOENT")), 0);
-          } else if (event === "close") {
-            setTimeout(() => handler(1), 0);
-          }
-        }),
-      };
+    it("should handle network error", async () => {
+      (global.fetch as any).mockRejectedValue(new Error("Network error"));
 
-      const result = await getPublicKeyFromIdentity();
+      const result = await getIdentity("http://localhost:7777");
 
       expect(result).toBeNull();
-    });
-
-    it("should extract public key from mixed output", async () => {
-      const mockOutput = `Some header text
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
------END PUBLIC KEY-----
-Some footer text`;
-
-      mockState.childProcessValue = {
-        stdout: {
-          on: vi.fn(function(this: any, event: string, handler: (data: string) => void) {
-            if (event === "data") handler(mockOutput);
-          }),
-        },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(0);
-        }),
-      };
-
-      const result = await getPublicKeyFromIdentity();
-
-      expect(result).toContain("-----BEGIN PUBLIC KEY-----");
-      expect(result).toContain("-----END PUBLIC KEY-----");
     });
   });
 
   describe("joinMesh", () => {
-    it("should return true on successful join", async () => {
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(0);
-        }),
-      };
+    const mockPermitData: PermitData = {
+      ca: "-----BEGIN CERTIFICATE-----\nCA...\n-----END CERTIFICATE-----",
+      agent: {
+        certificate: "-----BEGIN CERTIFICATE-----\nAGENT...\n-----END CERTIFICATE-----",
+        privateKey: "-----BEGIN PRIVATE KEY-----\nKEY...\n-----END PRIVATE KEY-----",
+        labels: [],
+      },
+      bootstraps: ["hub.example.com:8888"],
+    };
 
-      const result = await joinMesh("test-mesh", "test-endpoint", "/path/to/permit.json");
+    it("should POST permit to /api/meshes/{name}", async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      const result = await joinMesh(
+        "http://localhost:7777",
+        "my-mesh",
+        "my-ep",
+        mockPermitData
+      );
+
+      expect(result).toBe(true);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://localhost:7777/api/meshes/my-mesh",
+        expect.objectContaining({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: expect.stringContaining("my-ep"),
+        })
+      );
+    });
+
+    it("should handle 409 as already joined", async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: false,
+        status: 409,
+      });
+
+      const result = await joinMesh(
+        "http://localhost:7777",
+        "my-mesh",
+        "my-ep",
+        mockPermitData
+      );
 
       expect(result).toBe(true);
     });
 
-    it("should return false on non-zero exit code", async () => {
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: {
-          on: vi.fn(function(this: any, event: string, handler: (data: string) => void) {
-            if (event === "data") handler("Error: Failed to join mesh\n");
-          }),
-        },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(1);
-        }),
-      };
+    it("should return false on error", async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve("Server error"),
+      });
 
-      const result = await joinMesh("test-mesh", "test-endpoint", "/path/to/permit.json");
+      const result = await joinMesh(
+        "http://localhost:7777",
+        "my-mesh",
+        "my-ep",
+        mockPermitData
+      );
 
       expect(result).toBe(false);
     });
 
-    it("should handle spawn error", async () => {
-      // Instead of throwing, return a child that emits error event
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (...args: any[]) => void) {
-          if (event === "error") {
-            setTimeout(() => handler(new Error("Command failed")), 0);
-          } else if (event === "close") {
-            setTimeout(() => handler(1), 0);
-          }
-        }),
-      };
+    it("should handle network error", async () => {
+      (global.fetch as any).mockRejectedValue(new Error("Network error"));
 
-      const result = await joinMesh("test-mesh", "test-endpoint", "/path/to/permit.json");
+      const result = await joinMesh(
+        "http://localhost:7777",
+        "my-mesh",
+        "my-ep",
+        mockPermitData
+      );
 
       expect(result).toBe(false);
     });
 
     it("should handle special characters in mesh name", async () => {
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(0);
-        }),
-      };
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+      });
 
-      const result = await joinMesh("test_mesh-123", "endpoint-456", "/path/to/permit.json");
+      const result = await joinMesh(
+        "http://localhost:7777",
+        "test_mesh-123",
+        "endpoint-456",
+        mockPermitData
+      );
 
       expect(result).toBe(true);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("test_mesh-123"),
+        expect.anything()
+      );
+    });
+
+    it("should use empty string for missing private key", async () => {
+      const permitWithoutKey: PermitData = {
+        ...mockPermitData,
+        agent: {
+          certificate: mockPermitData.agent.certificate,
+          labels: [],
+        },
+      };
+
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      await joinMesh(
+        "http://localhost:7777",
+        "my-mesh",
+        "my-ep",
+        permitWithoutKey
+      );
+
+      const callArgs = (fetch as any).mock.calls[0];
+      const body = JSON.parse(callArgs[1].body);
+      expect(body.agent.privateKey).toBe("");
     });
   });
 
   describe("error handling", () => {
     it("should handle network timeout gracefully", async () => {
-      mockState.socketEvent = "timeout";
+      setTimeout(() => {
+        const timeoutHandler = socketHandlers.get("timeout");
+        if (timeoutHandler) timeoutHandler();
+      }, 10);
 
       const result = await checkPortOpen("unreachable-host", 7777);
-
-      expect(result).toBe(false);
-    });
-
-    it("should handle malformed permit path", async () => {
-      mockState.childProcessValue = {
-        stdout: { on: vi.fn() },
-        stderr: {
-          on: vi.fn(function(this: any, event: string, handler: (data: string) => void) {
-            if (event === "data") handler("Error: Invalid permit file\n");
-          }),
-        },
-        on: vi.fn(function(this: any, event: string, handler: (code: number) => void) {
-          if (event === "close") handler(1);
-        }),
-      };
-
-      const result = await joinMesh("test-mesh", "test-endpoint", "/invalid/path/permit.json");
 
       expect(result).toBe(false);
     });

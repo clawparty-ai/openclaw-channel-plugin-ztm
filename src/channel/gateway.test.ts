@@ -56,9 +56,9 @@ const { mockSendZTMMessage, mockGenerateMessageId } = vi.hoisted(() => ({
   mockGenerateMessageId: vi.fn(() => "msg-123"),
 }));
 
-const { mockCheckPortOpen, mockGetPublicKeyFromIdentity, mockJoinMesh } = vi.hoisted(() => ({
+const { mockCheckPortOpen, mockGetIdentity, mockJoinMesh } = vi.hoisted(() => ({
   mockCheckPortOpen: vi.fn().mockResolvedValue(true),
-  mockGetPublicKeyFromIdentity: vi.fn().mockResolvedValue("public-key-123"),
+  mockGetIdentity: vi.fn().mockResolvedValue("public-key-123"),
   mockJoinMesh: vi.fn().mockResolvedValue(true),
 }));
 
@@ -128,7 +128,7 @@ vi.mock("../messaging/outbound.js", () => ({
 
 vi.mock("../connectivity/mesh.js", () => ({
   checkPortOpen: mockCheckPortOpen,
-  getPublicKeyFromIdentity: mockGetPublicKeyFromIdentity,
+  getIdentity: mockGetIdentity,
   joinMesh: mockJoinMesh,
 }));
 

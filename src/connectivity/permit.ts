@@ -4,16 +4,25 @@ import * as fs from "fs";
 import * as path from "path";
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
-import type { ZTMMessage, ZTMApiClient } from "../api/ztm-api.js";
+import type { ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { normalizeUsername } from "../core/dm-policy.js";
+import type { PermitData } from "../types/connectivity.js";
 
-// Request permit from permit server
+/**
+ * Request permit from permit server
+ *
+ * The permit server returns a complete permit package including:
+ * - ca: The mesh's CA certificate
+ * - agent.certificate: Certificate for this endpoint (signed by CA)
+ * - agent.privateKey: Private key for this endpoint
+ * - bootstraps: List of hub addresses to connect to
+ */
 export async function requestPermit(
   permitUrl: string,
   publicKey: string,
   username: string
-): Promise<unknown> {
+): Promise<PermitData | null> {
   try {
     const response = await fetch(permitUrl, {
       method: "POST",
@@ -32,7 +41,22 @@ export async function requestPermit(
       return null;
     }
 
-    const permitData = await response.json();
+    const permitData = (await response.json()) as PermitData;
+
+    // Validate required fields
+    if (!permitData.ca) {
+      logger.error("Permit missing CA certificate");
+      return null;
+    }
+    if (!permitData.agent?.certificate) {
+      logger.error("Permit missing agent certificate");
+      return null;
+    }
+    if (!Array.isArray(permitData.bootstraps)) {
+      logger.error("Permit missing bootstraps");
+      return null;
+    }
+
     logger.info("Permit request successful");
     return permitData;
   } catch (error) {
@@ -42,7 +66,7 @@ export async function requestPermit(
 }
 
 // Save permit data to file
-export function savePermitData(permitData: unknown, permitPath: string): boolean {
+export function savePermitData(permitData: PermitData, permitPath: string): boolean {
   try {
     // Ensure directory exists
     const dir = path.dirname(permitPath);
@@ -61,14 +85,14 @@ export function savePermitData(permitData: unknown, permitPath: string): boolean
 /**
  * Load permit data from a local file
  */
-export function loadPermitFromFile(filePath: string): unknown {
+export function loadPermitFromFile(filePath: string): PermitData | null {
   try {
     if (!fs.existsSync(filePath)) {
       logger.error(`Permit file not found: ${filePath}`);
       return null;
     }
     const content = fs.readFileSync(filePath, "utf-8");
-    const permitData = JSON.parse(content);
+    const permitData = JSON.parse(content) as PermitData;
     logger.info(`Permit loaded from file: ${filePath}`);
     return permitData;
   } catch (error) {

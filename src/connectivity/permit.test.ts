@@ -3,8 +3,19 @@
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
 import { requestPermit, savePermitData, handlePairingRequest } from "./permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
+import type { PermitData } from "../types/connectivity.js";
 import { testConfig } from "../test-utils/fixtures.js";
 import { createMockLoggerFns } from "../test-utils/mocks.js";
+
+// Valid PermitData for testing
+const validPermitData: PermitData = {
+  ca: "-----BEGIN CERTIFICATE-----\ntest-ca\n-----END CERTIFICATE-----",
+  agent: {
+    certificate: "-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----",
+    privateKey: "-----BEGIN PRIVATE KEY-----\ntest-key\n-----END PRIVATE KEY-----",
+  },
+  bootstraps: ["bootstrap1.ztm.local:7777", "bootstrap2.ztm.local:7777"],
+};
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -146,7 +157,13 @@ describe("Permit management functions", () => {
 
   describe("requestPermit", () => {
     it("should request permit successfully", async () => {
-      const mockPermitData = { token: "permit-token-123" };
+      const mockPermitData = {
+        ca: "-----BEGIN CERTIFICATE-----\nCA...\n-----END CERTIFICATE-----",
+        agent: {
+          certificate: "-----BEGIN CERTIFICATE-----\nCERT...\n-----END CERTIFICATE-----",
+        },
+        bootstraps: ["hub.example.com:8888"],
+      };
       mockFetch.mockResolvedValue(
         new Response(JSON.stringify(mockPermitData), {
           status: 200,
@@ -222,7 +239,13 @@ describe("Permit management functions", () => {
     });
 
     it("should log success message", async () => {
-      const mockPermitData = { token: "test-token" };
+      const mockPermitData = {
+        ca: "-----BEGIN CERTIFICATE-----\nCA...\n-----END CERTIFICATE-----",
+        agent: {
+          certificate: "-----BEGIN CERTIFICATE-----\nCERT...\n-----END CERTIFICATE-----",
+        },
+        bootstraps: ["hub.example.com:8888"],
+      };
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
@@ -300,7 +323,8 @@ describe("Permit management functions", () => {
         "user"
       );
 
-      expect(result).toEqual({});
+      // Empty response should fail validation and return null
+      expect(result).toBeNull();
     });
   });
 
@@ -308,7 +332,7 @@ describe("Permit management functions", () => {
     const testPermitPath = "/test/path/permit.json";
 
     it("should save permit data successfully", () => {
-      const permitData = { token: "test-token" };
+      const permitData = validPermitData;
 
       const result = savePermitData(permitData, testPermitPath);
 
@@ -321,7 +345,7 @@ describe("Permit management functions", () => {
     });
 
     it("should create directory if not exists", () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsExists = false;
 
       const result = savePermitData(permitData, testPermitPath);
@@ -333,7 +357,7 @@ describe("Permit management functions", () => {
     });
 
     it("should handle file write error", () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsWriteError = new Error("Write failed");
 
       const result = savePermitData(permitData, testPermitPath);
@@ -342,7 +366,7 @@ describe("Permit management functions", () => {
     });
 
     it("should handle directory creation error", () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsExists = false;
       mockFsMkdirError = new Error("Mkdir failed");
 
@@ -352,7 +376,7 @@ describe("Permit management functions", () => {
     });
 
     it("should log success message", async () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsExists = true;
       mockFsWriteError = null;
 
@@ -365,7 +389,7 @@ describe("Permit management functions", () => {
     });
 
     it("should log error on failure", async () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsWriteError = new Error("Write failed");
 
       savePermitData(permitData, testPermitPath);
@@ -376,14 +400,16 @@ describe("Permit management functions", () => {
 
     it("should handle complex nested permit data", () => {
       const permitData = {
-        token: "test",
+        ca: "test-ca",
+        agent: { certificate: "test-cert" },
+        bootstraps: ["bootstrap1:7777"],
         nested: {
           level1: {
             level2: { value: "deep" },
           },
           array: [1, 2, 3],
         },
-      };
+      } as unknown as PermitData;
 
       savePermitData(permitData, testPermitPath);
 
@@ -392,9 +418,12 @@ describe("Permit management functions", () => {
 
     it("should handle special characters in data", () => {
       const permitData = {
+        ca: "test-ca",
+        agent: { certificate: "test-cert" },
+        bootstraps: ["bootstrap1:7777"],
         message: "Test unicode: 你好 🌍",
         special: 'Quotes: " \'',
-      };
+      } as unknown as PermitData;
 
       const result = savePermitData(permitData, testPermitPath);
 
@@ -402,7 +431,7 @@ describe("Permit management functions", () => {
     });
 
     it("should not create directory when exists", () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsExists = true;
 
       savePermitData(permitData, testPermitPath);
@@ -411,7 +440,7 @@ describe("Permit management functions", () => {
     });
 
     it("should handle deeply nested paths", () => {
-      const permitData = { token: "test" };
+      const permitData = validPermitData;
       mockFsExists = false;
       const deepPath = "/a/b/c/d/e/f/permit.json";
 
@@ -680,15 +709,20 @@ describe("Permit management functions", () => {
     });
 
     it("should handle empty permit data save", () => {
-      const emptyData = {};
+      const emptyData = {} as unknown as PermitData;
 
       savePermitData(emptyData, "/test/path.json");
 
-      expect(fsWriteCalls[0][1]).toBe(JSON.stringify(emptyData, null, 2));
+      expect(fsWriteCalls[0][1]).toBe("{}");
     });
 
     it("should handle null values in permit data", () => {
-      const dataWithNull = { token: "test", optional: null };
+      const dataWithNull = {
+        ca: "test-ca",
+        agent: { certificate: "test-cert" },
+        bootstraps: ["bootstrap1:7777"],
+        optional: null,
+      } as unknown as PermitData;
 
       savePermitData(dataWithNull, "/test/path.json");
 

@@ -1,9 +1,8 @@
-// ZTM Mesh connectivity management
-// Handles network connectivity checks and ZTM CLI command execution
+// ZTM Mesh connectivity management via Agent API
 
-import { spawn } from "child_process";
 import * as net from "net";
 import { logger } from "../utils/logger.js";
+import type { PermitData } from "../types/connectivity.js";
 
 /**
  * Check if a TCP port is open and accepting connections.
@@ -44,107 +43,116 @@ export async function checkPortOpen(hostname: string, port: number): Promise<boo
 }
 
 /**
- * Execute the ZTM CLI identity command to retrieve the public key.
+ * Get identity (public key) from ZTM Agent API
  *
- * This command reads the local ZTM identity from the system and extracts
- * the public key for use in permit requests and mesh authentication.
+ * API: GET /api/identity
+ * Returns: Public key in PEM format
  *
- * @returns Promise resolving to the public key string if successful, null otherwise
+ * @param agentUrl - ZTM Agent URL (e.g., http://localhost:7777)
+ * @returns Promise resolving to public key PEM string or null
  *
  * @example
- * const pubkey = await getPublicKeyFromIdentity();
+ * const pubkey = await getIdentity("http://localhost:7777");
  * // pubkey: "-----BEGIN PUBLIC KEY-----\nMIIBIj...\n-----END PUBLIC KEY-----"
  */
-export async function getPublicKeyFromIdentity(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const child = spawn("ztm", ["identity"], {
-      timeout: 30000,
+export async function getIdentity(agentUrl: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${agentUrl}/api/identity`, {
+      method: "GET",
+      headers: {
+        "Accept": "text/plain",
+      },
     });
 
-    let stdout = "";
-    let stderr = "";
+    if (!response.ok) {
+      logger.error(
+        `Failed to get identity: ${response.status} ${response.statusText}`
+      );
+      return null;
+    }
 
-    child.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
+    const publicKey = await response.text();
 
-    child.stderr.on("data", (data) => {
-      stderr += data.toString();
-    });
+    if (
+      !publicKey.includes("-----BEGIN PUBLIC KEY-----") ||
+      !publicKey.includes("-----END PUBLIC KEY-----")
+    ) {
+      logger.error("Invalid identity format received from agent");
+      return null;
+    }
 
-    child.on("close", (code) => {
-      if (code === 0 && stdout.includes("-----BEGIN PUBLIC KEY-----")) {
-        // Extract the public key from output
-        const match = stdout.match(/-----BEGIN PUBLIC KEY-----[\s\S]+?-----END PUBLIC KEY-----/);
-        if (match) {
-          resolve(match[0]);
-        } else {
-          resolve(null);
-        }
-      } else {
-        logger.error(`ztm identity failed: ${stderr}`);
-        resolve(null);
-      }
-    });
-
-    child.on("error", (error) => {
-      logger.error(`Failed to execute ztm identity: ${error.message}`);
-      resolve(null);
-    });
-  });
+    return publicKey.trim();
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to fetch identity: ${errorMsg}`);
+    return null;
+  }
 }
 
 /**
- * Execute the ZTM CLI join command to connect to a mesh network.
+ * Join mesh via ZTM Agent API
  *
- * This command registers the bot with a ZTM mesh using the provided
- * permit file for authentication.
+ * API: POST /api/meshes/{meshName}
  *
- * @param meshName - The name of the mesh to join
- * @param endpointName - The name for this endpoint (usually the bot username)
- * @param permitPath - Path to the permit file for authentication
- * @returns Promise resolving to true if join was successful, false otherwise
+ * @param agentUrl - ZTM Agent URL
+ * @param meshName - Name of the mesh to join
+ * @param endpointName - Endpoint name for this agent
+ * @param permitData - Complete permit data from permit server (contains CA, certificate, key, bootstraps)
+ * @returns Promise resolving to true if join was successful
  *
  * @example
- * const success = await joinMesh("my-mesh", "bot-1", "/path/to/permit.json");
- * // success: true if successfully joined
+ * const success = await joinMesh(
+ *   "http://localhost:7777",
+ *   "my-mesh",
+ *   "my-ep",
+ *   permitData
+ * );
  */
 export async function joinMesh(
+  agentUrl: string,
   meshName: string,
   endpointName: string,
-  permitPath: string
+  permitData: PermitData
 ): Promise<boolean> {
-  return new Promise((resolve) => {
-    const child = spawn(
-      "ztm",
-      ["join", meshName, "--as", endpointName, "--permit", permitPath],
-      { timeout: 60000 }
+  try {
+    const permit = {
+      ca: permitData.ca,
+      agent: {
+        name: endpointName,
+        certificate: permitData.agent.certificate,
+        privateKey: permitData.agent.privateKey || "",
+        labels: permitData.agent.labels || [],
+      },
+      bootstraps: permitData.bootstraps,
+    };
+
+    const response = await fetch(
+      `${agentUrl}/api/meshes/${encodeURIComponent(meshName)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(permit),
+      }
     );
 
-    let stdout = "";
-    let stderr = "";
+    if (response.ok) {
+      logger.info(`Successfully joined mesh ${meshName} as ${endpointName}`);
+      return true;
+    }
 
-    child.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
+    if (response.status === 409) {
+      logger.info(`Already a member of mesh ${meshName}`);
+      return true;
+    }
 
-    child.stderr.on("data", (data) => {
-      stderr += data.toString();
-    });
-
-    child.on("close", (code) => {
-      if (code === 0) {
-        logger.info(`Successfully joined mesh ${meshName} as ${endpointName}`);
-        resolve(true);
-      } else {
-        logger.error(`ztm join failed: ${stderr}`);
-        resolve(false);
-      }
-    });
-
-    child.on("error", (error) => {
-      logger.error(`Failed to execute ztm join: ${error.message}`);
-      resolve(false);
-    });
-  });
+    const errorText = await response.text().catch(() => "Unknown error");
+    logger.error(`Failed to join mesh: ${response.status} ${errorText}`);
+    return false;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to join mesh: ${errorMsg}`);
+    return false;
+  }
 }

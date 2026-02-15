@@ -232,7 +232,7 @@ export class ZTMChatWizard {
 
     const sources = ["server", "file"] as const;
     const sourceLabels = [
-      "Server - Request permit from permit server (requires ztm identity)",
+      "Server - Request permit from permit server (requires agent API access)",
       "File - Use existing permit.json file",
     ];
 

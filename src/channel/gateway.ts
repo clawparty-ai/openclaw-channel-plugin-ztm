@@ -34,8 +34,9 @@ import {
 } from "../runtime/state.js";
 import { startMessageWatcher } from "../messaging/inbound.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
-import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "../connectivity/mesh.js";
+import { checkPortOpen, getIdentity, joinMesh } from "../connectivity/mesh.js";
 import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
+import type { PermitData } from "../types/connectivity.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import {
   resolveZTMChatAccount,
@@ -362,7 +363,7 @@ export async function startAccountGateway(
   }
 
   // Step 2: Load permit based on permitSource
-  let permitData: unknown;
+  let permitData: PermitData | null = null;
 
   if (config.permitSource === "file") {
     // Load from file - validate permitFilePath is provided
@@ -379,11 +380,11 @@ export async function startAccountGateway(
     const permitExists = fs.existsSync(permitPath);
 
     if (!permitExists) {
-      // Step 3: Get public key from ztm identity
-      ctx.log?.info("Getting public key from ztm identity...");
-      const publicKey = await getPublicKeyFromIdentity();
+      // Step 3: Get identity from ZTM Agent API
+      ctx.log?.info("Getting identity from ZTM agent...");
+      const publicKey = await getIdentity(config.agentUrl);
       if (!publicKey) {
-        throw new Error("Failed to get public key from ztm identity");
+        throw new Error("Failed to get identity from ZTM agent");
       }
 
       // Step 4: Request permit from permit server
@@ -404,11 +405,14 @@ export async function startAccountGateway(
       }
     } else {
       // Load existing permit
-      permitData = JSON.parse(fs.readFileSync(permitPath, "utf-8"));
+      permitData = loadPermitFromFile(permitPath);
+      if (!permitData) {
+        throw new Error("Failed to load existing permit data");
+      }
     }
   }
 
-  // Step 6: Join mesh (skip if already connected)
+  // Step 6: Join mesh via API (skip if already connected)
   const preCheckClient = createZTMApiClient(config);
   let alreadyConnected = false;
   const preCheckResult = await preCheckClient.getMeshInfo();
@@ -421,16 +425,12 @@ export async function startAccountGateway(
       `Already connected to mesh ${config.meshName}, skipping join`,
     );
   } else {
-    ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName}...`);
-    // Use the appropriate permit path based on permitSource
-    // Note: permitFilePath was already validated above when permitSource === "file"
-    const currentPermitPath = config.permitSource === "file"
-      ? (config.permitFilePath ?? permitPath)
-      : permitPath;
+    ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);
     const joinSuccess = await joinMesh(
+      config.agentUrl,
       config.meshName,
       endpointName,
-      currentPermitPath,
+      permitData,
     );
     if (!joinSuccess) {
       throw new Error("Failed to join mesh");
