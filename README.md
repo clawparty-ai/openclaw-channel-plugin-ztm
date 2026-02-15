@@ -557,15 +557,38 @@ flowchart TD
     H --> K
 ```
 
-#### Policy Decision Matrix
+### Policy Decision Matrix
 
-| Message Type | Check Order | Result |
-|-------------|------------|--------|
-| DM | allow → deny → pairing → check allowFrom | Allow/Deny/Pairing |
-| Group (creator) | bypass policy → requireMention | Allow if mentioned |
-| Group (disabled) | - | Always Deny |
-| Group (allowlist) | policy → allowFrom → requireMention | Whitelist + Mention |
-| Group (open) | policy → requireMention | Mention Check |
+**DM Policy Check Order:**
+
+| Step | Condition | Next Step |
+|------|-----------|-----------|
+| 1 | Empty sender | → Deny (ignore) |
+| 2 | Sender in `allowFrom` config | → Allow (whitelisted) |
+| 3 | Sender in pairing store | → Allow (whitelisted) |
+| 4 | Policy = `allow` | → Allow (allowed) |
+| 5 | Policy = `deny` | → Deny (denied) |
+| 6 | Policy = `pairing` | → Send pairing request |
+
+**Group Policy Check Order:**
+
+| Step | Condition | Next Step |
+|------|-----------|-----------|
+| 1 | Empty sender | → Deny (ignore) |
+| 2 | Sender = creator | → Step 6 (bypass policy) |
+| 3 | groupPolicy = `disabled` | → Deny (denied) |
+| 4 | groupPolicy = `allowlist` + not in allowFrom | → Deny (whitelisted) |
+| 5 | groupPolicy = `open` | → Continue |
+| 6 | requireMention = true + no @mention | → Deny (mention_required) |
+| 7 | All checks passed | → Allow (creator/whitelisted/allowed) |
+
+**Result Actions:**
+
+| Action | Description |
+|--------|-------------|
+| `process` | Message allowed, route to AI agent |
+| `ignore` | Message denied, log and discard |
+| `pairing` | Send pairing request to user |
 
 ## ZTM API
 
