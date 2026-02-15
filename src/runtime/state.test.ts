@@ -457,4 +457,94 @@ describe("Account Runtime State Management", () => {
       expect(state2?.connected).toBe(true);
     });
   });
+
+  // ============================================================================
+  // Race Condition Tests - Concurrent Account Initialization
+  // ============================================================================
+
+  describe("concurrent account initialization", () => {
+    it("should handle concurrent getOrCreateAccountState calls", async () => {
+      const concurrentCalls = 10;
+      const results: AccountRuntimeState[] = [];
+
+      // Simulate concurrent creation of the same account
+      const promises = Array(concurrentCalls)
+        .fill(null)
+        .map(() => {
+          const state = getOrCreateAccountState("race-test-account");
+          results.push(state);
+          return Promise.resolve(state);
+        });
+
+      await Promise.all(promises);
+
+      // All calls should return the same state instance
+      const uniqueStates = new Set(results);
+      expect(uniqueStates.size).toBe(1);
+    });
+
+    it("should handle concurrent initializeRuntime for same account", async () => {
+      const accountId = "concurrent-init-account";
+
+      // Simulate two concurrent initialization calls
+      const [result1, result2] = await Promise.all([
+        initializeRuntime({ ...testConfig, username: "bot1" }, accountId),
+        initializeRuntime({ ...testConfig, username: "bot2" }, accountId),
+      ]);
+
+      // Both should succeed
+      expect(result1).toBe(true);
+      expect(result2).toBe(true);
+
+      // State should have one of the configs (last write wins in current impl)
+      const state = getAllAccountStates().get(accountId);
+      expect(state?.config.username).toMatch(/^bot[12]$/);
+    });
+
+    it("should handle concurrent stopRuntime calls", async () => {
+      const accountId = "concurrent-stop-account";
+
+      await initializeRuntime(testConfig, accountId);
+
+      // Simulate two concurrent stop calls
+      await Promise.all([
+        stopRuntime(accountId),
+        stopRuntime(accountId),
+      ]);
+
+      // Should not throw, state should be stopped
+      const state = getAllAccountStates().get(accountId);
+      expect(state?.connected).toBe(false);
+    });
+
+    it("should handle concurrent removeAccountState calls", async () => {
+      const accountId = "concurrent-remove-account";
+
+      getOrCreateAccountState(accountId);
+
+      // Simulate concurrent removal
+      await Promise.all([
+        Promise.resolve(removeAccountState(accountId)),
+        Promise.resolve(removeAccountState(accountId)),
+      ]);
+
+      // Account should be removed
+      const states = getAllAccountStates();
+      expect(states.has(accountId)).toBe(false);
+    });
+
+    it("should handle interleaved initialize and stop", async () => {
+      const accountId = "interleaved-account";
+
+      // Start multiple init/stop in sequence rapidly
+      await initializeRuntime(testConfig, accountId);
+      await stopRuntime(accountId);
+      await initializeRuntime(testConfig, accountId);
+      await stopRuntime(accountId);
+
+      // Final state should be stopped
+      const state = getAllAccountStates().get(accountId);
+      expect(state?.connected).toBe(false);
+    });
+  });
 });
