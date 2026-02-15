@@ -327,7 +327,201 @@ describe("Permit management functions", () => {
       // Empty response should fail validation and return null
       expect(result).toBeNull();
     });
+
+    // ============================================
+    // Malformed Permit Data Tests
+    // ============================================
+
+    it("should reject permit missing CA certificate", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            agent: { certificate: "cert" },
+            bootstraps: ["hub:7777"],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject permit missing agent certificate", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ca: "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+            bootstraps: ["hub:7777"],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject permit with invalid bootstraps (not array)", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ca: "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+            agent: { certificate: "-----BEGIN CERTIFICATE-----\nCERT\n-----END CERTIFICATE-----" },
+            bootstraps: "not-an-array",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject permit with null bootstraps", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ca: "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+            agent: { certificate: "-----BEGIN CERTIFICATE-----\nCERT\n-----END CERTIFICATE-----" },
+            bootstraps: null,
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject permit with empty bootstraps array", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ca: "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+            agent: { certificate: "-----BEGIN CERTIFICATE-----\nCERT\n-----END CERTIFICATE-----" },
+            bootstraps: [],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      // Empty bootstraps should still be valid (allows empty array)
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).not.toBeNull();
+    });
+
+    it("should reject permit with missing agent field entirely", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ca: "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+            bootstraps: ["hub:7777"],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject permit with invalid JSON", async () => {
+      mockFetch.mockResolvedValue(
+        new Response("not valid json", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle permit with extra unknown fields gracefully", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ca: "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+            agent: { certificate: "-----BEGIN CERTIFICATE-----\nCERT\n-----END CERTIFICATE-----" },
+            bootstraps: ["hub:7777"],
+            unknownField: "should be ignored",
+            extra: { nested: "data" },
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).not.toBeNull();
+      expect(result?.ca).toBeDefined();
+      expect(result?.agent?.certificate).toBeDefined();
+      expect(result?.bootstraps).toEqual(["hub:7777"]);
+    });
   });
+
+  // loadPermitFromFile is tested indirectly through integration tests
 
   describe("savePermitData", () => {
     const testPermitPath = "/test/path/permit.json";

@@ -38,7 +38,8 @@ export function checkDmPolicy(
   config: ZTMChatConfig,
   storeAllowFrom: string[] = []
 ): MessageCheckResult {
-  if (!sender) {
+  // Reject empty or whitespace-only sender (security: prevent spoofing)
+  if (!sender || !sender.trim()) {
     return { allowed: false, reason: "denied", action: "ignore" };
   }
 

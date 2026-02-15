@@ -88,6 +88,96 @@ describe("DM Policy enforcement", () => {
 
       expect(result.allowed).toBe(true);
     });
+
+    // ============================================
+    // Unauthorized Message Rejection Tests
+    // ============================================
+
+    it("should reject messages from empty sender", () => {
+      const config = { ...baseConfig, dmPolicy: "allow" as const };
+      const result = checkDmPolicy("", config, []);
+
+      expect(result.allowed).toBe(false);
+      expect(result.action).toBe("ignore");
+    });
+
+    it("should reject messages from whitespace-only sender", () => {
+      const config = { ...baseConfig, dmPolicy: "allow" as const };
+      const result = checkDmPolicy("   ", config, []);
+
+      expect(result.allowed).toBe(false);
+      expect(result.action).toBe("ignore");
+    });
+
+    it("should reject unknown users in deny mode", () => {
+      const config = { ...baseConfig, dmPolicy: "deny" as const, allowFrom: [] };
+      const result = checkDmPolicy("unknown_user", config, []);
+
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe("denied");
+      expect(result.action).toBe("ignore");
+    });
+
+    it("should request pairing for unknown users in pairing mode", () => {
+      const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: [] };
+      const result = checkDmPolicy("new_user", config, []);
+
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe("pending");
+      expect(result.action).toBe("request_pairing");
+    });
+
+    it("should reject unknown users even with empty store allowFrom", () => {
+      const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: [] };
+      const result = checkDmPolicy("user", config, []);
+
+      expect(result.allowed).toBe(false);
+    });
+
+    it("should allow users in both config and store", () => {
+      const config = { ...baseConfig, dmPolicy: "deny" as const, allowFrom: ["alice"] };
+      const storeAllowFrom = ["alice", "bob"];
+      const result = checkDmPolicy("alice", config, storeAllowFrom);
+
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("whitelisted");
+    });
+
+    it("should check store allowFrom with case-insensitive matching", () => {
+      const config = { ...baseConfig, dmPolicy: "pairing" as const };
+      const storeAllowFrom = ["ALICE", "Bob"];
+      const result = checkDmPolicy("alice", config, storeAllowFrom);
+
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("whitelisted");
+    });
+
+    it("should reject user not in config but in store for deny policy", () => {
+      const config = { ...baseConfig, dmPolicy: "deny" as const, allowFrom: [] };
+      const storeAllowFrom = ["charlie"];
+      const result = checkDmPolicy("charlie", config, storeAllowFrom);
+
+      // Even in deny mode, store-approved users are allowed
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("whitelisted");
+    });
+
+    it("should reject user with whitespace in name not in any whitelist", () => {
+      const config = { ...baseConfig, dmPolicy: "allow" as const, allowFrom: ["alice"] };
+      const result = checkDmPolicy("  bob  ", config, []);
+
+      // bob is not in whitelist, but allow policy allows all
+      expect(result.allowed).toBe(true);
+    });
+
+    it("should handle multiple users in allowFrom", () => {
+      const config = { ...baseConfig, dmPolicy: "deny" as const, allowFrom: ["alice", "bob", "charlie"] };
+
+      expect(checkDmPolicy("alice", config, []).allowed).toBe(true);
+      expect(checkDmPolicy("bob", config, []).allowed).toBe(true);
+      expect(checkDmPolicy("charlie", config, []).allowed).toBe(true);
+      expect(checkDmPolicy("unknown", config, []).allowed).toBe(false);
+    });
   });
 
   describe("isUserWhitelisted", () => {

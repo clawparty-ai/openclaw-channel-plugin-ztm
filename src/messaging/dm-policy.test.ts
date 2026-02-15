@@ -54,9 +54,9 @@ describe("DM Policy Integration", () => {
       expect(result.action).toBe("ignore");
     });
 
-    it("should handle whitespace-only sender", () => {
+    it("should deny whitespace-only sender", () => {
       const result = checkDmPolicy("   ", baseConfig);
-      expect(result.action).toBe("request_pairing");
+      expect(result.action).toBe("ignore");
     });
 
     it("should handle sender with leading/trailing whitespace", () => {
