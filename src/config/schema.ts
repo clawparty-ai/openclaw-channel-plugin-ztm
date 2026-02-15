@@ -52,6 +52,18 @@ export const ZTMChatConfigSchema = Type.Object({
     format: "uri",
     examples: ["https://ztm-portal.flomesh.io:7779/permit"],
   }),
+  permitSource: Type.Union([
+    Type.Literal("auto"),
+    Type.Literal("file"),
+  ], {
+    title: "Permit Source",
+    description: "How to obtain permit.json: 'auto' from permit server, or 'file' from local file",
+  }),
+  permitFilePath: Type.Optional(Type.String({
+    title: "Permit File Path",
+    description: "Path to permit.json file when permitSource is 'file'",
+    examples: ["/home/user/ztm/permit.json", "C:\\Users\\user\\ztm\\permit.json"],
+  })),
   meshName: Type.String({
     title: "Mesh Name",
     description: "Unique identifier for the ZTM mesh network",
