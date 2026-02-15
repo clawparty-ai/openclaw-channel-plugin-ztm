@@ -3,7 +3,7 @@
 
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
-import { getMessageStateStore } from "../runtime/store.js";
+import { getAccountMessageStateStore } from "../runtime/store.js";
 import { startPollingWatcher } from "./polling.js";
 import { processIncomingMessage } from "./processor.js";
 import { notifyMessageCallbacks } from "./dispatcher.js";
@@ -60,7 +60,7 @@ export async function startMessageWatcher(
 async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
   if (!state.apiClient) return;
 
-  const persistedMetadata = getMessageStateStore().getFileMetadata(state.accountId);
+  const persistedMetadata = getAccountMessageStateStore(state.accountId).getFileMetadata(state.accountId);
   if (Object.keys(persistedMetadata).length > 0) {
     state.apiClient.seedFileMetadata(persistedMetadata);
     logger.info(
@@ -217,7 +217,7 @@ function startWatchLoop(
       logger.debug(`[${state.accountId}] Performing delayed full sync after inactivity`);
       await performFullSync(state, storeAllowFrom);
       if (state.apiClient) {
-        getMessageStateStore().setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+        getAccountMessageStateStore(state.accountId).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
       }
     }, FULL_SYNC_DELAY);
   };
@@ -347,7 +347,7 @@ async function processChangedPaths(
 
   scheduleFullSync(loopStoreAllowFrom);
   if (state.apiClient) {
-    getMessageStateStore().setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+    getAccountMessageStateStore(state.accountId).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
   }
 
   return true;

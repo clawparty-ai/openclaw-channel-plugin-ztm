@@ -29,7 +29,7 @@ vi.mock("../utils/logger.js", () => ({
 
 // Mock store with fresh instances for each call
 vi.mock("../runtime/store.js", () => ({
-  getMessageStateStore: vi.fn(function() {
+  getAccountMessageStateStore: vi.fn(function() {
     return {
       getWatermark: vi.fn(() => -1),
       getGlobalWatermark: vi.fn(() => 0),
@@ -214,7 +214,7 @@ describe("Inbound message processing", () => {
 
     it("should skip already-processed messages based on watermark", async () => {
       // Get the original mock and override getWatermark
-      const { getMessageStateStore } = await import("../runtime/store.js");
+      const { getAccountMessageStateStore } = await import("../runtime/store.js");
       const message = createMessage();
 
       // Create a new store mock with high watermark
@@ -231,10 +231,10 @@ describe("Inbound message processing", () => {
       };
 
       // Save original implementation
-      const originalImpl = vi.mocked(getMessageStateStore).getMockImplementation?.();
+      const originalImpl = vi.mocked(getAccountMessageStateStore).getMockImplementation?.();
 
       // Override
-      vi.mocked(getMessageStateStore).mockReturnValue(mockStore);
+      vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore);
 
       const config = { ...baseConfig, dmPolicy: "allow" as const };
       const result = processIncomingMessage(message, config, [], testAccountId);
@@ -243,9 +243,9 @@ describe("Inbound message processing", () => {
 
       // Restore original if there was one
       if (originalImpl) {
-        vi.mocked(getMessageStateStore).mockImplementation(originalImpl);
+        vi.mocked(getAccountMessageStateStore).mockImplementation(originalImpl);
       } else {
-        vi.mocked(getMessageStateStore).mockReset();
+        vi.mocked(getAccountMessageStateStore).mockReset();
       }
     });
 
@@ -354,12 +354,12 @@ describe("Inbound message processing", () => {
     });
 
     it("should set watermark in message state store", async () => {
-      // Mock getMessageStateStore to return a store with a tracked setWatermark
+      // Mock getAccountMessageStateStore to return a store with a tracked setWatermark
       const setWatermarkMock = vi.fn();
-      const { getMessageStateStore } = await import("../runtime/store.js");
+      const { getAccountMessageStateStore } = await import("../runtime/store.js");
 
       // Override mock to return store with tracked setWatermark
-      vi.mocked(getMessageStateStore).mockReturnValue({
+      vi.mocked(getAccountMessageStateStore).mockReturnValue({
         getWatermark: vi.fn(() => -1),
         getGlobalWatermark: vi.fn(() => 0),
         setWatermark: setWatermarkMock,

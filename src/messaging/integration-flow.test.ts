@@ -38,7 +38,7 @@ vi.mock("../utils/logger.js", () => ({
 
 // Mock store with fresh instances for each call
 vi.mock("../runtime/store.js", () => ({
-  getMessageStateStore: vi.fn(function () {
+  getAccountMessageStateStore: vi.fn(function () {
     return {
       getWatermark: vi.fn(() => -1),
       getGlobalWatermark: vi.fn(() => 0),
@@ -666,8 +666,8 @@ describe("Integration: Complete Message Flow", () => {
       }
 
       // Import store to manipulate watermark
-      const { getMessageStateStore } = await import("../runtime/store.js");
-      const store = getMessageStateStore();
+      const { getAccountMessageStateStore } = await import("../runtime/store.js");
+      const store = getAccountMessageStateStore(accountId);
       vi.mocked(store.getWatermark).mockReturnValue(timestamp + 1);
 
       // Second message with same timestamp should be skipped

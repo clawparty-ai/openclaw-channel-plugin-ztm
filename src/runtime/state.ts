@@ -8,7 +8,7 @@
 // - State retrieval utilities
 
 import { logger } from "../utils/logger.js";
-import { getMessageStateStore } from "./store.js";
+import { getAccountMessageStateStore } from "./store.js";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
@@ -203,7 +203,7 @@ export async function stopRuntime(accountId: string): Promise<void> {
   state.meshConnected = false;
   state.lastStopAt = new Date();
 
-  getMessageStateStore().flush();
+  getAccountMessageStateStore(accountId).flush();
 
   logger.info(`[${accountId}] Stopped`);
 }

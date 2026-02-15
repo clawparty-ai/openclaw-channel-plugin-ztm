@@ -37,7 +37,7 @@ vi.mock("../utils/logger.js", () => ({
 }));
 
 vi.mock("./store.js", () => ({
-  getMessageStateStore: vi.fn(() => ({
+  getAccountMessageStateStore: vi.fn(() => ({
     flush: vi.fn(),
         flushAsync: vi.fn().mockResolvedValue(undefined),
     getWatermark: () => -1,
@@ -349,7 +349,7 @@ describe("Account Runtime State Management", () => {
     });
 
     it("should flush message state store", async () => {
-      const { getMessageStateStore, disposeMessageStateStore } = await import("./store.js");
+      const { getAccountMessageStateStore, disposeMessageStateStore } = await import("./store.js");
       const store = {
         flush: vi.fn(),
         flushAsync: vi.fn().mockResolvedValue(undefined),
@@ -361,7 +361,7 @@ describe("Account Runtime State Management", () => {
         setFileMetadataBulk: vi.fn(),
         dispose: vi.fn(),
       };
-      vi.mocked(getMessageStateStore).mockReturnValue(store);
+      vi.mocked(getAccountMessageStateStore).mockReturnValue(store);
       vi.mocked(disposeMessageStateStore).mockImplementation(() => {
         store.dispose();
       });

@@ -9,7 +9,7 @@
 // 5. Return normalized ZTMChatMessage
 
 import { logger } from "../utils/logger.js";
-import { getMessageStateStore } from "../runtime/store.js";
+import { getAccountMessageStateStore } from "../runtime/store.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import { escapeHtml } from "../utils/validation.js";
 import type { ZTMChatConfig } from "../types/config.js";
@@ -62,7 +62,7 @@ export function processIncomingMessage(
   }
 
   // Step 3: Check watermark (skip already-processed messages)
-  const watermark = getMessageStateStore().getWatermark(accountId, watermarkKey);
+  const watermark = getAccountMessageStateStore(accountId).getWatermark(accountId, watermarkKey);
   if (msg.time <= watermark) {
     logger.debug(`Skipping already-processed message from ${watermarkKey} (time=${msg.time} <= watermark=${watermark})`);
     return null;

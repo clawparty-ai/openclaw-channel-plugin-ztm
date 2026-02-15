@@ -2,7 +2,7 @@
 // Handles notification of registered message callbacks
 
 import { logger } from "../utils/logger.js";
-import { getMessageStateStore } from "../runtime/store.js";
+import { getAccountMessageStateStore } from "../runtime/store.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
@@ -55,7 +55,7 @@ export function notifyMessageCallbacks(
 
   const watermarkKey = getWatermarkKey(message);
   if (successCount > 0) {
-    getMessageStateStore().setWatermark(state.accountId, watermarkKey, message.timestamp.getTime());
+    getAccountMessageStateStore(state.accountId).setWatermark(state.accountId, watermarkKey, message.timestamp.getTime());
   } else {
     logger.warn(`[${state.accountId}] Message processing failed for ${watermarkKey}, watermark not updated`);
   }

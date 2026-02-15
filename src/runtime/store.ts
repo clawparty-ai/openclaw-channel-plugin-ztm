@@ -387,21 +387,8 @@ export function createMessageStateStore(
   return new MessageStateStoreImpl(statePath, fsImpl, loggerImpl);
 }
 
-// Default instance for backward compatibility
-let defaultInstance: MessageStateStore | null = null;
 // Per-account stores to avoid race conditions in multi-account scenarios
 const accountStores = new Map<string, MessageStateStore>();
-
-/**
- * Get or create the default MessageStateStore instance
- * @deprecated Use getAccountMessageStateStore() for multi-account scenarios
- */
-export function getMessageStateStore(): MessageStateStore {
-  if (!defaultInstance) {
-    defaultInstance = createMessageStateStore();
-  }
-  return defaultInstance;
-}
 
 /**
  * Get a MessageStateStore for a specific account.
@@ -423,11 +410,6 @@ export function getAccountMessageStateStore(accountId: string): MessageStateStor
 
 // Export dispose function for plugin cleanup
 export function disposeMessageStateStore(): void {
-  // Dispose default instance
-  if (defaultInstance) {
-    defaultInstance.dispose();
-    defaultInstance = null;
-  }
   // Dispose all account-specific stores
   for (const store of accountStores.values()) {
     store.dispose();

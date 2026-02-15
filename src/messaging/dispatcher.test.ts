@@ -29,7 +29,7 @@ vi.mock("../utils/logger.js", () => ({
 }));
 
 vi.mock("../runtime/store.js", () => ({
-  getMessageStateStore: vi.fn(() => ({
+  getAccountMessageStateStore: vi.fn(() => ({
     getWatermark: vi.fn(() => -1),
     getGlobalWatermark: vi.fn(() => 0),
     setWatermark: vi.fn().mockImplementation((...args: unknown[]) => {
