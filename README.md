@@ -1,8 +1,8 @@
 # ZTM Chat Channel Plugin for OpenClaw
 
 [![npm version](https://img.shields.io/npm/v/ztm-chat)](https://www.npmjs.com/package/ztm-chat)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/flomesh-projects/openclaw-channel-plugin-ztm/test.yml)](https://github.com/flomesh-projects/openclaw-channel-plugin-ztm/actions)
-[![Test Coverage](https://img.shields.io/badge/coverage-66%25-yellow)](https://github.com/flomesh-projects/openclaw-channel-plugin-ztm)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/flomesh-io/openclaw-channel-plugin-ztm/test.yml)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/actions)
+[![Test Coverage](https://img.shields.io/badge/coverage-66%25-yellow)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6)](https://www.typescriptlang.org/)
 
