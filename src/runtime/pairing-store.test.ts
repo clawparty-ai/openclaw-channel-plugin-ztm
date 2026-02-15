@@ -2,9 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   createPairingStateStore,
   PairingStateStoreImpl,
-  PairingStateData,
-  FileSystem,
 } from "./pairing-store.js";
+import type { PairingStateData, FileSystem } from "./pairing-store.js";
 import { createMockLoggerFns } from "../test-utils/mocks.js";
 
 const createMockFs = (initialFiles: Map<string, string> = new Map()): FileSystem => {

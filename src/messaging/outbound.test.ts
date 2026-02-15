@@ -53,6 +53,12 @@ describe("Outbound message functions", () => {
         error: vi.fn(),
         debug: vi.fn(),
       },
+      defaultLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+      },
     }));
   });
 

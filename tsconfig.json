@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "noEmit": true
   },
   "include": ["**/*.ts", "**/*.tsx"],

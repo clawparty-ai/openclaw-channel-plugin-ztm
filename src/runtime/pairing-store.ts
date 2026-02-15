@@ -5,7 +5,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { defaultLogger, type Logger } from "../utils/logger.js";
-import { FileSystem, nodeFs } from "./store.js";
+import { nodeFs, type FileSystem } from "./store.js";
 
 export type { FileSystem };
 
