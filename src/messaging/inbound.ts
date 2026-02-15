@@ -12,7 +12,9 @@ export * from './watcher.js';
 export * from './dispatcher.js';
 
 // Re-export DM policy functions for backward compatibility
-export { checkDmPolicy, isUserWhitelisted, normalizeUsername, isPairingMode } from '../core/dm-policy.js';
+export { checkDmPolicy, isUserWhitelisted, isPairingMode } from '../core/dm-policy.js';
+// Re-export normalizeUsername from utils for backward compatibility
+export { normalizeUsername } from '../utils/validation.js';
 
 // Re-export types for backward compatibility
 export type { ZTMChatMessage, MessageCheckResult } from '../types/messaging.js';

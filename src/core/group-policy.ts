@@ -12,6 +12,7 @@ import type {
   GroupPermissions,
   GroupMessageCheckResult,
 } from "../types/group-policy.js";
+import { normalizeUsername } from "../utils/validation.js";
 
 // Default tool permissions for groups
 const DEFAULT_ALLOWED_TOOLS = ["group:messaging", "group:sessions"];
@@ -96,16 +97,6 @@ function hasMention(content: string, botUsername: string): boolean {
   ];
 
   return mentionPatterns.some((pattern) => normalizedContent.includes(pattern));
-}
-
-/**
- * Normalize a username for comparison
- *
- * @param username - Username to normalize
- * @returns Normalized username (lowercase, trimmed)
- */
-function normalizeUsername(username: string): string {
-  return username.trim().toLowerCase();
 }
 
 /**

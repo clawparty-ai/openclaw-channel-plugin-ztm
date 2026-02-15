@@ -6,7 +6,7 @@ import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import type { ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import { normalizeUsername } from "../core/dm-policy.js";
+import { normalizeUsername } from "../utils/validation.js";
 import type { PermitData } from "../types/connectivity.js";
 
 /**

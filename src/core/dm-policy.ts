@@ -107,23 +107,6 @@ export function isUserWhitelisted(
 }
 
 /**
- * Normalize a username by trimming whitespace and converting to lowercase.
- *
- * Usernames are case-insensitive in ZTM Chat. This function ensures consistent
- * comparison by normalizing the format.
- *
- * @param username - The username to normalize
- * @returns Normalized username (trimmed, lowercase)
- *
- * @example
- * const normalized = normalizeUsername("  Alice  ");
- * // normalized: "alice"
- */
-export function normalizeUsername(username: string): string {
-  return username.trim().toLowerCase();
-}
-
-/**
  * Check if DM policy is set to pairing mode.
  *
  * In pairing mode, unknown users cannot send messages until they are approved

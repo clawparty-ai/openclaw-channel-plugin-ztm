@@ -8,6 +8,18 @@ import type { ConfigValidationError, ValidationErrorReason } from "../types/conf
 export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 // ============================================
+// Username Normalization
+// ============================================
+
+/**
+ * Normalize a username for consistent comparison
+ * Trims whitespace and converts to lowercase
+ */
+export function normalizeUsername(username: string): string {
+  return username.trim().toLowerCase();
+}
+
+// ============================================
 // Validation Error Factory
 // ============================================
 
