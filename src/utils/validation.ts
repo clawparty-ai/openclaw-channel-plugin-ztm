@@ -62,6 +62,10 @@ export function validationError(
  * Validate a URL string and return whether it's valid
  */
 export function isValidUrl(value: string): boolean {
+  // Reject URLs with control characters (security: prevent URL smuggling)
+  if (/[\n\r\t]/.test(value)) {
+    return false;
+  }
   try {
     const url = new URL(value);
     return url.protocol === "http:" || url.protocol === "https:";

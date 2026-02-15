@@ -6,6 +6,8 @@ import {
   isValidUrl,
   validateUrl,
   validateHttpsUrl,
+  escapeHtml,
+  normalizeUsername,
 } from "./validation.js";
 import type { ConfigValidationError, ValidationErrorReason } from "../types/config.js";
 
@@ -91,6 +93,104 @@ describe("validation utilities", () => {
     it("should return invalid for other protocols", () => {
       const result = validateHttpsUrl("ftp://example.com");
       expect(result.valid).toBe(false);
+    });
+  });
+
+  // ============================================
+  // Security Tests - Input Sanitization
+  // ============================================
+
+  describe("escapeHtml - XSS Prevention", () => {
+    it("should escape ampersand character", () => {
+      expect(escapeHtml("foo & bar")).toBe("foo &amp; bar");
+    });
+
+    it("should escape less-than character", () => {
+      expect(escapeHtml("<script>")).toBe("&lt;script&gt;");
+    });
+
+    it("should escape greater-than character", () => {
+      expect(escapeHtml("2 > 1")).toBe("2 &gt; 1");
+    });
+
+    it("should escape double quote character", () => {
+      expect(escapeHtml('say "hello"')).toBe("say &quot;hello&quot;");
+    });
+
+    it("should escape single quote character", () => {
+      expect(escapeHtml("it's fine")).toBe("it&#039;s fine");
+    });
+
+    it("should handle empty string", () => {
+      expect(escapeHtml("")).toBe("");
+    });
+
+    it("should handle null/undefined-like input", () => {
+      expect(escapeHtml("")).toBe("");
+    });
+
+    it("should escape complete XSS attack payload", () => {
+      const malicious = '<script>alert("xss")</script>';
+      expect(escapeHtml(malicious)).toBe("&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;");
+    });
+
+    it("should escape HTML entities in user input", () => {
+      expect(escapeHtml("User &amp; Co")).toBe("User &amp;amp; Co");
+      expect(escapeHtml("a < b & c > d")).toBe("a &lt; b &amp; c &gt; d");
+    });
+
+    it("should handle strings with only special characters", () => {
+      expect(escapeHtml('<>"&')).toBe("&lt;&gt;&quot;&amp;");
+    });
+  });
+
+  describe("normalizeUsername - Input Normalization", () => {
+    it("should convert uppercase to lowercase", () => {
+      expect(normalizeUsername("ALICE")).toBe("alice");
+    });
+
+    it("should trim leading whitespace", () => {
+      expect(normalizeUsername("  alice")).toBe("alice");
+    });
+
+    it("should trim trailing whitespace", () => {
+      expect(normalizeUsername("alice  ")).toBe("alice");
+    });
+
+    it("should handle mixed case and whitespace", () => {
+      expect(normalizeUsername("  Alice  ")).toBe("alice");
+    });
+
+    it("should handle empty string", () => {
+      expect(normalizeUsername("")).toBe("");
+    });
+
+    it("should handle whitespace-only string", () => {
+      expect(normalizeUsername("   ")).toBe("");
+    });
+
+    it("should preserve numbers and special chars in username", () => {
+      expect(normalizeUsername("user_123")).toBe("user_123");
+      expect(normalizeUsername("test-user")).toBe("test-user");
+    });
+  });
+
+  describe("Security - URL validation edge cases", () => {
+    it("should reject javascript: protocol", () => {
+      expect(isValidUrl("javascript:alert(1)")).toBe(false);
+    });
+
+    it("should reject data: protocol", () => {
+      expect(isValidUrl("data:text/html,<script>alert(1)</script>")).toBe(false);
+    });
+
+    it("should reject file: protocol", () => {
+      expect(isValidUrl("file:///etc/passwd")).toBe(false);
+    });
+
+    it("should reject URLs with newlines", () => {
+      expect(isValidUrl("http://example.com\n")).toBe(false);
+      expect(isValidUrl("http://example.com\r")).toBe(false);
     });
   });
 });
