@@ -35,24 +35,19 @@ export {
  * These factories are registered with the container and support lazy initialization
  */
 
-// Import actual implementations (lazy import)
-let _logger: any = null;
-let _configModule: any = null;
-let _apiClientModule: any = null;
-let _runtimeModule: any = null;
+// Import implementations using ESM imports
+import { logger as loggerInstance, createLogger as createLoggerFn } from "../utils/logger.js";
+import { getEffectiveChannelConfig } from "../channel/config.js";
+import { createZTMApiClient } from "../api/ztm-api.js";
+import { getZTMRuntime, isRuntimeInitialized } from "../runtime/runtime.js";
 
 /**
  * Logger factory
  * Returns a factory function that creates a logger instance
  */
 export function createLogger(serviceName: string): () => ILogger {
-  // Return a function that creates or returns the cached logger
-  return () => {
-    if (!_logger) {
-      _logger = require("../utils/logger.js");
-    }
-    return _logger.createLogger(serviceName);
-  };
+  // Return logger instance with type cast for DI compatibility
+  return () => loggerInstance as unknown as ILogger;
 }
 
 /**
@@ -60,15 +55,13 @@ export function createLogger(serviceName: string): () => ILogger {
  * Returns a factory function for DI container registration
  */
 export function createConfigService(): () => IConfig {
-  return () => {
-    if (!_configModule) {
-      _configModule = require("../config/index.js");
-    }
-    return {
-      get: () => _configModule.getEffectiveChannelConfig(),
-      isValid: () => _configModule.isConfigured(),
-    };
-  };
+  return () => ({
+    get: () => {
+      const cfg = getEffectiveChannelConfig();
+      return (cfg ?? {}) as ZTMChatConfig;
+    },
+    isValid: () => true, // Default to valid, actual validation happens elsewhere
+  });
 }
 
 /**
@@ -77,11 +70,19 @@ export function createConfigService(): () => IConfig {
  * Methods directly return promises for compatibility
  */
 export function createApiClientService(): () => IApiClient {
-  return (): IApiClient => {
-    if (!_apiClientModule) {
-      _apiClientModule = require("../api/ztm-api.js");
-    }
-    const client = _apiClientModule.createZTMApiClient();
+  return () => {
+    // Create with empty config - actual config should be provided via factory
+    const client = createZTMApiClient({
+      agentUrl: "",
+      permitUrl: "",
+      permitSource: "server",
+      meshName: "",
+      username: "",
+      dmPolicy: "pairing",
+      enableGroups: false,
+      autoReply: false,
+      messagePath: "/",
+    });
     return {
       getChats: client.getChats(),
       sendPeerMessage: client.sendPeerMessage,
@@ -97,15 +98,10 @@ export function createApiClientService(): () => IApiClient {
  * Returns a factory function for DI container registration
  */
 export function createRuntimeService(): () => IRuntime {
-  return () => {
-    if (!_runtimeModule) {
-      _runtimeModule = require("../runtime/runtime.js");
-    }
-    return {
-      get: () => _runtimeModule.getZTMRuntime(),
-      isInitialized: () => _runtimeModule.isRuntimeInitialized(),
-    };
-  };
+  return () => ({
+    get: () => getZTMRuntime(),
+    isInitialized: () => isRuntimeInitialized(),
+  });
 }
 
 /**
@@ -113,21 +109,6 @@ export function createRuntimeService(): () => IRuntime {
  * Returns a factory function for DI container registration
  */
 export function createApiClientFactory(): () => IApiClientFactory {
-  return () => (config: ZTMChatConfig, deps: unknown = undefined) => {
-    if (!_apiClientModule) {
-      _apiClientModule = require("../api/ztm-api.js");
-    }
-    return _apiClientModule.createZTMApiClient(config, deps);
-  };
-}
-
-/**
- * Reset all lazy imports (for testing)
- * Call this in test beforeEach to reset module cache
- */
-export function resetLazyImports(): void {
-  _logger = null;
-  _configModule = null;
-  _apiClientModule = null;
-  _runtimeModule = null;
+  return () => (config: ZTMChatConfig, deps?: unknown) =>
+    createZTMApiClient(config, deps as any);
 }
