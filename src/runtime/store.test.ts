@@ -260,6 +260,41 @@ describe("MessageStateStore", () => {
     });
   });
 
+  describe("flushAsync", () => {
+    it("should persist state asynchronously", async () => {
+      const store = createTestStore();
+      store.setWatermark("test-async-1", "peer1", 1234567890);
+
+      // flushAsync should not throw
+      await expect(store.flushAsync()).resolves.toBeUndefined();
+    });
+
+    it("should handle multiple async flushes", async () => {
+      const store = createTestStore();
+      store.setWatermark("test-async-2", "peer1", 1000);
+
+      // Multiple async flushes should be safe
+      const p1 = store.flushAsync();
+      const p2 = store.flushAsync();
+      await expect(Promise.all([p1, p2])).resolves.toBeDefined();
+    });
+
+    it("should use async file I/O (writeFile)", async () => {
+      const tempFile = path.join(os.tmpdir(), `ztm-async-test-${Date.now()}`);
+      const store = new MessageStateStoreImpl(tempFile);
+      store.setWatermark("test-async-3", "peer1", 2000);
+
+      // flushAsync uses promises.writeFile under the hood
+      await store.flushAsync();
+
+      // Verify data was persisted by loading fresh store
+      const store2 = new MessageStateStoreImpl(tempFile);
+      expect(store2.getWatermark("test-async-3", "peer1")).toBe(2000);
+      store.dispose();
+      store2.dispose();
+    });
+  });
+
   describe("dispose", () => {
     it("should clean up resources", () => {
       const store = createTestStore();
