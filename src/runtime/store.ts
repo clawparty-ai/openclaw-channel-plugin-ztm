@@ -389,9 +389,12 @@ export function createMessageStateStore(
 
 // Default instance for backward compatibility
 let defaultInstance: MessageStateStore | null = null;
+// Per-account stores to avoid race conditions in multi-account scenarios
+const accountStores = new Map<string, MessageStateStore>();
 
 /**
  * Get or create the default MessageStateStore instance
+ * @deprecated Use getAccountMessageStateStore() for multi-account scenarios
  */
 export function getMessageStateStore(): MessageStateStore {
   if (!defaultInstance) {
@@ -400,10 +403,34 @@ export function getMessageStateStore(): MessageStateStore {
   return defaultInstance;
 }
 
+/**
+ * Get a MessageStateStore for a specific account.
+ * Each account gets its own isolated store to prevent race conditions.
+ *
+ * @param accountId - The account identifier
+ * @returns Isolated MessageStateStore for the account
+ */
+export function getAccountMessageStateStore(accountId: string): MessageStateStore {
+  let store = accountStores.get(accountId);
+  if (!store) {
+    // Create account-specific state path to isolate data
+    const accountStatePath = resolveStatePath().replace(/\.json$/, `-${accountId}.json`);
+    store = createMessageStateStore(accountStatePath);
+    accountStores.set(accountId, store);
+  }
+  return store;
+}
+
 // Export dispose function for plugin cleanup
 export function disposeMessageStateStore(): void {
+  // Dispose default instance
   if (defaultInstance) {
     defaultInstance.dispose();
     defaultInstance = null;
   }
+  // Dispose all account-specific stores
+  for (const store of accountStores.values()) {
+    store.dispose();
+  }
+  accountStores.clear();
 }
