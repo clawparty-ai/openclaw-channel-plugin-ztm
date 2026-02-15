@@ -290,8 +290,8 @@ export function validateZTMChatConfig(
 ): ZTMChatConfigValidation {
   const errors: ConfigValidationError[] = [];
 
-  // Validate root object type
-  if (!raw || typeof raw !== "object") {
+  // Validate root object type - must be a plain object, not array or null
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return {
       valid: false,
       errors: [
@@ -299,7 +299,7 @@ export function validateZTMChatConfig(
           field: "root",
           reason: "type_mismatch",
           value: raw,
-          message: "Configuration must be an object",
+          message: "Configuration must be a plain object",
         },
       ],
     };
@@ -349,10 +349,12 @@ export function validateZTMChatConfig(
     };
   }
 
-  const permitSource = (config.permitSource as string) || "server";
+  const rawPermitSource = config.permitSource;
+  const permitSource: "server" | "file" =
+    rawPermitSource === "server" || rawPermitSource === "file" ? rawPermitSource : "server";
   const resolvedConfig: ZTMChatConfig = {
     agentUrl,
-    permitSource: permitSource === "server" || permitSource === "file" ? permitSource : "server",
+    permitSource,
     permitUrl: permitSource === "server"
       ? config.permitUrl?.toString().trim() ?? ""
       : "",
@@ -367,7 +369,9 @@ export function validateZTMChatConfig(
       typeof config.messagePath === "string" && config.messagePath.trim()
         ? config.messagePath.trim()
         : "/shared",
-    dmPolicy: (config.dmPolicy as DMPolicy) || "pairing",
+    dmPolicy: (config.dmPolicy === "allow" || config.dmPolicy === "deny" || config.dmPolicy === "pairing")
+      ? config.dmPolicy
+      : "pairing",
     allowFrom: Array.isArray(config.allowFrom)
       ? config.allowFrom
           .filter((v): v is string => typeof v === "string")
