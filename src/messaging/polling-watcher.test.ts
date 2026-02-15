@@ -387,15 +387,18 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
+      // Simulate store read failure - should skip polling cycle for security
       mockReadAllowFromFn = vi.fn(() => Promise.reject(new Error("Store read failed")));
 
       await startPollingWatcher(mockState);
 
       if (setIntervalCallback) {
-        await expect(setIntervalCallback()).resolves.toBeUndefined();
+        await setIntervalCallback();
       }
 
-      expect(createdIntervals.length).toBe(1);
+      // When store read fails, getChats should NOT be called to avoid bypassing DM policy
+      // This is a security measure: skip the entire cycle rather than process with empty allowFrom
+      expect(mockState.apiClient!.getChats).not.toHaveBeenCalled();
     });
 
     it("should handle empty chat list", async () => {

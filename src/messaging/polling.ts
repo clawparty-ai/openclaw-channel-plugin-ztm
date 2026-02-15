@@ -20,10 +20,15 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
   state.watchInterval = setInterval(async () => {
     if (!state.apiClient || !state.config) return;
 
+    // If reading allowFrom store fails, skip this polling cycle to avoid bypassing DM policy
     const pollStoreAllowFrom = await getZTMRuntime().channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
       logger.error(`[${state.accountId}] readAllowFromStore failed during polling: ${err instanceof Error ? err.message : String(err)}`);
-      return [] as string[];
+      return null;
     });
+    // Skip processing if we couldn't read the store (security: don't bypass allowFrom checks)
+    if (pollStoreAllowFrom === null) {
+      return;
+    }
     const chatsResult = await state.apiClient.getChats();
     const chats = handleResult(chatsResult, {
       operation: "getChats",
