@@ -58,6 +58,25 @@ export function savePermitData(permitData: unknown, permitPath: string): boolean
   }
 }
 
+/**
+ * Load permit data from a local file
+ */
+export async function loadPermitFromFile(filePath: string): Promise<unknown> {
+  try {
+    if (!fs.existsSync(filePath)) {
+      logger.error(`Permit file not found: ${filePath}`);
+      return null;
+    }
+    const content = fs.readFileSync(filePath, "utf-8");
+    const permitData = JSON.parse(content);
+    logger.info(`Permit loaded from file: ${filePath}`);
+    return permitData;
+  } catch (error) {
+    logger.error(`Failed to load permit from file: ${error}`);
+    return null;
+  }
+}
+
 // Handle pairing request - send a pairing request message to the peer
 export async function handlePairingRequest(
   state: AccountRuntimeState,

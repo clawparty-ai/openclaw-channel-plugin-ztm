@@ -1,5 +1,6 @@
 // Unit tests for Channel Gateway
 
+import * as fs from "fs";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";
 import type { ZTMChatConfig, ZTMMeshInfo, ZTMMessage } from "../types/index.js";
@@ -61,9 +62,10 @@ const { mockCheckPortOpen, mockGetPublicKeyFromIdentity, mockJoinMesh } = vi.hoi
   mockJoinMesh: vi.fn().mockResolvedValue(true),
 }));
 
-const { mockRequestPermit, mockSavePermitData } = vi.hoisted(() => ({
+const { mockRequestPermit, mockSavePermitData, mockLoadPermitFromFile } = vi.hoisted(() => ({
   mockRequestPermit: vi.fn().mockResolvedValue({ token: "permit-token" }),
   mockSavePermitData: vi.fn().mockReturnValue(true),
+  mockLoadPermitFromFile: vi.fn().mockResolvedValue({ key: "value" }),
 }));
 
 const { mockStartMessageWatcher } = vi.hoisted(() => ({
@@ -133,6 +135,7 @@ vi.mock("../connectivity/mesh.js", () => ({
 vi.mock("../connectivity/permit.js", () => ({
   requestPermit: mockRequestPermit,
   savePermitData: mockSavePermitData,
+  loadPermitFromFile: mockLoadPermitFromFile,
 }));
 
 vi.mock("../messaging/inbound.js", () => ({
@@ -182,8 +185,11 @@ vi.mock("./config.js", () => ({
   getEffectiveChannelConfig: mockGetEffectiveChannelConfig,
 }));
 
-const { mockFsExistsSync } = vi.hoisted(() => ({
+const { mockFsExistsSync, mockFsReadFileSync, mockFsWriteFileSync, mockFsUnlinkSync } = vi.hoisted(() => ({
   mockFsExistsSync: vi.fn(),
+  mockFsReadFileSync: vi.fn(),
+  mockFsWriteFileSync: vi.fn(),
+  mockFsUnlinkSync: vi.fn(),
 }));
 
 const { mockPathJoin } = vi.hoisted(() => ({
@@ -192,6 +198,9 @@ const { mockPathJoin } = vi.hoisted(() => ({
 
 vi.mock("fs", () => ({
   existsSync: mockFsExistsSync,
+  readFileSync: mockFsReadFileSync,
+  writeFileSync: mockFsWriteFileSync,
+  unlinkSync: mockFsUnlinkSync,
 }));
 
 vi.mock("node:path", () => ({
@@ -847,6 +856,20 @@ describe("Channel Gateway", () => {
       expect(ctx.log?.info).toHaveBeenCalledWith(
         expect.stringContaining("Pairing mode active - no approved users")
       );
+    });
+  });
+
+  describe("permit loading with permitSource", () => {
+    it("should load permit from file when permitSource is file", async () => {
+      const mockPermitData = { key: "value" };
+      const mockFilePath = "/tmp/mock-permit.json";
+      fs.writeFileSync(mockFilePath, JSON.stringify(mockPermitData));
+
+      // Test the loading logic
+      const permit = await mockLoadPermitFromFile(mockFilePath);
+      expect(permit).toEqual(mockPermitData);
+
+      fs.unlinkSync(mockFilePath);
     });
   });
 

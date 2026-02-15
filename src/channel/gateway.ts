@@ -35,7 +35,7 @@ import {
 import { startMessageWatcher } from "../messaging/inbound.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
 import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "../connectivity/mesh.js";
-import { requestPermit, savePermitData } from "../connectivity/permit.js";
+import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import {
   resolveZTMChatAccount,
@@ -361,32 +361,47 @@ export async function startAccountGateway(
     throw new Error(`Invalid ZTM agent URL: ${config.agentUrl}`);
   }
 
-  // Step 2: Check if permit.json exists
-  const permitExists = fs.existsSync(permitPath);
+  // Step 2: Load permit based on permitSource
+  let permitData: unknown;
 
-  if (!permitExists) {
-    // Step 3: Get public key from ztm identity
-    ctx.log?.info("Getting public key from ztm identity...");
-    const publicKey = await getPublicKeyFromIdentity();
-    if (!publicKey) {
-      throw new Error("Failed to get public key from ztm identity");
-    }
-
-    // Step 4: Request permit from permit server
-    ctx.log?.info("Requesting permit from permit server...");
-    const permitData = await requestPermit(
-      config.permitUrl,
-      publicKey,
-      config.username,
-    );
-
+  if (config.permitSource === "file") {
+    // Load from file
+    ctx.log?.info(`Loading permit from file: ${config.permitFilePath}...`);
+    permitData = await loadPermitFromFile(config.permitFilePath!);
     if (!permitData) {
-      throw new Error("Failed to request permit from permit server");
+      throw new Error(`Failed to load permit from file: ${config.permitFilePath}`);
     }
+  } else {
+    // auto mode: Check if permit.json exists
+    const permitExists = fs.existsSync(permitPath);
 
-    // Step 5: Save permit data
-    if (!savePermitData(permitData, permitPath)) {
-      throw new Error("Failed to save permit data");
+    if (!permitExists) {
+      // Step 3: Get public key from ztm identity
+      ctx.log?.info("Getting public key from ztm identity...");
+      const publicKey = await getPublicKeyFromIdentity();
+      if (!publicKey) {
+        throw new Error("Failed to get public key from ztm identity");
+      }
+
+      // Step 4: Request permit from permit server
+      ctx.log?.info("Requesting permit from permit server...");
+      permitData = await requestPermit(
+        config.permitUrl,
+        publicKey,
+        config.username,
+      );
+
+      if (!permitData) {
+        throw new Error("Failed to request permit from permit server");
+      }
+
+      // Step 5: Save permit data
+      if (!savePermitData(permitData, permitPath)) {
+        throw new Error("Failed to save permit data");
+      }
+    } else {
+      // Load existing permit
+      permitData = JSON.parse(fs.readFileSync(permitPath, "utf-8"));
     }
   }
 
@@ -404,10 +419,14 @@ export async function startAccountGateway(
     );
   } else {
     ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName}...`);
+    // Use the appropriate permit path based on permitSource
+    const currentPermitPath = config.permitSource === "file"
+      ? config.permitFilePath!
+      : permitPath;
     const joinSuccess = await joinMesh(
       config.meshName,
       endpointName,
-      permitPath,
+      currentPermitPath,
     );
     if (!joinSuccess) {
       throw new Error("Failed to join mesh");
