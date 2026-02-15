@@ -11,13 +11,20 @@ import { testAccountId } from "../test-utils/fixtures.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 
-// Mock dependencies
+// Use vi.hoisted to ensure mocks are properly scoped
+const { mockSetWatermark: actualMockSetWatermark, mockLoggerDebug: actualMockLoggerDebug } = vi.hoisted(() => ({
+  mockSetWatermark: vi.fn(),
+  mockLoggerDebug: vi.fn(),
+}));
+
 vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn(),
+    debug: vi.fn().mockImplementation((...args: unknown[]) => {
+      actualMockLoggerDebug(...args);
+    }),
   },
 }));
 
@@ -25,7 +32,9 @@ vi.mock("../runtime/store.js", () => ({
   getMessageStateStore: vi.fn(() => ({
     getWatermark: vi.fn(() => -1),
     getGlobalWatermark: vi.fn(() => 0),
-    setWatermark: vi.fn(),
+    setWatermark: vi.fn().mockImplementation((...args: unknown[]) => {
+      actualMockSetWatermark(...args);
+    }),
     getFileMetadata: vi.fn(() => ({})),
     setFileMetadata: vi.fn(),
     setFileMetadataBulk: vi.fn(),
@@ -59,6 +68,8 @@ describe("Message Dispatcher", () => {
   }
 
   beforeEach(() => {
+    actualMockSetWatermark.mockClear();
+    actualMockLoggerDebug.mockClear();
     vi.clearAllMocks();
     mockState = createMockState();
   });
@@ -124,22 +135,7 @@ describe("Message Dispatcher", () => {
       expect(successCallback).toHaveBeenCalled();
     });
 
-    it("should update watermark after successful callbacks", async () => {
-      const { getMessageStateStore } = await import("../runtime/store.js");
-      const mockStore = {
-        getWatermark: vi.fn(() => -1),
-        getGlobalWatermark: vi.fn(() => 0),
-        setWatermark: vi.fn(),
-        getFileMetadata: vi.fn(() => ({})),
-        setFileMetadata: vi.fn(),
-        setFileMetadataBulk: vi.fn(),
-        flush: vi.fn(),
-        dispose: vi.fn(),
-      };
-
-      // Set the mock to return our test store
-      vi.mocked(getMessageStateStore).mockReturnValue(mockStore);
-
+    it("should update watermark after successful callbacks", () => {
       const callback = vi.fn();
       mockState.messageCallbacks = new Set([callback]);
 
@@ -155,7 +151,7 @@ describe("Message Dispatcher", () => {
       notifyMessageCallbacks(mockState, message);
 
       // Verify that setWatermark was called on the store
-      expect(mockStore.setWatermark).toHaveBeenCalledWith(
+      expect(actualMockSetWatermark).toHaveBeenCalledWith(
         testAccountId,
         "alice",
         1234567890
@@ -203,13 +199,12 @@ describe("Message Dispatcher", () => {
       expect(mockState.messageCallbacks.size).toBe(0);
     });
 
-    it("should log cleared callback count", async () => {
+    it("should log cleared callback count", () => {
       mockState.messageCallbacks = new Set([vi.fn(), vi.fn()]);
-      const { logger } = await import("../utils/logger.js");
 
       clearCallbacks(mockState);
 
-      expect(logger.debug).toHaveBeenCalledWith(
+      expect(actualMockLoggerDebug).toHaveBeenCalledWith(
         expect.stringContaining("Cleared 2 callback(s)")
       );
     });
