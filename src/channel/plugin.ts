@@ -217,8 +217,13 @@ const directorySelfImpl = async ({ cfg, accountId }: any) => {
 const directoryListPeersImpl = async ({ cfg, accountId }: any) => {
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
   const config = getZTMChatConfig(account);
-  if (!config) return [];
   const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+
+  if (!config) {
+    logger.warn?.(`Failed to list peers: ZTM Chat config not found for account ${accountId ?? "default"}`);
+    return [];
+  }
+
   const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
   const apiClient = apiClientFactory(config, { logger });
 
