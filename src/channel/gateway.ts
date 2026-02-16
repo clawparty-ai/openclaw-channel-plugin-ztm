@@ -25,7 +25,7 @@ import {
   stopRuntime,
   removeAccountState,
 } from "../runtime/state.js";
-import { startMessageWatcher } from "../messaging/inbound.js";
+import { startMessageWatcher } from "../messaging/watcher.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
 import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
 import type { PermitData } from "../types/connectivity.js";

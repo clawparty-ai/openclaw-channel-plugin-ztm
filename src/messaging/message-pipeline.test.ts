@@ -1,16 +1,14 @@
 // Unit tests for Inbound message processing
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  processIncomingMessage,
-  checkDmPolicy,
-  notifyMessageCallbacks,
-  startMessageWatcher,
-  normalizeUsername,
-  type ProcessMessageContext,
-  type ZTMChatMessage,
-  type MessageCheckResult,
-} from "./inbound.js";
+import { processIncomingMessage } from "./processor.js";
+import { notifyMessageCallbacks } from "./dispatcher.js";
+import { checkDmPolicy } from "../core/dm-policy.js";
+import { normalizeUsername } from "../utils/validation.js";
+import { startMessageWatcher } from "./watcher.js";
+import type { ProcessMessageContext } from "./processor.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
+import type { MessageCheckResult } from "../types/messaging.js";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 

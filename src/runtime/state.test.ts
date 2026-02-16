@@ -72,7 +72,7 @@ vi.mock("./pairing-store.js", () => ({
   nodeFs: {},
 }));
 
-vi.mock("../messaging/inbound.js", () => ({
+vi.mock("../messaging/watcher.js", () => ({
   startMessageWatcher: vi.fn().mockResolvedValue(undefined),
 }));
 

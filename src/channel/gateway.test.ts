@@ -138,7 +138,7 @@ vi.mock("../connectivity/permit.js", () => ({
   loadPermitFromFile: mockLoadPermitFromFile,
 }));
 
-vi.mock("../messaging/inbound.js", () => ({
+vi.mock("../messaging/watcher.js", () => ({
   startMessageWatcher: mockStartMessageWatcher,
 }));
 
@@ -825,10 +825,10 @@ describe("Channel Gateway", () => {
     it("should log pairing mode info", async () => {
       const { checkPortOpen, joinMesh } = await import("../connectivity/mesh.js");
       const stateModule = await import("../runtime/state.js");
-      const inboundModule = await import("../messaging/inbound.js");
+      const watcherModule = await import("../messaging/watcher.js");
       const runtimeModule = await import("../runtime/index.js");
       const { initializeRuntime } = stateModule;
-      const { startMessageWatcher } = inboundModule;
+      const { startMessageWatcher } = watcherModule;
       const { getZTMRuntime } = runtimeModule;
 
       (checkPortOpen as any).mockResolvedValue(true);

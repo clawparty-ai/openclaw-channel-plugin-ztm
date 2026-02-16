@@ -3,7 +3,9 @@
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { getAllowFromCache } from "../runtime/state.js";
-import { processIncomingMessage, notifyMessageCallbacks, checkDmPolicy } from "./inbound.js";
+import { processIncomingMessage } from "./processor.js";
+import { notifyMessageCallbacks } from "./dispatcher.js";
+import { checkDmPolicy } from "../core/dm-policy.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatConfig } from "../types/config.js";
