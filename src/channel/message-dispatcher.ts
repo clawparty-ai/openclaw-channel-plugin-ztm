@@ -4,7 +4,8 @@
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import { checkGroupPolicy, getGroupPermission } from "../core/group-policy.js";
+import { checkGroupPolicy } from "../core/group-policy.js";
+import { getGroupPermissionCached } from "../runtime/state.js";
 import { sendZTMMessage } from "../messaging/outbound.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { extractErrorMessage } from "../utils/error.js";
@@ -60,13 +61,14 @@ export function createInboundContext(params: {
 function checkGroupMessagePolicy(
   msg: ZTMChatMessage,
   config: ZTMChatConfig,
+  accountId: string,
   ctx: { log?: { info: (...args: unknown[]) => void } }
 ): boolean {
   if (!msg.isGroup || !msg.groupId || !msg.groupCreator) {
     return true; // Not a group message, allow
   }
 
-  const permissions = getGroupPermission(msg.groupCreator, msg.groupId, config);
+  const permissions = getGroupPermissionCached(accountId, msg.groupCreator, msg.groupId, config);
   const policyResult = checkGroupPolicy(
     msg.sender,
     msg.content,
@@ -101,7 +103,7 @@ export async function handleInboundMessage(
 ): Promise<void> {
   try {
     // Check group policy for group messages
-    if (!checkGroupMessagePolicy(msg, config, ctx)) {
+    if (!checkGroupMessagePolicy(msg, config, accountId, ctx)) {
       return; // Don't process the message
     }
 
