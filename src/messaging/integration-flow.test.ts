@@ -6,6 +6,7 @@ import {
   processIncomingMessage,
   checkDmPolicy,
   notifyMessageCallbacks,
+  type ProcessMessageContext,
 } from "./inbound.js";
 import { sendZTMMessage } from "./outbound.js";
 import {
@@ -219,13 +220,13 @@ describe("Integration: Complete Message Flow", () => {
 
       // Alice is whitelisted - should be allowed
       const messageFromAlice = createMessage({ sender: "alice" });
-      const result = processIncomingMessage(messageFromAlice, config, [], accountId);
+      const result = processIncomingMessage(messageFromAlice, { config, storeAllowFrom: [], accountId });
       expect(result).not.toBeNull();
       expect(result?.sender).toBe("alice");
 
       // Charlie is not whitelisted - should be denied in pairing mode
       const messageFromCharlie = createMessage({ sender: "charlie" });
-      const resultCharlie = processIncomingMessage(messageFromCharlie, config, [], accountId);
+      const resultCharlie = processIncomingMessage(messageFromCharlie, { config, storeAllowFrom: [], accountId });
       expect(resultCharlie).toBeNull();
     });
 
@@ -236,7 +237,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Dave is store-approved - should be allowed
       const messageFromDave = createMessage({ sender: "dave" });
-      const result = processIncomingMessage(messageFromDave, config, storeAllowFrom, accountId);
+      const result = processIncomingMessage(messageFromDave, { config, storeAllowFrom, accountId });
       expect(result).not.toBeNull();
       expect(result?.sender).toBe("dave");
     });
@@ -261,10 +262,7 @@ describe("Integration: Complete Message Flow", () => {
 
       const processedMessage = processIncomingMessage(
         inboundMessage,
-        config,
-        [],
-        accountId,
-        groupInfo
+        { config, storeAllowFrom: [], accountId, groupInfo }
       );
 
       // Note: processIncomingMessage processes the message but doesn't include
@@ -299,7 +297,7 @@ describe("Integration: Complete Message Flow", () => {
       const config = createBaseConfig({ dmPolicy: "allow" });
 
       const message = createMessage({ sender: "stranger" });
-      const result = processIncomingMessage(message, config, [], accountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       expect(result).not.toBeNull();
     });
@@ -309,7 +307,7 @@ describe("Integration: Complete Message Flow", () => {
       const config = createBaseConfig({ dmPolicy: "deny" });
 
       const message = createMessage({ sender: "friend" });
-      const result = processIncomingMessage(message, config, [], accountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull();
     });
@@ -319,7 +317,7 @@ describe("Integration: Complete Message Flow", () => {
       const config = createBaseConfig({ dmPolicy: "pairing" });
 
       const message = createMessage({ sender: "new-user" });
-      const result = processIncomingMessage(message, config, [], accountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       // Should return null (not processed) because pairing is required
       expect(result).toBeNull();
@@ -354,10 +352,10 @@ describe("Integration: Complete Message Flow", () => {
 
       // Process messages for each account
       const message1 = createMessage({ sender: "user-1" });
-      const result1 = processIncomingMessage(message1, config1, [], account1Id);
+      const result1 = processIncomingMessage(message1, { config: config1, storeAllowFrom: [], accountId: account1Id });
 
       const message2 = createMessage({ sender: "user-2" });
-      const result2 = processIncomingMessage(message2, config2, [], account2Id);
+      const result2 = processIncomingMessage(message2, { config: config2, storeAllowFrom: [], accountId: account2Id });
 
       expect(result1).not.toBeNull();
       expect(result2).not.toBeNull();
@@ -377,7 +375,7 @@ describe("Integration: Complete Message Flow", () => {
       // Process messages concurrently
       const messages = accountIds.map((accountId, index) => {
         const message = createMessage({ sender: `user-${index}` });
-        return processIncomingMessage(message, createBaseConfig({ dmPolicy: "allow" }), [], accountId);
+        return processIncomingMessage(message, { config: createBaseConfig({ dmPolicy: "allow" }), storeAllowFrom: [], accountId });
       });
 
       // All messages should be processed
@@ -409,11 +407,11 @@ describe("Integration: Complete Message Flow", () => {
       const message = createMessage({ sender: "test-user" });
 
       // Account 1 allows
-      const result1 = processIncomingMessage(message, config1, [], account1Id);
+      const result1 = processIncomingMessage(message, { config: config1, storeAllowFrom: [], accountId: account1Id });
       expect(result1).not.toBeNull();
 
       // Account 2 denies
-      const result2 = processIncomingMessage(message, config2, [], account2Id);
+      const result2 = processIncomingMessage(message, { config: config2, storeAllowFrom: [], accountId: account2Id });
       expect(result2).toBeNull();
     });
   });
@@ -426,7 +424,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Step 1: New user sends message - should be blocked
       const message = createMessage({ sender: newUser });
-      const result = processIncomingMessage(message, config, [], accountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull(); // Not processed - needs pairing
 
@@ -451,7 +449,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Step 1: Now the user should be allowed
       const message = createMessage({ sender: approvedUser });
-      const result = processIncomingMessage(message, config, storeAllowFrom, accountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom, accountId });
 
       expect(result).not.toBeNull();
       expect(result?.sender).toBe(approvedUser);
@@ -483,7 +481,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // User sends message initially
       const message1 = createMessage({ sender: user, time: Date.now() });
-      const result1 = processIncomingMessage(message1, config, [], accountId);
+      const result1 = processIncomingMessage(message1, { config, storeAllowFrom: [], accountId });
       expect(result1).toBeNull();
 
       // Setup mock to return the user as pending
@@ -548,7 +546,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Step 1: Receive and process message
       const inboundMsg = createMessage({ sender: "eve", message: "Testing full flow!" });
-      const processed = processIncomingMessage(inboundMsg, config, [], accountId);
+      const processed = processIncomingMessage(inboundMsg, { config, storeAllowFrom: [], accountId });
 
       expect(processed).not.toBeNull();
 
@@ -589,7 +587,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Process message
       const inboundMsg = createMessage({ sender: "multi-callback-user" });
-      const processed = processIncomingMessage(inboundMsg, config, [], accountId);
+      const processed = processIncomingMessage(inboundMsg, { config, storeAllowFrom: [], accountId });
 
       expect(processed).not.toBeNull();
 
@@ -619,7 +617,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Process message
       const inboundMsg = createMessage({ sender: "error-handling-user" });
-      const processed = processIncomingMessage(inboundMsg, config, [], accountId);
+      const processed = processIncomingMessage(inboundMsg, { config, storeAllowFrom: [], accountId });
 
       expect(processed).not.toBeNull();
 
@@ -642,7 +640,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Message from self
       const ownMessage = createMessage({ sender: "my-bot" });
-      const result = processIncomingMessage(ownMessage, config, [], accountId);
+      const result = processIncomingMessage(ownMessage, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull();
     });
@@ -656,7 +654,7 @@ describe("Integration: Complete Message Flow", () => {
       const message = createMessage({ time: timestamp, sender: "watermark-user" });
 
       // First message should be processed
-      const result1 = processIncomingMessage(message, config, [], accountId);
+      const result1 = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
       expect(result1).not.toBeNull();
 
       // Add callback to trigger watermark update
@@ -673,9 +671,7 @@ describe("Integration: Complete Message Flow", () => {
       // Second message with same timestamp should be skipped
       const result2 = processIncomingMessage(
         { ...message, time: timestamp },
-        config,
-        [],
-        accountId
+        { config, storeAllowFrom: [], accountId }
       );
       // Note: watermark check behavior depends on implementation
       // This test verifies the flow works
@@ -687,7 +683,7 @@ describe("Integration: Complete Message Flow", () => {
       const config = createBaseConfig({ dmPolicy: "allow" });
 
       const emptyMessage = createMessage({ message: "" });
-      const result = processIncomingMessage(emptyMessage, config, [], accountId);
+      const result = processIncomingMessage(emptyMessage, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull();
     });
@@ -697,7 +693,7 @@ describe("Integration: Complete Message Flow", () => {
       const config = createBaseConfig({ dmPolicy: "allow" });
 
       const whitespaceMessage = createMessage({ message: "   \n\t  " });
-      const result = processIncomingMessage(whitespaceMessage, config, [], accountId);
+      const result = processIncomingMessage(whitespaceMessage, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull();
     });
@@ -711,5 +707,5 @@ function processInboundMessage(
   storeAllowFrom: string[] = [],
   accountId: string = "default"
 ): ZTMChatMessage | null {
-  return processIncomingMessage(msg, config, storeAllowFrom, accountId);
+  return processIncomingMessage(msg, { config, storeAllowFrom, accountId });
 }

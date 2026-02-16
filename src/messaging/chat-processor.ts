@@ -1,7 +1,7 @@
 // Shared chat message processing utilities
 // Used by both watcher.ts and polling.ts to process incoming messages
 
-import { processIncomingMessage } from "./processor.js";
+import { processIncomingMessage, type ProcessMessageContext } from "./processor.js";
 import { notifyMessageCallbacks } from "./dispatcher.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatConfig } from "../types/config.js";
@@ -34,10 +34,7 @@ export async function processChatMessage(
         message: chat.latest.message,
         sender: sender,
       },
-      config,
-      storeAllowFrom,
-      accountId,
-      groupInfo
+      { config, storeAllowFrom, accountId, groupInfo }
     );
     if (normalized) {
       return true;
@@ -60,9 +57,7 @@ export async function processChatMessage(
       message: chat.latest.message,
       sender: sender,
     },
-    config,
-    storeAllowFrom,
-    accountId
+    { config, storeAllowFrom, accountId }
   );
   if (normalized) {
     return true;
@@ -93,10 +88,7 @@ export async function processAndNotifyChat(
         message: chat.latest.message,
         sender: sender,
       },
-      state.config,
-      storeAllowFrom,
-      state.accountId,
-      { creator: chat.creator!, group: chat.group! }
+      { config: state.config, storeAllowFrom, accountId: state.accountId, groupInfo: { creator: chat.creator!, group: chat.group! } }
     );
     if (normalized) {
       notifyMessageCallbacks(state, {
@@ -126,9 +118,7 @@ export async function processAndNotifyChat(
       message: chat.latest.message,
       sender: sender,
     },
-    state.config,
-    storeAllowFrom,
-    state.accountId
+    { config: state.config, storeAllowFrom, accountId: state.accountId }
   );
   if (normalized) {
     notifyMessageCallbacks(state, normalized);

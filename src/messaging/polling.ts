@@ -28,10 +28,7 @@ function processGroupChat(
       message: chat.latest.message,
       sender: sender,
     },
-    config,
-    pollStoreAllowFrom,
-    accountId,
-    { creator: chat.creator!, group: chat.group! }
+    { config, storeAllowFrom: pollStoreAllowFrom, accountId, groupInfo: { creator: chat.creator!, group: chat.group! } }
   );
   if (normalized) {
     notifyMessageCallbacks(state, {
@@ -61,9 +58,7 @@ async function processPeerChat(
       message: chat.latest.message,
       sender: chat.peer,
     },
-    config,
-    pollStoreAllowFrom,
-    accountId
+    { config, storeAllowFrom: pollStoreAllowFrom, accountId }
   );
   if (normalized) {
     notifyMessageCallbacks(state, normalized);

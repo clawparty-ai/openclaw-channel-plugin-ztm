@@ -161,9 +161,11 @@ describe("Polling Watcher", () => {
       expect(processIncomingMessage).toHaveBeenCalledTimes(1);
       expect(processIncomingMessage).toHaveBeenCalledWith(
         expect.objectContaining({ sender: "alice" }),
-        expect.any(Object),
-        expect.any(Array),
-        "test-account"
+        expect.objectContaining({
+          config: expect.any(Object),
+          storeAllowFrom: expect.any(Array),
+          accountId: "test-account"
+        })
       );
     });
 
@@ -253,9 +255,11 @@ describe("Polling Watcher", () => {
 
       expect(inboundModule.processIncomingMessage).toHaveBeenCalledWith(
         { time: 1234567890, message: "Test message", sender: "alice" },
-        mockState.config,
-        expect.any(Array),
-        "test-account"
+        expect.objectContaining({
+          config: mockState.config,
+          storeAllowFrom: expect.any(Array),
+          accountId: "test-account"
+        })
       );
       expect(inboundModule.notifyMessageCallbacks).toHaveBeenCalledWith(mockState, mockNormalizedMessage);
     });
