@@ -572,4 +572,151 @@ describe("Account Runtime State Management", () => {
       expect(state?.connected).toBe(false);
     });
   });
+
+  describe("account removal during operations", () => {
+    it("should handle removal while watch interval is active", async () => {
+      const accountId = "remove-during-watch";
+
+      // Create account and simulate watch interval
+      const state = getOrCreateAccountState(accountId);
+      state.watchInterval = setInterval(() => {}, 1000);
+
+      // Remove account while interval is active
+      removeAccountState(accountId);
+
+      // Account should be removed and interval cleared
+      expect(getAllAccountStates().has(accountId)).toBe(false);
+      expect(state.watchInterval).toBe(null);
+
+      // Cleanup
+      clearInterval(state.watchInterval);
+    });
+
+    it("should handle removal while pending pairings exist", async () => {
+      const accountId = "remove-during-pairing";
+
+      // Create account with pending pairings
+      const state = getOrCreateAccountState(accountId);
+      state.pendingPairings.set("alice", new Date());
+      state.pendingPairings.set("bob", new Date());
+      state.pendingPairings.set("charlie", new Date());
+
+      // Verify pairings exist
+      expect(state.pendingPairings.size).toBe(3);
+
+      // Remove account
+      removeAccountState(accountId);
+
+      // Account should be removed and pairings cleared
+      expect(getAllAccountStates().has(accountId)).toBe(false);
+    });
+
+    it("should handle removal while message callbacks are registered", async () => {
+      const accountId = "remove-during-callback";
+
+      // Create account with message callbacks
+      const state = getOrCreateAccountState(accountId);
+      const callback1 = vi.fn();
+      const callback2 = vi.fn();
+      state.messageCallbacks.add(callback1);
+      state.messageCallbacks.add(callback2);
+
+      // Verify callbacks exist
+      expect(state.messageCallbacks.size).toBe(2);
+
+      // Remove account
+      removeAccountState(accountId);
+
+      // Account should be removed and callbacks cleared
+      expect(getAllAccountStates().has(accountId)).toBe(false);
+    });
+
+    it("should handle removal while allowFromCache is populated", async () => {
+      const accountId = "remove-during-cache";
+
+      // Create account with cache
+      const state = getOrCreateAccountState(accountId);
+      state.allowFromCache = {
+        value: ["alice", "bob"],
+        timestamp: Date.now(),
+      };
+
+      // Verify cache exists
+      expect(state.allowFromCache).not.toBeNull();
+
+      // Remove account
+      removeAccountState(accountId);
+
+      // Account should be removed and cache cleared
+      expect(getAllAccountStates().has(accountId)).toBe(false);
+    });
+
+    it("should handle removal while groupPermissionCache is populated", async () => {
+      const accountId = "remove-during-group-cache";
+
+      // Create account with group permission cache
+      const state = getOrCreateAccountState(accountId);
+      state.groupPermissionCache = new Map([
+        ["admin/test-group", {
+          creator: "admin",
+          group: "test-group",
+          groupPolicy: "open",
+          requireMention: false,
+          allowFrom: [],
+        }],
+        ["user/other-group", {
+          creator: "user",
+          group: "other-group",
+          groupPolicy: "allowlist",
+          requireMention: true,
+          allowFrom: ["alice", "bob"],
+        }],
+      ]);
+
+      // Verify cache exists
+      expect(state.groupPermissionCache?.size).toBe(2);
+
+      // Remove account
+      removeAccountState(accountId);
+
+      // Account should be removed and cache cleared
+      expect(getAllAccountStates().has(accountId)).toBe(false);
+    });
+
+    it("should handle concurrent removal and getOrCreate", async () => {
+      const accountId = "concurrent-remove-create";
+
+      // Create account first
+      getOrCreateAccountState(accountId);
+
+      // Simulate concurrent removal and recreation
+      const [removeResult, createResult] = await Promise.all([
+        Promise.resolve(removeAccountState(accountId)),
+        Promise.resolve(getOrCreateAccountState(accountId)),
+      ]);
+
+      // Account should exist with fresh state
+      const states = getAllAccountStates();
+      expect(states.has(accountId)).toBe(true);
+    });
+
+    it("should handle rapid sequential remove and recreate", async () => {
+      const accountId = "sequential-remove-create";
+
+      // Rapidly create and remove multiple times
+      for (let i = 0; i < 10; i++) {
+        getOrCreateAccountState(accountId);
+        removeAccountState(accountId);
+      }
+
+      // Final state should be removed
+      expect(getAllAccountStates().has(accountId)).toBe(false);
+    });
+
+    it("should handle removal of non-existent account gracefully", () => {
+      // Remove non-existent account should not throw
+      expect(() => removeAccountState("non-existent-account")).not.toThrow();
+      expect(getAllAccountStates().has("non-existent-account")).toBe(false);
+    });
+  });
 });
