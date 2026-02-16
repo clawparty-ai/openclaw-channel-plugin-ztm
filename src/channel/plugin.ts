@@ -24,6 +24,21 @@ import {
 } from "../di/index.js";
 import type { ResolvedZTMChatAccount } from "./config.js";
 
+// Type guard to safely extract ZTMChatConfig from unknown
+function isZTMChatConfig(config: unknown): config is ZTMChatConfig {
+  return (
+    typeof config === "object" &&
+    config !== null &&
+    "username" in config &&
+    "agentUrl" in config
+  );
+}
+
+// Safely get config with type guard
+function getZTMChatConfig(account: { config: unknown }): ZTMChatConfig | null {
+  return isZTMChatConfig(account.config) ? account.config : null;
+}
+
 // Local type extension for ChannelAccountSnapshot with additional properties
 interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
   meshConnected?: boolean;
@@ -98,7 +113,8 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const resolveDmPolicyImpl = ({ cfg, accountId, account }: any) => {
   const resolvedAccountId = accountId ?? account.accountId ?? "default";
-  const config = account.config as ZTMChatConfig;
+  const config = getZTMChatConfig(account);
+  if (!config) return null;
   const channelsConfig = (cfg || {}) as {
     channels?: { "ztm-chat"?: { accounts?: Record<string, unknown> } };
   };
@@ -124,7 +140,8 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: any) => {
 const collectWarningsImpl = async ({ cfg, accountId }: any): Promise<string[]> => {
   const warnings: string[] = [];
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-  const config = account.config as ZTMChatConfig;
+  const config = getZTMChatConfig(account);
+  if (!config) return warnings;
 
   const allowFrom = config?.allowFrom ?? [];
   if (!allowFrom.length) {
@@ -182,7 +199,8 @@ const buildChannelSummaryImpl = ({ snapshot }: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const directorySelfImpl = async ({ cfg, accountId }: any) => {
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-  const config = account.config as ZTMChatConfig;
+  const config = getZTMChatConfig(account);
+  if (!config) return null;
   return {
     kind: "user" as const,
     id: account.username ?? "",
@@ -198,7 +216,8 @@ const directorySelfImpl = async ({ cfg, accountId }: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const directoryListPeersImpl = async ({ cfg, accountId }: any) => {
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-  const config = account.config as ZTMChatConfig;
+  const config = getZTMChatConfig(account);
+  if (!config) return [];
   const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
   const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
   const apiClient = apiClientFactory(config, { logger });
@@ -246,7 +265,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     normalizeAllowEntry: (entry) => entry.trim().toLowerCase(),
     notifyApproval: async ({ cfg, id }) => {
       const account = resolveZTMChatAccount({ cfg });
-      const config = account.config as ZTMChatConfig;
+      const config = getZTMChatConfig(account);
+      if (!config) return;
       const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
       const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
       const runtime = container.get<IRuntime>(DEPENDENCIES.RUNTIME);
@@ -296,18 +316,22 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     defaultAccountId: (cfg) =>
       listZTMChatAccountIds(cfg ?? undefined)[0] ?? "default",
     isConfigured: (account) =>
-      isConfigMinimallyValid(account.config as ZTMChatConfig),
-    describeAccount: (account) => ({
-      accountId: account.accountId,
-      name: account.username,
-      enabled: account.enabled,
-      configured: isConfigMinimallyValid(account.config as ZTMChatConfig),
-      agentUrl: (account.config as ZTMChatConfig)?.agentUrl,
-      meshName: (account.config as ZTMChatConfig)?.meshName,
-    }),
+      isConfigMinimallyValid(getZTMChatConfig(account) ?? {} as ZTMChatConfig),
+    describeAccount: (account) => {
+      const config = getZTMChatConfig(account);
+      return {
+        accountId: account.accountId,
+        name: account.username,
+        enabled: account.enabled,
+        configured: isConfigMinimallyValid(config ?? {} as ZTMChatConfig),
+        agentUrl: config?.agentUrl,
+        meshName: config?.meshName,
+      };
+    },
     resolveAllowFrom: ({ cfg, accountId }) => {
       const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-      return ((account.config as ZTMChatConfig)?.allowFrom ?? []).map((entry) =>
+      const config = getZTMChatConfig(account);
+      return ((config?.allowFrom) ?? []).map((entry) =>
         String(entry ?? ""),
       );
     },
