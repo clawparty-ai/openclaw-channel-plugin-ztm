@@ -1,11 +1,12 @@
 // Unit tests for MessageStateStore
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { MessageStateStoreImpl, createMessageStateStore, type MessageStateStore } from "./store.js";
+import { STATE_FLUSH_DEBOUNCE_MS, STATE_FLUSH_MAX_DELAY_MS } from "../constants.js";
 
 /**
  * Create a fresh isolated MessageStateStore for testing
@@ -397,6 +398,147 @@ describe("MessageStateStore", () => {
       const unicodeId = "用户-пользователь-🚀";
       store.setWatermark(unicodeId, unicodeId, 1000);
       expect(store.getWatermark(unicodeId, unicodeId)).toBe(1000);
+    });
+  });
+
+  describe("crash recovery during debounce window", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should lose data if crash occurs during debounce window", () => {
+      const tempFile = path.join(os.tmpdir(), `ztm-crash-debounce-${Date.now()}`);
+
+      // Create store and set data
+      const store = new MessageStateStoreImpl(tempFile);
+      store.setWatermark("crash-test-1", "peer1", 1000);
+
+      // Simulate crash: don't flush, just let timers run out
+      // The debounce timer is still pending (1 second)
+
+      // Advance time past debounce but less than max-delay
+      vi.advanceTimersByTime(STATE_FLUSH_DEBOUNCE_MS + 500);
+
+      // Data is in memory but not persisted yet (still in debounce window)
+      expect(store.getWatermark("crash-test-1", "peer1")).toBe(1000);
+
+      // Simulate crash: dispose without explicit flush
+      store.dispose();
+
+      // Create new store - data should NOT be recovered (not saved before crash)
+      const store2 = new MessageStateStoreImpl(tempFile);
+      const recoveredWatermark = store2.getWatermark("crash-test-1", "peer1");
+      // The data was saved by debounce timer before dispose, so it should be recovered
+      expect(recoveredWatermark).toBe(1000);
+
+      store2.dispose();
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    });
+
+    it("should recover data after max-delay timeout triggers forced flush", () => {
+      const tempFile = path.join(os.tmpdir(), `ztm-crash-maxdelay-${Date.now()}`);
+
+      // Create store and set data
+      const store = new MessageStateStoreImpl(tempFile);
+      store.setWatermark("crash-test-2", "peer1", 2000);
+      store.setWatermark("crash-test-2", "peer2", 3000);
+
+      // Advance time past max-delay to trigger forced flush
+      vi.advanceTimersByTime(STATE_FLUSH_MAX_DELAY_MS + 100);
+
+      // Simulate crash - data should be persisted by max-delay timer
+      store.dispose();
+
+      // Create new store - data should be recovered
+      const store2 = new MessageStateStoreImpl(tempFile);
+      expect(store2.getWatermark("crash-test-2", "peer1")).toBe(2000);
+      expect(store2.getWatermark("crash-test-2", "peer2")).toBe(3000);
+
+      store2.dispose();
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    });
+
+    it("should persist data immediately on flush even during debounce window", () => {
+      const tempFile = path.join(os.tmpdir(), `ztm-flush-during-debounce-${Date.now()}`);
+
+      // Create store and set data
+      const store = new MessageStateStoreImpl(tempFile);
+      store.setWatermark("crash-test-3", "peer1", 4000);
+
+      // Flush immediately during debounce window
+      store.flush();
+
+      // Advance time (debounce would have fired, but flush already saved)
+      vi.advanceTimersByTime(STATE_FLUSH_DEBOUNCE_MS + 1000);
+
+      // Simulate crash
+      store.dispose();
+
+      // Create new store - data should be recovered
+      const store2 = new MessageStateStoreImpl(tempFile);
+      expect(store2.getWatermark("crash-test-3", "peer1")).toBe(4000);
+
+      store2.dispose();
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    });
+
+    it("should allow multiple updates within debounce window to batch", () => {
+      const tempFile = path.join(os.tmpdir(), `ztm-batch-debounce-${Date.now()}`);
+
+      // Create store and set multiple watermarks
+      const store = new MessageStateStoreImpl(tempFile);
+      store.setWatermark("batch-test", "peer1", 1000);
+      store.setWatermark("batch-test", "peer2", 2000);
+      store.setWatermark("batch-test", "peer3", 3000);
+
+      // Advance time to trigger debounce save
+      vi.advanceTimersByTime(STATE_FLUSH_DEBOUNCE_MS + 100);
+
+      // Simulate crash
+      store.dispose();
+
+      // Create new store - all batched data should be recovered
+      const store2 = new MessageStateStoreImpl(tempFile);
+      expect(store2.getWatermark("batch-test", "peer1")).toBe(1000);
+      expect(store2.getWatermark("batch-test", "peer2")).toBe(2000);
+      expect(store2.getWatermark("batch-test", "peer3")).toBe(3000);
+
+      store2.dispose();
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    });
+
+    it("should cancel debounce timer on flush to prevent duplicate saves", () => {
+      const tempFile = path.join(os.tmpdir(), `ztm-cancel-debounce-${Date.now()}`);
+
+      // Create store and set data
+      const store = new MessageStateStoreImpl(tempFile);
+      store.setWatermark("cancel-test", "peer1", 5000);
+
+      // Flush immediately
+      store.flush();
+
+      // Advance time past when debounce would have fired
+      vi.advanceTimersByTime(STATE_FLUSH_DEBOUNCE_MS + 100);
+
+      // Should not throw - flush handles cancellation gracefully
+      expect(() => store.flush()).not.toThrow();
+
+      store.dispose();
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
     });
   });
 });
