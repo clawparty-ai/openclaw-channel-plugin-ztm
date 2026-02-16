@@ -21,7 +21,7 @@ import {
   type IApiClient,
   type IApiClientFactory,
   type IRuntime,
-} from "../di/index";
+} from "../di/index.js";
 import type { ResolvedZTMChatAccount } from "./config.js";
 
 // Local type extension for ChannelAccountSnapshot with additional properties
@@ -66,14 +66,9 @@ container.register(DEPENDENCIES.API_CLIENT_FACTORY, createApiClientFactory());
 container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 
 // ============================================================================
-// Resolved Account Type
-// ============================================================================
-
-// ============================================================================
 // Helper Functions (imported from other modules)
 // ============================================================================
 
-// These will be imported from other channel modules
 import {
   resolveZTMChatAccount,
   listZTMChatAccountIds,
@@ -96,10 +91,15 @@ import {
 } from "./state.js";
 
 // ============================================================================
-// Channel Plugin Definition
+// Channel Plugin Definition - Modular Structure
 // ============================================================================
+// The plugin is organized into logical sections for better maintainability.
+// Each section is self-contained and focuses on a specific responsibility.
 
 export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
+  // ---------------------------------------------------------------------------
+  // Meta Section - Plugin metadata and branding
+  // ---------------------------------------------------------------------------
   id: "ztm-chat",
   meta: {
     id: meta.id,
@@ -107,9 +107,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     selectionLabel: meta.selectionLabel,
     docsPath: meta.docsPath,
     blurb: meta.blurb,
-    aliases: [...meta.aliases], // Convert readonly array to mutable
+    aliases: [...meta.aliases],
     quickstartAllowFrom: true,
   },
+
+  // ---------------------------------------------------------------------------
+  // Pairing Section - Device pairing configuration
+  // ---------------------------------------------------------------------------
   pairing: {
     idLabel: "username",
     normalizeAllowEntry: (entry) => entry.trim().toLowerCase(),
@@ -132,6 +136,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       }
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Capabilities Section - Feature flags for this channel
+  // ---------------------------------------------------------------------------
   capabilities: {
     chatTypes: ["direct", "group"],
     reactions: false,
@@ -140,8 +148,20 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     nativeCommands: false,
     blockStreaming: true,
   },
+
+  // ---------------------------------------------------------------------------
+  // Reload Section - Configuration reload handling
+  // ---------------------------------------------------------------------------
   reload: { configPrefixes: ["channels.ztm-chat"] },
+
+  // ---------------------------------------------------------------------------
+  // Config Schema Section - Configuration validation
+  // ---------------------------------------------------------------------------
   configSchema: buildChannelConfigSchemaWithHints(ZTMChatConfigSchema),
+
+  // ---------------------------------------------------------------------------
+  // Config Section - Account configuration resolution
+  // ---------------------------------------------------------------------------
   config: {
     listAccountIds: (cfg) => listZTMChatAccountIds(cfg ?? undefined),
     resolveAccount: (cfg, accountId) =>
@@ -170,6 +190,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         .filter(Boolean)
         .map((entry) => entry.toLowerCase()),
   },
+
+  // ---------------------------------------------------------------------------
+  // Security Section - DM policy and warnings
+  // ---------------------------------------------------------------------------
   security: {
     resolveDmPolicy: ({ cfg, accountId, account }) => {
       const resolvedAccountId = accountId ?? account.accountId ?? "default";
@@ -214,7 +238,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         const meshResult = await apiClient.getMeshInfo();
 
         if (!meshResult.ok) {
-          // Silently ignore probe errors - don't add to warnings
           return warnings;
         }
 
@@ -234,10 +257,18 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       return warnings;
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Groups Section - Group chat configuration
+  // ---------------------------------------------------------------------------
   groups: {
     resolveRequireMention: () => false,
     resolveToolPolicy: () => ({ allow: ["ztm-chat"] }),
   },
+
+  // ---------------------------------------------------------------------------
+  // Messaging Section - Message target handling
+  // ---------------------------------------------------------------------------
   messaging: {
     normalizeTarget: (target) => target.trim().toLowerCase(),
     targetResolver: {
@@ -245,6 +276,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       hint: "<username>",
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Outbound Section - Message sending
+  // ---------------------------------------------------------------------------
   outbound: {
     deliveryMode: "direct",
     sendText: async ({ to, text, accountId }) => {
@@ -253,6 +288,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       return sendTextGateway({ to: target, text, accountId: accountKey });
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Status Section - Runtime status and health checks
+  // ---------------------------------------------------------------------------
   status: {
     defaultRuntime: {
       accountId: "default",
@@ -290,6 +329,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       return buildAccountSnapshotImpl({ account });
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Directory Section - User and peer discovery
+  // ---------------------------------------------------------------------------
   directory: {
     self: async ({ cfg, accountId }) => {
       const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
@@ -329,6 +372,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       return [];
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Gateway Section - Account lifecycle management
+  // ---------------------------------------------------------------------------
   gateway: {
     startAccount: async (ctx) => {
       const log = ctx.log;
