@@ -5,7 +5,94 @@ import { getZTMRuntime } from "../runtime/index.js";
 import { processIncomingMessage, notifyMessageCallbacks, checkDmPolicy } from "./inbound.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
+import type { ZTMChatConfig } from "../types/config.js";
 import { handleResult } from "../utils/result.js";
+
+// Process a group chat message (synchronous - no async operations needed)
+function processGroupChat(
+  chat: { creator?: string; group?: string; name?: string; latest?: { time: number; message: string; sender?: string } | null },
+  config: ZTMChatConfig,
+  pollStoreAllowFrom: string[],
+  accountId: string,
+  state: AccountRuntimeState
+): void {
+  if (!chat.latest) return;
+
+  const sender = chat.latest.sender || "";
+  if (sender === config.username) return;
+
+  const normalized = processIncomingMessage(
+    {
+      time: chat.latest.time,
+      message: chat.latest.message,
+      sender: sender,
+    },
+    config,
+    pollStoreAllowFrom,
+    accountId,
+    { creator: chat.creator!, group: chat.group! }
+  );
+  if (normalized) {
+    notifyMessageCallbacks(state, {
+      ...normalized,
+      isGroup: true,
+      groupName: chat.name,
+      groupId: chat.group,
+      groupCreator: chat.creator,
+    });
+  }
+}
+
+// Process a peer-to-peer chat message (async - requires handlePairingRequest)
+async function processPeerChat(
+  chat: { peer?: string; latest?: { time: number; message: string; sender?: string } | null },
+  config: ZTMChatConfig,
+  pollStoreAllowFrom: string[],
+  accountId: string,
+  state: AccountRuntimeState
+): Promise<void> {
+  if (!chat.peer || chat.peer === config.username) return;
+  if (!chat.latest) return;
+
+  const normalized = processIncomingMessage(
+    {
+      time: chat.latest.time,
+      message: chat.latest.message,
+      sender: chat.peer,
+    },
+    config,
+    pollStoreAllowFrom,
+    accountId
+  );
+  if (normalized) {
+    notifyMessageCallbacks(state, normalized);
+  }
+
+  const check = checkDmPolicy(chat.peer, config, pollStoreAllowFrom);
+  if (check.action === "request_pairing") {
+    await handlePairingRequest(state, chat.peer, "Polling check", pollStoreAllowFrom);
+  }
+}
+
+// Process all chats in a polling cycle
+async function processChats(
+  chats: Array<{ creator?: string; group?: string; name?: string; peer?: string; latest?: { time: number; message: string; sender?: string } | null }>,
+  config: ZTMChatConfig,
+  pollStoreAllowFrom: string[],
+  accountId: string,
+  state: AccountRuntimeState
+): Promise<void> {
+  for (const chat of chats) {
+    const isGroup = !!(chat.creator && chat.group);
+
+    if (isGroup) {
+      processGroupChat(chat, config, pollStoreAllowFrom, accountId, state);
+      continue;
+    }
+
+    await processPeerChat(chat, config, pollStoreAllowFrom, accountId, state);
+  }
+}
 
 // Fallback polling watcher (when watch is unavailable)
 export async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
@@ -37,59 +124,7 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
       logLevel: "debug"
     });
     if (!chats) return;
-    for (const chat of chats) {
-      const isGroup = !!(chat.creator && chat.group);
-      
-      if (isGroup) {
-        if (!chat.latest) continue;
-        const sender = chat.latest.sender || "";
-        if (sender === config.username) continue;
-        
-        const normalized = processIncomingMessage(
-          {
-            time: chat.latest.time,
-            message: chat.latest.message,
-            sender: sender,
-          },
-          config,
-          pollStoreAllowFrom,
-          state.accountId,
-          { creator: chat.creator!, group: chat.group! }
-        );
-        if (normalized) {
-          notifyMessageCallbacks(state, {
-            ...normalized,
-            isGroup: true,
-            groupName: chat.name,
-            groupId: chat.group,
-            groupCreator: chat.creator,
-          });
-        }
-        continue;
-      }
-      
-      // Peer chat
-      if (!chat.peer || chat.peer === config.username) continue;
-      if (chat.latest) {
-        const normalized = processIncomingMessage(
-          {
-            time: chat.latest.time,
-            message: chat.latest.message,
-            sender: chat.peer,
-          },
-          config,
-          pollStoreAllowFrom,
-          state.accountId
-        );
-        if (normalized) {
-          notifyMessageCallbacks(state, normalized);
-        }
 
-        const check = checkDmPolicy(chat.peer, config, pollStoreAllowFrom);
-        if (check.action === "request_pairing") {
-          await handlePairingRequest(state, chat.peer, "Polling check", pollStoreAllowFrom);
-        }
-      }
-    }
+    await processChats(chats, config, pollStoreAllowFrom, state.accountId, state);
   }, pollingInterval);
 }
