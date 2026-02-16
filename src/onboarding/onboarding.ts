@@ -5,6 +5,7 @@ import * as readline from "readline";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { DMPolicy, GroupPolicy } from "../config/schema.js";
 import { isValidUrl, IDENTIFIER_PATTERN } from "../utils/validation.js";
+import { extractErrorMessage } from "../utils/error.js";
 import { getZTMRuntime, hasZTMRuntime } from "../runtime/index.js";
 
 // Extended config with wizard-specific fields
@@ -490,7 +491,8 @@ export class ZTMChatWizard {
           this.prompts.info("   4. After approval, their messages will be accepted");
         }
       } catch (error) {
-        this.prompts.error(`Failed to save: ${error}`);
+        const errorMsg = extractErrorMessage(error);
+        this.prompts.error(`Failed to save: ${errorMsg}`);
       }
     }
 

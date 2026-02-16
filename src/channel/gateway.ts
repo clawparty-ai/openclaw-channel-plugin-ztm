@@ -27,6 +27,7 @@ import { createZTMApiClient } from "../api/ztm-api.js";
 import { isSuccess } from "../types/common.js";
 import { logger } from "../utils/logger.js";
 import { resolvePermitPath } from "../utils/paths.js";
+import { extractErrorMessage } from "../utils/error.js";
 import {
   getAllAccountStates,
   initializeRuntime,
@@ -319,8 +320,9 @@ async function handleInboundMessage(
       );
     }
   } catch (error) {
+    const errorMsg = extractErrorMessage(error);
     ctx.log?.error?.(
-      `[${accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`,
+      `[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`,
     );
   }
 }
@@ -630,8 +632,9 @@ export function buildMessageCallback(
           );
         }
       } catch (error) {
+        const errorMsg = extractErrorMessage(error);
         logger.error?.(
-          `[${accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`,
+          `[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`,
         );
       }
     };

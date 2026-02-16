@@ -7,6 +7,7 @@ import { getZTMRuntime } from "../runtime/index.js";
 import type { ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { normalizeUsername } from "../utils/validation.js";
+import { extractErrorMessage } from "../utils/error.js";
 import type { PermitData } from "../types/connectivity.js";
 
 /**
@@ -60,7 +61,8 @@ export async function requestPermit(
     logger.info("Permit request successful");
     return permitData;
   } catch (error) {
-    logger.error(`Permit request error: ${error}`);
+    const errorMsg = extractErrorMessage(error);
+    logger.error(`Permit request error: ${errorMsg}`);
     return null;
   }
 }
@@ -77,7 +79,8 @@ export function savePermitData(permitData: PermitData, permitPath: string): bool
     logger.info(`Permit data saved to ${permitPath}`);
     return true;
   } catch (error) {
-    logger.error(`Failed to save permit data: ${error}`);
+    const errorMsg = extractErrorMessage(error);
+    logger.error(`Failed to save permit data: ${errorMsg}`);
     return false;
   }
 }
@@ -96,7 +99,8 @@ export function loadPermitFromFile(filePath: string): PermitData | null {
     logger.info(`Permit loaded from file: ${filePath}`);
     return permitData;
   } catch (error) {
-    logger.error(`Failed to load permit from file: ${error}`);
+    const errorMsg = extractErrorMessage(error);
+    logger.error(`Failed to load permit from file: ${errorMsg}`);
     return null;
   }
 }

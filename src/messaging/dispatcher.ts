@@ -2,6 +2,7 @@
 // Handles notification of registered message callbacks
 
 import { logger } from "../utils/logger.js";
+import { extractErrorMessage } from "../utils/error.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
@@ -42,7 +43,8 @@ export function notifyMessageCallbacks(
       successCount++;
     } catch (error) {
       errorCount++;
-      logger.error(`[${state.accountId}] Callback error: ${error}`);
+      const errorMsg = extractErrorMessage(error);
+      logger.error(`[${state.accountId}] Callback error: ${errorMsg}`);
     }
   }
 
