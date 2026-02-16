@@ -10,7 +10,7 @@ import type {
 } from "../types/config.js";
 import type { ZTMApiClient, ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatMessage } from "../messaging/inbound.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
 import {
   resolveZTMChatConfig,
   validateZTMChatConfig,

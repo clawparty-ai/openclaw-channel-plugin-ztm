@@ -2,7 +2,7 @@
 // Handles inbound message context creation and dispatch to AI agents
 
 import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMChatMessage } from "../messaging/inbound.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { checkGroupPolicy, getGroupPermission } from "../core/group-policy.js";
 import { sendZTMMessage } from "../messaging/outbound.js";
