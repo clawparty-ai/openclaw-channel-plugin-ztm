@@ -335,7 +335,7 @@ async function processChangedPeer(
       logger.debug(`[${state.accountId}] Skipping outbound message to ${peer} (sender=${msg.sender})`);
       continue;
     }
-    const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
+    const normalized = processIncomingMessage(msg, { config: state.config, storeAllowFrom, accountId: state.accountId });
     if (normalized) {
       notifyMessageCallbacks(state, normalized);
     }
@@ -378,11 +378,8 @@ async function processChangedGroup(
       continue;
     }
     const normalized = processIncomingMessage(
-      msg, 
-      state.config, 
-      storeAllowFrom, 
-      state.accountId,
-      { creator, group }
+      msg,
+      { config: state.config, storeAllowFrom, accountId: state.accountId, groupInfo: { creator, group } }
     );
     if (normalized) {
       notifyMessageCallbacks(state, {

@@ -5,6 +5,7 @@ import {
   processIncomingMessage,
   checkDmPolicy,
   notifyMessageCallbacks,
+  type ProcessMessageContext,
   type ZTMChatMessage,
   type MessageCheckResult,
 } from "./inbound.js";
@@ -185,7 +186,7 @@ describe("Inbound message processing", () => {
     it("should normalize valid messages", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).not.toBeNull();
       expect(result?.id).toBe(`${message.time}-alice`);
@@ -199,7 +200,7 @@ describe("Inbound message processing", () => {
     it("should skip empty messages", () => {
       const message = createMessage({ message: "" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).toBeNull();
     });
@@ -207,7 +208,7 @@ describe("Inbound message processing", () => {
     it("should skip whitespace-only messages", () => {
       const message = createMessage({ message: "   " });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).toBeNull();
     });
@@ -237,7 +238,7 @@ describe("Inbound message processing", () => {
       vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore);
 
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).toBeNull();
 
@@ -252,7 +253,7 @@ describe("Inbound message processing", () => {
     it("should respect dmPolicy='deny'", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "deny" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).toBeNull();
     });
@@ -260,7 +261,7 @@ describe("Inbound message processing", () => {
     it("should trigger pairing request for dmPolicy='pairing'", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).toBeNull();
     });
@@ -269,7 +270,7 @@ describe("Inbound message processing", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
 
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).not.toBeNull();
       expect(result?.sender).toBe("alice");
@@ -278,7 +279,7 @@ describe("Inbound message processing", () => {
     it("should handle messages with newlines", () => {
       const message = createMessage({ message: "Hello\nWorld\n" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello\nWorld\n");
@@ -287,7 +288,7 @@ describe("Inbound message processing", () => {
     it("should handle messages with special characters", () => {
       const message = createMessage({ message: "Hello! 🌍 世界" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello! 🌍 世界");
@@ -296,7 +297,7 @@ describe("Inbound message processing", () => {
     it("should handle very long messages", () => {
       const message = createMessage({ message: "a".repeat(10000) });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("a".repeat(10000));
@@ -306,7 +307,7 @@ describe("Inbound message processing", () => {
       const message = createMessage({ time: 0 });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
 
-      const result = processIncomingMessage(message, config, [], testAccountId);
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).not.toBeNull();
     });
