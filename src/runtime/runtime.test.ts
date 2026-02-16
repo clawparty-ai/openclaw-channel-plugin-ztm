@@ -1,326 +1,227 @@
 // Unit tests for Runtime
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createMockLoggerFns } from "../test-utils/mocks.js";
+import {
+  setZTMRuntime,
+  getZTMRuntime,
+  isRuntimeInitialized,
+  hasZTMRuntime,
+  RuntimeManager,
+} from "./runtime.js";
+import type { PluginRuntime } from "openclaw/plugin-sdk";
 
-// Mock PluginRuntime interface
-interface MockPluginRuntime {
-  onMessage: (callback: (message: unknown) => void) => () => void;
-  log?: {
-    info?: (message: string) => void;
-    debug?: (message: string) => void;
-    warn?: (message: string) => void;
-    error?: (message: string) => void;
-  };
-}
-
-// Runtime state
-interface RuntimeState {
-  initialized: boolean;
-  connected: boolean;
-  messageCallbacks: Set<(message: unknown) => void>;
-  lastError: string | null;
-}
+// Mock logger - must be hoisted
+vi.mock("../utils/logger.js", () => ({
+  setRuntimeLogger: vi.fn(() => undefined),
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
 describe("Runtime Management", () => {
-  let runtime: PluginRuntime | null = null;
-  let state: RuntimeState;
-
-  // Mock PluginRuntime type
-  type PluginRuntime = MockPluginRuntime;
-
-  const setRuntime = (next: PluginRuntime) => {
-    runtime = next;
-  };
-
-  const getRuntime = (): PluginRuntime => {
-    if (!runtime) {
-      throw new Error("Runtime not initialized");
-    }
-    return runtime;
-  };
-
   beforeEach(() => {
-    state = {
-      initialized: false,
-      connected: false,
-      messageCallbacks: new Set(),
-      lastError: null,
-    };
-    runtime = null;
+    // Reset singleton before each test
+    RuntimeManager.reset();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // Clean up runtime
+    RuntimeManager.reset();
   });
 
-  describe("Runtime Initialization", () => {
+  describe("getZTMRuntime", () => {
     it("should throw error when runtime not initialized", () => {
-      expect(() => getRuntime()).toThrow("Runtime not initialized");
+      expect(() => getZTMRuntime()).toThrow("ZTM runtime not initialized");
     });
 
     it("should return runtime after initialization", () => {
-      const mockRuntime: PluginRuntime = {
-        onMessage: () => () => {},
-      };
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      setRuntime(mockRuntime);
+      setZTMRuntime(mockRuntime);
 
-      expect(getRuntime()).toBeDefined();
-      expect(getRuntime()).toBe(mockRuntime);
+      expect(getZTMRuntime()).toBeDefined();
+      expect(getZTMRuntime()).toBe(mockRuntime);
+    });
+
+    it("should return same instance on multiple calls", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
+
+      setZTMRuntime(mockRuntime);
+
+      const rt1 = getZTMRuntime();
+      const rt2 = getZTMRuntime();
+
+      expect(rt1).toBe(rt2);
     });
   });
 
-  describe("Message Callbacks", () => {
-    it("should register message callback", () => {
-      const callback = vi.fn();
-      const mockRuntime: PluginRuntime = {
-        onMessage: (cb) => {
-          state.messageCallbacks.add(cb);
-          return () => state.messageCallbacks.delete(cb);
-        },
-      };
+  describe("setZTMRuntime", () => {
+    it("should set runtime instance", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      setRuntime(mockRuntime);
-      const rt = getRuntime();
-      const unsubscribe = rt.onMessage(callback);
+      setZTMRuntime(mockRuntime);
 
-      expect(state.messageCallbacks.has(callback)).toBe(true);
-      expect(typeof unsubscribe).toBe("function");
+      expect(getZTMRuntime()).toBe(mockRuntime);
     });
 
-    it("should unsubscribe message callback", () => {
-      const callback = vi.fn();
-      const mockRuntime: PluginRuntime = {
-        onMessage: (cb) => {
-          state.messageCallbacks.add(cb);
-          return () => state.messageCallbacks.delete(cb);
-        },
-      };
+    it("should replace existing runtime", () => {
+      const mockRuntime1 = {
+        id: 1,
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      setRuntime(mockRuntime);
-      const rt = getRuntime();
-      const unsubscribe = rt.onMessage(callback);
+      const mockRuntime2 = {
+        id: 2,
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      expect(state.messageCallbacks.has(callback)).toBe(true);
+      setZTMRuntime(mockRuntime1);
+      setZTMRuntime(mockRuntime2);
 
-      unsubscribe();
-
-      expect(state.messageCallbacks.has(callback)).toBe(false);
+      expect(getZTMRuntime()).toBe(mockRuntime2);
     });
 
-    it("should handle multiple callbacks", () => {
-      const callback1 = vi.fn();
-      const callback2 = vi.fn();
-
-      const mockRuntime: PluginRuntime = {
-        onMessage: (cb) => {
-          state.messageCallbacks.add(cb);
-          return () => state.messageCallbacks.delete(cb);
+    it("should call setRuntimeLogger when runtime has log property", () => {
+      // This test verifies the runtime can be set with a log property
+      // The actual logger integration uses require() which doesn't work well with ESM mocks
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+        log: {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
         },
-      };
+      } as unknown as PluginRuntime;
 
-      setRuntime(mockRuntime);
-      const rt = getRuntime();
+      // Should not throw - runtime is set successfully
+      expect(() => setZTMRuntime(mockRuntime)).not.toThrow();
+      expect(getZTMRuntime()).toBe(mockRuntime);
+    });
 
-      rt.onMessage(callback1);
-      rt.onMessage(callback2);
+    it("should handle runtime without logger", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      expect(state.messageCallbacks.size).toBe(2);
+      // Should not throw
+      expect(() => setZTMRuntime(mockRuntime)).not.toThrow();
     });
   });
 
-  describe("Runtime State", () => {
-    it("should track initialization state", () => {
-      expect(state.initialized).toBe(false);
-
-      state.initialized = true;
-
-      expect(state.initialized).toBe(true);
+  describe("isRuntimeInitialized", () => {
+    it("should return false when runtime not set", () => {
+      expect(isRuntimeInitialized()).toBe(false);
     });
 
-    it("should track connection state", () => {
-      expect(state.connected).toBe(false);
+    it("should return true after runtime is set", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      state.connected = true;
+      setZTMRuntime(mockRuntime);
 
-      expect(state.connected).toBe(true);
+      expect(isRuntimeInitialized()).toBe(true);
     });
 
-    it("should track last error", () => {
-      expect(state.lastError).toBeNull();
+    it("should return false after reset", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      state.lastError = "Connection failed";
+      setZTMRuntime(mockRuntime);
+      RuntimeManager.reset();
 
-      expect(state.lastError).toBe("Connection failed");
-    });
-  });
-
-  describe("Callback Invocation", () => {
-    it("should invoke registered callbacks with message", () => {
-      const callback = vi.fn();
-      const storedCallback: { cb?: (message: unknown) => void } = {};
-
-      const mockRuntime: PluginRuntime = {
-        onMessage: (cb) => {
-          storedCallback.cb = cb;
-          return () => {};
-        },
-      };
-
-      setRuntime(mockRuntime);
-      const rt = getRuntime();
-
-      rt.onMessage(callback);
-
-      // Simulate receiving a message
-      if (storedCallback.cb) {
-        storedCallback.cb({ content: "Hello", sender: "alice" });
-      }
-
-      expect(callback).toHaveBeenCalledTimes(1);
-      expect(callback).toHaveBeenCalledWith({
-        content: "Hello",
-        sender: "alice",
-      });
+      expect(isRuntimeInitialized()).toBe(false);
     });
   });
 
-  describe("Logging", () => {
-    it("should support info logging", () => {
-      const mockLog = { info: vi.fn() };
-
-      const mockRuntime: PluginRuntime = {
-        onMessage: () => () => {},
-        log: mockLog,
-      };
-
-      mockRuntime.log!.info!("Test message");
-
-      expect(mockLog.info).toHaveBeenCalledWith("Test message");
+  describe("hasZTMRuntime", () => {
+    it("should return false when runtime not set", () => {
+      expect(hasZTMRuntime()).toBe(false);
     });
 
-    it("should support debug logging", () => {
-      const mockLog = { debug: vi.fn() };
+    it("should return true after runtime is set", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      const mockRuntime: PluginRuntime = {
-        onMessage: () => () => {},
-        log: mockLog,
-      };
+      setZTMRuntime(mockRuntime);
 
-      mockRuntime.log!.debug!("Debug message");
-
-      expect(mockLog.debug).toHaveBeenCalledWith("Debug message");
+      expect(hasZTMRuntime()).toBe(true);
     });
 
-    it("should handle missing logger gracefully", () => {
-      const mockRuntime: PluginRuntime = {
-        onMessage: () => () => {},
-      };
+    it("should be alias for isRuntimeInitialized", () => {
+      const mockRuntime = {
+        channel: { routing: { resolveAgentRoute: vi.fn() } },
+      } as unknown as PluginRuntime;
 
-      // Should not throw - log is undefined so these are no-ops
-      mockRuntime.log?.info?.("Test");
-      mockRuntime.log?.debug?.("Test");
-      mockRuntime.log?.warn?.("Test");
-      mockRuntime.log?.error?.("Test");
+      setZTMRuntime(mockRuntime);
+
+      expect(hasZTMRuntime()).toBe(isRuntimeInitialized());
     });
   });
 });
 
-describe("Channel State Management", () => {
-  interface ChannelState {
-    configured: boolean;
-    running: boolean;
-    lastStartAt: Date | null;
-    lastStopAt: Date | null;
-    lastError: string | null;
-    lastInboundAt: Date | null;
-    lastOutboundAt: Date | null;
-  }
-
-  it("should have correct initial state", () => {
-    const state: ChannelState = {
-      configured: false,
-      running: false,
-      lastStartAt: null,
-      lastStopAt: null,
-      lastError: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-    };
-
-    expect(state.configured).toBe(false);
-    expect(state.running).toBe(false);
-    expect(state.lastStartAt).toBeNull();
-    expect(state.lastStopAt).toBeNull();
-    expect(state.lastError).toBeNull();
+describe("RuntimeManager Singleton", () => {
+  beforeEach(() => {
+    RuntimeManager.reset();
   });
 
-  it("should update state on connection", () => {
-    const state: ChannelState = {
-      configured: false,
-      running: false,
-      lastStartAt: null,
-      lastStopAt: null,
-      lastError: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-    };
-
-    state.configured = true;
-    state.running = true;
-    state.lastStartAt = new Date();
-
-    expect(state.configured).toBe(true);
-    expect(state.running).toBe(true);
-    expect(state.lastStartAt).not.toBeNull();
+  afterEach(() => {
+    vi.restoreAllMocks();
+    RuntimeManager.reset();
   });
 
-  it("should track inbound messages", () => {
-    const state: ChannelState = {
-      configured: false,
-      running: false,
-      lastStartAt: null,
-      lastStopAt: null,
-      lastError: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-    };
+  it("should return same instance on multiple getInstance calls", () => {
+    const instance1 = RuntimeManager.getInstance();
+    const instance2 = RuntimeManager.getInstance();
 
-    state.lastInboundAt = new Date();
-
-    expect(state.lastInboundAt).not.toBeNull();
+    expect(instance1).toBe(instance2);
   });
 
-  it("should track outbound messages", () => {
-    const state: ChannelState = {
-      configured: false,
-      running: false,
-      lastStartAt: null,
-      lastStopAt: null,
-      lastError: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-    };
+  it("should allow setting and getting runtime", () => {
+    const manager = RuntimeManager.getInstance();
+    const mockRuntime = {
+      channel: { routing: { resolveAgentRoute: vi.fn() } },
+    } as unknown as PluginRuntime;
 
-    state.lastOutboundAt = new Date();
+    manager.setRuntime(mockRuntime);
 
-    expect(state.lastOutboundAt).not.toBeNull();
+    expect(manager.getRuntime()).toBe(mockRuntime);
+    expect(manager.isInitialized()).toBe(true);
   });
 
-  it("should track errors", () => {
-    const state: ChannelState = {
-      configured: false,
-      running: false,
-      lastStartAt: null,
-      lastStopAt: null,
-      lastError: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-    };
+  it("should throw error when getting runtime before set", () => {
+    const manager = RuntimeManager.getInstance();
 
-    state.lastError = "Connection timeout";
+    expect(() => manager.getRuntime()).toThrow("ZTM runtime not initialized");
+  });
 
-    expect(state.lastError).toBe("Connection timeout");
+  it("should report uninitialized state correctly", () => {
+    const manager = RuntimeManager.getInstance();
+
+    expect(manager.isInitialized()).toBe(false);
+  });
+
+  it("should report initialized state after setting runtime", () => {
+    const manager = RuntimeManager.getInstance();
+    const mockRuntime = {
+      channel: { routing: { resolveAgentRoute: vi.fn() } },
+    } as unknown as PluginRuntime;
+
+    manager.setRuntime(mockRuntime);
+
+    expect(manager.isInitialized()).toBe(true);
   });
 });

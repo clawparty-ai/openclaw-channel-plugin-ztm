@@ -2,6 +2,7 @@
 // Refactored to use Dependency Injection + Singleton pattern for testability
 
 import type { PluginRuntime } from "openclaw/plugin-sdk";
+import { setRuntimeLogger } from "../utils/logger.js";
 
 // ============================================================================
 // RUNTIME PROVIDER INTERFACE
@@ -37,7 +38,7 @@ export interface RuntimeProvider {
  * Singleton manager for ZTM runtime
  * Provides testable runtime management with dependency injection capability
  */
-class RuntimeManager implements RuntimeProvider {
+export class RuntimeManager implements RuntimeProvider {
   private static instance: RuntimeManager | null = null;
   private runtime: PluginRuntime | null = null;
 
@@ -110,7 +111,6 @@ export function setZTMRuntime(next: PluginRuntime): void {
   // Cast to any to access runtime.log which may not be in type definition
   const rt = next as unknown as { log?: { debug?: (msg: string) => void; info?: (msg: string) => void; warn?: (msg: string) => void; error?: (msg: string) => void } };
   if (rt.log) {
-    const { setRuntimeLogger } = require("../utils/logger.js");
     setRuntimeLogger({
       debug: (msg: string) => rt.log?.debug?.(msg),
       info: (msg: string) => rt.log?.info?.(msg),
