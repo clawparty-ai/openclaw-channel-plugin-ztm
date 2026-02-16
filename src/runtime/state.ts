@@ -14,6 +14,7 @@ import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
+import { PAIRING_MAX_AGE_MS } from "../constants.js";
 
 // Re-export types for backward compatibility
 export type { AccountRuntimeState };
@@ -82,6 +83,36 @@ export function removeAccountState(accountId: string): void {
     state.pendingPairings.clear();
     accountStates.delete(accountId);
   }
+}
+
+/**
+ * Clean up expired pending pairings from all accounts.
+ * Removes entries older than PAIRING_MAX_AGE_MS (1 hour).
+ * Should be called periodically to prevent unbounded memory growth.
+ *
+ * @returns Total number of expired pairings removed
+ */
+export function cleanupExpiredPairings(): number {
+  const now = Date.now();
+  let totalRemoved = 0;
+
+  for (const [accountId, state] of accountStates) {
+    if (state.pendingPairings.size === 0) continue;
+
+    let removed = 0;
+    for (const [peer, timestamp] of state.pendingPairings) {
+      if (now - timestamp.getTime() > PAIRING_MAX_AGE_MS) {
+        state.pendingPairings.delete(peer);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
+      totalRemoved += removed;
+    }
+  }
+
+  return totalRemoved;
 }
 
 /**
