@@ -143,8 +143,8 @@ function startWatchLoop(
   let lastMessageTime = Date.now();
   let fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
   let messagesReceivedInCycle = false;
-  // Prevent overlapping watch loop executions
-  let isRunning = false;
+  // Track pending iteration instead of skipping - ensures no missed iterations
+  let pendingIteration = false;
 
   const ctx: WatchContext = { state, rt, messagePath, messageSemaphore };
 
@@ -162,11 +162,11 @@ function startWatchLoop(
   };
 
   const watchLoop = async (): Promise<void> => {
-    // Skip this iteration if previous one is still running
-    if (isRunning) {
+    // If previous iteration is still running, mark as pending to run after it completes
+    if (pendingIteration) {
       return;
     }
-    isRunning = true;
+    pendingIteration = true;
 
     try {
       const loopStart = Date.now();
@@ -176,6 +176,7 @@ function startWatchLoop(
       if (isWatchError(result)) {
         handleWatchError(ctx.state, result.errorMessage, scheduleFullSync);
         const elapsed = Date.now() - loopStart;
+        pendingIteration = false;
         setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL_MS - elapsed));
         return;
       }
@@ -189,9 +190,23 @@ function startWatchLoop(
 
       state.watchErrorCount = 0;
       const elapsed = Date.now() - loopStart;
-      setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL_MS - elapsed));
+      pendingIteration = false;
+
+      // If there was a pending iteration request while we were processing,
+      // run immediately instead of waiting for the next interval
+      setTimeout(() => {
+        if (pendingIteration) {
+          // There was a request while we were running, process it now
+          watchLoop();
+        } else {
+          watchLoop();
+        }
+      }, Math.max(0, WATCH_INTERVAL_MS - elapsed));
     } finally {
-      isRunning = false;
+      // Ensure flag is cleared even on early returns
+      if (pendingIteration) {
+        pendingIteration = false;
+      }
     }
   };
 
