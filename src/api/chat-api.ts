@@ -4,9 +4,9 @@ import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMChat } from "../types/api.js";
 import { success, failure, type Result } from "../types/common.js";
 import {
-  ZtmReadError,
+  ZTMReadError,
 } from "../types/errors.js";
-import type { ZtmLogger, RequestHandler, ApiResult } from "./request.js";
+import type { ZTMLogger, RequestHandler, ApiResult } from "./request.js";
 
 /**
  * Normalize message content from API format to plain string.
@@ -45,7 +45,7 @@ export function normalizeMessageContent(message: unknown): string {
 export function createChatApi(
   config: ZTMChatConfig,
   request: RequestHandler,
-  logger: ZtmLogger
+  logger: ZTMLogger
 ) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
@@ -53,13 +53,13 @@ export function createChatApi(
     /**
      * Get all chats from the Chat App API
      */
-    async getChats(): Promise<Result<ZTMChat[], ZtmReadError>> {
+    async getChats(): Promise<Result<ZTMChat[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Fetching chats via Chat App API`);
 
       const result = await request<ZTMChat[]>("GET", `${CHAT_API_BASE}/chats`);
 
       if (!result.ok) {
-        const error = new ZtmReadError({
+        const error = new ZTMReadError({
           peer: "*",
           operation: "list",
           cause: result.error ?? new Error("Unknown error"),

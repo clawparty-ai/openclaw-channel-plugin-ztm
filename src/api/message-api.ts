@@ -4,10 +4,10 @@ import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMMessage, WatchChangeItem } from "../types/api.js";
 import { success, failure, type Result } from "../types/common.js";
 import {
-  ZtmReadError,
-  ZtmSendError,
+  ZTMReadError,
+  ZTMSendError,
 } from "../types/errors.js";
-import type { ZtmLogger, RequestHandler } from "./request.js";
+import type { ZTMLogger, RequestHandler } from "./request.js";
 import { normalizeMessageContent } from "./chat-api.js";
 
 /**
@@ -16,8 +16,8 @@ import { normalizeMessageContent } from "./chat-api.js";
 export function createMessageApi(
   config: ZTMChatConfig,
   request: RequestHandler,
-  logger: ZtmLogger,
-  getChats: () => Promise<Result<import("../types/api.js").ZTMChat[], ZtmReadError>>
+  logger: ZTMLogger,
+  getChats: () => Promise<Result<import("../types/api.js").ZTMChat[], ZTMReadError>>
 ) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
@@ -31,7 +31,7 @@ export function createMessageApi(
       peer: string,
       since?: number,
       before?: number
-    ): Promise<Result<ZTMMessage[], ZtmReadError>> {
+    ): Promise<Result<ZTMMessage[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Fetching messages from peer "${peer}" since=${since}, before=${before}`);
 
       const queryParams = new URLSearchParams();
@@ -45,7 +45,7 @@ export function createMessageApi(
       const result = await request<ZTMMessage[]>("GET", `${CHAT_API_BASE}/peers/${peer}/messages?${queryParams.toString()}`);
 
       if (!result.ok) {
-        const error = new ZtmReadError({
+        const error = new ZTMReadError({
           peer,
           operation: "read",
           cause: result.error ?? new Error("Unknown error"),
@@ -66,7 +66,7 @@ export function createMessageApi(
     /**
      * Send a message to a peer
      */
-    async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>> {
+    async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZTMSendError>> {
       logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
 
       const ztmEntry = { text: message.message };
@@ -74,7 +74,7 @@ export function createMessageApi(
       const result = await request<void>("POST", `${CHAT_API_BASE}/peers/${peer}/messages`, ztmEntry);
 
       if (!result.ok) {
-        const error = new ZtmSendError({
+        const error = new ZTMSendError({
           peer,
           messageTime: message.time,
           contentPreview: message.message,
@@ -94,7 +94,7 @@ export function createMessageApi(
     async getGroupMessages(
       creator: string,
       group: string
-    ): Promise<Result<ZTMMessage[], ZtmReadError>> {
+    ): Promise<Result<ZTMMessage[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Fetching group messages from "${creator}/${group}"`);
 
       const result = await request<ZTMMessage[]>(
@@ -103,7 +103,7 @@ export function createMessageApi(
       );
 
       if (!result.ok) {
-        const error = new ZtmReadError({
+        const error = new ZTMReadError({
           peer: `${creator}/${group}`,
           operation: "read",
           cause: result.error ?? new Error("Unknown error"),
@@ -137,7 +137,7 @@ export function createMessageApi(
       creator: string,
       group: string,
       message: ZTMMessage
-    ): Promise<Result<boolean, ZtmSendError>> {
+    ): Promise<Result<boolean, ZTMSendError>> {
       logger.debug?.(`[ZTM API] Sending message to group "${creator}/${group}", text="${message.message.substring(0, 50)}..."`);
 
       const ztmEntry = { text: message.message };
@@ -149,7 +149,7 @@ export function createMessageApi(
       );
 
       if (!result.ok) {
-        const error = new ZtmSendError({
+        const error = new ZTMSendError({
           peer: `${creator}/${group}`,
           messageTime: message.time,
           contentPreview: message.message,
@@ -168,12 +168,12 @@ export function createMessageApi(
      */
     async watchChanges(
       prefix: string
-    ): Promise<Result<WatchChangeItem[], ZtmReadError>> {
+    ): Promise<Result<WatchChangeItem[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
 
       const chatsResult = await getChats();
       if (!chatsResult.ok) {
-        const error = new ZtmReadError({
+        const error = new ZTMReadError({
           peer: "*",
           operation: "list",
           cause: chatsResult.error ?? new Error("Unknown error"),

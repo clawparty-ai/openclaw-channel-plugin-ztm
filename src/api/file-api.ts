@@ -3,10 +3,10 @@
 import type { ZTMChatConfig } from "../types/config.js";
 import { success, type Result } from "../types/common.js";
 import {
-  ZtmError,
-  ZtmReadError,
+  ZTMError,
+  ZTMReadError,
 } from "../types/errors.js";
-import type { ZtmLogger, RequestHandler, ApiResult } from "./request.js";
+import type { ZTMLogger, RequestHandler, ApiResult } from "./request.js";
 
 // Maximum number of tracked files to prevent memory leaks
 const MAX_TRACKED_FILES = 500;
@@ -17,7 +17,7 @@ const MAX_TRACKED_FILES = 500;
 export function createFileApi(
   config: ZTMChatConfig,
   request: RequestHandler,
-  logger: ZtmLogger
+  logger: ZTMLogger
 ) {
   // Track both time and size for each file to detect changes in append-only files
   interface FileMetadata {

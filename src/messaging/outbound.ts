@@ -5,7 +5,7 @@ import { logger } from "../utils/logger.js";
 import { type ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { type Result } from "../types/common.js";
-import { ZtmSendError } from "../types/errors.js";
+import { ZTMSendError } from "../types/errors.js";
 import { handleResult } from "../utils/result.js";
 
 export function generateMessageId(): string {
@@ -18,9 +18,9 @@ export async function sendZTMMessage(
   peer: string,
   content: string,
   groupInfo?: { creator: string; group: string }
-): Promise<Result<boolean, ZtmSendError>> {
+): Promise<Result<boolean, ZTMSendError>> {
   if (!state.config || !state.apiClient) {
-    const error = new ZtmSendError({
+    const error = new ZTMSendError({
       peer,
       messageTime: Date.now(),
       cause: new Error("Runtime not initialized"),
@@ -35,7 +35,7 @@ export async function sendZTMMessage(
     sender: state.config.username,
   };
 
-  let result: Result<boolean, ZtmSendError>;
+  let result: Result<boolean, ZTMSendError>;
 
   if (groupInfo) {
     result = await state.apiClient.sendGroupMessage(groupInfo.creator, groupInfo.group, message);

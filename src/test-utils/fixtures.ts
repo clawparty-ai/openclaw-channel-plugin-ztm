@@ -279,15 +279,15 @@ export function createMockChat(
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
-import { ZtmReadError } from "../types/errors.js";
+import { ZTMReadError } from "../types/errors.js";
 
 /**
  * Create a mock failure response for getChats
  */
-export function createChatsFailure(peer = "test"): { ok: false; error: ZtmReadError } {
+export function createChatsFailure(peer = "test"): { ok: false; error: ZTMReadError } {
   return {
     ok: false,
-    error: new ZtmReadError({
+    error: new ZTMReadError({
       peer,
       operation: "list",
       cause: new Error("Network error"),

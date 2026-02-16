@@ -14,13 +14,13 @@ import type {
 } from "../types/api.js";
 import { success, failure, type Result } from "../types/common.js";
 import {
-  ZtmApiError,
-  ZtmTimeoutError,
-  ZtmSendError,
-  ZtmReadError,
-  ZtmDiscoveryError,
-  ZtmParseError,
-  ZtmError,
+  ZTMApiError,
+  ZTMTimeoutError,
+  ZTMSendError,
+  ZTMReadError,
+  ZTMDiscoveryError,
+  ZTMParseError,
+  ZTMError,
 } from "../types/errors.js";
 import type { Logger } from "../utils/logger.js";
 import { defaultLogger } from "../utils/logger.js";
@@ -29,8 +29,8 @@ import { fetchWithRetry, type FetchWithRetry } from "../utils/retry.js";
 import {
   createRequestHandler,
   defaultDeps,
-  type ZtmApiClientDeps,
-  type ZtmLogger,
+  type ZTMApiClientDeps,
+  type ZTMLogger,
   type RequestHandler,
 } from "./request.js";
 
@@ -40,7 +40,7 @@ import { createMessageApi } from "./message-api.js";
 import { createFileApi } from "./file-api.js";
 
 // Re-export types for backward compatibility
-export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClient, ZtmApiClientDeps };
+export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClient, ZTMApiClientDeps };
 
 /**
  * Escape special regex characters in string literals
@@ -63,7 +63,7 @@ function parseMessageFileWithResult(
   fileContent: unknown,
   peer: string,
   filePath: string
-): Result<ZTMMessage[], ZtmParseError> {
+): Result<ZTMMessage[], ZTMParseError> {
   try {
     const entries = Array.isArray(fileContent) ? fileContent : [fileContent];
     const result: ZTMMessage[] = [];
@@ -79,7 +79,7 @@ function parseMessageFileWithResult(
     return success(result);
   } catch (error) {
     const cause = error instanceof Error ? error : new Error(String(error));
-    return failure(new ZtmParseError({
+    return failure(new ZTMParseError({
       peer,
       filePath,
       cause,
@@ -140,9 +140,9 @@ function findLatestFilesByPeer(
  */
 export function createZTMApiClient(
   config: ZTMChatConfig,
-  deps: Partial<ZtmApiClientDeps> = {}
+  deps: Partial<ZTMApiClientDeps> = {}
 ): ZTMApiClient {
-  const { logger, fetch, fetchWithRetry: doFetchWithRetry }: ZtmApiClientDeps = {
+  const { logger, fetch, fetchWithRetry: doFetchWithRetry }: ZTMApiClientDeps = {
     ...defaultDeps,
     ...deps,
   };

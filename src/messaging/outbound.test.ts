@@ -5,7 +5,7 @@ import { sendZTMMessage, generateMessageId } from "./outbound.js";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import { mockSuccess } from "../test-utils/mocks.js";
 import { success, isSuccess } from "../types/common.js";
-import { ZtmSendError } from "../types/errors.js";
+import { ZTMSendError } from "../types/errors.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { ZTMApiClient } from "../types/api.js";
@@ -31,11 +31,11 @@ function createMockState(): AccountRuntimeState {
   };
 }
 
-// Helper to create a failure Result for ZtmSendError
+// Helper to create a failure Result for ZTMSendError
 function createSendFailure(peer: string, message: string) {
   return {
     ok: false,
-    error: new ZtmSendError({
+    error: new ZTMSendError({
       peer,
       messageTime: Date.now(),
       cause: new Error(message),

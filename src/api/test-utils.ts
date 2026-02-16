@@ -4,7 +4,7 @@
 
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient } from "../types/api.js";
-import type { ZtmApiClientDeps } from "./ztm-api.js";
+import type { ZTMApiClientDeps } from "./ztm-api.js";
 import { createZTMApiClient } from "./ztm-api.js";
 import { fetchWithRetry } from "../utils/retry.js";
 
@@ -117,7 +117,7 @@ export function createMockFetchWithRetry(): {
 /**
  * Test dependencies for creating API clients
  */
-export interface ZtmApiTestDeps {
+export interface ZTMApiTestDeps {
   logger: MockLogger;
   fetch: ReturnType<typeof createMockFetch>['fetch'];
   fetchWithRetry: ReturnType<typeof createMockFetchWithRetry>['fetchWithRetry'];
@@ -129,7 +129,7 @@ export interface ZtmApiTestDeps {
  */
 export function createTestClient(
   config: ZTMChatConfig,
-  deps?: Partial<ZtmApiTestDeps>
+  deps?: Partial<ZTMApiTestDeps>
 ): ZTMApiClient {
   // Create mock dependencies only if not provided
   const mockLogger = deps?.logger ?? createMockLogger();

@@ -4,8 +4,8 @@ import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient } from "../types/api.js";
 import { success, failure, type Result } from "../types/common.js";
 import {
-  ZtmApiError,
-  ZtmTimeoutError,
+  ZTMApiError,
+  ZTMTimeoutError,
 } from "../types/errors.js";
 import { defaultLogger, type Logger } from "../utils/logger.js";
 import { fetchWithRetry, type FetchWithRetry, type RetryOptions } from "../utils/retry.js";
@@ -14,7 +14,7 @@ import { API_TIMEOUT_MS } from "../constants.js";
 /**
  * Logger interface for dependency injection
  */
-export interface ZtmLogger {
+export interface ZTMLogger {
   debug?: (...args: unknown[]) => void;
   info?: (...args: unknown[]) => void;
   warn?: (...args: unknown[]) => void;
@@ -24,8 +24,8 @@ export interface ZtmLogger {
 /**
  * Dependencies that can be injected into the API client
  */
-export interface ZtmApiClientDeps {
-  logger: ZtmLogger;
+export interface ZTMApiClientDeps {
+  logger: ZTMLogger;
   fetch: typeof fetch;
   fetchWithRetry: FetchWithRetry;
 }
@@ -33,16 +33,16 @@ export interface ZtmApiClientDeps {
 /**
  * Default values for dependencies
  */
-export const defaultDeps: ZtmApiClientDeps = {
-  logger: defaultLogger as ZtmLogger,
+export const defaultDeps: ZTMApiClientDeps = {
+  logger: defaultLogger as ZTMLogger,
   fetch,
   fetchWithRetry,
 };
 
 /**
- * Type alias for ZTM API operations that can fail with ZtmApiError
+ * Type alias for ZTM API operations that can fail with ZTMApiError
  */
-export type ApiResult<T> = Promise<Result<T, ZtmApiError | ZtmTimeoutError>>;
+export type ApiResult<T> = Promise<Result<T, ZTMApiError | ZTMTimeoutError>>;
 
 // Default timeout for API requests (in milliseconds)
 export const DEFAULT_TIMEOUT = API_TIMEOUT_MS;
@@ -66,7 +66,7 @@ export interface RequestHandler {
 export function createRequestHandler(
   baseUrl: string,
   apiTimeout: number,
-  deps: ZtmApiClientDeps
+  deps: ZTMApiClientDeps
 ): RequestHandler {
   const { fetchWithRetry: doFetchWithRetry } = deps;
 
@@ -93,7 +93,7 @@ export function createRequestHandler(
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");
-        return failure(new ZtmApiError({
+        return failure(new ZTMApiError({
           method,
           path,
           statusCode: response.status,
@@ -117,14 +117,14 @@ export function createRequestHandler(
       const cause = error instanceof Error ? error : new Error(String(error));
       // Check if it's a timeout by looking at the error message or type
       if (cause.name === "AbortError" || cause.message.includes("timeout")) {
-        return failure(new ZtmTimeoutError({
+        return failure(new ZTMTimeoutError({
           method,
           path,
           timeoutMs: apiTimeout,
           cause,
         }));
       }
-      return failure(new ZtmApiError({
+      return failure(new ZTMApiError({
         method,
         path,
         cause,

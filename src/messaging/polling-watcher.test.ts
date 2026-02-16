@@ -12,7 +12,7 @@ import {
 } from "../test-utils/fixtures.js";
 import { mockSuccess } from "../test-utils/mocks.js";
 import { success } from "../types/common.js";
-import { ZtmReadError } from "../types/errors.js";
+import { ZTMReadError } from "../types/errors.js";
 import type { ZTMChat } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
@@ -349,7 +349,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle empty chat list", async () => {
-      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success<ZTMChat[], ZtmReadError>([])));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success<ZTMChat[], ZTMReadError>([])));
 
       const { processIncomingMessage } = await import("./inbound.js");
 

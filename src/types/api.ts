@@ -3,14 +3,14 @@
 
 import type { Result } from "./common.js";
 import type {
-  ZtmApiError,
-  ZtmTimeoutError,
-  ZtmSendError,
-  ZtmReadError,
-  ZtmWriteError,
-  ZtmDiscoveryError,
-  ZtmParseError,
-  ZtmError,
+  ZTMApiError,
+  ZTMTimeoutError,
+  ZTMSendError,
+  ZTMReadError,
+  ZTMWriteError,
+  ZTMDiscoveryError,
+  ZTMParseError,
+  ZTMError,
 } from "./errors.js";
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -82,38 +82,38 @@ export interface WatchChangeItem {
  */
 export interface ZTMApiClient {
   // ═══════════════════════════════════════════════════════════════════════════
-  // Mesh Operations - Return Result types with ZtmApiError
+  // Mesh Operations - Return Result types with ZTMApiError
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Get current mesh information */
-  getMeshInfo(): Promise<Result<ZTMMeshInfo, ZtmApiError>>;
+  getMeshInfo(): Promise<Result<ZTMMeshInfo, ZTMApiError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // User/Peer Discovery - Return Result types with ZtmDiscoveryError
+  // User/Peer Discovery - Return Result types with ZTMDiscoveryError
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Discover available users in the mesh. Returns Result with discovered users or discovery error. */
-  discoverUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
+  discoverUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>>;
 
   /** Discover available peers. Returns Result with discovered peers or discovery error. */
-  discoverPeers(): Promise<Result<ZTMPeer[], ZtmDiscoveryError>>;
+  discoverPeers(): Promise<Result<ZTMPeer[], ZTMDiscoveryError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Chat Operations - Return Result types with ZtmSendError / ZtmReadError
+  // Chat Operations - Return Result types with ZTMSendError / ZTMReadError
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Get all chats. Returns Result with chats list or error. */
-  getChats(): Promise<Result<ZTMChat[], ZtmReadError>>;
+  getChats(): Promise<Result<ZTMChat[], ZTMReadError>>;
 
   /** Get messages from a specific peer. Returns Result with messages or read error. */
   getPeerMessages(
     peer: string,
     since?: number,
     before?: number
-  ): Promise<Result<ZTMMessage[], ZtmReadError>>;
+  ): Promise<Result<ZTMMessage[], ZTMReadError>>;
 
-  /** Send a message to a peer. Returns Result with success=true or ZtmSendError on failure. */
-  sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>>;
+  /** Send a message to a peer. Returns Result with success=true or ZTMSendError on failure. */
+  sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZTMSendError>>;
 
   // ═════════════════════════════════════════════════════════════════════════════
   // Group Operations
@@ -123,14 +123,14 @@ export interface ZTMApiClient {
   getGroupMessages(
     creator: string,
     group: string
-  ): Promise<Result<ZTMMessage[], ZtmReadError>>;
+  ): Promise<Result<ZTMMessage[], ZTMReadError>>;
 
   /** Send a message to a group. Returns Result with success or error. */
   sendGroupMessage(
     creator: string,
     group: string,
     message: ZTMMessage
-  ): Promise<Result<boolean, ZtmSendError>>;
+  ): Promise<Result<boolean, ZTMSendError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // File Operations - Return Result types with appropriate errors
@@ -138,7 +138,7 @@ export interface ZTMApiClient {
 
 
   /** Watch for changes in storage with given prefix. Returns Result with changed items or error. */
-  watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZtmReadError>>;
+  watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>>;
 
   /** Seed file metadata from persisted state (call before first watchChanges) */
   seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
@@ -147,5 +147,5 @@ export interface ZTMApiClient {
   exportFileMetadata(): Record<string, { time: number; size: number }>;
 
   /** Discover active peers by scanning shared storage. Returns Result with users or discovery error. */
-  listUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
+  listUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>>;
 }

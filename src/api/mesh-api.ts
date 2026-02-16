@@ -4,11 +4,11 @@ import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMUserInfo, ZTMPeer, ZTMMeshInfo } from "../types/api.js";
 import { success, failure, isSuccess, type Result } from "../types/common.js";
 import {
-  ZtmDiscoveryError,
-  ZtmApiError,
-  ZtmTimeoutError,
+  ZTMDiscoveryError,
+  ZTMApiError,
+  ZTMTimeoutError,
 } from "../types/errors.js";
-import type { ZtmLogger, RequestHandler } from "./request.js";
+import type { ZTMLogger, RequestHandler } from "./request.js";
 
 /**
  * Create mesh operations API
@@ -16,22 +16,22 @@ import type { ZtmLogger, RequestHandler } from "./request.js";
 export function createMeshApi(
   config: ZTMChatConfig,
   request: RequestHandler,
-  logger: ZtmLogger
+  logger: ZTMLogger
 ) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
-  async function getMeshInfo(): Promise<Result<ZTMMeshInfo, ZtmApiError | ZtmTimeoutError>> {
+  async function getMeshInfo(): Promise<Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>> {
     return request<ZTMMeshInfo>("GET", `/api/meshes/${config.meshName}`);
   }
 
-  async function listUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
+  async function listUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>> {
     logger.debug?.(`[ZTM API] Discovering users via Chat App API`);
 
     const result = await request<string[]>("GET", `${CHAT_API_BASE}/users`);
 
     if (!result.ok) {
       logger.error?.(`[ZTM API] Failed to list users: ${result.error?.message ?? "Unknown error"}`);
-      return failure(new ZtmDiscoveryError({
+      return failure(new ZTMDiscoveryError({
         operation: "discoverUsers",
         source: "ChatAppAPI",
         cause: result.error ?? new Error("Unknown error"),
@@ -43,17 +43,17 @@ export function createMeshApi(
     return success(users);
   }
 
-  async function discoverUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
+  async function discoverUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>> {
     return listUsers();
   }
 
-  async function discoverPeers(): Promise<Result<ZTMPeer[], ZtmDiscoveryError>> {
+  async function discoverPeers(): Promise<Result<ZTMPeer[], ZTMDiscoveryError>> {
     const usersResult = await listUsers();
     const usersError = usersResult.error;
     if (isSuccess(usersResult) && usersResult.value) {
       return success(usersResult.value.map(u => ({ username: u.username })));
     }
-    const error = usersError ?? new ZtmDiscoveryError({ operation: "discoverPeers", source: "ChatAppAPI", cause: new Error("Failed to discover peers") });
+    const error = usersError ?? new ZTMDiscoveryError({ operation: "discoverPeers", source: "ChatAppAPI", cause: new Error("Failed to discover peers") });
     return failure(error);
   }
 

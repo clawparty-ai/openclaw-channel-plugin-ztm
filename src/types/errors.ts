@@ -14,7 +14,7 @@ import { success, failure, type Result } from "./common.js";
  * Base error class for all ZTM Chat operations.
  * Provides structured error information including context and cause.
  */
-export abstract class ZtmError extends Error {
+export abstract class ZTMError extends Error {
   constructor(
     public readonly context: Record<string, unknown> = {},
     public readonly cause?: Error
@@ -49,7 +49,7 @@ export abstract class ZtmError extends Error {
  * Error thrown when sending a peer message fails.
  * Includes message metadata for debugging and retry decisions.
  */
-export class ZtmSendError extends ZtmError {
+export class ZTMSendError extends ZTMError {
   constructor({
     peer,
     messageTime,
@@ -81,10 +81,10 @@ export class ZtmSendError extends ZtmError {
 
 /**
  * Error thrown when message file write operation fails.
- * Separated from ZtmSendError to clearly distinguish storage operation failures
+ * Separated from ZTMSendError to clearly distinguish storage operation failures
  * from message sending failures.
  */
-export class ZtmWriteError extends ZtmError {
+export class ZTMWriteError extends ZTMError {
   constructor({
     peer,
     messageTime,
@@ -117,7 +117,7 @@ export class ZtmWriteError extends ZtmError {
 /**
  * Error thrown when reading messages from a peer fails.
  */
-export class ZtmReadError extends ZtmError {
+export class ZTMReadError extends ZTMError {
   constructor({
     peer,
     operation = "read",
@@ -151,7 +151,7 @@ export class ZtmReadError extends ZtmError {
 /**
  * Error thrown when parsing message file content fails.
  */
-export class ZtmParseError extends ZtmError {
+export class ZTMParseError extends ZTMError {
   constructor({
     peer,
     filePath,
@@ -172,7 +172,7 @@ export class ZtmParseError extends ZtmError {
       },
       cause
     );
-    this.name = "ZtmParseError";
+    this.name = "ZTMParseError";
     this.message = `Failed to parse message file from ${peer}: ${filePath}` +
       (parseDetails ? ` (${parseDetails})` : "") +
       (cause ? `: ${cause.message}` : "");
@@ -186,7 +186,7 @@ export class ZtmParseError extends ZtmError {
 /**
  * Error thrown when user/peer discovery operation fails.
  */
-export class ZtmDiscoveryError extends ZtmError {
+export class ZTMDiscoveryError extends ZTMError {
   constructor({
     operation = "discoverUsers",
     source,
@@ -220,7 +220,7 @@ export class ZtmDiscoveryError extends ZtmError {
 /**
  * Error thrown when ZTM Agent API communication fails.
  */
-export class ZtmApiError extends ZtmError {
+export class ZTMApiError extends ZTMError {
   constructor({
     method,
     path,
@@ -253,7 +253,7 @@ export class ZtmApiError extends ZtmError {
       },
       cause
     );
-    this.name = "ZtmApiError";
+    this.name = "ZTMApiError";
     this.message = `ZTM API error: ${method} ${path}` +
       (statusCode ? ` - ${statusCode} ${statusText}` : "") +
       (cause ? `: ${cause.message}` : "");
@@ -263,7 +263,7 @@ export class ZtmApiError extends ZtmError {
 /**
  * Error thrown when API request times out.
  */
-export class ZtmTimeoutError extends ZtmError {
+export class ZTMTimeoutError extends ZTMError {
   constructor({
     method,
     path,
@@ -276,7 +276,7 @@ export class ZtmTimeoutError extends ZtmError {
     cause?: Error;
   }) {
     super({ method, path, timeoutMs, attemptedAt: new Date().toISOString() }, cause);
-    this.name = "ZtmTimeoutError";
+    this.name = "ZTMTimeoutError";
     this.message = `ZTM API timeout: ${method} ${path} exceeded ${timeoutMs}ms` +
       (cause ? `: ${cause.message}` : "");
   }
@@ -289,7 +289,7 @@ export class ZtmTimeoutError extends ZtmError {
 /**
  * Error thrown when runtime is not properly initialized.
  */
-export class ZtmRuntimeError extends ZtmError {
+export class ZTMRuntimeError extends ZTMError {
   constructor({
     operation,
     reason,
@@ -298,7 +298,7 @@ export class ZtmRuntimeError extends ZtmError {
     reason: string;
   }) {
     super({ operation, reason });
-    this.name = "ZtmRuntimeError";
+    this.name = "ZTMRuntimeError";
     this.message = `Runtime not initialized for ${operation}: ${reason}`;
   }
 }
@@ -306,7 +306,7 @@ export class ZtmRuntimeError extends ZtmError {
 /**
  * Error thrown when configuration is invalid.
  */
-export class ZtmConfigError extends ZtmError {
+export class ZTMConfigError extends ZTMError {
   constructor({
     field,
     value,
@@ -317,7 +317,7 @@ export class ZtmConfigError extends ZtmError {
     reason: string;
   }) {
     super({ field, value, reason });
-    this.name = "ZtmConfigError";
+    this.name = "ZTMConfigError";
     this.message = `Invalid ZTM configuration for ${field}: ${reason}` +
       (value !== undefined ? ` (got: ${String(value)})` : "");
   }
