@@ -202,6 +202,13 @@ function startWatchLoop(
           watchLoop();
         }
       }, Math.max(0, WATCH_INTERVAL_MS - elapsed));
+    } catch (error) {
+      // Unexpected error in watch loop - log and restart to prevent single point of failure
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`[${ctx.state.accountId}] Unexpected error in watch loop: ${errorMsg}`);
+      pendingIteration = false;
+      // Restart the loop after a brief delay to prevent tight error loop
+      setTimeout(watchLoop, WATCH_INTERVAL_MS);
     } finally {
       // Ensure flag is cleared even on early returns
       if (pendingIteration) {
