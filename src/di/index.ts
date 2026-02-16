@@ -67,10 +67,10 @@ export function createConfigService(): () => IConfig {
 /**
  * API client factory
  * Returns a factory function for DI container registration
- * Methods directly return promises for compatibility
+ * Returns a client implementing all segregated interfaces
  */
 export function createApiClientService(): () => IApiClient {
-  return () => {
+  return (): IApiClient => {
     // Create with empty config - actual config should be provided via factory
     const client = createZTMApiClient({
       agentUrl: "",
@@ -83,13 +83,8 @@ export function createApiClientService(): () => IApiClient {
       autoReply: false,
       messagePath: "/",
     });
-    return {
-      getChats: client.getChats(),
-      sendPeerMessage: client.sendPeerMessage,
-      sendGroupMessage: client.sendGroupMessage,
-      discoverUsers: client.discoverUsers(),
-      getMeshInfo: client.getMeshInfo(),
-    };
+    // Return client implementing all IApiClient interfaces
+    return client as unknown as IApiClient;
   };
 }
 

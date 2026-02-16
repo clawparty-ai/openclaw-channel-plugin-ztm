@@ -78,16 +78,49 @@ export interface IConfig {
 }
 
 /**
- * API client service interface
- * Methods return AsyncResult (Promise<Result<...>>) for proper error handling
+ * API client interface - Read operations
+ * Focuses on retrieving chats, messages, and monitoring changes
  */
-export interface IApiClient {
-  getChats: AsyncResult<unknown, Error>;
+export interface IChatReader {
+  getChats(): AsyncResult<unknown, Error>;
+  getPeerMessages(peer: string): AsyncResult<unknown, Error>;
+  getGroupMessages(creator: string, group: string): AsyncResult<unknown, Error>;
+  watchChanges(prefix: string): AsyncResult<unknown, Error>;
+}
+
+/**
+ * API client interface - Write operations
+ * Focuses on sending messages to peers and groups
+ */
+export interface IChatSender {
   sendPeerMessage(peer: string, message: ZTMMessage): AsyncResult<unknown, Error>;
   sendGroupMessage(creator: string, group: string, message: ZTMMessage): AsyncResult<unknown, Error>;
-  discoverUsers: AsyncResult<unknown, Error>;
-  getMeshInfo: AsyncResult<unknown, Error>;
 }
+
+/**
+ * API client interface - Discovery operations
+ * Focuses on discovering users and mesh status
+ */
+export interface IDiscovery {
+  discoverUsers(): AsyncResult<unknown, Error>;
+  getMeshInfo(): AsyncResult<unknown, Error>;
+}
+
+/**
+ * API client interface - Metadata operations
+ * Focuses on file metadata for state persistence
+ */
+export interface IMetadata {
+  seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
+  exportFileMetadata(): Record<string, { time: number; size: number }>;
+}
+
+/**
+ * API client service interface
+ * Combines all API operations - use specific interfaces when possible
+ * for better segregation of concerns
+ */
+export interface IApiClient extends IChatReader, IChatSender, IDiscovery, IMetadata {}
 
 /**
  * API client factory interface
