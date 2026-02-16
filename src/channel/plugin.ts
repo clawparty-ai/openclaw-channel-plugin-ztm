@@ -206,8 +206,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       }
 
       // Try to probe the connection
+      const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
       try {
-        const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
         const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
         const probeConfig = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }).config;
         const apiClient = apiClientFactory(probeConfig, { logger });
@@ -227,8 +227,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
             `ZTM Agent has ${meshInfo.errors.length} error(s): ${meshInfo.errors[0]?.message ?? "Unknown error"}`,
           );
         }
-      } catch {
-        // Silently ignore probe errors
+      } catch (err) {
+        logger.warn?.(`Probe failed for ${accountId}: ${err instanceof Error ? err.message : String(err)}`);
       }
 
       return warnings;
