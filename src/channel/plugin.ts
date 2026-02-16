@@ -91,6 +91,133 @@ import {
 } from "./state.js";
 
 // ============================================================================
+// Extracted Complex Functions - Reduce Cyclomatic Complexity
+// ============================================================================
+
+// Resolves DM policy configuration
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const resolveDmPolicyImpl = ({ cfg, accountId, account }: any) => {
+  const resolvedAccountId = accountId ?? account.accountId ?? "default";
+  const config = account.config as ZTMChatConfig;
+  const channelsConfig = (cfg || {}) as {
+    channels?: { "ztm-chat"?: { accounts?: Record<string, unknown> } };
+  };
+  const useAccountPath = Boolean(
+    channelsConfig.channels?.["ztm-chat"]?.accounts?.[resolvedAccountId],
+  );
+  const basePath = useAccountPath
+    ? `channels.ztm-chat.accounts.${resolvedAccountId}.`
+    : "channels.ztm-chat.";
+
+  return {
+    policy: config?.dmPolicy ?? "pairing",
+    allowFrom: config?.allowFrom ?? [],
+    policyPath: `${basePath}dmPolicy`,
+    allowFromPath: `${basePath}allowFrom`,
+    approveHint: "",
+    normalizeEntry: (raw: string) => raw.trim().toLowerCase(),
+  };
+}
+
+// Collects warnings for the account configuration
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const collectWarningsImpl = async ({ cfg, accountId }: any): Promise<string[]> => {
+  const warnings: string[] = [];
+  const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
+  const config = account.config as ZTMChatConfig;
+
+  const allowFrom = config?.allowFrom ?? [];
+  if (!allowFrom.length) {
+    warnings.push(
+      "No allowFrom configured - accepting messages from any ZTM user",
+    );
+  }
+
+  // Try to probe the connection
+  const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+  try {
+    const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
+    const probeConfig = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }).config;
+    const apiClient = apiClientFactory(probeConfig, { logger });
+    const meshResult = await apiClient.getMeshInfo();
+
+    if (!meshResult.ok) {
+      return warnings;
+    }
+
+    const meshInfo = meshResult.value;
+    if (!meshInfo?.connected) {
+      warnings.push("ZTM Agent is not connected to the mesh network");
+    }
+    if (meshInfo?.errors && meshInfo.errors.length > 0) {
+      warnings.push(
+        `ZTM Agent has ${meshInfo.errors.length} error(s): ${meshInfo.errors[0]?.message ?? "Unknown error"}`,
+      );
+    }
+  } catch (err) {
+    logger.warn?.(`Probe failed for ${accountId}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  return warnings;
+}
+
+// Builds channel summary from snapshot
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const buildChannelSummaryImpl = ({ snapshot }: any) => {
+  const extendedSnapshot = snapshot;
+  return {
+    configured: snapshot.configured ?? false,
+    running: snapshot.running ?? false,
+    connected: extendedSnapshot.meshConnected ?? false,
+    lastStartAt: snapshot.lastStartAt ?? null,
+    lastStopAt: snapshot.lastStopAt ?? null,
+    lastError: snapshot.lastError ?? null,
+    lastInboundAt: snapshot.lastInboundAt ?? null,
+    lastOutboundAt: snapshot.lastOutboundAt ?? null,
+    peerCount: extendedSnapshot.peerCount ?? 0,
+  };
+}
+
+// Gets self info from directory
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const directorySelfImpl = async ({ cfg, accountId }: any) => {
+  const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
+  const config = account.config as ZTMChatConfig;
+  return {
+    kind: "user" as const,
+    id: account.username ?? "",
+    name: account.username ?? "",
+    raw: {
+      username: account.username ?? "",
+      meshName: config?.meshName,
+    },
+  };
+}
+
+// Lists peers from directory
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const directoryListPeersImpl = async ({ cfg, accountId }: any) => {
+  const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
+  const config = account.config as ZTMChatConfig;
+  const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+  const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
+  const apiClient = apiClientFactory(config, { logger });
+
+  const usersResult = await apiClient.discoverUsers();
+  if (!usersResult.ok) {
+    logger.warn?.(`Failed to list peers: ${usersResult.error?.message ?? "Unknown error"}`);
+    return [];
+  }
+
+  return (usersResult.value ?? []).map((user) => ({
+    kind: "user" as const,
+    id: user.username,
+    name: user.username,
+    raw: user,
+  }));
+}
+
+// ============================================================================
 // Channel Plugin Definition - Modular Structure
 // ============================================================================
 // The plugin is organized into logical sections for better maintainability.
@@ -195,67 +322,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Security Section - DM policy and warnings
   // ---------------------------------------------------------------------------
   security: {
-    resolveDmPolicy: ({ cfg, accountId, account }) => {
-      const resolvedAccountId = accountId ?? account.accountId ?? "default";
-      const config = account.config as ZTMChatConfig;
-      const channelsConfig = (cfg || {}) as {
-        channels?: { "ztm-chat"?: { accounts?: Record<string, unknown> } };
-      };
-      const useAccountPath = Boolean(
-        channelsConfig.channels?.["ztm-chat"]?.accounts?.[resolvedAccountId],
-      );
-      const basePath = useAccountPath
-        ? `channels.ztm-chat.accounts.${resolvedAccountId}.`
-        : "channels.ztm-chat.";
-
-      return {
-        policy: config?.dmPolicy ?? "pairing",
-        allowFrom: config?.allowFrom ?? [],
-        policyPath: `${basePath}dmPolicy`,
-        allowFromPath: `${basePath}allowFrom`,
-        approveHint: "",
-        normalizeEntry: (raw) => raw.trim().toLowerCase(),
-      };
-    },
-    collectWarnings: async ({ cfg, accountId }) => {
-      const warnings: string[] = [];
-      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-      const config = account.config as ZTMChatConfig;
-
-      const allowFrom = config?.allowFrom ?? [];
-      if (!allowFrom.length) {
-        warnings.push(
-          "No allowFrom configured - accepting messages from any ZTM user",
-        );
-      }
-
-      // Try to probe the connection
-      const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
-      try {
-        const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
-        const probeConfig = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }).config;
-        const apiClient = apiClientFactory(probeConfig, { logger });
-        const meshResult = await apiClient.getMeshInfo();
-
-        if (!meshResult.ok) {
-          return warnings;
-        }
-
-        const meshInfo = meshResult.value;
-        if (!meshInfo?.connected) {
-          warnings.push("ZTM Agent is not connected to the mesh network");
-        }
-        if (meshInfo?.errors && meshInfo.errors.length > 0) {
-          warnings.push(
-            `ZTM Agent has ${meshInfo.errors.length} error(s): ${meshInfo.errors[0]?.message ?? "Unknown error"}`,
-          );
-        }
-      } catch (err) {
-        logger.warn?.(`Probe failed for ${accountId}: ${err instanceof Error ? err.message : String(err)}`);
-      }
-
-      return warnings;
-    },
+    resolveDmPolicy: resolveDmPolicyImpl,
+    collectWarnings: collectWarningsImpl,
   },
 
   // ---------------------------------------------------------------------------
@@ -308,20 +376,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     collectStatusIssues: (accounts: ChannelAccountSnapshot[]): ChannelStatusIssue[] => {
       return collectStatusIssuesImpl(accounts);
     },
-    buildChannelSummary: ({ snapshot }) => {
-      const extendedSnapshot = snapshot as ChannelAccountSnapshot;
-      return {
-        configured: snapshot.configured ?? false,
-        running: snapshot.running ?? false,
-        connected: extendedSnapshot.meshConnected ?? false,
-        lastStartAt: snapshot.lastStartAt ?? null,
-        lastStopAt: snapshot.lastStopAt ?? null,
-        lastError: snapshot.lastError ?? null,
-        lastInboundAt: snapshot.lastInboundAt ?? null,
-        lastOutboundAt: snapshot.lastOutboundAt ?? null,
-        peerCount: extendedSnapshot.peerCount ?? 0,
-      };
-    },
+    buildChannelSummary: buildChannelSummaryImpl,
     probeAccount: async ({ account, timeoutMs = 10000 }) => {
       return probeAccountGateway({ account, timeoutMs });
     },
@@ -334,39 +389,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Directory Section - User and peer discovery
   // ---------------------------------------------------------------------------
   directory: {
-    self: async ({ cfg, accountId }) => {
-      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-      const config = account.config as ZTMChatConfig;
-      return {
-        kind: "user" as const,
-        id: account.username ?? "",
-        name: account.username ?? "",
-        raw: {
-          username: account.username ?? "",
-          meshName: config?.meshName,
-        },
-      };
-    },
-    listPeers: async ({ cfg, accountId }) => {
-      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
-      const config = account.config as ZTMChatConfig;
-      const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
-      const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
-      const apiClient = apiClientFactory(config, { logger });
-
-      const usersResult = await apiClient.discoverUsers();
-      if (!usersResult.ok) {
-        logger.warn?.(`Failed to list peers: ${usersResult.error?.message ?? "Unknown error"}`);
-        return [];
-      }
-
-      return (usersResult.value ?? []).map((user) => ({
-        kind: "user" as const,
-        id: user.username,
-        name: user.username,
-        raw: user,
-      }));
-    },
+    self: directorySelfImpl,
+    listPeers: directoryListPeersImpl,
     listGroups: async () => {
       // Group chat support is future feature
       return [];
