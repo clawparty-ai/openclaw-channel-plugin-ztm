@@ -300,12 +300,18 @@ async function processChangedPaths(
 
   const tasks: Promise<void>[] = [];
 
+  // Timeout for individual message processing to prevent indefinite blocking
+  const MESSAGE_PROCESS_TIMEOUT_MS = 30000;
+
   for (const item of peerItems) {
     if (item.peer) {
       tasks.push(
-        messageSemaphore.execute(() =>
-          processChangedPeer(state, rt, item.peer!, loopStoreAllowFrom)
-        )
+        messageSemaphore.execute(
+          () => processChangedPeer(state, rt, item.peer!, loopStoreAllowFrom),
+          MESSAGE_PROCESS_TIMEOUT_MS
+        ).catch((err) => {
+          logger.error(`[${state.accountId}] Timeout processing peer message: ${err}`);
+        })
       );
     }
   }
@@ -313,9 +319,12 @@ async function processChangedPaths(
   for (const item of groupItems) {
     if (item.creator && item.group) {
       tasks.push(
-        messageSemaphore.execute(() =>
-          processChangedGroup(state, rt, item.creator!, item.group!, item.name, loopStoreAllowFrom)
-        )
+        messageSemaphore.execute(
+          () => processChangedGroup(state, rt, item.creator!, item.group!, item.name, loopStoreAllowFrom),
+          MESSAGE_PROCESS_TIMEOUT_MS
+        ).catch((err) => {
+          logger.error(`[${state.accountId}] Timeout processing group message: ${err}`);
+        })
       );
     }
   }
