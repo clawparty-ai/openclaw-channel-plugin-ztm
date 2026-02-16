@@ -92,17 +92,19 @@ class RuntimeManager implements RuntimeProvider {
 // ============================================================================
 
 /**
- * Default runtime provider instance
- * Can be replaced with a mock for testing
+ * Get the runtime provider instance lazily
+ * Only creates the singleton when first accessed, not at module load time
  */
-export const runtimeProvider: RuntimeProvider = RuntimeManager.getInstance();
+function getRuntimeProvider(): RuntimeProvider {
+  return RuntimeManager.getInstance();
+}
 
 /**
  * Set the ZTM runtime
  * @param next The runtime to use
  */
 export function setZTMRuntime(next: PluginRuntime): void {
-  runtimeProvider.setRuntime(next);
+  getRuntimeProvider().setRuntime(next);
 }
 
 /**
@@ -111,7 +113,7 @@ export function setZTMRuntime(next: PluginRuntime): void {
  * @throws Error if runtime not initialized
  */
 export function getZTMRuntime(): PluginRuntime {
-  return runtimeProvider.getRuntime();
+  return getRuntimeProvider().getRuntime();
 }
 
 /**
@@ -119,7 +121,7 @@ export function getZTMRuntime(): PluginRuntime {
  * @returns true if runtime has been set
  */
 export function isRuntimeInitialized(): boolean {
-  return runtimeProvider.isInitialized();
+  return getRuntimeProvider().isInitialized();
 }
 
 /**
@@ -127,7 +129,7 @@ export function isRuntimeInitialized(): boolean {
  * @returns true if runtime has been set
  */
 export function hasZTMRuntime(): boolean {
-  return runtimeProvider.isInitialized();
+  return getRuntimeProvider().isInitialized();
 }
 
 
