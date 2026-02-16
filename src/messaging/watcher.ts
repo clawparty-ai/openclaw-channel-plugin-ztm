@@ -5,6 +5,7 @@ import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
 import { startPollingWatcher } from "./polling.js";
+import { processAndNotifyChat } from "./chat-processor.js";
 import { processIncomingMessage } from "./processor.js";
 import { notifyMessageCallbacks } from "./dispatcher.js";
 import { Semaphore } from "../utils/concurrency.js";
@@ -69,72 +70,7 @@ async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
   }
 }
 
-/**
- * Process a single chat message and notify callbacks if valid
- */
-async function processChatMessage(
-  chat: ZTMChat,
-  state: AccountRuntimeState,
-  storeAllowFrom: string[]
-): Promise<boolean> {
-  const isGroup = !!(chat.creator && chat.group);
-  
-  if (isGroup) {
-    if (!chat.latest) return false;
-    
-    const sender = chat.latest.sender || "";
-    if (sender === state.config.username) return false;
-    
-    const groupInfo = { creator: chat.creator!, group: chat.group! };
-    const normalized = processIncomingMessage(
-      {
-        time: chat.latest.time,
-        message: chat.latest.message,
-        sender: sender,
-      },
-      state.config,
-      storeAllowFrom,
-      state.accountId,
-      groupInfo
-    );
-    if (normalized) {
-      notifyMessageCallbacks(state, {
-        ...normalized,
-        isGroup: true,
-        groupName: chat.name,
-        groupId: chat.group,
-        groupCreator: chat.creator,
-      });
-      return true;
-    }
-    return false;
-  }
-  
-  // Peer chat
-  if (!chat.peer || chat.peer === state.config.username) return false;
-  if (!chat.latest) return false;
-
-  const sender = chat.latest.sender || chat.peer;
-  if (sender === state.config.username) {
-    return false;
-  }
-
-  const normalized = processIncomingMessage(
-    {
-      time: chat.latest.time,
-      message: chat.latest.message,
-      sender: sender,
-    },
-    state.config,
-    storeAllowFrom,
-    state.accountId
-  );
-  if (normalized) {
-    notifyMessageCallbacks(state, normalized);
-    return true;
-  }
-  return false;
-}
+// processAndNotifyChat is now imported from chat-processor.ts
 
 /**
  * Perform initial sync of all existing messages
@@ -156,7 +92,7 @@ async function performInitialSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (await processChatMessage(chat, state, storeAllowFrom)) {
+    if (await processAndNotifyChat(chat, state, storeAllowFrom)) {
       processedCount++;
     }
   }
@@ -481,7 +417,7 @@ async function performFullSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (await processChatMessage(chat, state, storeAllowFrom)) {
+    if (await processAndNotifyChat(chat, state, storeAllowFrom)) {
       processedCount++;
     }
   }
