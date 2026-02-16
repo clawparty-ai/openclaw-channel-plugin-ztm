@@ -14,6 +14,7 @@ import { isSuccess } from "../types/common.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
 import type { ZTMChat, WatchChangeItem } from "../types/api.js";
+import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS } from "../constants.js";
 
 /**
  * Start message watcher using ZTM's Watch mechanism
@@ -138,7 +139,6 @@ function startWatchLoop(
   messagePath: string
 ): void {
   const messageSemaphore = new Semaphore(5);
-  const FULL_SYNC_DELAY = 30000;
   let lastMessageTime = Date.now();
   let fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
   let messagesReceivedInCycle = false;
@@ -157,10 +157,8 @@ function startWatchLoop(
       if (state.apiClient) {
         getAccountMessageStateStore(state.accountId).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
       }
-    }, FULL_SYNC_DELAY);
+    }, FULL_SYNC_DELAY_MS);
   };
-
-  const WATCH_INTERVAL = 1000;
 
   const watchLoop = async (): Promise<void> => {
     // Skip this iteration if previous one is still running
@@ -177,7 +175,7 @@ function startWatchLoop(
       if (isWatchError(result)) {
         handleWatchError(ctx.state, result.errorMessage, scheduleFullSync);
         const elapsed = Date.now() - loopStart;
-        setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL - elapsed));
+        setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL_MS - elapsed));
         return;
       }
 
@@ -190,7 +188,7 @@ function startWatchLoop(
 
       state.watchErrorCount = 0;
       const elapsed = Date.now() - loopStart;
-      setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL - elapsed));
+      setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL_MS - elapsed));
     } finally {
       isRunning = false;
     }

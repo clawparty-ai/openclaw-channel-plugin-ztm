@@ -23,6 +23,7 @@ import {
   type IRuntime,
 } from "../di/index.js";
 import type { ResolvedZTMChatAccount } from "./config.js";
+import { PROBE_TIMEOUT_MS } from "../constants.js";
 
 // Type guard to safely extract ZTMChatConfig from unknown
 function isZTMChatConfig(config: unknown): config is ZTMChatConfig {
@@ -406,7 +407,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       return collectStatusIssuesImpl(accounts);
     },
     buildChannelSummary: buildChannelSummaryImpl,
-    probeAccount: async ({ account, timeoutMs = 10000 }) => {
+    probeAccount: async ({ account, timeoutMs = PROBE_TIMEOUT_MS }) => {
       return probeAccountGateway({ account, timeoutMs });
     },
     buildAccountSnapshot: ({ account }) => {

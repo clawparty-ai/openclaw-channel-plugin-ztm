@@ -9,6 +9,7 @@ import {
 } from "../types/errors.js";
 import { defaultLogger, type Logger } from "../utils/logger.js";
 import { fetchWithRetry, type FetchWithRetry, type RetryOptions } from "../utils/retry.js";
+import { API_TIMEOUT_MS } from "../constants.js";
 
 /**
  * Logger interface for dependency injection
@@ -44,7 +45,7 @@ export const defaultDeps: ZtmApiClientDeps = {
 export type ApiResult<T> = Promise<Result<T, ZtmApiError | ZtmTimeoutError>>;
 
 // Default timeout for API requests (in milliseconds)
-export const DEFAULT_TIMEOUT = 30000;
+export const DEFAULT_TIMEOUT = API_TIMEOUT_MS;
 
 /**
  * Request handler function type

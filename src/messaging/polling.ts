@@ -7,6 +7,7 @@ import { handlePairingRequest } from "../connectivity/permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import { handleResult } from "../utils/result.js";
+import { POLLING_INTERVAL_DEFAULT_MS, POLLING_INTERVAL_MIN_MS } from "../constants.js";
 
 // Process a group chat message (synchronous - no async operations needed)
 function processGroupChat(
@@ -100,7 +101,9 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
   if (!apiClient) return;
 
   const rawInterval = (config as Record<string, unknown>).pollingInterval;
-  const pollingInterval = typeof rawInterval === "number" ? Math.max(rawInterval, 1000) : 2000;
+  const pollingInterval = typeof rawInterval === "number"
+    ? Math.max(rawInterval, POLLING_INTERVAL_MIN_MS)
+    : POLLING_INTERVAL_DEFAULT_MS;
 
   logger.info(`[${state.accountId}] Starting polling watcher (${pollingInterval}ms)`);
 

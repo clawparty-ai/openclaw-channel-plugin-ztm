@@ -28,6 +28,7 @@ import { isSuccess } from "../types/common.js";
 import { logger } from "../utils/logger.js";
 import { resolvePermitPath } from "../utils/paths.js";
 import { extractErrorMessage } from "../utils/error.js";
+import { PROBE_TIMEOUT_MS } from "../constants.js";
 import {
   getAllAccountStates,
   initializeRuntime,
@@ -156,7 +157,7 @@ export function collectStatusIssues(
  */
 export async function probeAccountGateway({
   account,
-  timeoutMs = 10000,
+  timeoutMs = PROBE_TIMEOUT_MS,
 }: {
   account: { config: ZTMChatConfig };
   timeoutMs?: number;

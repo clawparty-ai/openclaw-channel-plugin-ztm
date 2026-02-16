@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { defaultLogger, type Logger } from "../utils/logger.js";
 import { resolveStatePath, resolveZTMStateDir } from "../utils/paths.js";
+import { MAX_PEERS_PER_ACCOUNT, MAX_FILES_PER_ACCOUNT } from "../constants.js";
 
 /**
  * FileSystem interface for dependency injection (enables testing without real I/O)
@@ -128,9 +129,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
   private readonly stateDir: string;
 
   // Maximum number of peers to track per account (prevents unbounded state growth)
-  private readonly MAX_PEERS_PER_ACCOUNT = 1000;
-  // Maximum number of file paths to track per account
-  private readonly MAX_FILES_PER_ACCOUNT = 1000;
+  // Uses constant from constants.ts
 
   constructor(
     statePath?: string,
@@ -307,22 +306,22 @@ export class MessageStateStoreImpl implements MessageStateStore {
   /** Clean up old entries if limits are exceeded (called after watermark updates) */
   private cleanupIfNeeded(accountId: string): void {
     const peers = this.data.accounts[accountId];
-    if (peers && Object.keys(peers).length > this.MAX_PEERS_PER_ACCOUNT) {
+    if (peers && Object.keys(peers).length > MAX_PEERS_PER_ACCOUNT) {
       // Keep the most recently active peers (sorted by timestamp descending)
       const sorted = Object.entries(peers)
         .sort(([, t1], [, t2]) => t2 - t1)
-        .slice(0, this.MAX_PEERS_PER_ACCOUNT);
+        .slice(0, MAX_PEERS_PER_ACCOUNT);
       this.data.accounts[accountId] = Object.fromEntries(sorted);
       this.dirty = true;
     }
 
     // Also cleanup fileMetadata if needed
     const fileMetadata = this.data.fileMetadata[accountId];
-    if (fileMetadata && Object.keys(fileMetadata).length > this.MAX_FILES_PER_ACCOUNT) {
+    if (fileMetadata && Object.keys(fileMetadata).length > MAX_FILES_PER_ACCOUNT) {
       // Keep the most recently seen files (sorted by timestamp descending)
       const sorted = Object.entries(fileMetadata)
         .sort(([, m1], [, m2]) => m2.time - m1.time)
-        .slice(0, this.MAX_FILES_PER_ACCOUNT);
+        .slice(0, MAX_FILES_PER_ACCOUNT);
       this.data.fileMetadata[accountId] = Object.fromEntries(sorted);
       this.dirty = true;
     }

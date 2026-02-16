@@ -2,6 +2,11 @@
 // Provides retry logic with exponential backoff for network operations
 
 import { logger } from "./logger.js";
+import {
+  RETRY_INITIAL_DELAY_MS,
+  RETRY_MAX_DELAY_MS,
+  RETRY_TIMEOUT_MS,
+} from "../constants.js";
 
 export interface RetryOptions {
   maxRetries?: number;
@@ -26,10 +31,10 @@ export type FetchWithRetry = typeof fetchWithRetry;
 
 const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxRetries: 3,
-  initialDelay: 1000,
-  maxDelay: 10000,
+  initialDelay: RETRY_INITIAL_DELAY_MS,
+  maxDelay: RETRY_MAX_DELAY_MS,
   backoffMultiplier: 2,
-  timeout: 30000,
+  timeout: RETRY_TIMEOUT_MS,
 };
 
 /**

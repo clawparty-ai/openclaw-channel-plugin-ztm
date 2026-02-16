@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { defaultLogger, type Logger } from "../utils/logger.js";
 import { nodeFs, type FileSystem } from "./store.js";
+import { MAX_PAIRINGS_PER_ACCOUNT } from "../constants.js";
 
 export type { FileSystem };
 
@@ -69,7 +70,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
   private readonly stateDir: string;
 
   // Maximum number of pending pairings per account (prevents unbounded growth)
-  private readonly MAX_PAIRINGS_PER_ACCOUNT = 1000;
+  // MAX_PAIRINGS_PER_ACCOUNT imported from constants.ts
 
   constructor(
     statePath?: string,
@@ -246,13 +247,13 @@ export class PairingStateStoreImpl implements PairingStateStore {
     if (!accountData) return;
 
     const entries = Object.entries(accountData);
-    if (entries.length > this.MAX_PAIRINGS_PER_ACCOUNT) {
+    if (entries.length > MAX_PAIRINGS_PER_ACCOUNT) {
       // Keep the most recent pairings (sort by date descending)
       const sorted = entries
         .map(([peer, dateStr]) => ({ peer, date: new Date(dateStr) }))
         .filter(({ date }) => !isNaN(date.getTime()))
         .sort((a, b) => b.date.getTime() - a.date.getTime())
-        .slice(0, this.MAX_PAIRINGS_PER_ACCOUNT);
+        .slice(0, MAX_PAIRINGS_PER_ACCOUNT);
 
       this.data.accounts[accountId] = Object.fromEntries(
         sorted.map(({ peer, date }) => [peer, date.toISOString()])
@@ -260,7 +261,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
 
       this.dirty = true;
       this.logger.warn(
-        `[${accountId}] Pairing limit exceeded, kept ${this.MAX_PAIRINGS_PER_ACCOUNT} most recent`
+        `[${accountId}] Pairing limit exceeded, kept ${MAX_PAIRINGS_PER_ACCOUNT} most recent`
       );
     }
   }
