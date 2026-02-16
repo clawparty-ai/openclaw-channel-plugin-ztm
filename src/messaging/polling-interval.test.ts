@@ -3,6 +3,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { clearAllowFromCache } from "../runtime/state.js";
 import { mockSuccess } from "../test-utils/mocks.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
@@ -13,6 +14,12 @@ const originalSetInterval = global.setInterval;
 
 vi.mock("../utils/logger.js", () => ({
   logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+  defaultLogger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -38,6 +45,11 @@ vi.mock("./inbound.js", () => ({
 
 vi.mock("../connectivity/permit.js", () => ({
   handlePairingRequest: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock("../runtime/state.js", () => ({
+  getAllowFromCache: vi.fn(() => Promise.resolve([])),
+  clearAllowFromCache: vi.fn(),
 }));
 
 describe("Interval Management", () => {
@@ -71,6 +83,8 @@ describe("Interval Management", () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     createdIntervals = [];
+    // Clear allowFrom cache between tests to ensure fresh reads
+    clearAllowFromCache(testAccountId);
 
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
       const ref = originalSetInterval(callback, ms);
@@ -155,6 +169,8 @@ describe("Watch → Polling Transition", () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     createdIntervals = [];
+    // Clear allowFrom cache between tests to ensure fresh reads
+    clearAllowFromCache(testAccountId);
 
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
       const ref = originalSetInterval(callback, ms);

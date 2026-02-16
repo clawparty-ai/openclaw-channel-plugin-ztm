@@ -2,6 +2,7 @@
 
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
+import { getAllowFromCache } from "../runtime/state.js";
 import { processIncomingMessage, notifyMessageCallbacks, checkDmPolicy } from "./inbound.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
@@ -107,11 +108,8 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
   state.watchInterval = setInterval(async () => {
     if (!state.apiClient || !state.config) return;
 
-    // If reading allowFrom store fails, skip this polling cycle to avoid bypassing DM policy
-    const pollStoreAllowFrom = await getZTMRuntime().channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
-      logger.error(`[${state.accountId}] readAllowFromStore failed during polling: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
-    });
+    // Use cached allowFrom to avoid redundant async calls every poll cycle
+    const pollStoreAllowFrom = await getAllowFromCache(state.accountId, getZTMRuntime);
     // Skip processing if we couldn't read the store (security: don't bypass allowFrom checks)
     if (pollStoreAllowFrom === null) {
       return;
