@@ -128,3 +128,13 @@ export function createApiClientFactory(): () => IApiClientFactory {
   return () => (config: ZTMChatConfig, deps?: unknown) =>
     createZTMApiClient(config, deps as any);
 }
+
+/**
+ * AccountStateManager factory
+ * Returns a factory function for DI container registration
+ */
+export function createAccountStateManagerService(): () => unknown {
+  // Import here to avoid circular dependencies
+  const { getAccountStateManager } = require("../runtime/state.js");
+  return () => getAccountStateManager();
+}

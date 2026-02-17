@@ -18,6 +18,7 @@ import {
   createRuntimeService,
   createAllowFromRepositoryService,
   createMessageStateRepositoryService,
+  createAccountStateManagerService,
   type ILogger,
   type IConfig,
   type IApiClient,
@@ -85,6 +86,7 @@ container.register(DEPENDENCIES.API_CLIENT_FACTORY, createApiClientFactory());
 container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 container.register(DEPENDENCIES.ALLOW_FROM_REPO, createAllowFromRepositoryService());
 container.register(DEPENDENCIES.MESSAGE_STATE_REPO, createMessageStateRepositoryService());
+container.register(DEPENDENCIES.ACCOUNT_STATE_MANAGER, createAccountStateManagerService());
 
 // ============================================================================
 // Helper Functions (imported from other modules)
