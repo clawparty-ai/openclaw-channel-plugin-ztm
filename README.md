@@ -151,9 +151,18 @@ flowchart LR
         User3["Member 3"]
     end
 
-    Plugin -->|"Filter by policy"| Group
-    Group -->|"@mention required"| Plugin
-    Plugin -->|"AI Response"| Group
+    subgraph ZTM["ZTM Agent"]
+        Agent[("Chat API")]
+    end
+
+    User1 -.->|"@mention"| Agent
+    User2 -.->|"@mention"| Agent
+    User3 -.->|"@mention"| Agent
+
+    Agent -->|"Poll messages"| Plugin
+    Plugin -->|"Check policy"| Plugin
+    Plugin -->|"AI Response"| Agent
+    Agent -->|"Deliver"| Group
 ```
 
 ### Enabling Group Chat
@@ -727,10 +736,10 @@ npm test:watch    # Watch mode
 ### Test Coverage
 
 ```
-Test Files  46 passed (46)
-Tests  932 passed (932)
+Test Files  59 passed (59)
+Tests  1354 passed (1354)
 
-Coverage: 66.63% Statements | 58.66% Branches | 64.17% Functions | 67.34% Lines
+Coverage: ~70% Statements | ~60% Branches | ~65% Functions | ~70% Lines
 
 Coverage Areas:
 - Group Policy: Creator bypass, requireMention, allowlist, open/disabled modes
@@ -738,12 +747,12 @@ Coverage Areas:
 - Configuration: Schema validation, defaults, helpers
 - Onboarding: Wizard flow, buildConfig
 - Messaging: Processing, dispatch, deduplication, polling, watcher
-- Runtime: State management, pairing store, persistence
+- Runtime: State management, pairing store, persistence, caching
 - API: ZTM client, mesh connectivity, permit
-- Utils: Logger, retry, validation, result handling
+- Utils: Logger, retry, validation, result handling, concurrency
 - Channel: Gateway, plugin, config
 - DI: Container, dependency resolution
-- Types: Result, common utilities
+- Types: Result, common utilities, errors
 ```
 
 ### Debug Logging
@@ -762,57 +771,95 @@ ZTM_CHAT_LOG_LEVEL=debug openclaw restart
 ├── openclaw.plugin.json  # OpenClaw plugin manifest
 ├── tsconfig.json         # TypeScript config
 ├── vitest.config.ts     # Test config
+├── eslint.config.js     # ESLint config
+├── prettier.config.js   # Prettier config
 └── src/
     ├── api/              # ZTM API client
-    │   ├── ztm-api.ts
-    │   ├── chat-api.ts
-    │   ├── message-api.ts
-    │   ├── file-api.ts
-    │   ├── mesh-api.ts
-    │   └── request.ts
+    │   ├── ztm-api.ts           # Main API client factory
+    │   ├── chat-api.ts          # Send/receive messages
+    │   ├── message-api.ts        # Message operations (list, read, delete)
+    │   ├── mesh-api.ts          # Mesh network operations
+    │   ├── file-api.ts          # File transfers
+    │   ├── request.ts           # HTTP request utilities with retry
+    │   ├── test-utils.ts        # Test utilities for API
+    │   └── index.ts             # Barrel exports
     ├── channel/          # OpenClaw channel adapter
-    │   ├── channel.ts
-    │   ├── plugin.ts
-    │   ├── gateway.ts
-    │   └── config.ts
+    │   ├── plugin.ts            # Main plugin definition
+    │   ├── gateway.ts           # Account lifecycle
+    │   ├── config.ts            # Account configuration resolution
+    │   ├── state.ts             # Account state management
+    │   ├── connectivity-manager.ts # Mesh connectivity monitoring
+    │   ├── message-dispatcher.ts # Message dispatch to callbacks
+    │   └── index.ts             # Barrel exports
     ├── config/           # Configuration
-    │   ├── schema.ts
-    │   ├── defaults.ts
-    │   ├── validation.ts
-    │   └── helpers.ts
+    │   ├── schema.ts            # TypeBox schema definitions
+    │   ├── defaults.ts          # Default values
+    │   ├── validation.ts        # Config validation
+    │   ├── helpers.ts          # Config helpers
+    │   └── index.ts            # Barrel exports
     ├── connectivity/    # Network connectivity
-    │   ├── mesh.ts
-    │   └── permit.ts
+    │   ├── mesh.ts             # Mesh operations
+    │   ├── permit.ts           # Permit management
+    │   └── index.ts            # Barrel exports
     ├── core/            # Core business logic
-    │   ├── group-policy.ts
-    │   └── dm-policy.ts
+    │   ├── group-policy.ts      # Group permissions
+    │   ├── dm-policy.ts         # DM policy
+    │   └── index.ts            # Barrel exports
     ├── di/              # Dependency injection
-    │   └── container.ts
+    │   ├── container.ts         # DI container
+    │   ├── index.ts            # Service factories & barrel exports
+    │   └── example-usage.ts   # Usage examples
     ├── messaging/       # Message processing
-    │   ├── inbound.ts
-    │   ├── outbound.ts
-    │   ├── processor.ts
-    │   ├── dispatcher.ts
-    │   ├── watcher.ts
-    │   └── polling.ts
+    │   ├── processor.ts         # Message validation & normalization
+    │   ├── chat-processor.ts    # High-level chat processing
+    │   ├── message-processor-helpers.ts # Shared utilities
+    │   ├── dispatcher.ts        # Policy checking & dispatch
+    │   ├── outbound.ts         # Send messages
+    │   ├── watcher.ts          # Watch mechanism
+    │   ├── polling.ts          # Polling fallback
+    │   ├── index.ts            # Barrel exports
+    │   └── *.test.ts          # Test files
     ├── onboarding/      # Setup wizard
-    │   └── onboarding.ts
+    │   ├── onboarding.ts       # CLI wizard implementation
+    │   └── index.ts           # Barrel exports
     ├── runtime/         # Runtime management
-    │   ├── runtime.ts
-    │   ├── state.ts
-    │   ├── store.ts
-    │   └── pairing-store.ts
+    │   ├── runtime.ts          # Runtime provider interface
+    │   ├── state.ts           # Account runtime state
+    │   ├── store.ts           # Message state persistence
+    │   ├── pairing-store.ts   # Pairing request persistence
+    │   ├── cache.ts           # LRU cache for group permissions
+    │   ├── repository.ts      # Repository interfaces
+    │   ├── repository-impl.ts  # Repository implementations
+    │   └── index.ts           # Barrel exports
     ├── types/           # TypeScript types
-    │   ├── config.ts
-    │   ├── group-policy.ts
-    │   └── messaging.ts
+    │   ├── api.ts             # ZTM API types
+    │   ├── config.ts          # Configuration types
+    │   ├── common.ts          # Common types (Result, etc)
+    │   ├── errors.ts          # Custom error classes
+    │   ├── group-policy.ts    # Group policy types
+    │   ├── messaging.ts       # Message types
+    │   ├── runtime.ts         # Runtime types
+    │   ├── connectivity.ts     # Connectivity types
+    │   └── index.ts          # Barrel exports
     ├── utils/           # Utilities
-    │   ├── logger.ts
-    │   ├── validation.ts
-    │   └── retry.ts
+    │   ├── logger.ts          # Context-aware logger
+    │   ├── validation.ts      # Input validation
+    │   ├── retry.ts          # Retry utilities
+    │   ├── result.ts          # Result/Either type
+    │   ├── error.ts          # Error handling
+    │   ├── guards.ts         # Type guards
+    │   ├── concurrency.ts     # Concurrency utilities
+    │   ├── log-sanitize.ts   # Log sanitization
+    │   ├── paths.ts          # Path utilities
+    │   ├── time-boundaries.ts # Time utilities
+    │   └── index.ts          # Barrel exports
     ├── mocks/           # Test mocks
-    │   └── ztm-client.ts
+    │   ├── ztm-client.ts     # Mock ZTM client
+    │   └── index.ts          # Barrel exports
     └── test-utils/      # Test utilities
-        ├── fixtures.ts
-        └── mocks.ts
+        ├── fixtures.ts        # Test fixtures
+        ├── mocks.ts          # Test mocks
+        ├── helpers.ts        # Test helpers
+        ├── vitest-setup.ts   # Vitest setup
+        └── index.ts         # Barrel exports
 ```
