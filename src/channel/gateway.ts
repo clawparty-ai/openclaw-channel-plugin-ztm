@@ -18,6 +18,7 @@ import {
 import { isConfigMinimallyValid } from "../config/validation.js";
 import { isSuccess } from "../types/common.js";
 import { logger } from "../utils/logger.js";
+import { getOrDefault } from "../utils/guards.js";
 import { extractErrorMessage } from "../utils/error.js";
 import {
   getAllAccountStates,
@@ -215,7 +216,7 @@ export async function startAccountGateway(
   );
 
   if (config.dmPolicy === "pairing") {
-    const allowFrom = config.allowFrom ?? [];
+    const allowFrom = getOrDefault(config.allowFrom, []);
     if (allowFrom.length === 0) {
       ctx.log?.info(
         `[${account.accountId}] Pairing mode active - no approved users. ` +

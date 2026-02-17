@@ -13,6 +13,7 @@ import type {
   GroupMessageCheckResult,
 } from "../types/group-policy.js";
 import { normalizeUsername } from "../utils/validation.js";
+import { getOrDefault } from "../utils/guards.js";
 
 // Default tool permissions for groups
 const DEFAULT_ALLOWED_TOOLS = ["group:messaging", "group:sessions"];
@@ -62,7 +63,7 @@ export function getGroupPermission(
       groupPolicy: perGroup.groupPolicy ?? channelGroupPolicy,
       // Per-group overrides global, fallback to global or default
       requireMention: perGroup.requireMention ?? channelRequireMention,
-      allowFrom: perGroup.allowFrom ?? [],
+      allowFrom: getOrDefault(perGroup.allowFrom, []),
       tools: perGroup.tools,
       toolsBySender: perGroup.toolsBySender,
     };
@@ -239,7 +240,7 @@ export function applyGroupToolsPolicy(
 
   // Start with group-level tools config
   let effectiveAllow = permissions.tools?.allow;
-  let effectiveDeny = permissions.tools?.deny ?? [];
+  let effectiveDeny = getOrDefault(permissions.tools?.deny, []);
 
   // Apply sender-specific overrides
   if (senderPolicy) {

@@ -11,6 +11,7 @@ import type { ZTMLogger, RequestHandler } from "./request.js";
 import { normalizeMessageContent } from "./chat-api.js";
 import { sanitizeForLog } from "../utils/log-sanitize.js";
 import { validateUsername, validateGroupId, validateMessageContent } from "../utils/validation.js";
+import { getOrDefault } from "../utils/guards.js";
 
 /**
  * Create message operations API
@@ -70,7 +71,7 @@ export function createMessageApi(
         return failure(error);
       }
 
-      const messages = (result.value ?? []).map((msg) => ({
+      const messages = getOrDefault(result.value, []).map((msg) => ({
         ...msg,
         message: normalizeMessageContent(msg.message),
       }));
@@ -182,7 +183,7 @@ export function createMessageApi(
         return failure(error);
       }
 
-      const messages = (result.value ?? []).map((msg) => {
+      const messages = getOrDefault(result.value, []).map((msg) => {
         const msgMessage = msg.message ?? null;
         let normalizedMessage = '';
         if (msgMessage !== null && typeof msgMessage === 'object') {
@@ -298,7 +299,7 @@ export function createMessageApi(
 
       logger.debug?.(`[ZTM API] Watch: got ${chatsResult.value?.length ?? 0} chats, lastPollTime=${lastPollTime}`);
 
-      for (const chat of chatsResult.value ?? []) {
+      for (const chat of getOrDefault(chatsResult.value, [])) {
         const chatLatestTime = chat.latest?.time ?? 0;
         if (chatLatestTime <= (lastPollTime ?? 0)) continue;
 
@@ -315,7 +316,8 @@ export function createMessageApi(
       }
 
       if (changedItems.length > 0) {
-        const latestTime = Math.max(...(chatsResult.value ?? []).map(c => c.latest?.time ?? 0));
+        const chats = getOrDefault(chatsResult.value, []);
+        const latestTime = Math.max(...chats.map(c => c.latest?.time ?? 0));
         lastPollTime = latestTime;
         const peerCount = changedItems.filter(i => i.type === 'peer').length;
         const groupCount = changedItems.filter(i => i.type === 'group').length;

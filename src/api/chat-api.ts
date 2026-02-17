@@ -7,6 +7,7 @@ import {
   ZTMReadError,
 } from "../types/errors.js";
 import type { ZTMLogger, RequestHandler, ApiResult } from "./request.js";
+import { getOrDefault } from "../utils/guards.js";
 
 /**
  * Normalize message content from API format to plain string.
@@ -69,7 +70,7 @@ export function createChatApi(
       }
 
       // Normalize message format: convert {text: "..."} to string
-      const chats = (result.value ?? []).map((chat) => {
+      const chats = getOrDefault(result.value, []).map((chat) => {
         if (chat.latest) {
           return {
             ...chat,

@@ -8,6 +8,7 @@
 
 import type { ZTMChatConfig } from "../types/config.js";
 import type { MessageCheckResult } from "../types/messaging.js";
+import { getOrDefault } from "../utils/guards.js";
 
 /**
  * Check if a sender is allowed to send messages based on DM policy.
@@ -45,7 +46,7 @@ export function checkDmPolicy(
 
   const normalizedSender = sender.trim().toLowerCase();
 
-  const allowFrom = config.allowFrom ?? [];
+  const allowFrom = getOrDefault(config.allowFrom, []);
   const isWhitelisted = allowFrom.length > 0 &&
     allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
 
@@ -99,7 +100,7 @@ export function isUserWhitelisted(
   storeAllowFrom: string[] = []
 ): boolean {
   const normalized = username.trim().toLowerCase();
-  const allowFrom = config.allowFrom ?? [];
+  const allowFrom = getOrDefault(config.allowFrom, []);
 
   const inConfig = allowFrom.some((entry) => entry.trim().toLowerCase() === normalized);
   const inStore = storeAllowFrom.some((entry) => entry.trim().toLowerCase() === normalized);
