@@ -24,4 +24,11 @@ export default [
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
+  // 禁用测试文件中的 no-explicit-any 规则（测试中 mock 需要 any 类型）
+  {
+    files: ["**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 ];

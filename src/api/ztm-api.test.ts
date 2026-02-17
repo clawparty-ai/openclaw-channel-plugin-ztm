@@ -1,7 +1,7 @@
 // Unit tests for ZTM API Client
 // Uses dependency injection pattern for easy mocking
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { testConfig } from '../test-utils/fixtures.js';
 import {
   createZTMApiClient,
