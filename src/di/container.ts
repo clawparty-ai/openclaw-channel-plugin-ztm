@@ -6,6 +6,7 @@ import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMMessage } from "../types/api.js";
 import type { Result, AsyncResult } from "../types/common.js";
 import type { PluginRuntime } from "openclaw/plugin-sdk";
+import type { IAllowFromRepository, IMessageStateRepository } from "../runtime/repository.js";
 
 // ============================================================================
 // DEPENDENCY KEYS
@@ -27,6 +28,8 @@ const _inboundProcessorKey = Symbol("ztm:inbound-processor");
 const _watcherKey = Symbol("ztm:watcher");
 const _pollingWatcherKey = Symbol("ztm:polling-watcher");
 const _messageDispatcherKey = Symbol("ztm:message-dispatcher");
+const _allowFromRepoKey = Symbol("ztm:allow-from-repo");
+const _messageStateRepoKey = Symbol("ztm:message-state-repo");
 
 export const DEPENDENCIES = {
   LOGGER: createDependencyKey<ILogger>(_loggerKey),
@@ -41,6 +44,8 @@ export const DEPENDENCIES = {
   WATCHER: createDependencyKey<unknown>(_watcherKey),
   POLLING_WATCHER: createDependencyKey<unknown>(_pollingWatcherKey),
   MESSAGE_DISPATCHER: createDependencyKey<unknown>(_messageDispatcherKey),
+  ALLOW_FROM_REPO: createDependencyKey<IAllowFromRepository>(_allowFromRepoKey),
+  MESSAGE_STATE_REPO: createDependencyKey<IMessageStateRepository>(_messageStateRepoKey),
 } as const;
 
 /**
