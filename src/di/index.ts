@@ -123,7 +123,7 @@ export function createMessageStateRepositoryService(): () => IMessageStateReposi
  * Returns a factory function for DI container registration
  */
 export function createApiClientFactory(): () => IApiClientFactory {
-  return () => (config: ZTMChatConfig, deps?: Record<string, unknown>) => createZTMApiClient(config, deps);
+  return () => (config: ZTMChatConfig, deps?: unknown) => createZTMApiClient(config, deps as Parameters<typeof createZTMApiClient>[1]);
 }
 
 /**

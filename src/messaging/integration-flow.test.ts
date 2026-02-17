@@ -127,10 +127,10 @@ function createMessage(overrides?: Partial<{ time: number; message: string; send
 
 describe('Integration: Complete Message Flow', () => {
   // Get the mocked pairing store functions - typed as Mock to have .mockReturnValue
-  let mockLoadPendingPairings: unknown;
-  let mockSavePendingPairing: unknown;
-  let mockDeletePendingPairing: unknown;
-  let mockCleanupExpiredPairings: unknown;
+  let mockLoadPendingPairings: any;
+  let mockSavePendingPairing: any;
+  let mockDeletePendingPairing: any;
+  let mockCleanupExpiredPairings: any;
 
   beforeEach(async () => {
     // Get mock functions from the mocked module

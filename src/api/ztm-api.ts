@@ -4,12 +4,25 @@
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type {
+  ZTMMessage,
   ZTMPeer,
   ZTMUserInfo,
   ZTMMeshInfo,
   ZTMChat,
   ZTMApiClient,
+  ZTMDiscoveryError,
 } from '../types/api.js';
+
+// Re-export types for convenience
+export type {
+  ZTMMessage,
+  ZTMPeer,
+  ZTMUserInfo,
+  ZTMMeshInfo,
+  ZTMChat,
+  ZTMApiClient,
+  ZTMDiscoveryError,
+};
 
 import {
   createRequestHandler,
@@ -24,11 +37,6 @@ import { createFileApi } from './file-api.js';
 
 // Re-export types for backward compatibility
 export type {
-  ZTMPeer,
-  ZTMUserInfo,
-  ZTMMeshInfo,
-  ZTMChat,
-  ZTMApiClient,
   ZTMApiClientDeps,
 };
 
