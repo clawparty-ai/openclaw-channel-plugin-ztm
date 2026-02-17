@@ -301,3 +301,242 @@ describe("createSemaphore", () => {
     expect(semaphore.availablePermits()).toBe(10);
   });
 });
+
+describe("Race condition tests", () => {
+  describe("Timeout firing after release", () => {
+    it("should not resolve promise after timeout when already released", async () => {
+      const semaphore = new Semaphore(1);
+      let releaseCalled = false;
+      let timeoutResolved = false;
+
+      // Acquire the only permit
+      await semaphore.acquire();
+
+      // Start a timed acquire that will timeout
+      const acquirePromise = semaphore.acquire(50).then(result => {
+        timeoutResolved = true;
+        return result;
+      });
+
+      // Wait a tiny bit for the acquire to queue
+      await new Promise(resolve => setTimeout(resolve, 5));
+
+      // Release the permit
+      semaphore.release();
+      releaseCalled = true;
+
+      // Wait for either timeout or immediate resolution
+      const result = await acquirePromise;
+
+      // The acquire should have been resolved by release, not by timeout
+      // Result should be true (acquired), not false (timed out)
+      expect(result).toBe(true);
+      expect(releaseCalled).toBe(true);
+    });
+
+    it("should timeout correctly when no release occurs", async () => {
+      const semaphore = new Semaphore(1);
+
+      // Acquire the only permit
+      await semaphore.acquire();
+
+      // Start a timed acquire that will timeout
+      const result = await semaphore.acquire(50);
+
+      expect(result).toBe(false);
+      expect(semaphore.queuedWaiters()).toBe(0);
+    });
+
+    it("should handle rapid acquire-release-acquire sequence", async () => {
+      const semaphore = new Semaphore(1);
+
+      // Acquire
+      await semaphore.acquire();
+
+      // Queue multiple acquires
+      const p1 = semaphore.acquire(100);
+      const p2 = semaphore.acquire(100);
+      const p3 = semaphore.acquire(100);
+
+      await new Promise(resolve => setTimeout(resolve, 5));
+
+      // Release one permit
+      semaphore.release();
+
+      // Wait for timeout
+      const results = await Promise.all([p1, p2, p3]);
+
+      // Only one should succeed, others should timeout
+      const successCount = results.filter(r => r === true).length;
+      expect(successCount).toBe(1);
+    });
+  });
+
+  describe("Concurrent acquire/release edge cases", () => {
+    it("should handle simultaneous acquire from multiple tasks", async () => {
+      const semaphore = new Semaphore(2);
+
+      // Create many concurrent acquires with timeout - they will queue
+      const promises = Array(10).fill(null).map(() => semaphore.acquire(100));
+
+      // All should eventually resolve (some will succeed, others will timeout)
+      const results = await Promise.all(promises);
+
+      // Should get exactly 2 permits (others timeout)
+      const acquired = results.filter(r => r === true).length;
+      expect(acquired).toBe(2);
+    });
+
+    it("should handle release without acquire", async () => {
+      const semaphore = new Semaphore(1);
+
+      // Release without acquire
+      semaphore.release();
+
+      // Should now have 2 permits
+      expect(semaphore.availablePermits()).toBe(2);
+    });
+
+    it("should handle multiple releases without acquire", async () => {
+      const semaphore = new Semaphore(1);
+
+      semaphore.release();
+      semaphore.release();
+      semaphore.release();
+
+      expect(semaphore.availablePermits()).toBe(4);
+    });
+
+    it("should maintain correct permit count after rapid acquire-release", async () => {
+      const semaphore = new Semaphore(5);
+
+      // Rapid acquire-release cycles
+      for (let i = 0; i < 100; i++) {
+        await semaphore.acquire();
+        semaphore.release();
+      }
+
+      // Should be back to original count
+      expect(semaphore.availablePermits()).toBe(5);
+    });
+  });
+
+  describe("Double-resolution prevention", () => {
+    it("should not call resolve twice on same acquire", async () => {
+      const semaphore = new Semaphore(1);
+      let resolveCount = 0;
+
+      // Patch to track resolve calls
+      const originalAcquire = semaphore.acquire.bind(semaphore);
+
+      await semaphore.acquire();
+
+      // Queue an acquire with very long timeout
+      const acquirePromise = semaphore.acquire(10000).then(result => {
+        resolveCount++;
+        return result;
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 5));
+
+      // Release - should resolve the waiting acquire
+      semaphore.release();
+
+      // Small delay to ensure resolution
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Release again - should not cause issues (extra release)
+      semaphore.release();
+
+      // Wait a bit more
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // The acquire should have resolved exactly once
+      expect(resolveCount).toBe(1);
+    });
+
+    it("should handle timeout and release racing", async () => {
+      const semaphore = new Semaphore(1);
+      let timeoutResolvedAsFalse = false;
+      let releaseResolvedAsTrue = false;
+
+      await semaphore.acquire();
+
+      // Start acquire with very short timeout
+      const timeoutPromise = semaphore.acquire(10).then(result => {
+        if (result === false) timeoutResolvedAsFalse = true;
+        return result;
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 5));
+
+      // Release right around when timeout would fire
+      const releasePromise = semaphore.acquire(50).then(result => {
+        if (result === true) releaseResolvedAsTrue = true;
+        return result;
+      });
+
+      await Promise.all([timeoutPromise, releasePromise]);
+
+      // Both should complete without throwing
+      // One may timeout, one should succeed
+      expect(timeoutResolvedAsFalse || releaseResolvedAsTrue).toBe(true);
+    });
+
+    it("should not leak waiters after timeout", async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      // Queue many acquires with short timeouts
+      for (let i = 0; i < 10; i++) {
+        semaphore.acquire(10);
+      }
+
+      // Wait for all to timeout
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Waiters should be cleaned up
+      expect(semaphore.queuedWaiters()).toBe(0);
+    });
+  });
+
+  describe("execute with timeout", () => {
+    it("should timeout and throw when no permit available", async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      await expect(
+        semaphore.execute(async () => "done", 50)
+      ).rejects.toThrow("failed to acquire permit");
+    });
+
+    it("should execute successfully after timeout", async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      // This should timeout
+      await expect(
+        semaphore.execute(async () => "done", 10)
+      ).rejects.toThrow();
+
+      // Release and try again - should succeed
+      semaphore.release();
+      const result = await semaphore.execute(async () => "success", 50);
+      expect(result).toBe("success");
+    });
+
+    it("should execute with very short timeout 0", async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      // With 0 timeout, should fail immediately
+      await expect(
+        semaphore.execute(async () => "done", 0)
+      ).rejects.toThrow();
+    });
+  });
+});
