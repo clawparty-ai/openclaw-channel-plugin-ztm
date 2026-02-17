@@ -1,10 +1,10 @@
 // Mock ZTM Agent Server for Integration Testing
 // Simulates the ZTM Chat API endpoints
 
-import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMMessage } from "../api/ztm-api.js";
-import type { ZTMChat, ZTMPeer, ZTMUserInfo } from "../api/ztm-api.js";
+import { createServer, type IncomingMessage, type ServerResponse } from 'http';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMMessage } from '../api/ztm-api.js';
+import type { ZTMChat, ZTMPeer, ZTMUserInfo } from '../api/ztm-api.js';
 
 // Test configuration
 export interface MockZTMConfig {
@@ -13,7 +13,7 @@ export interface MockZTMConfig {
   users: ZTMUserInfo[];
   peers: ZTMPeer[];
   chats: ZTMChat[];
-  messages: Map<string, ZTMMessage[]>;  // key: "peer→bot" or "creator/group→chat"
+  messages: Map<string, ZTMMessage[]>; // key: "peer→bot" or "creator/group→chat"
   certificate?: string;
   privateKey?: string;
 }
@@ -26,7 +26,7 @@ export class MockZTMClient {
   private watchPollCount = 0;
 
   constructor(config: Partial<MockZTMConfig> = {}) {
-    this.port = 0;  // Random port
+    this.port = 0; // Random port
     const defaults = createMockConfig();
     this.config = {
       meshName: config.meshName ?? defaults.meshName,
@@ -45,13 +45,13 @@ export class MockZTMClient {
   }
 
   start(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
         // Handle async request handler and catch errors
-        this.handleRequest(req, res).catch((err) => {
+        this.handleRequest(req, res).catch(err => {
           if (!res.headersSent) {
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Internal Server Error" }));
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal Server Error' }));
           }
         });
       });
@@ -66,7 +66,7 @@ export class MockZTMClient {
   stop(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.server) {
-        this.server.close((err) => {
+        this.server.close(err => {
           this.server = null;
           if (err) reject(err);
           else resolve();
@@ -78,15 +78,15 @@ export class MockZTMClient {
   }
 
   private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const url = new URL(req.url || "/", `http://localhost:${this.port}`);
+    const url = new URL(req.url || '/', `http://localhost:${this.port}`);
     const pathname = url.pathname;
 
     // Set CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Content-Type", "application/json");
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
 
     // Handle OPTIONS preflight
-    if (req.method === "OPTIONS") {
+    if (req.method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
       return;
@@ -94,79 +94,85 @@ export class MockZTMClient {
 
     try {
       // Route: GET /api/meshes/{meshName}
-      if (pathname.match(/^\/api\/meshes\/[^/]+$/) && req.method === "GET") {
-        const meshName = pathname.split("/")[3];
+      if (pathname.match(/^\/api\/meshes\/[^/]+$/) && req.method === 'GET') {
+        const meshName = pathname.split('/')[3];
         this.handleGetMesh(meshName, res);
         return;
       }
 
       // Route: GET /api/meshes
-      if (pathname === "/api/meshes" && req.method === "GET") {
+      if (pathname === '/api/meshes' && req.method === 'GET') {
         this.handleGetMeshes(res);
         return;
       }
 
       // Route: GET /apps/ztm/chat/api/users
-      if (pathname === "/apps/ztm/chat/api/users" && req.method === "GET") {
+      if (pathname === '/apps/ztm/chat/api/users' && req.method === 'GET') {
         this.handleGetUsers(res);
         return;
       }
 
       // Route: GET /apps/ztm/chat/api/chats
-      if (pathname === "/apps/ztm/chat/api/chats" && req.method === "GET") {
+      if (pathname === '/apps/ztm/chat/api/chats' && req.method === 'GET') {
         this.handleGetChats(res);
         return;
       }
 
       // Route: GET /apps/ztm/chat/api/peers/{peer}/messages
-      if (pathname.match(/^\/apps\/ztm\/chat\/api\/peers\/[^/]+\/messages$/) && req.method === "GET") {
-        const peer = pathname.split("/")[6];
+      if (
+        pathname.match(/^\/apps\/ztm\/chat\/api\/peers\/[^/]+\/messages$/) &&
+        req.method === 'GET'
+      ) {
+        const peer = pathname.split('/')[6];
         this.handleGetPeerMessages(peer, url, res);
         return;
       }
 
       // Route: POST /apps/ztm/chat/api/peers/{peer}/messages
-      if (pathname.match(/^\/apps\/ztm\/chat\/api\/peers\/[^/]+\/messages$/) && req.method === "POST") {
-        const peer = pathname.split("/")[6];
+      if (
+        pathname.match(/^\/apps\/ztm\/chat\/api\/peers\/[^/]+\/messages$/) &&
+        req.method === 'POST'
+      ) {
+        const peer = pathname.split('/')[6];
         await this.handleSendPeerMessage(peer, req, res);
         return;
       }
 
       // Route: GET /api/watch{prefix}
-      if (pathname.startsWith("/api/watch") && req.method === "GET") {
-        const prefix = url.searchParams.get("prefix") || pathname.replace("/api/watch", "");
+      if (pathname.startsWith('/api/watch') && req.method === 'GET') {
+        const prefix = url.searchParams.get('prefix') || pathname.replace('/api/watch', '');
         this.handleWatch(prefix, url, res);
         return;
       }
 
       // 404 for unknown routes
       res.writeHead(404);
-      res.end(JSON.stringify({ error: "Not Found" }));
+      res.end(JSON.stringify({ error: 'Not Found' }));
     } catch (error) {
       res.writeHead(500);
-      res.end(JSON.stringify({ error: "Internal Server Error" }));
+      res.end(JSON.stringify({ error: 'Internal Server Error' }));
     }
   }
 
   private handleGetMesh(meshName: string, res: ServerResponse): void {
     if (meshName !== this.config.meshName) {
       res.writeHead(404);
-      res.end(JSON.stringify({ error: "Mesh not found" }));
+      res.end(JSON.stringify({ error: 'Mesh not found' }));
       return;
     }
     res.writeHead(200);
-    res.end(JSON.stringify({
-      name: meshName,
-      connected: true,
-      peers: this.config.peers.length,
-    }));
+    res.end(
+      JSON.stringify({
+        name: meshName,
+        connected: true,
+        peers: this.config.peers.length,
+      })
+    );
   }
 
   private handleGetMeshes(res: ServerResponse): void {
     res.writeHead(200);
-    res.end(JSON.stringify([
-      { name: this.config.meshName, connected: true },
-    ]));
+    res.end(JSON.stringify([{ name: this.config.meshName, connected: true }]));
   }
 
   private handleGetUsers(res: ServerResponse): void {
@@ -180,8 +186,8 @@ export class MockZTMClient {
   }
 
   private handleGetPeerMessages(peer: string, url: URL, res: ServerResponse): void {
-    const since = url.searchParams.get("since");
-    const before = url.searchParams.get("before");
+    const since = url.searchParams.get('since');
+    const before = url.searchParams.get('before');
     const key = `${peer}→${this.config.username}`;
     let messages = this.config.messages.get(key) || [];
 
@@ -197,7 +203,11 @@ export class MockZTMClient {
     res.end(JSON.stringify(messages));
   }
 
-  private async handleSendPeerMessage(peer: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  private async handleSendPeerMessage(
+    peer: string,
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> {
     const chunks: Buffer[] = [];
     for await (const chunk of req) {
       chunks.push(chunk);
@@ -215,12 +225,12 @@ export class MockZTMClient {
       res.end(JSON.stringify({ success: true, id: `msg-${Date.now()}` }));
     } catch {
       res.writeHead(400);
-      res.end(JSON.stringify({ error: "Invalid message format" }));
+      res.end(JSON.stringify({ error: 'Invalid message format' }));
     }
   }
 
   private handleWatch(prefix: string, url: URL, res: ServerResponse): void {
-    const pollingInterval = Number(url.searchParams.get("pollingInterval")) || 2000;
+    const pollingInterval = Number(url.searchParams.get('pollingInterval')) || 2000;
     this.lastWatchPrefix = prefix;
     this.watchPollCount++;
 
@@ -260,34 +270,32 @@ export class MockZTMClient {
 export function createMockConfig(): MockZTMConfig {
   const now = Date.now();
   return {
-    meshName: "test-mesh",
-    username: "test-bot",
-    users: [
-      { username: "alice" },
-      { username: "bob" },
-    ],
+    meshName: 'test-mesh',
+    username: 'test-bot',
+    users: [{ username: 'alice' }, { username: 'bob' }],
     peers: [
-      { username: "alice", endpoint: "alice@192.168.1.10:7777" },
-      { username: "bob", endpoint: "bob@192.168.1.11:7777" },
+      { username: 'alice', endpoint: 'alice@192.168.1.10:7777' },
+      { username: 'bob', endpoint: 'bob@192.168.1.11:7777' },
     ],
     chats: [
       {
-        creator: "alice",
-        group: "test-group",
-        members: ["alice", "test-bot"],
+        creator: 'alice',
+        group: 'test-group',
+        members: ['alice', 'test-bot'],
         time: now,
         updated: now,
-        latest: { time: now, message: "", sender: "alice" },
+        latest: { time: now, message: '', sender: 'alice' },
       },
     ],
     messages: new Map([
-      ["alice→test-bot", [
-        { time: now - 60000, message: "Hello!", sender: "alice" },
-        { time: now - 30000, message: "How are you?", sender: "alice" },
-      ]],
-      ["test-bot→alice", [
-        { time: now - 45000, message: "Hi Alice!", sender: "test-bot" },
-      ]],
+      [
+        'alice→test-bot',
+        [
+          { time: now - 60000, message: 'Hello!', sender: 'alice' },
+          { time: now - 30000, message: 'How are you?', sender: 'alice' },
+        ],
+      ],
+      ['test-bot→alice', [{ time: now - 45000, message: 'Hi Alice!', sender: 'test-bot' }]],
     ]),
   };
 }

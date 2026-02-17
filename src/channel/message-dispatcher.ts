@@ -1,14 +1,14 @@
 // Message Dispatcher for ZTM Chat
 // Handles inbound message context creation and dispatch to AI agents
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import { checkGroupPolicy } from "../core/group-policy.js";
-import { getGroupPermissionCached } from "../runtime/state.js";
-import { sendZTMMessage } from "../messaging/outbound.js";
-import { getZTMRuntime } from "../runtime/index.js";
-import { extractErrorMessage } from "../utils/error.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
+import type { AccountRuntimeState } from '../runtime/state.js';
+import { checkGroupPolicy } from '../core/group-policy.js';
+import { getGroupPermissionCached } from '../runtime/state.js';
+import { sendZTMMessage } from '../messaging/outbound.js';
+import { getZTMRuntime } from '../runtime/index.js';
+import { extractErrorMessage } from '../utils/error.js';
 
 /**
  * Create inbound context payload for AI agent dispatch.
@@ -24,9 +24,9 @@ export function createInboundContext(params: {
   const { rt, msg, config, accountId, cfg = {} } = params;
 
   const route = rt.channel.routing.resolveAgentRoute({
-    channel: "ztm-chat",
+    channel: 'ztm-chat',
     accountId,
-    peer: { kind: "direct" as const, id: msg.sender },
+    peer: { kind: 'direct' as const, id: msg.sender },
     cfg,
   });
 
@@ -39,15 +39,15 @@ export function createInboundContext(params: {
       To: `ztm-chat:${config.username}`,
       SessionKey: route.sessionKey,
       AccountId: route.accountId,
-      ChatType: "direct" as const,
+      ChatType: 'direct' as const,
       ConversationLabel: msg.sender,
       SenderName: msg.sender,
       SenderId: msg.sender,
-      Provider: "ztm-chat",
-      Surface: "ztm-chat",
+      Provider: 'ztm-chat',
+      Surface: 'ztm-chat',
       MessageSid: msg.id,
       Timestamp: msg.timestamp,
-      OriginatingChannel: "ztm-chat",
+      OriginatingChannel: 'ztm-chat',
       OriginatingTo: `ztm-chat:${msg.sender}`,
     }),
     matchedBy: route.matchedBy,
@@ -69,12 +69,7 @@ function checkGroupMessagePolicy(
   }
 
   const permissions = getGroupPermissionCached(accountId, msg.groupCreator, msg.groupId, config);
-  const policyResult = checkGroupPolicy(
-    msg.sender,
-    msg.content,
-    permissions,
-    config.username
-  );
+  const policyResult = checkGroupPolicy(msg.sender, msg.content, permissions, config.username);
 
   if (!policyResult.allowed) {
     ctx.log?.info(
@@ -83,9 +78,7 @@ function checkGroupMessagePolicy(
     return false;
   }
 
-  ctx.log?.info(
-    `[DM] Group message from ${msg.sender} allowed: ${policyResult.reason}`
-  );
+  ctx.log?.info(`[DM] Group message from ${msg.sender} allowed: ${policyResult.reason}`);
   return true;
 }
 
@@ -99,7 +92,7 @@ export async function handleInboundMessage(
   config: ZTMChatConfig,
   accountId: string,
   ctx: { log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void } },
-  msg: ZTMChatMessage,
+  msg: ZTMChatMessage
 ): Promise<void> {
   try {
     // Check group policy for group messages
@@ -107,50 +100,49 @@ export async function handleInboundMessage(
       return; // Don't process the message
     }
 
-    const { ctxPayload, matchedBy, agentId } = createInboundContext({ rt, msg, config, accountId, cfg });
+    const { ctxPayload, matchedBy, agentId } = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId,
+      cfg,
+    });
 
     ctx.log?.info(
-      `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`,
+      `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`
     );
 
-    const { queuedFinal } =
-      await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-        ctx: ctxPayload,
-        cfg,
-        dispatcherOptions: {
-          humanDelay: rt.channel.reply.resolveHumanDelayConfig(
-            cfg,
-            agentId,
-          ),
-          deliver: async (payload: { text?: string; mediaUrl?: string }) => {
-            const replyText = payload.text ?? "";
-            if (!replyText) return;
-            const groupInfo = msg.isGroup && msg.groupId && msg.groupCreator
+    const { queuedFinal } = await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+      ctx: ctxPayload,
+      cfg,
+      dispatcherOptions: {
+        humanDelay: rt.channel.reply.resolveHumanDelayConfig(cfg, agentId),
+        deliver: async (payload: { text?: string; mediaUrl?: string }) => {
+          const replyText = payload.text ?? '';
+          if (!replyText) return;
+          const groupInfo =
+            msg.isGroup && msg.groupId && msg.groupCreator
               ? { creator: msg.groupCreator, group: msg.groupId }
               : undefined;
-            await sendZTMMessage(state, msg.sender, replyText, groupInfo);
-            ctx.log?.info(
-              `[${accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? "..." : ""}`,
-            );
-          },
-          onError: (err: unknown) => {
-            ctx.log?.error?.(
-              `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`,
-            );
-          },
+          await sendZTMMessage(state, msg.sender, replyText, groupInfo);
+          ctx.log?.info(
+            `[${accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? '...' : ''}`
+          );
         },
-      });
+        onError: (err: unknown) => {
+          ctx.log?.error?.(
+            `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`
+          );
+        },
+      },
+    });
 
     if (!queuedFinal) {
-      ctx.log?.info(
-        `[${accountId}] No response generated for message from ${msg.sender}`,
-      );
+      ctx.log?.info(`[${accountId}] No response generated for message from ${msg.sender}`);
     }
   } catch (error) {
     const errorMsg = extractErrorMessage(error);
-    ctx.log?.error?.(
-      `[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`,
-    );
+    ctx.log?.error?.(`[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`);
   }
 }
 
@@ -175,7 +167,7 @@ export function createMessageCallback(
       msgType = `peer "${msg.sender}"`;
     }
     ctx.log?.info(
-      `[${accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
+      `[${accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`
     );
 
     // Call the handler

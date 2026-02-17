@@ -4,50 +4,43 @@
 import type {
   ChannelAccountSnapshot as BaseChannelAccountSnapshot,
   OpenClawConfig,
-} from "openclaw/plugin-sdk";
-import type {
-  ZTMChatConfig,
-} from "../types/config.js";
-import type { ZTMApiClient, ZTMMessage } from "../api/ztm-api.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import {
-  resolveZTMChatConfig,
-  validateZTMChatConfig,
-} from "../config/index.js";
-import { isConfigMinimallyValid } from "../config/validation.js";
-import { isSuccess } from "../types/common.js";
-import { logger } from "../utils/logger.js";
-import { getOrDefault } from "../utils/guards.js";
-import { extractErrorMessage } from "../utils/error.js";
+} from 'openclaw/plugin-sdk';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient, ZTMMessage } from '../api/ztm-api.js';
+import type { AccountRuntimeState } from '../runtime/state.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
+import { resolveZTMChatConfig, validateZTMChatConfig } from '../config/index.js';
+import { isConfigMinimallyValid } from '../config/validation.js';
+import { isSuccess } from '../types/common.js';
+import { logger } from '../utils/logger.js';
+import { getOrDefault } from '../utils/guards.js';
+import { extractErrorMessage } from '../utils/error.js';
 import {
   getAllAccountStates,
   initializeRuntime,
   stopRuntime,
   removeAccountState,
   cleanupExpiredPairings,
-} from "../runtime/state.js";
-import { PAIRING_CLEANUP_INTERVAL_MS } from "../constants.js";
-import { startMessageWatcher } from "../messaging/watcher.js";
-import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
-import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
-import type { PermitData } from "../types/connectivity.js";
-import { container, DEPENDENCIES } from "../di/index.js";
-import {
-  resolveZTMChatAccount,
-} from "./config.js";
+} from '../runtime/state.js';
+import { PAIRING_CLEANUP_INTERVAL_MS } from '../constants.js';
+import { startMessageWatcher } from '../messaging/watcher.js';
+import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
+import { requestPermit, savePermitData, loadPermitFromFile } from '../connectivity/permit.js';
+import type { PermitData } from '../types/connectivity.js';
+import { container, DEPENDENCIES } from '../di/index.js';
+import { resolveZTMChatAccount } from './config.js';
 import {
   validateAgentConnectivity,
   loadOrRequestPermit,
   joinMeshIfNeeded,
   probeAccount as probeAccountConnectivity,
   resolveAccountPermitPath,
-} from "./connectivity-manager.js";
+} from './connectivity-manager.js';
 import {
   createInboundContext,
   handleInboundMessage,
   createMessageCallback,
-} from "./message-dispatcher.js";
+} from './message-dispatcher.js';
 
 // ============================================================================
 // Local Types
@@ -61,8 +54,8 @@ interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
 interface ChannelStatusIssue {
   channel: string;
   accountId: string;
-  kind: "config" | "intent" | "permissions" | "auth" | "runtime";
-  level?: "error" | "warn" | "info";
+  kind: 'config' | 'intent' | 'permissions' | 'auth' | 'runtime';
+  level?: 'error' | 'warn' | 'info';
   message: string;
 }
 
@@ -73,9 +66,7 @@ interface ChannelStatusIssue {
 /**
  * Collect status issues for configured accounts
  */
-export function collectStatusIssues(
-  accounts: ChannelAccountSnapshot[],
-): ChannelStatusIssue[] {
+export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): ChannelStatusIssue[] {
   if (!accounts || accounts.length === 0) {
     return [];
   }
@@ -91,11 +82,11 @@ export function collectStatusIssues(
   // Check config validity
   if (!isConfigMinimallyValid(config)) {
     issues.push({
-      channel: "ztm-chat",
-      accountId: accountId || "default",
-      kind: "config",
-      level: "error",
-      message: "Missing required configuration (agentUrl or username)",
+      channel: 'ztm-chat',
+      accountId: accountId || 'default',
+      kind: 'config',
+      level: 'error',
+      message: 'Missing required configuration (agentUrl or username)',
     });
     return issues;
   }
@@ -119,7 +110,7 @@ export async function probeAccountGateway({
 }): Promise<{
   ok: boolean;
   error: string | null;
-  meshInfo?: import("../api/ztm-api.js").ZTMMeshInfo;
+  meshInfo?: import('../api/ztm-api.js').ZTMMeshInfo;
 }> {
   return probeAccountConnectivity({ config: account.config, timeoutMs });
 }
@@ -145,26 +136,26 @@ export async function sendTextGateway({
   messageId: string;
   error?: string;
 }> {
-  const accountKey = accountId ?? "default";
+  const accountKey = accountId ?? 'default';
   const accountStates = getAllAccountStates();
   const state = accountStates.get(accountKey);
 
   if (!state) {
     return {
-      channel: "ztm-chat",
+      channel: 'ztm-chat',
       ok: false,
-      messageId: "",
-      error: "Account not initialized",
+      messageId: '',
+      error: 'Account not initialized',
     };
   }
 
-  const peer = to.replace(/^ztm-chat:/, "");
+  const peer = to.replace(/^ztm-chat:/, '');
   const result = await sendZTMMessage(state, peer, text);
 
   return {
-    channel: "ztm-chat",
+    channel: 'ztm-chat',
     ok: result.ok,
-    messageId: result.ok ? generateMessageId() : "",
+    messageId: result.ok ? generateMessageId() : '',
     error: result.ok ? undefined : (result.error?.message ?? state.lastError ?? undefined),
   };
 }
@@ -173,15 +164,17 @@ export async function sendTextGateway({
 // Start Account Gateway
 // ============================================================================
 
-export async function startAccountGateway(
-  ctx: { account: { config: ZTMChatConfig; accountId: string }; log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void }; cfg?: Record<string, unknown> },
-): Promise<() => Promise<void>> {
+export async function startAccountGateway(ctx: {
+  account: { config: ZTMChatConfig; accountId: string };
+  log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
+  cfg?: Record<string, unknown>;
+}): Promise<() => Promise<void>> {
   const account = ctx.account;
   const config = resolveZTMChatConfig(account.config);
   const validation = validateZTMChatConfig(config);
 
   if (!validation.valid) {
-    throw new Error(validation.errors.join("; "));
+    throw new Error(validation.errors.join('; '));
   }
 
   // Use cross-platform compatible path resolution
@@ -203,7 +196,7 @@ export async function startAccountGateway(
   if (!initialized) {
     const accountStates = getAllAccountStates();
     const state = accountStates.get(account.accountId);
-    throw new Error(state?.lastError ?? "Failed to initialize ZTM connection");
+    throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
   }
 
   const accountStates = getAllAccountStates();
@@ -214,20 +207,20 @@ export async function startAccountGateway(
   const cfg = ctx.cfg;
 
   ctx.log?.info(
-    `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`,
+    `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`
   );
 
-  if (config.dmPolicy === "pairing") {
+  if (config.dmPolicy === 'pairing') {
     const allowFrom = getOrDefault(config.allowFrom, []);
     if (allowFrom.length === 0) {
       ctx.log?.info(
         `[${account.accountId}] Pairing mode active - no approved users. ` +
           `Users must send a message to initiate pairing. ` +
-          `Approve users with: openclaw pairing approve ztm-chat <username>`,
+          `Approve users with: openclaw pairing approve ztm-chat <username>`
       );
     } else {
       ctx.log?.info(
-        `[${account.accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`,
+        `[${account.accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`
       );
     }
   }
@@ -280,57 +273,52 @@ export async function logoutAccountGateway({
 export function buildMessageCallback(
   state: AccountRuntimeState,
   accountId: string,
-  config: ZTMChatConfig,
+  config: ZTMChatConfig
 ): (msg: ZTMChatMessage) => void {
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
 
   return (msg: ZTMChatMessage) => {
     const handleInbound = async (): Promise<void> => {
       try {
-        const { ctxPayload, matchedBy, agentId } = createInboundContext({ rt, msg, config, accountId });
+        const { ctxPayload, matchedBy, agentId } = createInboundContext({
+          rt,
+          msg,
+          config,
+          accountId,
+        });
 
         logger.info?.(
-          `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`,
+          `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`
         );
 
-        const { queuedFinal } =
-          await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-            ctx: ctxPayload,
-            cfg: {},
-            dispatcherOptions: {
-              humanDelay: rt.channel.reply.resolveHumanDelayConfig(
-                {},
-                agentId,
-              ),
-              deliver: async (payload: {
-                text?: string;
-                mediaUrl?: string;
-              }) => {
-                const replyText = payload.text ?? "";
-                if (!replyText) return;
-                const groupInfo = msg.isGroup && msg.groupId && msg.groupCreator
+        const { queuedFinal } = await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+          ctx: ctxPayload,
+          cfg: {},
+          dispatcherOptions: {
+            humanDelay: rt.channel.reply.resolveHumanDelayConfig({}, agentId),
+            deliver: async (payload: { text?: string; mediaUrl?: string }) => {
+              const replyText = payload.text ?? '';
+              if (!replyText) return;
+              const groupInfo =
+                msg.isGroup && msg.groupId && msg.groupCreator
                   ? { creator: msg.groupCreator, group: msg.groupId }
                   : undefined;
-                await sendZTMMessage(state, msg.sender, replyText, groupInfo);
-              },
-              onError: (err: unknown) => {
-                logger.error?.(
-                  `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`,
-                );
-              },
+              await sendZTMMessage(state, msg.sender, replyText, groupInfo);
             },
-          });
+            onError: (err: unknown) => {
+              logger.error?.(
+                `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`
+              );
+            },
+          },
+        });
 
         if (!queuedFinal) {
-          logger.info?.(
-            `[${accountId}] No response generated for message from ${msg.sender}`,
-          );
+          logger.info?.(`[${accountId}] No response generated for message from ${msg.sender}`);
         }
       } catch (error) {
         const errorMsg = extractErrorMessage(error);
-        logger.error?.(
-          `[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`,
-        );
+        logger.error?.(`[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`);
       }
     };
 

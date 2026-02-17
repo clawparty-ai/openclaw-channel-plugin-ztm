@@ -23,7 +23,7 @@ export class Semaphore {
 
   constructor(permits: number) {
     if (permits <= 0) {
-      throw new Error("Semaphore permits must be greater than 0");
+      throw new Error('Semaphore permits must be greater than 0');
     }
     this.permits = permits;
   }
@@ -42,16 +42,16 @@ export class Semaphore {
 
     // If no timeout specified, wait indefinitely
     if (timeoutMs === undefined) {
-      return new Promise<boolean>((resolve) => {
+      return new Promise<boolean>(resolve => {
         this.waiters.push({
-          resolve: (value) => resolve(value),
+          resolve: value => resolve(value),
           resolved: false,
         });
       });
     }
 
     // With timeout, race between permit availability and timeout
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       const waiter: Waiter = {
         resolve: (value: boolean) => {
           // Mark as resolved before calling the actual resolve

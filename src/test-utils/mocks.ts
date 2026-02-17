@@ -1,11 +1,11 @@
 // Test Mocks - Reusable mock functions and objects for ZTM Chat tests
 // Provides mock implementations for API clients, loggers, stores, etc.
 
-import { vi, type Mock } from "vitest";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient } from "../api/ztm-api.js";
-import { success, failure } from "../types/common.js";
-import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from "../api/ztm-api.js";
+import { vi, type Mock } from 'vitest';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient } from '../api/ztm-api.js';
+import { success, failure } from '../types/common.js';
+import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from '../api/ztm-api.js';
 
 // ============================================================================
 // Logger Mocks
@@ -17,21 +17,23 @@ import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from "../
 export function createMockLogger() {
   const calls: { level: string; args: unknown[][] }[] = [];
 
-  const log = (level: string) => (...args: unknown[]) => {
-    calls.push({
-      level,
-      args: args.map((a) => (typeof a === "object" ? JSON.parse(JSON.stringify(a)) : a)),
-    });
-  };
+  const log =
+    (level: string) =>
+    (...args: unknown[]) => {
+      calls.push({
+        level,
+        args: args.map(a => (typeof a === 'object' ? JSON.parse(JSON.stringify(a)) : a)),
+      });
+    };
 
   return {
-    debug: log("debug"),
-    info: log("info"),
-    warn: log("warn"),
-    error: log("error"),
+    debug: log('debug'),
+    info: log('info'),
+    warn: log('warn'),
+    error: log('error'),
     calls,
-    getCalls: (level?: string) => (level ? calls.filter((c) => c.level === level) : calls),
-    clearCalls: () => calls.length = 0,
+    getCalls: (level?: string) => (level ? calls.filter(c => c.level === level) : calls),
+    clearCalls: () => (calls.length = 0),
   };
 }
 
@@ -73,7 +75,7 @@ export function createMockFetch(options: MockFetchOptions = {}) {
 
     return new Response(JSON.stringify(data), {
       status,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   };
 
@@ -98,7 +100,9 @@ export function createMockFetch(options: MockFetchOptions = {}) {
  */
 export function createMockApiClient(overrides: Partial<ZTMApiClient> = {}): ZTMApiClient {
   const defaultClient: ZTMApiClient = {
-    getMeshInfo: vi.fn().mockResolvedValue(success({ name: "test-mesh", connected: true, endpoints: 1 })),
+    getMeshInfo: vi
+      .fn()
+      .mockResolvedValue(success({ name: 'test-mesh', connected: true, endpoints: 1 })),
     discoverUsers: vi.fn().mockResolvedValue(success([])),
     discoverPeers: vi.fn().mockResolvedValue(success([])),
     listUsers: vi.fn().mockResolvedValue(success([])),
@@ -118,7 +122,10 @@ export function createMockApiClient(overrides: Partial<ZTMApiClient> = {}): ZTMA
 /**
  * Create a mock API client that returns specific messages
  */
-export function createMockApiClientWithMessages(messages: ZTMMessage[], peer = "alice"): ZTMApiClient {
+export function createMockApiClientWithMessages(
+  messages: ZTMMessage[],
+  peer = 'alice'
+): ZTMApiClient {
   return createMockApiClient({
     getPeerMessages: vi.fn().mockResolvedValue(success(messages)),
     getChats: vi.fn().mockResolvedValue(
@@ -155,18 +162,24 @@ export function createMockMessageStateStore() {
   const fileMetadata = new Map<string, { time: number; size: number }>();
 
   return {
-    getWatermark: vi.fn((accountId: string, key: string) => watermarks.get(`${accountId}:${key}`) || 0),
+    getWatermark: vi.fn(
+      (accountId: string, key: string) => watermarks.get(`${accountId}:${key}`) || 0
+    ),
     getGlobalWatermark: vi.fn((accountId: string) => {
-      const accountWatermarks = Array.from(watermarks.entries()).filter(([k]) => k.startsWith(`${accountId}:`));
+      const accountWatermarks = Array.from(watermarks.entries()).filter(([k]) =>
+        k.startsWith(`${accountId}:`)
+      );
       return accountWatermarks.length > 0 ? Math.max(...accountWatermarks.map(([, v]) => v)) : 0;
     }),
     setWatermark: vi.fn((accountId: string, key: string, time: number) => {
       watermarks.set(`${accountId}:${key}`, time);
     }),
     getFileMetadata: vi.fn(() => Object.fromEntries(fileMetadata)),
-    setFileMetadata: vi.fn((accountId: string, filePath: string, metadata: { time: number; size: number }) => {
-      fileMetadata.set(filePath, metadata);
-    }),
+    setFileMetadata: vi.fn(
+      (accountId: string, filePath: string, metadata: { time: number; size: number }) => {
+        fileMetadata.set(filePath, metadata);
+      }
+    ),
     setFileMetadataBulk: vi.fn(),
     flush: vi.fn(),
     flushAsync: vi.fn().mockResolvedValue(undefined),
@@ -206,7 +219,7 @@ export function createMockPairingStore() {
  */
 export function createMockAccountState(config: ZTMChatConfig, apiClient?: ZTMApiClient) {
   return {
-    accountId: "test-account",
+    accountId: 'test-account',
     config,
     apiClient: apiClient || createMockApiClient(),
     runtime: {
@@ -227,10 +240,10 @@ export function createMockAccountState(config: ZTMChatConfig, apiClient?: ZTMApi
 /**
  * Create a mock API error
  */
-export function createMockApiError(message = "API Error") {
+export function createMockApiError(message = 'API Error') {
   return {
     message,
-    code: "API_ERROR",
+    code: 'API_ERROR',
     statusCode: 500,
   };
 }

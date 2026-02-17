@@ -1,23 +1,24 @@
 // Unit tests for Message Dispatcher
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   notifyMessageCallbacks,
   getCallbackStats,
   hasCallbacks,
   clearCallbacks,
-} from "./dispatcher.js";
-import { testAccountId } from "../test-utils/fixtures.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
+} from './dispatcher.js';
+import { testAccountId } from '../test-utils/fixtures.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
+import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 
 // Use vi.hoisted to ensure mocks are properly scoped
-const { mockSetWatermark: actualMockSetWatermark, mockLoggerDebug: actualMockLoggerDebug } = vi.hoisted(() => ({
-  mockSetWatermark: vi.fn(),
-  mockLoggerDebug: vi.fn(),
-}));
+const { mockSetWatermark: actualMockSetWatermark, mockLoggerDebug: actualMockLoggerDebug } =
+  vi.hoisted(() => ({
+    mockSetWatermark: vi.fn(),
+    mockLoggerDebug: vi.fn(),
+  }));
 
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -28,7 +29,7 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("../runtime/store.js", () => ({
+vi.mock('../runtime/store.js', () => ({
   getAccountMessageStateStore: vi.fn(() => ({
     getWatermark: vi.fn(() => -1),
     getGlobalWatermark: vi.fn(() => 0),
@@ -39,13 +40,13 @@ vi.mock("../runtime/store.js", () => ({
     setFileMetadata: vi.fn(),
     setFileMetadataBulk: vi.fn(),
     flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   })),
   disposeMessageStateStore: vi.fn(),
 }));
 
-describe("Message Dispatcher", () => {
+describe('Message Dispatcher', () => {
   let mockState: ReturnType<typeof createMockState>;
 
   function createMockState(): AccountRuntimeState {
@@ -75,16 +76,16 @@ describe("Message Dispatcher", () => {
     mockState = createMockState();
   });
 
-  describe("notifyMessageCallbacks", () => {
-    it("should update lastInboundAt timestamp", async () => {
+  describe('notifyMessageCallbacks', () => {
+    it('should update lastInboundAt timestamp', async () => {
       const before = mockState.lastInboundAt;
       const message: ZTMChatMessage = {
-        id: "123",
-        content: "Test",
-        sender: "alice",
-        senderId: "alice",
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
         timestamp: new Date(),
-        peer: "alice",
+        peer: 'alice',
       };
 
       await notifyMessageCallbacks(mockState, message);
@@ -93,18 +94,18 @@ describe("Message Dispatcher", () => {
       expect(mockState.lastInboundAt).toBeInstanceOf(Date);
     });
 
-    it("should call all registered callbacks", async () => {
+    it('should call all registered callbacks', async () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
       mockState.messageCallbacks = new Set([callback1, callback2]);
 
       const message: ZTMChatMessage = {
-        id: "123",
-        content: "Test",
-        sender: "alice",
-        senderId: "alice",
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
         timestamp: new Date(),
-        peer: "alice",
+        peer: 'alice',
       };
 
       await notifyMessageCallbacks(mockState, message);
@@ -113,20 +114,20 @@ describe("Message Dispatcher", () => {
       expect(callback2).toHaveBeenCalledWith(message);
     });
 
-    it("should continue calling other callbacks if one throws", async () => {
+    it('should continue calling other callbacks if one throws', async () => {
       const errorCallback = vi.fn(() => {
-        throw new Error("Callback error");
+        throw new Error('Callback error');
       });
       const successCallback = vi.fn();
       mockState.messageCallbacks = new Set([errorCallback, successCallback]);
 
       const message: ZTMChatMessage = {
-        id: "123",
-        content: "Test",
-        sender: "alice",
-        senderId: "alice",
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
         timestamp: new Date(),
-        peer: "alice",
+        peer: 'alice',
       };
 
       expect(async () => {
@@ -136,32 +137,28 @@ describe("Message Dispatcher", () => {
       expect(successCallback).toHaveBeenCalled();
     });
 
-    it("should update watermark after successful callbacks", async () => {
+    it('should update watermark after successful callbacks', async () => {
       const callback = vi.fn();
       mockState.messageCallbacks = new Set([callback]);
 
       const message: ZTMChatMessage = {
-        id: "123",
-        content: "Test",
-        sender: "alice",
-        senderId: "alice",
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
         timestamp: new Date(1234567890),
-        peer: "alice",
+        peer: 'alice',
       };
 
       await notifyMessageCallbacks(mockState, message);
 
       // Verify that setWatermark was called on the store
-      expect(actualMockSetWatermark).toHaveBeenCalledWith(
-        testAccountId,
-        "alice",
-        1234567890
-      );
+      expect(actualMockSetWatermark).toHaveBeenCalledWith(testAccountId, 'alice', 1234567890);
     });
   });
 
-  describe("getCallbackStats", () => {
-    it("should return correct stats", () => {
+  describe('getCallbackStats', () => {
+    it('should return correct stats', () => {
       mockState.messageCallbacks = new Set([vi.fn(), vi.fn()]);
 
       const stats = getCallbackStats(mockState);
@@ -170,7 +167,7 @@ describe("Message Dispatcher", () => {
       expect(stats.active).toBe(2);
     });
 
-    it("should return zero for no callbacks", () => {
+    it('should return zero for no callbacks', () => {
       const stats = getCallbackStats(mockState);
 
       expect(stats.total).toBe(0);
@@ -178,20 +175,20 @@ describe("Message Dispatcher", () => {
     });
   });
 
-  describe("hasCallbacks", () => {
-    it("should return true when callbacks exist", () => {
+  describe('hasCallbacks', () => {
+    it('should return true when callbacks exist', () => {
       mockState.messageCallbacks = new Set([vi.fn()]);
 
       expect(hasCallbacks(mockState)).toBe(true);
     });
 
-    it("should return false when no callbacks", () => {
+    it('should return false when no callbacks', () => {
       expect(hasCallbacks(mockState)).toBe(false);
     });
   });
 
-  describe("clearCallbacks", () => {
-    it("should remove all callbacks", () => {
+  describe('clearCallbacks', () => {
+    it('should remove all callbacks', () => {
       const callback = vi.fn();
       mockState.messageCallbacks = new Set([callback]);
 
@@ -200,13 +197,13 @@ describe("Message Dispatcher", () => {
       expect(mockState.messageCallbacks.size).toBe(0);
     });
 
-    it("should log cleared callback count", () => {
+    it('should log cleared callback count', () => {
       mockState.messageCallbacks = new Set([vi.fn(), vi.fn()]);
 
       clearCallbacks(mockState);
 
       expect(actualMockLoggerDebug).toHaveBeenCalledWith(
-        expect.stringContaining("Cleared 2 callback(s)")
+        expect.stringContaining('Cleared 2 callback(s)')
       );
     });
   });

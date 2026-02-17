@@ -1,9 +1,9 @@
 // Integration tests for Error Recovery
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 
-describe("Error Recovery Integration", () => {
-  it("should recover from transient apiClient errors", () => {
+describe('Error Recovery Integration', () => {
+  it('should recover from transient apiClient errors', () => {
     let attemptCount = 0;
     let success = false;
 
@@ -18,7 +18,7 @@ describe("Error Recovery Integration", () => {
     expect(success).toBe(true);
   });
 
-  it("should reset error count on successful operation", () => {
+  it('should reset error count on successful operation', () => {
     let errorCount = 3;
 
     errorCount = 0;
@@ -26,7 +26,7 @@ describe("Error Recovery Integration", () => {
     expect(errorCount).toBe(0);
   });
 
-  it("should increment error count on failures", () => {
+  it('should increment error count on failures', () => {
     let errorCount = 0;
 
     for (let i = 0; i < 3; i++) {
@@ -36,7 +36,7 @@ describe("Error Recovery Integration", () => {
     expect(errorCount).toBe(3);
   });
 
-  it("should trigger fallback after error threshold", () => {
+  it('should trigger fallback after error threshold', () => {
     let errorCount = 0;
     const threshold = 5;
     let fallbackTriggered = false;

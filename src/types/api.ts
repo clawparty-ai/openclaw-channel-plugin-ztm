@@ -1,7 +1,7 @@
 // ZTM Chat API Types
 // Types for ZTM Agent API communication
 
-import type { Result } from "./common.js";
+import type { Result } from './common.js';
 import type {
   ZTMApiError,
   ZTMTimeoutError,
@@ -11,7 +11,7 @@ import type {
   ZTMDiscoveryError,
   ZTMParseError,
   ZTMError,
-} from "./errors.js";
+} from './errors.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Core ZTM Types
@@ -120,10 +120,7 @@ export interface ZTMApiClient {
   // ═════════════════════════════════════════════════════════════════════════════
 
   /** Get messages from a group. Returns Result with messages or read error. */
-  getGroupMessages(
-    creator: string,
-    group: string
-  ): Promise<Result<ZTMMessage[], ZTMReadError>>;
+  getGroupMessages(creator: string, group: string): Promise<Result<ZTMMessage[], ZTMReadError>>;
 
   /** Send a message to a group. Returns Result with success or error. */
   sendGroupMessage(
@@ -135,7 +132,6 @@ export interface ZTMApiClient {
   // ═══════════════════════════════════════════════════════════════════════════
   // File Operations - Return Result types with appropriate errors
   // ═══════════════════════════════════════════════════════════════════════════
-
 
   /** Watch for changes in storage with given prefix. Returns Result with changed items or error. */
   watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>>;

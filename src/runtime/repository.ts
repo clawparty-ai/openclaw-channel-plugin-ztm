@@ -5,8 +5,8 @@
 // from runtime implementation details. The messaging layer should depend on
 // these interfaces, not concrete implementations.
 
-import type { PluginRuntime } from "openclaw/plugin-sdk";
-import type { FileMetadata } from "./store.js";
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
+import type { FileMetadata } from './store.js';
 
 /**
  * Repository for managing allowFrom store access

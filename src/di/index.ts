@@ -8,12 +8,12 @@ import type {
   IApiClient,
   IApiClientFactory,
   IRuntime,
-} from "./container";
+} from './container';
 
-import type { IAllowFromRepository, IMessageStateRepository } from "../runtime/repository.js";
+import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { Result, AsyncResult } from "../types/common.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { Result, AsyncResult } from '../types/common.js';
 
 export {
   DEPENDENCIES,
@@ -26,7 +26,7 @@ export {
   type IApiClient,
   type IApiClientFactory,
   type IRuntime,
-} from "./container";
+} from './container';
 
 export type { IAllowFromRepository, IMessageStateRepository };
 
@@ -40,11 +40,11 @@ export type { IAllowFromRepository, IMessageStateRepository };
  */
 
 // Import implementations using ESM imports
-import { logger as loggerInstance, createLogger as createLoggerFn } from "../utils/logger.js";
-import { getEffectiveChannelConfig } from "../channel/config.js";
-import { createZTMApiClient } from "../api/ztm-api.js";
-import { getZTMRuntime, isRuntimeInitialized } from "../runtime/runtime.js";
-import { getAllowFromRepository, getMessageStateRepository } from "../runtime/repository-impl.js";
+import { logger as loggerInstance, createLogger as createLoggerFn } from '../utils/logger.js';
+import { getEffectiveChannelConfig } from '../channel/config.js';
+import { createZTMApiClient } from '../api/ztm-api.js';
+import { getZTMRuntime, isRuntimeInitialized } from '../runtime/runtime.js';
+import { getAllowFromRepository, getMessageStateRepository } from '../runtime/repository-impl.js';
 
 /**
  * Logger factory
@@ -78,15 +78,15 @@ export function createApiClientService(): () => IApiClient {
   return (): IApiClient => {
     // Create with empty config - actual config should be provided via factory
     const client = createZTMApiClient({
-      agentUrl: "",
-      permitUrl: "",
-      permitSource: "server",
-      meshName: "",
-      username: "",
-      dmPolicy: "pairing",
+      agentUrl: '',
+      permitUrl: '',
+      permitSource: 'server',
+      meshName: '',
+      username: '',
+      dmPolicy: 'pairing',
       enableGroups: false,
       autoReply: false,
-      messagePath: "/",
+      messagePath: '/',
     });
     // Return client implementing all IApiClient interfaces
     return client as unknown as IApiClient;
@@ -125,8 +125,7 @@ export function createMessageStateRepositoryService(): () => IMessageStateReposi
  * Returns a factory function for DI container registration
  */
 export function createApiClientFactory(): () => IApiClientFactory {
-  return () => (config: ZTMChatConfig, deps?: unknown) =>
-    createZTMApiClient(config, deps as any);
+  return () => (config: ZTMChatConfig, deps?: unknown) => createZTMApiClient(config, deps as any);
 }
 
 /**
@@ -135,6 +134,6 @@ export function createApiClientFactory(): () => IApiClientFactory {
  */
 export function createAccountStateManagerService(): () => unknown {
   // Import here to avoid circular dependencies
-  const { getAccountStateManager } = require("../runtime/state.js");
+  const { getAccountStateManager } = require('../runtime/state.js');
   return () => getAccountStateManager();
 }

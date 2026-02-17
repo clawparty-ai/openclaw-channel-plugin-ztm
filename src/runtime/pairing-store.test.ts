@@ -1,10 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  createPairingStateStore,
-  PairingStateStoreImpl,
-} from "./pairing-store.js";
-import type { PairingStateData, FileSystem } from "./pairing-store.js";
-import { createMockLoggerFns } from "../test-utils/mocks.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createPairingStateStore, PairingStateStoreImpl } from './pairing-store.js';
+import type { PairingStateData, FileSystem } from './pairing-store.js';
+import { createMockLoggerFns } from '../test-utils/mocks.js';
 
 const createMockFs = (initialFiles: Map<string, string> = new Map()): FileSystem => {
   const files = new Map(initialFiles);
@@ -32,7 +29,7 @@ const createMockFs = (initialFiles: Map<string, string> = new Map()): FileSystem
   };
 };
 
-describe("PairingStateStore", () => {
+describe('PairingStateStore', () => {
   let mockFs: FileSystem;
   let mockLogger: ReturnType<typeof createMockLoggerFns>;
 
@@ -46,64 +43,84 @@ describe("PairingStateStore", () => {
     vi.useRealTimers();
   });
 
-  describe("createPairingStateStore", () => {
-    it("should create a store instance", () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+  describe('createPairingStateStore', () => {
+    it('should create a store instance', () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
       expect(store).toBeDefined();
-      expect(typeof store.loadPendingPairings).toBe("function");
-      expect(typeof store.savePendingPairing).toBe("function");
-      expect(typeof store.deletePendingPairing).toBe("function");
-      expect(typeof store.cleanupExpiredPairings).toBe("function");
+      expect(typeof store.loadPendingPairings).toBe('function');
+      expect(typeof store.savePendingPairing).toBe('function');
+      expect(typeof store.deletePendingPairing).toBe('function');
+      expect(typeof store.cleanupExpiredPairings).toBe('function');
     });
   });
 
-  describe("loadPendingPairings", () => {
-    it("should return empty map when no data exists", () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
-      const pairings = store.loadPendingPairings("account1");
+  describe('loadPendingPairings', () => {
+    it('should return empty map when no data exists', () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
+      const pairings = store.loadPendingPairings('account1');
       expect(pairings.size).toBe(0);
     });
 
-    it("should load persisted pairings", () => {
+    it('should load persisted pairings', () => {
       const initialData: PairingStateData = {
         accounts: {
           account1: {
-            alice: "2026-02-12T10:00:00.000Z",
-            bob: "2026-02-12T09:00:00.000Z",
+            alice: '2026-02-12T10:00:00.000Z',
+            bob: '2026-02-12T09:00:00.000Z',
           },
         },
       };
-      mockFs = createMockFs(new Map([["/tmp/test-pairings.json", JSON.stringify(initialData)]]));
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+      mockFs = createMockFs(new Map([['/tmp/test-pairings.json', JSON.stringify(initialData)]]));
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      const pairings = store.loadPendingPairings("account1");
+      const pairings = store.loadPendingPairings('account1');
       expect(pairings.size).toBe(2);
-      expect(pairings.has("alice")).toBe(true);
-      expect(pairings.has("bob")).toBe(true);
+      expect(pairings.has('alice')).toBe(true);
+      expect(pairings.has('bob')).toBe(true);
     });
 
-    it("should return empty map for non-existent account", () => {
+    it('should return empty map for non-existent account', () => {
       const initialData: PairingStateData = {
         accounts: {
           account1: {
-            alice: "2026-02-12T10:00:00.000Z",
+            alice: '2026-02-12T10:00:00.000Z',
           },
         },
       };
-      mockFs = createMockFs(new Map([["/tmp/test-pairings.json", JSON.stringify(initialData)]]));
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+      mockFs = createMockFs(new Map([['/tmp/test-pairings.json', JSON.stringify(initialData)]]));
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      const pairings = store.loadPendingPairings("account2");
+      const pairings = store.loadPendingPairings('account2');
       expect(pairings.size).toBe(0);
     });
   });
 
-  describe("savePendingPairing", () => {
-    it("should save a new pairing", async () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
-      const date = new Date("2026-02-12T10:00:00.000Z");
+  describe('savePendingPairing', () => {
+    it('should save a new pairing', async () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
+      const date = new Date('2026-02-12T10:00:00.000Z');
 
-      store.savePendingPairing("account1", "alice", date);
+      store.savePendingPairing('account1', 'alice', date);
       store.flush();
 
       const writeCalls = (mockFs.writeFileSync as ReturnType<typeof vi.fn>).mock.calls;
@@ -112,24 +129,32 @@ describe("PairingStateStore", () => {
       expect(savedData.accounts.account1.alice).toBe(date.toISOString());
     });
 
-    it("should use current date if not provided", () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+    it('should use current date if not provided', () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
       const now = new Date();
 
-      store.savePendingPairing("account1", "alice");
+      store.savePendingPairing('account1', 'alice');
 
-      const pairings = store.loadPendingPairings("account1");
-      expect(pairings.has("alice")).toBe(true);
-      const savedDate = pairings.get("alice")!;
+      const pairings = store.loadPendingPairings('account1');
+      expect(pairings.has('alice')).toBe(true);
+      const savedDate = pairings.get('alice')!;
       expect(savedDate.getTime()).toBeGreaterThanOrEqual(now.getTime() - 1000);
     });
 
-    it("should debounce writes", async () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+    it('should debounce writes', async () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      store.savePendingPairing("account1", "alice");
-      store.savePendingPairing("account1", "bob");
-      store.savePendingPairing("account1", "charlie");
+      store.savePendingPairing('account1', 'alice');
+      store.savePendingPairing('account1', 'bob');
+      store.savePendingPairing('account1', 'charlie');
 
       expect(mockFs.writeFileSync).not.toHaveBeenCalled();
 
@@ -142,35 +167,43 @@ describe("PairingStateStore", () => {
     });
   });
 
-  describe("deletePendingPairing", () => {
-    it("should delete an existing pairing", () => {
+  describe('deletePendingPairing', () => {
+    it('should delete an existing pairing', () => {
       const initialData: PairingStateData = {
         accounts: {
           account1: {
-            alice: "2026-02-12T10:00:00.000Z",
-            bob: "2026-02-12T09:00:00.000Z",
+            alice: '2026-02-12T10:00:00.000Z',
+            bob: '2026-02-12T09:00:00.000Z',
           },
         },
       };
-      mockFs = createMockFs(new Map([["/tmp/test-pairings.json", JSON.stringify(initialData)]]));
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+      mockFs = createMockFs(new Map([['/tmp/test-pairings.json', JSON.stringify(initialData)]]));
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      store.deletePendingPairing("account1", "alice");
+      store.deletePendingPairing('account1', 'alice');
       store.flush();
 
-      const pairings = store.loadPendingPairings("account1");
-      expect(pairings.has("alice")).toBe(false);
-      expect(pairings.has("bob")).toBe(true);
+      const pairings = store.loadPendingPairings('account1');
+      expect(pairings.has('alice')).toBe(false);
+      expect(pairings.has('bob')).toBe(true);
     });
 
-    it("should handle deleting non-existent pairing gracefully", () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
-      expect(() => store.deletePendingPairing("account1", "nonexistent")).not.toThrow();
+    it('should handle deleting non-existent pairing gracefully', () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
+      expect(() => store.deletePendingPairing('account1', 'nonexistent')).not.toThrow();
     });
   });
 
-  describe("cleanupExpiredPairings", () => {
-    it("should remove expired pairings", () => {
+  describe('cleanupExpiredPairings', () => {
+    it('should remove expired pairings', () => {
       const now = Date.now();
       const initialData: PairingStateData = {
         accounts: {
@@ -181,20 +214,24 @@ describe("PairingStateStore", () => {
           },
         },
       };
-      mockFs = createMockFs(new Map([["/tmp/test-pairings.json", JSON.stringify(initialData)]]));
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+      mockFs = createMockFs(new Map([['/tmp/test-pairings.json', JSON.stringify(initialData)]]));
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      const cleanedCount = store.cleanupExpiredPairings("account1", 30000);
+      const cleanedCount = store.cleanupExpiredPairings('account1', 30000);
       store.flush();
 
       expect(cleanedCount).toBe(2);
-      const pairings = store.loadPendingPairings("account1");
-      expect(pairings.has("alice")).toBe(true);
-      expect(pairings.has("bob")).toBe(false);
-      expect(pairings.has("charlie")).toBe(false);
+      const pairings = store.loadPendingPairings('account1');
+      expect(pairings.has('alice')).toBe(true);
+      expect(pairings.has('bob')).toBe(false);
+      expect(pairings.has('charlie')).toBe(false);
     });
 
-    it("should use 1 hour as default expiration", () => {
+    it('should use 1 hour as default expiration', () => {
       const now = Date.now();
       const initialData: PairingStateData = {
         accounts: {
@@ -204,18 +241,22 @@ describe("PairingStateStore", () => {
           },
         },
       };
-      mockFs = createMockFs(new Map([["/tmp/test-pairings.json", JSON.stringify(initialData)]]));
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+      mockFs = createMockFs(new Map([['/tmp/test-pairings.json', JSON.stringify(initialData)]]));
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      const cleanedCount = store.cleanupExpiredPairings("account1");
+      const cleanedCount = store.cleanupExpiredPairings('account1');
 
       expect(cleanedCount).toBe(1);
-      const pairings = store.loadPendingPairings("account1");
-      expect(pairings.has("alice")).toBe(true);
-      expect(pairings.has("bob")).toBe(false);
+      const pairings = store.loadPendingPairings('account1');
+      expect(pairings.has('alice')).toBe(true);
+      expect(pairings.has('bob')).toBe(false);
     });
 
-    it("should return 0 when no expired pairings", () => {
+    it('should return 0 when no expired pairings', () => {
       const now = Date.now();
       const initialData: PairingStateData = {
         accounts: {
@@ -224,26 +265,38 @@ describe("PairingStateStore", () => {
           },
         },
       };
-      mockFs = createMockFs(new Map([["/tmp/test-pairings.json", JSON.stringify(initialData)]]));
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+      mockFs = createMockFs(new Map([['/tmp/test-pairings.json', JSON.stringify(initialData)]]));
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      const cleanedCount = store.cleanupExpiredPairings("account1", 10000);
+      const cleanedCount = store.cleanupExpiredPairings('account1', 10000);
 
       expect(cleanedCount).toBe(0);
     });
 
-    it("should return 0 for non-existent account", () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
-      const cleanedCount = store.cleanupExpiredPairings("nonexistent");
+    it('should return 0 for non-existent account', () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
+      const cleanedCount = store.cleanupExpiredPairings('nonexistent');
       expect(cleanedCount).toBe(0);
     });
   });
 
-  describe("flush and dispose", () => {
-    it("should flush pending writes immediately", async () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+  describe('flush and dispose', () => {
+    it('should flush pending writes immediately', async () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      store.savePendingPairing("account1", "alice");
+      store.savePendingPairing('account1', 'alice');
       expect(mockFs.writeFileSync).not.toHaveBeenCalled();
 
       store.flush();
@@ -251,70 +304,86 @@ describe("PairingStateStore", () => {
       expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
 
-    it("should flush on dispose", async () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+    it('should flush on dispose', async () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
 
-      store.savePendingPairing("account1", "alice");
+      store.savePendingPairing('account1', 'alice');
       store.dispose();
 
       expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
   });
 
-  describe("error handling", () => {
-    it("should handle read errors gracefully", () => {
+  describe('error handling', () => {
+    it('should handle read errors gracefully', () => {
       const failingFs: FileSystem = {
         existsSync: vi.fn(() => true),
         mkdirSync: vi.fn(),
         readFileSync: vi.fn(() => {
-          throw new Error("Read error");
+          throw new Error('Read error');
         }),
         writeFileSync: vi.fn(),
         promises: {
-          mkdir: vi.fn().mockRejectedValue(new Error("mkdir error")),
-          readFile: vi.fn().mockRejectedValue(new Error("Read error")),
-          writeFile: vi.fn().mockRejectedValue(new Error("Write error")),
+          mkdir: vi.fn().mockRejectedValue(new Error('mkdir error')),
+          readFile: vi.fn().mockRejectedValue(new Error('Read error')),
+          writeFile: vi.fn().mockRejectedValue(new Error('Write error')),
           access: vi.fn().mockResolvedValue(undefined),
         },
       };
 
-      const store = createPairingStateStore("/tmp/test-pairings.json", failingFs, mockLogger as unknown as import("../utils/logger.js").Logger);
-      const pairings = store.loadPendingPairings("account1");
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        failingFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
+      const pairings = store.loadPendingPairings('account1');
       expect(pairings.size).toBe(0);
-      expect(mockLogger.warn).toHaveBeenCalledWith("Failed to load pairing state, starting fresh");
+      expect(mockLogger.warn).toHaveBeenCalledWith('Failed to load pairing state, starting fresh');
     });
 
-    it("should handle write errors gracefully", () => {
+    it('should handle write errors gracefully', () => {
       const failingFs: FileSystem = {
         existsSync: vi.fn(() => true),
         mkdirSync: vi.fn(),
-        readFileSync: vi.fn(() => "{}"),
+        readFileSync: vi.fn(() => '{}'),
         writeFileSync: vi.fn(() => {
-          throw new Error("Write error");
+          throw new Error('Write error');
         }),
         promises: {
-          mkdir: vi.fn().mockRejectedValue(new Error("mkdir error")),
-          readFile: vi.fn().mockResolvedValue("{}"),
-          writeFile: vi.fn().mockRejectedValue(new Error("Write error")),
+          mkdir: vi.fn().mockRejectedValue(new Error('mkdir error')),
+          readFile: vi.fn().mockResolvedValue('{}'),
+          writeFile: vi.fn().mockRejectedValue(new Error('Write error')),
           access: vi.fn().mockResolvedValue(undefined),
         },
       };
 
-      const store = createPairingStateStore("/tmp/test-pairings.json", failingFs, mockLogger as unknown as import("../utils/logger.js").Logger);
-      store.savePendingPairing("account1", "alice");
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        failingFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
+      store.savePendingPairing('account1', 'alice');
       store.flush();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith("Failed to persist pairing state");
+      expect(mockLogger.warn).toHaveBeenCalledWith('Failed to persist pairing state');
     });
   });
 
-  describe("pairing limit enforcement", () => {
-    it("should keep most recent pairings when limit exceeded", () => {
-      const store = createPairingStateStore("/tmp/test-pairings.json", mockFs, mockLogger as unknown as import("../utils/logger.js").Logger);
+  describe('pairing limit enforcement', () => {
+    it('should keep most recent pairings when limit exceeded', () => {
+      const store = createPairingStateStore(
+        '/tmp/test-pairings.json',
+        mockFs,
+        mockLogger as unknown as import('../utils/logger.js').Logger
+      );
       const now = Date.now();
 
       for (let i = 0; i < 1002; i++) {
-        store.savePendingPairing("account1", `user${i}`, new Date(now - i * 1000));
+        store.savePendingPairing('account1', `user${i}`, new Date(now - i * 1000));
       }
       store.flush();
 

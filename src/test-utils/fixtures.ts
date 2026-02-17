@@ -1,10 +1,10 @@
 // Test Fixtures - Static test data for ZTM Chat tests
 // Provides reusable test data like configs, messages, users, etc.
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from "../api/ztm-api.js";
-import { Semaphore } from "../utils/concurrency.js";
-import type { MessageCallback } from "../types/runtime.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from '../api/ztm-api.js';
+import { Semaphore } from '../utils/concurrency.js';
+import type { MessageCallback } from '../types/runtime.js';
 
 // ============================================================================
 // Time Constants
@@ -21,15 +21,15 @@ export const ONE_HOUR_AGO = NOW - 3_600_000;
 
 /** Default test configuration */
 export const testConfig: ZTMChatConfig = {
-  agentUrl: "https://example.com:7777",
-  permitUrl: "https://example.com/permit",
-  permitSource: "server",
-  meshName: "test-mesh",
-  username: "test-bot",
-  dmPolicy: "pairing",
+  agentUrl: 'https://example.com:7777',
+  permitUrl: 'https://example.com/permit',
+  permitSource: 'server',
+  meshName: 'test-mesh',
+  username: 'test-bot',
+  dmPolicy: 'pairing',
   enableGroups: false,
   autoReply: true,
-  messagePath: "/shared",
+  messagePath: '/shared',
 };
 
 /** Configuration with groups enabled */
@@ -41,20 +41,20 @@ export const testConfigWithGroups: ZTMChatConfig = {
 /** Configuration for pairing-only mode */
 export const testConfigPairingOnly: ZTMChatConfig = {
   ...testConfig,
-  dmPolicy: "pairing",
-  allowFrom: ["alice", "bob"],
+  dmPolicy: 'pairing',
+  allowFrom: ['alice', 'bob'],
 };
 
 /** Configuration for open DM policy */
 export const testConfigOpenDM: ZTMChatConfig = {
   ...testConfig,
-  dmPolicy: "allow",
+  dmPolicy: 'allow',
 };
 
 /** Configuration for closed DM policy */
 export const testConfigClosedDM: ZTMChatConfig = {
   ...testConfig,
-  dmPolicy: "deny",
+  dmPolicy: 'deny',
 };
 
 // ============================================================================
@@ -62,15 +62,15 @@ export const testConfigClosedDM: ZTMChatConfig = {
 // ============================================================================
 
 export const testUsers: ZTMUserInfo[] = [
-  { username: "alice" },
-  { username: "bob" },
-  { username: "charlie" },
+  { username: 'alice' },
+  { username: 'bob' },
+  { username: 'charlie' },
 ];
 
 export const testPeers: ZTMPeer[] = [
-  { username: "alice", endpoint: "alice@192.168.1.10:7777" },
-  { username: "bob", endpoint: "bob@192.168.1.11:7777" },
-  { username: "charlie" },
+  { username: 'alice', endpoint: 'alice@192.168.1.10:7777' },
+  { username: 'bob', endpoint: 'bob@192.168.1.11:7777' },
+  { username: 'charlie' },
 ];
 
 // ============================================================================
@@ -78,37 +78,37 @@ export const testPeers: ZTMPeer[] = [
 // ============================================================================
 
 export const testMessages: ZTMMessage[] = [
-  { time: ONE_MINUTE_AGO, message: "Hello!", sender: "alice" },
-  { time: ONE_MINUTE_AGO + 10_000, message: "How are you?", sender: "alice" },
-  { time: ONE_MINUTE_AGO + 20_000, message: "test-bot", sender: "alice" },
+  { time: ONE_MINUTE_AGO, message: 'Hello!', sender: 'alice' },
+  { time: ONE_MINUTE_AGO + 10_000, message: 'How are you?', sender: 'alice' },
+  { time: ONE_MINUTE_AGO + 20_000, message: 'test-bot', sender: 'alice' },
 ];
 
 /** Single test message */
 export const testMessage: ZTMMessage = {
   time: NOW,
-  message: "Test message",
-  sender: "alice",
+  message: 'Test message',
+  sender: 'alice',
 };
 
 /** Empty message */
 export const emptyMessage: ZTMMessage = {
   time: NOW,
-  message: "",
-  sender: "alice",
+  message: '',
+  sender: 'alice',
 };
 
 /** Unicode message */
 export const unicodeMessage: ZTMMessage = {
   time: NOW,
-  message: "你好世界 🌍 Привет мир",
-  sender: "alice",
+  message: '你好世界 🌍 Привет мир',
+  sender: 'alice',
 };
 
 /** Long message */
 export const longMessage: ZTMMessage = {
   time: NOW,
-  message: "A".repeat(10_000),
-  sender: "alice",
+  message: 'A'.repeat(10_000),
+  sender: 'alice',
 };
 
 // ============================================================================
@@ -117,28 +117,28 @@ export const longMessage: ZTMMessage = {
 
 export const testChats: ZTMChat[] = [
   {
-    peer: "alice",
+    peer: 'alice',
     time: ONE_MINUTE_AGO,
     updated: NOW,
     latest: testMessages[0],
   },
   {
-    peer: "bob",
+    peer: 'bob',
     time: FIVE_MINUTES_AGO,
     updated: ONE_MINUTE_AGO,
-    latest: { time: FIVE_MINUTES_AGO, message: "Hi there!", sender: "bob" },
+    latest: { time: FIVE_MINUTES_AGO, message: 'Hi there!', sender: 'bob' },
   },
 ];
 
 export const testGroupChats: ZTMChat[] = [
   {
-    creator: "alice",
-    group: "test-group-1",
-    name: "Test Group",
-    members: ["alice", "bob", "test-bot"],
+    creator: 'alice',
+    group: 'test-group-1',
+    name: 'Test Group',
+    members: ['alice', 'bob', 'test-bot'],
     time: ONE_HOUR_AGO,
     updated: NOW,
-    latest: { time: NOW, message: "Hello group!", sender: "alice" },
+    latest: { time: NOW, message: 'Hello group!', sender: 'alice' },
   },
 ];
 
@@ -147,25 +147,25 @@ export const testGroupChats: ZTMChat[] = [
 // ============================================================================
 
 export const testMeshInfo: ZTMMeshInfo = {
-  name: "test-mesh",
+  name: 'test-mesh',
   connected: true,
   endpoints: 5,
   errors: [],
 };
 
 export const testMeshInfoDisconnected: ZTMMeshInfo = {
-  name: "test-mesh",
+  name: 'test-mesh',
   connected: false,
   endpoints: 0,
-  errors: [{ time: new Date().toISOString(), message: "Connection lost" }],
+  errors: [{ time: new Date().toISOString(), message: 'Connection lost' }],
 };
 
 // ============================================================================
 // Account ID Fixtures
 // ============================================================================
 
-export const testAccountId = "test-account";
-export const testAccountId2 = "test-account-2";
+export const testAccountId = 'test-account';
+export const testAccountId2 = 'test-account-2';
 
 // ============================================================================
 // Factory Functions
@@ -177,8 +177,8 @@ export const testAccountId2 = "test-account-2";
 export function createMessage(overrides: Partial<ZTMMessage> = {}): ZTMMessage {
   return {
     time: NOW,
-    message: "Test message",
-    sender: "alice",
+    message: 'Test message',
+    sender: 'alice',
     ...overrides,
   };
 }
@@ -188,7 +188,7 @@ export function createMessage(overrides: Partial<ZTMMessage> = {}): ZTMMessage {
  */
 export function createChat(overrides: Partial<ZTMChat> = {}): ZTMChat {
   return {
-    peer: "alice",
+    peer: 'alice',
     time: NOW,
     updated: NOW,
     latest: createMessage(),
@@ -201,7 +201,7 @@ export function createChat(overrides: Partial<ZTMChat> = {}): ZTMChat {
  */
 export function createUser(overrides: Partial<ZTMUserInfo> = {}): ZTMUserInfo {
   return {
-    username: "alice",
+    username: 'alice',
     ...overrides,
   };
 }
@@ -211,7 +211,7 @@ export function createUser(overrides: Partial<ZTMUserInfo> = {}): ZTMUserInfo {
  */
 export function createPeer(overrides: Partial<ZTMPeer> = {}): ZTMPeer {
   return {
-    username: "alice",
+    username: 'alice',
     ...overrides,
   };
 }
@@ -229,7 +229,7 @@ export function createConfig(overrides: Partial<ZTMChatConfig> = {}): ZTMChatCon
 /**
  * Create multiple messages for testing
  */
-export function createMessages(count: number, sender = "alice"): ZTMMessage[] {
+export function createMessages(count: number, sender = 'alice'): ZTMMessage[] {
   return Array.from({ length: count }, (_, i) => ({
     time: NOW - (count - i) * 60_000,
     message: `Message ${i + 1}`,
@@ -257,9 +257,10 @@ export function createMockChat(
   message?: string,
   chatTime?: number
 ): ZTMChat {
-  const options: MockChatOptions = typeof peerOrOptions === "string"
-    ? { peer: peerOrOptions, message: message!, time: chatTime! }
-    : peerOrOptions;
+  const options: MockChatOptions =
+    typeof peerOrOptions === 'string'
+      ? { peer: peerOrOptions, message: message!, time: chatTime! }
+      : peerOrOptions;
 
   const time = options.time ?? NOW;
   return {
@@ -268,7 +269,7 @@ export function createMockChat(
     updated: time,
     latest: options.latest ?? {
       time,
-      message: options.message ?? "Test message",
+      message: options.message ?? 'Test message',
       sender: options.peer,
     },
   };
@@ -278,21 +279,21 @@ export function createMockChat(
 // Mock State Factory (for watcher tests)
 // ============================================================================
 
-import type { AccountRuntimeState } from "../types/runtime.js";
-import type { ZTMApiClient } from "../types/api.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import { ZTMReadError } from "../types/errors.js";
+import type { AccountRuntimeState } from '../types/runtime.js';
+import type { ZTMApiClient } from '../types/api.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
+import { ZTMReadError } from '../types/errors.js';
 
 /**
  * Create a mock failure response for getChats
  */
-export function createChatsFailure(peer = "test"): { ok: false; error: ZTMReadError } {
+export function createChatsFailure(peer = 'test'): { ok: false; error: ZTMReadError } {
   return {
     ok: false,
     error: new ZTMReadError({
       peer,
-      operation: "list",
-      cause: new Error("Network error"),
+      operation: 'list',
+      cause: new Error('Network error'),
     }),
   };
 }

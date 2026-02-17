@@ -1,13 +1,11 @@
 // Chat operations API for ZTM Chat
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMChat } from "../types/api.js";
-import { success, failure, type Result } from "../types/common.js";
-import {
-  ZTMReadError,
-} from "../types/errors.js";
-import type { ZTMLogger, RequestHandler, ApiResult } from "./request.js";
-import { getOrDefault } from "../utils/guards.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChat } from '../types/api.js';
+import { success, failure, type Result } from '../types/common.js';
+import { ZTMReadError } from '../types/errors.js';
+import type { ZTMLogger, RequestHandler, ApiResult } from './request.js';
+import { getOrDefault } from '../utils/guards.js';
 
 /**
  * Normalize message content from API format to plain string.
@@ -23,7 +21,11 @@ export function normalizeMessageContent(message: unknown): string {
   if (typeof message === 'object') {
     // Handle nested {message: {text: "..."}} format
     const nestedMessage = (message as { message?: unknown }).message;
-    if (nestedMessage !== undefined && nestedMessage !== null && typeof nestedMessage === 'object') {
+    if (
+      nestedMessage !== undefined &&
+      nestedMessage !== null &&
+      typeof nestedMessage === 'object'
+    ) {
       const nestedText = (nestedMessage as { text?: string }).text;
       if (typeof nestedText === 'string') {
         return nestedText;
@@ -43,11 +45,7 @@ export function normalizeMessageContent(message: unknown): string {
 /**
  * Create chat operations API
  */
-export function createChatApi(
-  config: ZTMChatConfig,
-  request: RequestHandler,
-  logger: ZTMLogger
-) {
+export function createChatApi(config: ZTMChatConfig, request: RequestHandler, logger: ZTMLogger) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
   return {
@@ -57,20 +55,20 @@ export function createChatApi(
     async getChats(): Promise<Result<ZTMChat[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Fetching chats via Chat App API`);
 
-      const result = await request<ZTMChat[]>("GET", `${CHAT_API_BASE}/chats`);
+      const result = await request<ZTMChat[]>('GET', `${CHAT_API_BASE}/chats`);
 
       if (!result.ok) {
         const error = new ZTMReadError({
-          peer: "*",
-          operation: "list",
-          cause: result.error ?? new Error("Unknown error"),
+          peer: '*',
+          operation: 'list',
+          cause: result.error ?? new Error('Unknown error'),
         });
         logger.error?.(`[ZTM API] Failed to get chats: ${error.message}`);
         return failure(error);
       }
 
       // Normalize message format: convert {text: "..."} to string
-      const chats = getOrDefault(result.value, []).map((chat) => {
+      const chats = getOrDefault(result.value, []).map(chat => {
         if (chat.latest) {
           return {
             ...chat,

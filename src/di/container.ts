@@ -1,12 +1,12 @@
 // Dependency Injection Container
 // Provides centralized dependency management and enables testability
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient } from "../types/api.js";
-import type { ZTMMessage } from "../types/api.js";
-import type { Result, AsyncResult } from "../types/common.js";
-import type { PluginRuntime } from "openclaw/plugin-sdk";
-import type { IAllowFromRepository, IMessageStateRepository } from "../runtime/repository.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient } from '../types/api.js';
+import type { ZTMMessage } from '../types/api.js';
+import type { Result, AsyncResult } from '../types/common.js';
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
+import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 
 // ============================================================================
 // DEPENDENCY KEYS
@@ -16,21 +16,21 @@ import type { IAllowFromRepository, IMessageStateRepository } from "../runtime/r
  * Symbol-based dependency keys prevent naming conflicts
  * Each service has a unique symbol for type-safe lookup
  */
-const _loggerKey = Symbol("ztm:logger");
-const _configKey = Symbol("ztm:config");
-const _apiClientKey = Symbol("ztm:api-client");
-const _apiClientFactoryKey = Symbol("ztm:api-client-factory");
-const _runtimeKey = Symbol("ztm:runtime");
-const _channelStateKey = Symbol("ztm:channel-state");
-const _meshConnectivityKey = Symbol("ztm:mesh-connectivity");
-const _permitHandlerKey = Symbol("ztm:permit-handler");
-const _inboundProcessorKey = Symbol("ztm:inbound-processor");
-const _watcherKey = Symbol("ztm:watcher");
-const _pollingWatcherKey = Symbol("ztm:polling-watcher");
-const _messageDispatcherKey = Symbol("ztm:message-dispatcher");
-const _allowFromRepoKey = Symbol("ztm:allow-from-repo");
-const _messageStateRepoKey = Symbol("ztm:message-state-repo");
-const _accountStateManagerKey = Symbol("ztm:account-state-manager");
+const _loggerKey = Symbol('ztm:logger');
+const _configKey = Symbol('ztm:config');
+const _apiClientKey = Symbol('ztm:api-client');
+const _apiClientFactoryKey = Symbol('ztm:api-client-factory');
+const _runtimeKey = Symbol('ztm:runtime');
+const _channelStateKey = Symbol('ztm:channel-state');
+const _meshConnectivityKey = Symbol('ztm:mesh-connectivity');
+const _permitHandlerKey = Symbol('ztm:permit-handler');
+const _inboundProcessorKey = Symbol('ztm:inbound-processor');
+const _watcherKey = Symbol('ztm:watcher');
+const _pollingWatcherKey = Symbol('ztm:polling-watcher');
+const _messageDispatcherKey = Symbol('ztm:message-dispatcher');
+const _allowFromRepoKey = Symbol('ztm:allow-from-repo');
+const _messageStateRepoKey = Symbol('ztm:message-state-repo');
+const _accountStateManagerKey = Symbol('ztm:account-state-manager');
 
 export const DEPENDENCIES = {
   LOGGER: createDependencyKey<ILogger>(_loggerKey),
@@ -101,7 +101,11 @@ export interface IChatReader {
  */
 export interface IChatSender {
   sendPeerMessage(peer: string, message: ZTMMessage): AsyncResult<unknown, Error>;
-  sendGroupMessage(creator: string, group: string, message: ZTMMessage): AsyncResult<unknown, Error>;
+  sendGroupMessage(
+    creator: string,
+    group: string,
+    message: ZTMMessage
+  ): AsyncResult<unknown, Error>;
 }
 
 /**
@@ -160,10 +164,13 @@ export interface IRuntime {
  */
 export class DIContainer {
   private static instance: DIContainer | null = null;
-  private services = new Map<symbol, {
-    factory: () => unknown;
-    instance: unknown | null;
-  }>();
+  private services = new Map<
+    symbol,
+    {
+      factory: () => unknown;
+      instance: unknown | null;
+    }
+  >();
 
   /**
    * Get the singleton container instance
@@ -222,8 +229,8 @@ export class DIContainer {
     if (!entry) {
       const keyStr = String(key);
       const availableKeys = Array.from(this.services.keys())
-        .map((k) => String(k))
-        .join(", ");
+        .map(k => String(k))
+        .join(', ');
       throw new Error(`Service ${keyStr} not registered. Available keys: ${availableKeys}`);
     }
 

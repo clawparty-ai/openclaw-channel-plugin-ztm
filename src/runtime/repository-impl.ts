@@ -4,11 +4,11 @@
 // This layer provides implementations that the messaging layer can depend on,
 // enabling better separation of concerns and testability.
 
-import type { PluginRuntime } from "openclaw/plugin-sdk";
-import type { FileMetadata } from "./store.js";
-import type { IAllowFromRepository, IMessageStateRepository } from "./repository.js";
-import { getAllowFromCache, clearAllowFromCache } from "./state.js";
-import { getAccountMessageStateStore } from "./store.js";
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
+import type { FileMetadata } from './store.js';
+import type { IAllowFromRepository, IMessageStateRepository } from './repository.js';
+import { getAllowFromCache, clearAllowFromCache } from './state.js';
+import { getAccountMessageStateStore } from './store.js';
 
 /**
  * Implementation of IAllowFromRepository

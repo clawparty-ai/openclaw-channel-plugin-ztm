@@ -2,11 +2,11 @@
 // Test Utilities - Dependency Injection for Easy Testing
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient } from "../types/api.js";
-import type { ZTMApiClientDeps } from "./ztm-api.js";
-import { createZTMApiClient } from "./ztm-api.js";
-import { fetchWithRetry } from "../utils/retry.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient } from '../types/api.js';
+import type { ZTMApiClientDeps } from './ztm-api.js';
+import { createZTMApiClient } from './ztm-api.js';
+import { fetchWithRetry } from '../utils/retry.js';
 
 /**
  * Mock logger interface for testing
@@ -26,9 +26,14 @@ export function createMockLogger(): MockLogger & {
 } {
   const calls: { level: string; args: unknown[][] }[] = [];
 
-  const log = (level: string) => (...args: unknown[]) => {
-    calls.push({ level, args: args.map(a => (typeof a === 'object' ? JSON.parse(JSON.stringify(a)) : a)) });
-  };
+  const log =
+    (level: string) =>
+    (...args: unknown[]) => {
+      calls.push({
+        level,
+        args: args.map(a => (typeof a === 'object' ? JSON.parse(JSON.stringify(a)) : a)),
+      });
+    };
 
   return {
     debug: log('debug'),
@@ -103,7 +108,11 @@ export function createMockFetchWithRetry(): {
   const { fetch } = createMockFetch();
   const calls: { url: string; options: RequestInit }[] = [];
 
-  const mockFn: typeof fetchWithRetry = async (url: string, options?: RequestInit, _opts?: { timeout?: number }): Promise<Response> => {
+  const mockFn: typeof fetchWithRetry = async (
+    url: string,
+    options?: RequestInit,
+    _opts?: { timeout?: number }
+  ): Promise<Response> => {
     calls.push({ url, options: options || {} });
     return fetch(url, options);
   };

@@ -1,16 +1,16 @@
 // Integration tests for Multi-Account Isolation
 
-import { describe, it, expect, vi } from "vitest";
-import { testConfig } from "../test-utils/fixtures.js";
+import { describe, it, expect, vi } from 'vitest';
+import { testConfig } from '../test-utils/fixtures.js';
 
-describe("Multi-Account Isolation", () => {
+describe('Multi-Account Isolation', () => {
   const createAccountState = (accountId: string) => ({
     accountId,
     config: {
       ...testConfig,
       username: `bot-${accountId}`,
       allowFrom: [] as string[],
-      dmPolicy: "pairing" as const,
+      dmPolicy: 'pairing' as const,
     },
     apiClient: null,
     connected: true,
@@ -27,22 +27,22 @@ describe("Multi-Account Isolation", () => {
     pendingPairings: new Map(),
   });
 
-  it("should isolate pendingPairings per account", () => {
-    const account1 = createAccountState("account1");
-    const account2 = createAccountState("account2");
+  it('should isolate pendingPairings per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
 
-    account1.pendingPairings.set("alice", new Date());
-    account2.pendingPairings.set("bob", new Date());
+    account1.pendingPairings.set('alice', new Date());
+    account2.pendingPairings.set('bob', new Date());
 
-    expect(account1.pendingPairings.has("alice")).toBe(true);
-    expect(account1.pendingPairings.has("bob")).toBe(false);
-    expect(account2.pendingPairings.has("alice")).toBe(false);
-    expect(account2.pendingPairings.has("bob")).toBe(true);
+    expect(account1.pendingPairings.has('alice')).toBe(true);
+    expect(account1.pendingPairings.has('bob')).toBe(false);
+    expect(account2.pendingPairings.has('alice')).toBe(false);
+    expect(account2.pendingPairings.has('bob')).toBe(true);
   });
 
-  it("should isolate messageCallbacks per account", () => {
-    const account1 = createAccountState("account1");
-    const account2 = createAccountState("account2");
+  it('should isolate messageCallbacks per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
 
     const callback1 = vi.fn();
     const callback2 = vi.fn();
@@ -56,9 +56,9 @@ describe("Multi-Account Isolation", () => {
     expect(account2.messageCallbacks.has(callback2)).toBe(true);
   });
 
-  it("should isolate watchErrorCount per account", () => {
-    const account1 = createAccountState("account1");
-    const account2 = createAccountState("account2");
+  it('should isolate watchErrorCount per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
 
     account1.watchErrorCount = 5;
     account2.watchErrorCount = 2;
@@ -67,9 +67,9 @@ describe("Multi-Account Isolation", () => {
     expect(account2.watchErrorCount).toBe(2);
   });
 
-  it("should isolate connection state per account", () => {
-    const account1 = createAccountState("account1");
-    const account2 = createAccountState("account2");
+  it('should isolate connection state per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
 
     account1.connected = false;
     account2.connected = true;
@@ -82,11 +82,11 @@ describe("Multi-Account Isolation", () => {
     expect(account2.meshConnected).toBe(true);
   });
 
-  it("should handle same user in different accounts", () => {
-    const account1 = createAccountState("account1");
-    const account2 = createAccountState("account2");
+  it('should handle same user in different accounts', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
 
-    const sender = "alice";
+    const sender = 'alice';
     account1.pendingPairings.set(sender, new Date());
 
     expect(account1.pendingPairings.has(sender)).toBe(true);

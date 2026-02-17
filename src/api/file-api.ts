@@ -1,12 +1,9 @@
 // File operations API for ZTM Chat
 
-import type { ZTMChatConfig } from "../types/config.js";
-import { success, type Result } from "../types/common.js";
-import {
-  ZTMError,
-  ZTMReadError,
-} from "../types/errors.js";
-import type { ZTMLogger, RequestHandler, ApiResult } from "./request.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import { success, type Result } from '../types/common.js';
+import { ZTMError, ZTMReadError } from '../types/errors.js';
+import type { ZTMLogger, RequestHandler, ApiResult } from './request.js';
 
 // Maximum number of tracked files to prevent memory leaks
 const MAX_TRACKED_FILES = 500;
@@ -14,11 +11,7 @@ const MAX_TRACKED_FILES = 500;
 /**
  * Create file operations API
  */
-export function createFileApi(
-  config: ZTMChatConfig,
-  request: RequestHandler,
-  logger: ZTMLogger
-) {
+export function createFileApi(config: ZTMChatConfig, request: RequestHandler, logger: ZTMLogger) {
   // Track both time and size for each file to detect changes in append-only files
   interface FileMetadata {
     time: number;
@@ -40,7 +33,7 @@ export function createFileApi(
 
   // Type guard for file metadata from API response
   function isFileMeta(obj: unknown): obj is { time?: number; size?: number } {
-    return typeof obj === "object" && obj !== null;
+    return typeof obj === 'object' && obj !== null;
   }
 
   return {

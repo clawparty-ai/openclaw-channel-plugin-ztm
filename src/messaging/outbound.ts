@@ -1,14 +1,14 @@
 // Outbound message sending for ZTM Chat
 
-import { randomBytes } from "node:crypto";
-import { logger } from "../utils/logger.js";
-import { type ZTMMessage } from "../api/ztm-api.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import { success, failure, type Result } from "../types/common.js";
-import { ZTMSendError } from "../types/errors.js";
+import { randomBytes } from 'node:crypto';
+import { logger } from '../utils/logger.js';
+import { type ZTMMessage } from '../api/ztm-api.js';
+import type { AccountRuntimeState } from '../runtime/state.js';
+import { success, failure, type Result } from '../types/common.js';
+import { ZTMSendError } from '../types/errors.js';
 
 export function generateMessageId(): string {
-  const randomPart = randomBytes(4).toString("hex");
+  const randomPart = randomBytes(4).toString('hex');
   return `ztm-${Date.now()}-${randomPart}`;
 }
 
@@ -23,7 +23,7 @@ export async function sendZTMMessage(
     const error = new ZTMSendError({
       peer,
       messageTime: Date.now(),
-      cause: new Error("Runtime not initialized"),
+      cause: new Error('Runtime not initialized'),
     });
     logger.error(`[${state.accountId}] Failed to send message: ${error.message}`);
     state.lastError = error.message;
@@ -44,15 +44,15 @@ export async function sendZTMMessage(
   // Handle result with consistent logging and state updates
   if (result.ok) {
     state.lastOutboundAt = new Date();
-    const operation = groupInfo ? "sendGroupMessage" : "sendPeerMessage";
+    const operation = groupInfo ? 'sendGroupMessage' : 'sendPeerMessage';
     const target = groupInfo ? `${groupInfo.creator}/${groupInfo.group}` : peer;
     logger.debug(`[${state.accountId}] ${operation} to "${target}" succeeded`);
     return result;
   }
 
   // Error path - update state and log
-  state.lastError = result.error?.message ?? "Unknown send error";
-  const operation = groupInfo ? "sendGroupMessage" : "sendPeerMessage";
+  state.lastError = result.error?.message ?? 'Unknown send error';
+  const operation = groupInfo ? 'sendGroupMessage' : 'sendPeerMessage';
   const target = groupInfo ? `${groupInfo.creator}/${groupInfo.group}` : peer;
   logger.warn(`[${state.accountId}] ${operation} to "${target}" failed: ${state.lastError}`);
 

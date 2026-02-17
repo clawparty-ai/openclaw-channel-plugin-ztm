@@ -11,7 +11,7 @@
  */
 export function sanitizeForLog(input: string, maxLength = 200): string {
   if (input === null || input === undefined) {
-    return "";
+    return '';
   }
 
   const str = String(input);
@@ -19,14 +19,14 @@ export function sanitizeForLog(input: string, maxLength = 200): string {
   // Remove newlines, carriage returns, and other control characters
   // that could allow log injection or break log parsers
   const sanitized = str
-    .replace(/[\r\n\t\v\f]/g, " ")  // Replace control chars with space
-    .replace(/[\x00-\x1F\x7F]/g, "") // Remove remaining control chars
-    .replace(/\s+/g, " ")             // Collapse multiple spaces
+    .replace(/[\r\n\t\v\f]/g, ' ') // Replace control chars with space
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove remaining control chars
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
     .trim();
 
   // Truncate to prevent excessively long log entries
   if (sanitized.length > maxLength) {
-    return sanitized.substring(0, maxLength) + "...";
+    return sanitized.substring(0, maxLength) + '...';
   }
 
   return sanitized;
@@ -46,9 +46,9 @@ export function sanitizeObjectForLog<T extends Record<string, unknown>>(
   const sanitized = { ...obj };
 
   for (const [key, value] of Object.entries(sanitized)) {
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       (sanitized as Record<string, unknown>)[key] = sanitizeForLog(value, maxLength);
-    } else if (typeof value === "object" && value !== null) {
+    } else if (typeof value === 'object' && value !== null) {
       (sanitized as Record<string, unknown>)[key] = sanitizeObjectForLog(
         value as Record<string, unknown>,
         maxLength

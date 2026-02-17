@@ -1,15 +1,11 @@
 // ZTM Chat Channel Configuration
 // Configuration parsing and schema utilities
 
-import type { TSchema } from "@sinclair/typebox";
-import type { OpenClawConfig } from "openclaw/plugin-sdk";
-import type { ZTMChatConfig } from "../types/config.js";
-import { ZTMChatConfigSchema } from "../config/index.js";
-import {
-  resolveZTMChatConfig,
-  getDefaultConfig,
-  mergeAccountConfig,
-} from "../config/index.js";
+import type { TSchema } from '@sinclair/typebox';
+import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { ZTMChatConfig } from '../types/config.js';
+import { ZTMChatConfigSchema } from '../config/index.js';
+import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../config/index.js';
 
 // ============================================================================
 // Types
@@ -32,15 +28,9 @@ export interface ResolvedZTMChatAccount {
 /**
  * Get effective channel config from openclaw.yaml: cfg.channels["ztm-chat"]
  */
-export function getEffectiveChannelConfig(
-  cfg?: OpenClawConfig,
-): Record<string, unknown> | null {
-  const inlineConfig = cfg?.channels?.["ztm-chat"] as Record<string, unknown>;
-  if (
-    inlineConfig &&
-    typeof inlineConfig === "object" &&
-    Object.keys(inlineConfig).length > 0
-  ) {
+export function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, unknown> | null {
+  const inlineConfig = cfg?.channels?.['ztm-chat'] as Record<string, unknown>;
+  if (inlineConfig && typeof inlineConfig === 'object' && Object.keys(inlineConfig).length > 0) {
     return inlineConfig;
   }
   return null;
@@ -56,20 +46,16 @@ export function getEffectiveChannelConfig(
 export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
   const channelConfig = getEffectiveChannelConfig(cfg);
   const accounts = channelConfig?.accounts as Record<string, unknown> | undefined;
-  if (accounts && typeof accounts === "object") {
+  if (accounts && typeof accounts === 'object') {
     const ids = Object.keys(accounts);
     if (ids.length > 0) return ids;
   }
   // Fallback: return ["default"] so the channel appears in channels status
-  return ["default"];
+  return ['default'];
 }
 
 // Dangerous property names that could lead to prototype pollution
-const DANGEROUS_PROPERTY_NAMES = new Set([
-  "__proto__",
-  "constructor",
-  "prototype",
-]);
+const DANGEROUS_PROPERTY_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
  * Validate account ID to prevent path traversal and prototype pollution
@@ -81,7 +67,7 @@ function isValidAccountId(accountId: string | undefined): boolean {
   // Check for dangerous property names
   if (DANGEROUS_PROPERTY_NAMES.has(accountId)) return false;
   // Check for path traversal patterns
-  if (accountId.includes("..") || accountId.includes("/") || accountId.includes("\\")) return false;
+  if (accountId.includes('..') || accountId.includes('/') || accountId.includes('\\')) return false;
   return true;
 }
 
@@ -99,21 +85,21 @@ export function resolveZTMChatAccount({
   if (!isValidAccountId(accountId)) {
     // Return default account for invalid IDs
     return {
-      accountId: "default",
-      username: "default",
+      accountId: 'default',
+      username: 'default',
       enabled: true,
       config: getDefaultConfig(),
     };
   }
 
   const channelConfig = getEffectiveChannelConfig(cfg);
-  const accountKey = accountId ?? "default";
+  const accountKey = accountId ?? 'default';
 
   if (!channelConfig) {
     return {
       accountId: accountKey,
-      username: accountKey,  // Use accountKey as default username
-      enabled: true,  // Default to enabled
+      username: accountKey, // Use accountKey as default username
+      enabled: true, // Default to enabled
       config: getDefaultConfig(),
     };
   }
@@ -141,9 +127,7 @@ export function resolveZTMChatAccount({
 /**
  * Build channel config schema with UI hints for the configuration UI
  */
-export function buildChannelConfigSchemaWithHints(
-  _schema: TSchema,
-) {
+export function buildChannelConfigSchemaWithHints(_schema: TSchema) {
   return {
     schema: {},
     parse(value: unknown) {
@@ -151,49 +135,49 @@ export function buildChannelConfigSchemaWithHints(
     },
     uiHints: {
       agentUrl: {
-        label: "ZTM Agent URL",
-        placeholder: "https://ztm-agent.example.com:7777",
-        help: "URL of your ZTM Agent API server",
+        label: 'ZTM Agent URL',
+        placeholder: 'https://ztm-agent.example.com:7777',
+        help: 'URL of your ZTM Agent API server',
         required: true,
         validation: {
-          pattern: "^https?://",
-          message: "Must start with http:// or https://",
+          pattern: '^https?://',
+          message: 'Must start with http:// or https://',
         },
       },
       meshName: {
-        label: "Mesh Name",
-        placeholder: "my-mesh",
-        help: "Name of your ZTM mesh network",
+        label: 'Mesh Name',
+        placeholder: 'my-mesh',
+        help: 'Name of your ZTM mesh network',
         required: true,
         validation: {
-          pattern: "^[a-zA-Z0-9_-]+$",
-          message: "Only letters, numbers, hyphens, and underscores",
+          pattern: '^[a-zA-Z0-9_-]+$',
+          message: 'Only letters, numbers, hyphens, and underscores',
         },
       },
       username: {
-        label: "Bot Username",
-        placeholder: "openclaw-bot",
-        help: "Username for the bot account in ZTM",
+        label: 'Bot Username',
+        placeholder: 'openclaw-bot',
+        help: 'Username for the bot account in ZTM',
         required: true,
         validation: {
-          pattern: "^[a-zA-Z0-9_-]+$",
-          message: "Only letters, numbers, hyphens, and underscores",
+          pattern: '^[a-zA-Z0-9_-]+$',
+          message: 'Only letters, numbers, hyphens, and underscores',
         },
       },
       enableGroups: {
-        label: "Enable Groups",
-        help: "Enable group chat support (future feature)",
+        label: 'Enable Groups',
+        help: 'Enable group chat support (future feature)',
         advanced: true,
       },
       autoReply: {
-        label: "Auto Reply",
-        help: "Automatically reply to messages using AI agent",
+        label: 'Auto Reply',
+        help: 'Automatically reply to messages using AI agent',
         default: true,
       },
       messagePath: {
-        label: "Message Path",
-        help: "Custom message path prefix (advanced)",
-        placeholder: "/shared",
+        label: 'Message Path',
+        help: 'Custom message path prefix (advanced)',
+        placeholder: '/shared',
         advanced: true,
       },
     },

@@ -1,17 +1,14 @@
 // Message operations API for ZTM Chat
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMMessage, WatchChangeItem } from "../types/api.js";
-import { success, failure, type Result } from "../types/common.js";
-import {
-  ZTMReadError,
-  ZTMSendError,
-} from "../types/errors.js";
-import type { ZTMLogger, RequestHandler } from "./request.js";
-import { normalizeMessageContent } from "./chat-api.js";
-import { sanitizeForLog } from "../utils/log-sanitize.js";
-import { validateUsername, validateGroupId, validateMessageContent } from "../utils/validation.js";
-import { getOrDefault } from "../utils/guards.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMMessage, WatchChangeItem } from '../types/api.js';
+import { success, failure, type Result } from '../types/common.js';
+import { ZTMReadError, ZTMSendError } from '../types/errors.js';
+import type { ZTMLogger, RequestHandler } from './request.js';
+import { normalizeMessageContent } from './chat-api.js';
+import { sanitizeForLog } from '../utils/log-sanitize.js';
+import { validateUsername, validateGroupId, validateMessageContent } from '../utils/validation.js';
+import { getOrDefault } from '../utils/guards.js';
 
 /**
  * Create message operations API
@@ -20,7 +17,7 @@ export function createMessageApi(
   config: ZTMChatConfig,
   request: RequestHandler,
   logger: ZTMLogger,
-  getChats: () => Promise<Result<import("../types/api.js").ZTMChat[], ZTMReadError>>
+  getChats: () => Promise<Result<import('../types/api.js').ZTMChat[], ZTMReadError>>
 ) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
@@ -40,15 +37,19 @@ export function createMessageApi(
       if (!peerValidation.valid) {
         const error = new ZTMReadError({
           peer,
-          operation: "read",
+          operation: 'read',
           cause: new Error(peerValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid peer username "${sanitizeForLog(peer)}": ${peerValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid peer username "${sanitizeForLog(peer)}": ${peerValidation.error}`
+        );
         return failure(error);
       }
 
       const safePeer = sanitizeForLog(peer);
-      logger.debug?.(`[ZTM API] Fetching messages from peer "${safePeer}" since=${since}, before=${before}`);
+      logger.debug?.(
+        `[ZTM API] Fetching messages from peer "${safePeer}" since=${since}, before=${before}`
+      );
 
       const queryParams = new URLSearchParams();
       if (since !== undefined) {
@@ -59,19 +60,22 @@ export function createMessageApi(
       }
 
       const encodedPeer = encodeURIComponent(peer);
-      const result = await request<ZTMMessage[]>("GET", `${CHAT_API_BASE}/peers/${encodedPeer}/messages?${queryParams.toString()}`);
+      const result = await request<ZTMMessage[]>(
+        'GET',
+        `${CHAT_API_BASE}/peers/${encodedPeer}/messages?${queryParams.toString()}`
+      );
 
       if (!result.ok) {
         const error = new ZTMReadError({
           peer,
-          operation: "read",
-          cause: result.error ?? new Error("Unknown error"),
+          operation: 'read',
+          cause: result.error ?? new Error('Unknown error'),
         });
         logger.error?.(`[ZTM API] Failed to get peer messages: ${error.message}`);
         return failure(error);
       }
 
-      const messages = getOrDefault(result.value, []).map((msg) => ({
+      const messages = getOrDefault(result.value, []).map(msg => ({
         ...msg,
         message: normalizeMessageContent(msg.message),
       }));
@@ -83,7 +87,10 @@ export function createMessageApi(
     /**
      * Send a message to a peer
      */
-    async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZTMSendError>> {
+    async sendPeerMessage(
+      peer: string,
+      message: ZTMMessage
+    ): Promise<Result<boolean, ZTMSendError>> {
       // Validate peer username format
       const peerValidation = validateUsername(peer);
       if (!peerValidation.valid) {
@@ -93,7 +100,9 @@ export function createMessageApi(
           contentPreview: message.message,
           cause: new Error(peerValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid peer username "${sanitizeForLog(peer)}": ${peerValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid peer username "${sanitizeForLog(peer)}": ${peerValidation.error}`
+        );
         return failure(error);
       }
 
@@ -106,25 +115,33 @@ export function createMessageApi(
           contentPreview: message.message,
           cause: new Error(contentValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid message content for peer "${sanitizeForLog(peer)}": ${contentValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid message content for peer "${sanitizeForLog(peer)}": ${contentValidation.error}`
+        );
         return failure(error);
       }
 
       const safePeer = sanitizeForLog(peer);
       const safeText = sanitizeForLog(message.message.substring(0, 50));
-      logger.debug?.(`[ZTM API] Sending message to peer "${safePeer}" at time=${message.time}, text="${safeText}..."`);
+      logger.debug?.(
+        `[ZTM API] Sending message to peer "${safePeer}" at time=${message.time}, text="${safeText}..."`
+      );
 
       const ztmEntry = { text: message.message };
       const encodedPeer = encodeURIComponent(peer);
 
-      const result = await request<void>("POST", `${CHAT_API_BASE}/peers/${encodedPeer}/messages`, ztmEntry);
+      const result = await request<void>(
+        'POST',
+        `${CHAT_API_BASE}/peers/${encodedPeer}/messages`,
+        ztmEntry
+      );
 
       if (!result.ok) {
         const error = new ZTMSendError({
           peer,
           messageTime: message.time,
           contentPreview: message.message,
-          cause: result.error ?? new Error("Unknown error"),
+          cause: result.error ?? new Error('Unknown error'),
         });
         logger.error?.(`[ZTM API] Failed to send message to ${safePeer}: ${error.message}`);
         return failure(error);
@@ -146,10 +163,12 @@ export function createMessageApi(
       if (!creatorValidation.valid) {
         const error = new ZTMReadError({
           peer: `${creator}/${group}`,
-          operation: "read",
+          operation: 'read',
           cause: new Error(creatorValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid creator username "${sanitizeForLog(creator)}": ${creatorValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid creator username "${sanitizeForLog(creator)}": ${creatorValidation.error}`
+        );
         return failure(error);
       }
 
@@ -158,10 +177,12 @@ export function createMessageApi(
       if (!groupValidation.valid) {
         const error = new ZTMReadError({
           peer: `${creator}/${group}`,
-          operation: "read",
+          operation: 'read',
           cause: new Error(groupValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid group ID "${sanitizeForLog(group)}": ${groupValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid group ID "${sanitizeForLog(group)}": ${groupValidation.error}`
+        );
         return failure(error);
       }
 
@@ -169,21 +190,21 @@ export function createMessageApi(
       logger.debug?.(`[ZTM API] Fetching group messages from "${safeGroup}"`);
 
       const result = await request<ZTMMessage[]>(
-        "GET",
+        'GET',
         `${CHAT_API_BASE}/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages`
       );
 
       if (!result.ok) {
         const error = new ZTMReadError({
           peer: `${creator}/${group}`,
-          operation: "read",
-          cause: result.error ?? new Error("Unknown error"),
+          operation: 'read',
+          cause: result.error ?? new Error('Unknown error'),
         });
         logger.error?.(`[ZTM API] Failed to get group messages: ${error.message}`);
         return failure(error);
       }
 
-      const messages = getOrDefault(result.value, []).map((msg) => {
+      const messages = getOrDefault(result.value, []).map(msg => {
         const msgMessage = msg.message ?? null;
         let normalizedMessage = '';
         if (msgMessage !== null && typeof msgMessage === 'object') {
@@ -218,7 +239,9 @@ export function createMessageApi(
           contentPreview: message.message,
           cause: new Error(creatorValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid creator username "${sanitizeForLog(creator)}": ${creatorValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid creator username "${sanitizeForLog(creator)}": ${creatorValidation.error}`
+        );
         return failure(error);
       }
 
@@ -231,7 +254,9 @@ export function createMessageApi(
           contentPreview: message.message,
           cause: new Error(groupValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid group ID "${sanitizeForLog(group)}": ${groupValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid group ID "${sanitizeForLog(group)}": ${groupValidation.error}`
+        );
         return failure(error);
       }
 
@@ -244,7 +269,9 @@ export function createMessageApi(
           contentPreview: message.message,
           cause: new Error(contentValidation.error),
         });
-        logger.warn?.(`[ZTM API] Invalid message content for group "${sanitizeForLog(`${creator}/${group}`)}": ${contentValidation.error}`);
+        logger.warn?.(
+          `[ZTM API] Invalid message content for group "${sanitizeForLog(`${creator}/${group}`)}": ${contentValidation.error}`
+        );
         return failure(error);
       }
 
@@ -255,7 +282,7 @@ export function createMessageApi(
       const ztmEntry = { text: message.message };
 
       const result = await request<void>(
-        "POST",
+        'POST',
         `${CHAT_API_BASE}/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages`,
         ztmEntry
       );
@@ -265,7 +292,7 @@ export function createMessageApi(
           peer: `${creator}/${group}`,
           messageTime: message.time,
           contentPreview: message.message,
-          cause: result.error ?? new Error("Unknown error"),
+          cause: result.error ?? new Error('Unknown error'),
         });
         logger.error?.(`[ZTM API] Failed to send group message: ${error.message}`);
         return failure(error);
@@ -278,18 +305,16 @@ export function createMessageApi(
     /**
      * Watch for changes in chats
      */
-    async watchChanges(
-      prefix: string
-    ): Promise<Result<WatchChangeItem[], ZTMReadError>> {
+    async watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>> {
       const safePrefix = sanitizeForLog(prefix);
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${safePrefix}"`);
 
       const chatsResult = await getChats();
       if (!chatsResult.ok) {
         const error = new ZTMReadError({
-          peer: "*",
-          operation: "list",
-          cause: chatsResult.error ?? new Error("Unknown error"),
+          peer: '*',
+          operation: 'list',
+          cause: chatsResult.error ?? new Error('Unknown error'),
         });
         logger.error?.(`[ZTM API] Watch failed for ${safePrefix}: ${error.message}`);
         return failure(error);
@@ -297,7 +322,9 @@ export function createMessageApi(
 
       const changedItems: WatchChangeItem[] = [];
 
-      logger.debug?.(`[ZTM API] Watch: got ${chatsResult.value?.length ?? 0} chats, lastPollTime=${lastPollTime}`);
+      logger.debug?.(
+        `[ZTM API] Watch: got ${chatsResult.value?.length ?? 0} chats, lastPollTime=${lastPollTime}`
+      );
 
       for (const chat of getOrDefault(chatsResult.value, [])) {
         const chatLatestTime = chat.latest?.time ?? 0;
@@ -310,7 +337,7 @@ export function createMessageApi(
             type: 'group',
             creator: chat.creator,
             group: chat.group,
-            name: chat.name
+            name: chat.name,
           });
         }
       }
@@ -321,7 +348,9 @@ export function createMessageApi(
         lastPollTime = latestTime;
         const peerCount = changedItems.filter(i => i.type === 'peer').length;
         const groupCount = changedItems.filter(i => i.type === 'group').length;
-        logger.debug?.(`[ZTM API] Watch: found ${peerCount} peers, ${groupCount} groups with new messages`);
+        logger.debug?.(
+          `[ZTM API] Watch: found ${peerCount} peers, ${groupCount} groups with new messages`
+        );
       }
 
       logger.debug?.(`[ZTM API] Watch complete: ${changedItems.length} chats with new messages`);

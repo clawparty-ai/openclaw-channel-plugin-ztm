@@ -1,10 +1,10 @@
 // Unit tests for File API
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { createFileApi } from "./file-api.js";
-import { testConfig } from "../test-utils/fixtures.js";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createFileApi } from './file-api.js';
+import { testConfig } from '../test-utils/fixtures.js';
 
-describe("createFileApi", () => {
+describe('createFileApi', () => {
   const mockLogger = {
     debug: () => {},
     info: () => {},
@@ -18,95 +18,95 @@ describe("createFileApi", () => {
     // Reset any shared state if needed
   });
 
-  describe("seedFileMetadata", () => {
-    it("should seed file metadata", () => {
+  describe('seedFileMetadata', () => {
+    it('should seed file metadata', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported).toHaveProperty("/path/to/file1.json");
-      expect(exported["/path/to/file1.json"].time).toBe(1000);
+      expect(exported).toHaveProperty('/path/to/file1.json');
+      expect(exported['/path/to/file1.json'].time).toBe(1000);
     });
 
-    it("should update existing file if time is newer", () => {
+    it('should update existing file if time is newer', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 2000, size: 200 },
+        '/path/to/file1.json': { time: 2000, size: 200 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].time).toBe(2000);
-      expect(exported["/path/to/file1.json"].size).toBe(200);
+      expect(exported['/path/to/file1.json'].time).toBe(2000);
+      expect(exported['/path/to/file1.json'].size).toBe(200);
     });
 
-    it("should not update existing file if time is older", () => {
+    it('should not update existing file if time is older', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 2000, size: 200 },
+        '/path/to/file1.json': { time: 2000, size: 200 },
       });
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].time).toBe(2000);
-      expect(exported["/path/to/file1.json"].size).toBe(200);
+      expect(exported['/path/to/file1.json'].time).toBe(2000);
+      expect(exported['/path/to/file1.json'].size).toBe(200);
     });
 
-    it("should not update existing file if size is smaller", () => {
+    it('should not update existing file if size is smaller', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 200 },
+        '/path/to/file1.json': { time: 1000, size: 200 },
       });
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].size).toBe(200);
+      expect(exported['/path/to/file1.json'].size).toBe(200);
     });
 
-    it("should update file if same time but larger size", () => {
+    it('should update file if same time but larger size', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 200 },
+        '/path/to/file1.json': { time: 1000, size: 200 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].size).toBe(200);
+      expect(exported['/path/to/file1.json'].size).toBe(200);
     });
 
-    it("should seed multiple files", () => {
+    it('should seed multiple files', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
-        "/path/to/file2.json": { time: 2000, size: 200 },
-        "/path/to/file3.json": { time: 3000, size: 300 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
+        '/path/to/file2.json': { time: 2000, size: 200 },
+        '/path/to/file3.json': { time: 3000, size: 300 },
       });
 
       const exported = fileApi.exportFileMetadata();
       expect(Object.keys(exported).length).toBe(3);
     });
 
-    it("should handle empty metadata", () => {
+    it('should handle empty metadata', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({});
@@ -116,46 +116,46 @@ describe("createFileApi", () => {
     });
   });
 
-  describe("exportFileMetadata", () => {
-    it("should return empty object initially", () => {
+  describe('exportFileMetadata', () => {
+    it('should return empty object initially', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       const exported = fileApi.exportFileMetadata();
       expect(exported).toEqual({});
     });
 
-    it("should export previously seeded metadata", () => {
+    it('should export previously seeded metadata', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       const exported = fileApi.exportFileMetadata();
       expect(exported).toEqual({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
     });
 
-    it("should return reference to internal map, not a copy", () => {
+    it('should return reference to internal map, not a copy', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 100 },
+        '/path/to/file1.json': { time: 1000, size: 100 },
       });
 
       const exported1 = fileApi.exportFileMetadata();
       const exported2 = fileApi.exportFileMetadata();
 
       // The function returns the same reference, so modifications affect both
-      exported1["/path/to/file1.json"].time = 9999;
+      exported1['/path/to/file1.json'].time = 9999;
 
-      expect(exported2["/path/to/file1.json"].time).toBe(9999);
+      expect(exported2['/path/to/file1.json'].time).toBe(9999);
     });
   });
 
-  describe("memory management", () => {
-    it("should limit tracked files to MAX_TRACKED_FILES", () => {
+  describe('memory management', () => {
+    it('should limit tracked files to MAX_TRACKED_FILES', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       // Seed more than MAX_TRACKED_FILES (500) files
@@ -171,38 +171,38 @@ describe("createFileApi", () => {
     });
   });
 
-  describe("file metadata edge cases", () => {
-    it("should handle zero time", () => {
+  describe('file metadata edge cases', () => {
+    it('should handle zero time', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 0, size: 100 },
+        '/path/to/file1.json': { time: 0, size: 100 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].time).toBe(0);
+      expect(exported['/path/to/file1.json'].time).toBe(0);
     });
 
-    it("should handle zero size", () => {
+    it('should handle zero size', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: 1000, size: 0 },
+        '/path/to/file1.json': { time: 1000, size: 0 },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].size).toBe(0);
+      expect(exported['/path/to/file1.json'].size).toBe(0);
     });
 
-    it("should handle very large values", () => {
+    it('should handle very large values', () => {
       const fileApi = createFileApi(testConfig, mockRequest as any, mockLogger);
 
       fileApi.seedFileMetadata({
-        "/path/to/file1.json": { time: Number.MAX_SAFE_INTEGER, size: Number.MAX_SAFE_INTEGER },
+        '/path/to/file1.json': { time: Number.MAX_SAFE_INTEGER, size: Number.MAX_SAFE_INTEGER },
       });
 
       const exported = fileApi.exportFileMetadata();
-      expect(exported["/path/to/file1.json"].time).toBe(Number.MAX_SAFE_INTEGER);
+      expect(exported['/path/to/file1.json'].time).toBe(Number.MAX_SAFE_INTEGER);
     });
   });
 });

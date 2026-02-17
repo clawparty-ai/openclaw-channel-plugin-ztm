@@ -1,9 +1,9 @@
 // Integration tests for Memory and Resource Management
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from 'vitest';
 
-describe("Memory and Resource Management", () => {
-  it("should limit pendingPairings size", () => {
+describe('Memory and Resource Management', () => {
+  it('should limit pendingPairings size', () => {
     const pendingPairings = new Map<string, Date>();
     const maxSize = 1000;
 
@@ -14,7 +14,7 @@ describe("Memory and Resource Management", () => {
     expect(pendingPairings.size).toBeGreaterThanOrEqual(maxSize);
   });
 
-  it("should limit messageCallbacks size", () => {
+  it('should limit messageCallbacks size', () => {
     const callbacks = new Set<() => void>();
     const maxSize = 100;
 
@@ -25,7 +25,7 @@ describe("Memory and Resource Management", () => {
     expect(callbacks.size).toBeGreaterThanOrEqual(maxSize);
   });
 
-  it("should clean up intervals on stop", () => {
+  it('should clean up intervals on stop', () => {
     let intervalCleared = false;
     const mockInterval = setInterval(() => {}, 1000);
 
@@ -35,8 +35,12 @@ describe("Memory and Resource Management", () => {
     expect(intervalCleared).toBe(true);
   });
 
-  it("should handle cleanup of unknown resources gracefully", () => {
-    const testCases: Array<{ interval?: number | null; callbacks?: Set<any>; pending?: Map<any, any> }> = [
+  it('should handle cleanup of unknown resources gracefully', () => {
+    const testCases: Array<{
+      interval?: number | null;
+      callbacks?: Set<any>;
+      pending?: Map<any, any>;
+    }> = [
       { interval: null },
       { interval: undefined },
       { callbacks: new Set() },

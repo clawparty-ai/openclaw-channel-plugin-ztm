@@ -1,29 +1,29 @@
 // Unit tests for Semaphore concurrency control
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mockResolved } from "../test-utils/mocks.js";
-import { Semaphore, createSemaphore } from "./concurrency.js";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mockResolved } from '../test-utils/mocks.js';
+import { Semaphore, createSemaphore } from './concurrency.js';
 
-describe("Semaphore", () => {
-  describe("constructor", () => {
-    it("should create semaphore with specified permits", () => {
+describe('Semaphore', () => {
+  describe('constructor', () => {
+    it('should create semaphore with specified permits', () => {
       const semaphore = new Semaphore(5);
 
       expect(semaphore.availablePermits()).toBe(5);
       expect(semaphore.queuedWaiters()).toBe(0);
     });
 
-    it("should throw error for zero permits", () => {
+    it('should throw error for zero permits', () => {
       expect(() => new Semaphore(0)).toThrow();
     });
 
-    it("should throw error for negative permits", () => {
+    it('should throw error for negative permits', () => {
       expect(() => new Semaphore(-1)).toThrow();
     });
   });
 
-  describe("acquire", () => {
-    it("should acquire permit when available", async () => {
+  describe('acquire', () => {
+    it('should acquire permit when available', async () => {
       const semaphore = new Semaphore(2);
 
       await semaphore.acquire();
@@ -31,7 +31,7 @@ describe("Semaphore", () => {
       expect(semaphore.availablePermits()).toBe(1);
     });
 
-    it("should queue when no permits available", async () => {
+    it('should queue when no permits available', async () => {
       const semaphore = new Semaphore(1);
       let acquire2Complete = false;
 
@@ -57,7 +57,7 @@ describe("Semaphore", () => {
       expect(acquire2Complete).toBe(true);
     });
 
-    it("should handle multiple queued waiters in FIFO order", async () => {
+    it('should handle multiple queued waiters in FIFO order', async () => {
       const semaphore = new Semaphore(1);
       const results: number[] = [];
 
@@ -82,7 +82,7 @@ describe("Semaphore", () => {
       expect(results).toEqual([1, 2, 3]);
     });
 
-    it("should acquire multiple times on same semaphore", async () => {
+    it('should acquire multiple times on same semaphore', async () => {
       const semaphore = new Semaphore(3);
 
       await semaphore.acquire();
@@ -93,8 +93,8 @@ describe("Semaphore", () => {
     });
   });
 
-  describe("release", () => {
-    it("should increase available permits", async () => {
+  describe('release', () => {
+    it('should increase available permits', async () => {
       const semaphore = new Semaphore(1);
 
       await semaphore.acquire();
@@ -104,7 +104,7 @@ describe("Semaphore", () => {
       expect(semaphore.availablePermits()).toBe(1);
     });
 
-    it("should transfer permit to queued waiter when available", async () => {
+    it('should transfer permit to queued waiter when available', async () => {
       const semaphore = new Semaphore(1);
 
       // First acquire uses the only permit
@@ -129,7 +129,7 @@ describe("Semaphore", () => {
       expect(permitTransferred).toBe(true);
     });
 
-    it("should increase permits when no waiters", async () => {
+    it('should increase permits when no waiters', async () => {
       const semaphore = new Semaphore(1);
 
       await semaphore.acquire();
@@ -142,7 +142,7 @@ describe("Semaphore", () => {
       expect(semaphore.availablePermits()).toBe(2);
     });
 
-    it("should release multiple times consecutively", async () => {
+    it('should release multiple times consecutively', async () => {
       const semaphore = new Semaphore(2);
 
       await semaphore.acquire();
@@ -155,87 +155,89 @@ describe("Semaphore", () => {
     });
   });
 
-  describe("execute", () => {
-    it("should execute function with permit held", async () => {
+  describe('execute', () => {
+    it('should execute function with permit held', async () => {
       const semaphore = new Semaphore(1);
       let executed = false;
 
       await semaphore.execute(async () => {
         expect(semaphore.availablePermits()).toBe(0);
         executed = true;
-        return "result";
+        return 'result';
       });
 
       expect(executed).toBe(true);
       expect(semaphore.availablePermits()).toBe(1);
     });
 
-    it("should release permit even if function throws", async () => {
+    it('should release permit even if function throws', async () => {
       const semaphore = new Semaphore(1);
 
-      await expect(semaphore.execute(() => {
-        throw new Error("Test error");
-      })).rejects.toThrow("Test error");
+      await expect(
+        semaphore.execute(() => {
+          throw new Error('Test error');
+        })
+      ).rejects.toThrow('Test error');
 
       expect(semaphore.availablePermits()).toBe(1);
     });
 
-    it("should wait for permit before executing", async () => {
+    it('should wait for permit before executing', async () => {
       const semaphore = new Semaphore(1);
       let executeOrder: string[] = [];
 
       // First acquire
       const firstAcquire = semaphore.acquire().then(() => {
-        executeOrder.push("acquire");
+        executeOrder.push('acquire');
       });
 
       // Queue execution (should wait for permit)
       const execPromise = semaphore.execute(async () => {
-        executeOrder.push("exec");
-        return "done";
+        executeOrder.push('exec');
+        return 'done';
       });
 
-      executeOrder.push("queue");
+      executeOrder.push('queue');
 
       // Release after delay
       setTimeout(() => {
         semaphore.release();
-        executeOrder.push("release");
+        executeOrder.push('release');
       }, 10);
 
       await execPromise;
       await firstAcquire;
 
       // The acquire should complete first, then release, then exec
-      expect(executeOrder).toContain("acquire");
-      expect(executeOrder).toContain("release");
-      expect(executeOrder).toContain("exec");
+      expect(executeOrder).toContain('acquire');
+      expect(executeOrder).toContain('release');
+      expect(executeOrder).toContain('exec');
     });
 
-    it("should support synchronous functions", async () => {
+    it('should support synchronous functions', async () => {
       const semaphore = new Semaphore(1);
 
       const result = await semaphore.execute(() => {
-        return "sync result";
+        return 'sync result';
       });
 
-      expect(result).toBe("sync result");
+      expect(result).toBe('sync result');
     });
 
-    it("should return result from async function", async () => {
+    it('should return result from async function', async () => {
       const semaphore = new Semaphore(1);
 
       const result = await semaphore.execute(async () => {
         await new Promise(resolve => setTimeout(resolve, 10));
-        return "async result";
+        return 'async result';
       });
 
-      expect(result).toBe("async result");
+      expect(result).toBe('async result');
     });
   });
 
-  describe("availablePermits", () => {
-    it("should return current available permit count", async () => {
+  describe('availablePermits', () => {
+    it('should return current available permit count', async () => {
       const semaphore = new Semaphore(5);
 
       expect(semaphore.availablePermits()).toBe(5);
@@ -247,7 +249,7 @@ describe("Semaphore", () => {
       expect(semaphore.availablePermits()).toBe(3);
     });
 
-    it("should return correct count after releases", async () => {
+    it('should return correct count after releases', async () => {
       const semaphore = new Semaphore(2);
 
       await semaphore.acquire();
@@ -261,8 +263,8 @@ describe("Semaphore", () => {
     });
   });
 
-  describe("queuedWaiters", () => {
-    it("should return current queued waiter count", async () => {
+  describe('queuedWaiters', () => {
+    it('should return current queued waiter count', async () => {
       const semaphore = new Semaphore(1);
 
       expect(semaphore.queuedWaiters()).toBe(0);
@@ -276,7 +278,7 @@ describe("Semaphore", () => {
       expect(semaphore.queuedWaiters()).toBe(2);
     });
 
-    it("should return 0 when no waiters", async () => {
+    it('should return 0 when no waiters', async () => {
       const semaphore = new Semaphore(5);
 
       expect(semaphore.queuedWaiters()).toBe(0);
@@ -288,23 +290,23 @@ describe("Semaphore", () => {
   });
 });
 
-describe("createSemaphore", () => {
-  it("should create a semaphore instance", () => {
+describe('createSemaphore', () => {
+  it('should create a semaphore instance', () => {
     const semaphore = createSemaphore(3);
 
     expect(semaphore).toBeInstanceOf(Semaphore);
     expect(semaphore.availablePermits()).toBe(3);
   });
 
-  it("should create semaphore with custom permits", () => {
+  it('should create semaphore with custom permits', () => {
     const semaphore = createSemaphore(10);
     expect(semaphore.availablePermits()).toBe(10);
   });
 });
 
-describe("Race condition tests", () => {
-  describe("Timeout firing after release", () => {
-    it("should not resolve promise after timeout when already released", async () => {
+describe('Race condition tests', () => {
+  describe('Timeout firing after release', () => {
+    it('should not resolve promise after timeout when already released', async () => {
       const semaphore = new Semaphore(1);
       let releaseCalled = false;
       let timeoutResolved = false;
@@ -334,7 +336,7 @@ describe("Race condition tests", () => {
       expect(releaseCalled).toBe(true);
     });
 
-    it("should timeout correctly when no release occurs", async () => {
+    it('should timeout correctly when no release occurs', async () => {
       const semaphore = new Semaphore(1);
 
       // Acquire the only permit
@@ -347,7 +349,7 @@ describe("Race condition tests", () => {
       expect(semaphore.queuedWaiters()).toBe(0);
     });
 
-    it("should handle rapid acquire-release-acquire sequence", async () => {
+    it('should handle rapid acquire-release-acquire sequence', async () => {
       const semaphore = new Semaphore(1);
 
       // Acquire
@@ -372,12 +374,14 @@ describe("Race condition tests", () => {
     });
   });
 
-  describe("Concurrent acquire/release edge cases", () => {
-    it("should handle simultaneous acquire from multiple tasks", async () => {
+  describe('Concurrent acquire/release edge cases', () => {
+    it('should handle simultaneous acquire from multiple tasks', async () => {
       const semaphore = new Semaphore(2);
 
       // Create many concurrent acquires with timeout - they will queue
-      const promises = Array(10).fill(null).map(() => semaphore.acquire(100));
+      const promises = Array(10)
+        .fill(null)
+        .map(() => semaphore.acquire(100));
 
       // All should eventually resolve (some will succeed, others will timeout)
       const results = await Promise.all(promises);
@@ -387,7 +391,7 @@ describe("Race condition tests", () => {
       expect(acquired).toBe(2);
     });
 
-    it("should handle release without acquire", async () => {
+    it('should handle release without acquire', async () => {
       const semaphore = new Semaphore(1);
 
       // Release without acquire
@@ -397,7 +401,7 @@ describe("Race condition tests", () => {
       expect(semaphore.availablePermits()).toBe(2);
     });
 
-    it("should handle multiple releases without acquire", async () => {
+    it('should handle multiple releases without acquire', async () => {
       const semaphore = new Semaphore(1);
 
       semaphore.release();
@@ -407,7 +411,7 @@ describe("Race condition tests", () => {
       expect(semaphore.availablePermits()).toBe(4);
     });
 
-    it("should maintain correct permit count after rapid acquire-release", async () => {
+    it('should maintain correct permit count after rapid acquire-release', async () => {
       const semaphore = new Semaphore(5);
 
       // Rapid acquire-release cycles
@@ -421,8 +425,8 @@ describe("Race condition tests", () => {
     });
   });
 
-  describe("Double-resolution prevention", () => {
-    it("should not call resolve twice on same acquire", async () => {
+  describe('Double-resolution prevention', () => {
+    it('should not call resolve twice on same acquire', async () => {
       const semaphore = new Semaphore(1);
       let resolveCount = 0;
 
@@ -455,7 +459,7 @@ describe("Race condition tests", () => {
       expect(resolveCount).toBe(1);
     });
 
-    it("should handle timeout and release racing", async () => {
+    it('should handle timeout and release racing', async () => {
       const semaphore = new Semaphore(1);
       let timeoutResolvedAsFalse = false;
       let releaseResolvedAsTrue = false;
@@ -483,7 +487,7 @@ describe("Race condition tests", () => {
       expect(timeoutResolvedAsFalse || releaseResolvedAsTrue).toBe(true);
     });
 
-    it("should not leak waiters after timeout", async () => {
+    it('should not leak waiters after timeout', async () => {
       const semaphore = new Semaphore(1);
 
       await semaphore.acquire();
@@ -501,42 +505,38 @@ describe("Race condition tests", () => {
     });
   });
 
-  describe("execute with timeout", () => {
-    it("should timeout and throw when no permit available", async () => {
+  describe('execute with timeout', () => {
+    it('should timeout and throw when no permit available', async () => {
       const semaphore = new Semaphore(1);
 
       await semaphore.acquire();
 
-      await expect(
-        semaphore.execute(async () => "done", 50)
-      ).rejects.toThrow("failed to acquire permit");
+      await expect(semaphore.execute(async () => 'done', 50)).rejects.toThrow(
+        'failed to acquire permit'
+      );
     });
 
-    it("should execute successfully after timeout", async () => {
+    it('should execute successfully after timeout', async () => {
       const semaphore = new Semaphore(1);
 
       await semaphore.acquire();
 
       // This should timeout
-      await expect(
-        semaphore.execute(async () => "done", 10)
-      ).rejects.toThrow();
+      await expect(semaphore.execute(async () => 'done', 10)).rejects.toThrow();
 
       // Release and try again - should succeed
       semaphore.release();
-      const result = await semaphore.execute(async () => "success", 50);
-      expect(result).toBe("success");
+      const result = await semaphore.execute(async () => 'success', 50);
+      expect(result).toBe('success');
     });
 
-    it("should execute with very short timeout 0", async () => {
+    it('should execute with very short timeout 0', async () => {
       const semaphore = new Semaphore(1);
 
       await semaphore.acquire();
 
       // With 0 timeout, should fail immediately
-      await expect(
-        semaphore.execute(async () => "done", 0)
-      ).rejects.toThrow();
+      await expect(semaphore.execute(async () => 'done', 0)).rejects.toThrow();
     });
   });
 });

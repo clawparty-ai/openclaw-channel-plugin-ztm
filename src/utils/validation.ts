@@ -1,6 +1,6 @@
-import type { ConfigValidationError, ValidationErrorReason } from "../types/config.js";
-import { MAX_MESSAGE_LENGTH } from "../constants.js";
-import { logger } from "./logger.js";
+import type { ConfigValidationError, ValidationErrorReason } from '../types/config.js';
+import { MAX_MESSAGE_LENGTH } from '../constants.js';
+import { logger } from './logger.js';
 
 // ============================================
 // Pattern Constants (centralized definitions)
@@ -52,13 +52,13 @@ export function normalizeUsername(username: string): string {
  * @returns HTML-escaped string
  */
 export function escapeHtml(input: string): string {
-  if (!input) return "";
+  if (!input) return '';
   return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // ============================================
@@ -87,7 +87,7 @@ export function isValidUrl(value: string): boolean {
   }
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    return url.protocol === 'http:' || url.protocol === 'https:';
   } catch {
     return false;
   }
@@ -105,7 +105,7 @@ export function validateUrl(
   } catch {
     return {
       valid: false,
-      error: validationError("url", "invalid_format", url, "Invalid URL format"),
+      error: validationError('url', 'invalid_format', url, 'Invalid URL format'),
     };
   }
 }
@@ -116,14 +116,14 @@ export function validateUrl(
 export function validateHttpsUrl(
   url: string
 ): { valid: true; value: string } | { valid: false; error: ConfigValidationError } {
-  if (!url.startsWith("https://") && !url.startsWith("http://")) {
+  if (!url.startsWith('https://') && !url.startsWith('http://')) {
     return {
       valid: false,
       error: validationError(
-        "url",
-        "invalid_format",
+        'url',
+        'invalid_format',
         url,
-        "URL must start with https:// or http://"
+        'URL must start with https:// or http://'
       ),
     };
   }
@@ -144,8 +144,8 @@ export function validateHttpsUrl(
 export function containsPathTraversal(input: string): boolean {
   // Check for common path traversal patterns
   const pathTraversalPatterns = [
-    '../',   // Unix parent directory
-    '..\\',  // Windows parent directory
+    '../', // Unix parent directory
+    '..\\', // Windows parent directory
     '%2e%2e', // URL encoded ../
     '%2e%2e%2f', // URL encoded ../
     '%2e%2e%5c', // URL encoded ..\
@@ -171,30 +171,38 @@ export function containsPathTraversal(input: string): boolean {
 export function validateUsername(username: string): ValidationResult<string> {
   // Check for empty username
   if (!username || typeof username !== 'string') {
-    return { valid: false, error: "Username must be a non-empty string" };
+    return { valid: false, error: 'Username must be a non-empty string' };
   }
 
   const trimmed = username.trim();
 
   // Check for empty after trimming
   if (trimmed.length === 0) {
-    return { valid: false, error: "Username cannot be empty or whitespace only" };
+    return { valid: false, error: 'Username cannot be empty or whitespace only' };
   }
 
   // Check length
   if (trimmed.length > MAX_USERNAME_LENGTH) {
-    return { valid: false, error: `Username exceeds maximum length of ${MAX_USERNAME_LENGTH} characters` };
+    return {
+      valid: false,
+      error: `Username exceeds maximum length of ${MAX_USERNAME_LENGTH} characters`,
+    };
   }
 
   // Check for path traversal
   if (containsPathTraversal(trimmed)) {
-    logger.warn(`[Security] Rejected username with path traversal pattern: "${trimmed.substring(0, 50)}"`);
-    return { valid: false, error: "Username contains invalid path traversal patterns" };
+    logger.warn(
+      `[Security] Rejected username with path traversal pattern: "${trimmed.substring(0, 50)}"`
+    );
+    return { valid: false, error: 'Username contains invalid path traversal patterns' };
   }
 
   // Check identifier pattern
   if (!IDENTIFIER_PATTERN.test(trimmed)) {
-    return { valid: false, error: "Username must contain only alphanumeric characters, hyphens, and underscores" };
+    return {
+      valid: false,
+      error: 'Username must contain only alphanumeric characters, hyphens, and underscores',
+    };
   }
 
   return { valid: true, value: trimmed };
@@ -214,30 +222,38 @@ export function validateUsername(username: string): ValidationResult<string> {
 export function validateGroupId(groupId: string): ValidationResult<string> {
   // Check for empty group ID
   if (!groupId || typeof groupId !== 'string') {
-    return { valid: false, error: "Group ID must be a non-empty string" };
+    return { valid: false, error: 'Group ID must be a non-empty string' };
   }
 
   const trimmed = groupId.trim();
 
   // Check for empty after trimming
   if (trimmed.length === 0) {
-    return { valid: false, error: "Group ID cannot be empty or whitespace only" };
+    return { valid: false, error: 'Group ID cannot be empty or whitespace only' };
   }
 
   // Check length
   if (trimmed.length > MAX_GROUP_ID_LENGTH) {
-    return { valid: false, error: `Group ID exceeds maximum length of ${MAX_GROUP_ID_LENGTH} characters` };
+    return {
+      valid: false,
+      error: `Group ID exceeds maximum length of ${MAX_GROUP_ID_LENGTH} characters`,
+    };
   }
 
   // Check for path traversal
   if (containsPathTraversal(trimmed)) {
-    logger.warn(`[Security] Rejected group ID with path traversal pattern: "${trimmed.substring(0, 50)}"`);
-    return { valid: false, error: "Group ID contains invalid path traversal patterns" };
+    logger.warn(
+      `[Security] Rejected group ID with path traversal pattern: "${trimmed.substring(0, 50)}"`
+    );
+    return { valid: false, error: 'Group ID contains invalid path traversal patterns' };
   }
 
   // Check identifier pattern
   if (!IDENTIFIER_PATTERN.test(trimmed)) {
-    return { valid: false, error: "Group ID must contain only alphanumeric characters, hyphens, and underscores" };
+    return {
+      valid: false,
+      error: 'Group ID must contain only alphanumeric characters, hyphens, and underscores',
+    };
   }
 
   return { valid: true, value: trimmed };
@@ -256,18 +272,21 @@ export function validateGroupId(groupId: string): ValidationResult<string> {
 export function validateMessageContent(content: string): ValidationResult<string> {
   // Check for empty content
   if (!content || typeof content !== 'string') {
-    return { valid: false, error: "Message content must be a non-empty string" };
+    return { valid: false, error: 'Message content must be a non-empty string' };
   }
 
   // Check for null bytes (potential injection vector)
   if (content.includes('\0')) {
     logger.warn(`[Security] Rejected message content containing null bytes`);
-    return { valid: false, error: "Message content contains invalid null bytes" };
+    return { valid: false, error: 'Message content contains invalid null bytes' };
   }
 
   // Check length
   if (content.length > MAX_MESSAGE_LENGTH) {
-    return { valid: false, error: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} bytes` };
+    return {
+      valid: false,
+      error: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} bytes`,
+    };
   }
 
   return { valid: true, value: content };

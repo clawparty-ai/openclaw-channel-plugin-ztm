@@ -6,33 +6,23 @@ import type {
   ZTMChatConfigValidation,
   DMPolicy,
   ConfigValidationError,
-} from "../types/config.js";
-import { validationError, isValidUrl, IDENTIFIER_PATTERN } from "../utils/validation.js";
+} from '../types/config.js';
+import { validationError, isValidUrl, IDENTIFIER_PATTERN } from '../utils/validation.js';
 
 /**
  * Validate agent URL field
  */
-function validateAgentUrl(
-  config: Record<string, unknown>,
-  errors: ConfigValidationError[]
-): void {
+function validateAgentUrl(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.agentUrl;
-  if (!value || typeof value !== "string" || !value.trim()) {
-    errors.push(
-      validationError(
-        "agentUrl",
-        "required",
-        value,
-        "agentUrl is required"
-      )
-    );
+  if (!value || typeof value !== 'string' || !value.trim()) {
+    errors.push(validationError('agentUrl', 'required', value, 'agentUrl is required'));
   } else if (!isValidUrl(value)) {
     errors.push(
       validationError(
-        "agentUrl",
-        "invalid_format",
+        'agentUrl',
+        'invalid_format',
         value,
-        "agentUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-agent.example.com:7777)"
+        'agentUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-agent.example.com:7777)'
       )
     );
   }
@@ -41,27 +31,17 @@ function validateAgentUrl(
 /**
  * Validate permit URL field
  */
-function validatePermitUrl(
-  config: Record<string, unknown>,
-  errors: ConfigValidationError[]
-): void {
+function validatePermitUrl(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.permitUrl;
-  if (!value || typeof value !== "string" || !value.trim()) {
-    errors.push(
-      validationError(
-        "permitUrl",
-        "required",
-        value,
-        "permitUrl is required"
-      )
-    );
+  if (!value || typeof value !== 'string' || !value.trim()) {
+    errors.push(validationError('permitUrl', 'required', value, 'permitUrl is required'));
   } else if (!isValidUrl(value)) {
     errors.push(
       validationError(
-        "permitUrl",
-        "invalid_format",
+        'permitUrl',
+        'invalid_format',
         value,
-        "permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)"
+        'permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)'
       )
     );
   }
@@ -70,37 +50,22 @@ function validatePermitUrl(
 /**
  * Validate mesh name field
  */
-function validateMeshName(
-  config: Record<string, unknown>,
-  errors: ConfigValidationError[]
-): void {
+function validateMeshName(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.meshName;
-  if (!value || typeof value !== "string" || !value.trim()) {
-    errors.push(
-      validationError(
-        "meshName",
-        "required",
-        value,
-        "meshName is required"
-      )
-    );
+  if (!value || typeof value !== 'string' || !value.trim()) {
+    errors.push(validationError('meshName', 'required', value, 'meshName is required'));
   } else if (!IDENTIFIER_PATTERN.test(value)) {
     errors.push(
       validationError(
-        "meshName",
-        "invalid_format",
+        'meshName',
+        'invalid_format',
         value,
-        "meshName must contain only letters, numbers, hyphens, and underscores"
+        'meshName must contain only letters, numbers, hyphens, and underscores'
       )
     );
   } else if (value.length > 64) {
     errors.push(
-      validationError(
-        "meshName",
-        "out_of_range",
-        value,
-        "meshName must be 64 characters or less"
-      )
+      validationError('meshName', 'out_of_range', value, 'meshName must be 64 characters or less')
     );
   }
 }
@@ -108,37 +73,22 @@ function validateMeshName(
 /**
  * Validate username field
  */
-function validateUsername(
-  config: Record<string, unknown>,
-  errors: ConfigValidationError[]
-): void {
+function validateUsername(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.username;
-  if (!value || typeof value !== "string" || !value.trim()) {
-    errors.push(
-      validationError(
-        "username",
-        "required",
-        value,
-        "username is required"
-      )
-    );
+  if (!value || typeof value !== 'string' || !value.trim()) {
+    errors.push(validationError('username', 'required', value, 'username is required'));
   } else if (!IDENTIFIER_PATTERN.test(value)) {
     errors.push(
       validationError(
-        "username",
-        "invalid_format",
+        'username',
+        'invalid_format',
         value,
-        "username must contain only letters, numbers, hyphens, and underscores"
+        'username must contain only letters, numbers, hyphens, and underscores'
       )
     );
   } else if (value.length > 64) {
     errors.push(
-      validationError(
-        "username",
-        "out_of_range",
-        value,
-        "username must be 64 characters or less"
-      )
+      validationError('username', 'out_of_range', value, 'username must be 64 characters or less')
     );
   }
 }
@@ -146,16 +96,13 @@ function validateUsername(
 /**
  * Validate DM policy field
  */
-function validateDmPolicy(
-  config: Record<string, unknown>,
-  errors: ConfigValidationError[]
-): void {
+function validateDmPolicy(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.dmPolicy;
-  if (value !== undefined && !["allow", "deny", "pairing"].includes(value as string)) {
+  if (value !== undefined && !['allow', 'deny', 'pairing'].includes(value as string)) {
     errors.push(
       validationError(
-        "dmPolicy",
-        "type_mismatch",
+        'dmPolicy',
+        'type_mismatch',
         value,
         "dmPolicy must be 'allow', 'deny', or 'pairing'"
       )
@@ -171,14 +118,9 @@ function validateApiTimeout(
   errors: ConfigValidationError[]
 ): void {
   const value = config.apiTimeout;
-  if (value !== undefined && (typeof value !== "number" || value < 1000)) {
+  if (value !== undefined && (typeof value !== 'number' || value < 1000)) {
     errors.push(
-      validationError(
-        "apiTimeout",
-        "out_of_range",
-        value,
-        "apiTimeout must be at least 1000ms"
-      )
+      validationError('apiTimeout', 'out_of_range', value, 'apiTimeout must be at least 1000ms')
     );
   }
 }
@@ -194,17 +136,17 @@ function validatePermitSource(
   if (value === undefined) {
     errors.push(
       validationError(
-        "permitSource",
-        "required",
+        'permitSource',
+        'required',
         value,
         "permitSource is required (must be 'server' or 'file')"
       )
     );
-  } else if (!["server", "file"].includes(value as string)) {
+  } else if (!['server', 'file'].includes(value as string)) {
     errors.push(
       validationError(
-        "permitSource",
-        "type_mismatch",
+        'permitSource',
+        'type_mismatch',
         value,
         "permitSource must be 'server' or 'file'"
       )
@@ -222,11 +164,11 @@ function validatePermitFilePath(
   const permitSource = config.permitSource;
   const value = config.permitFilePath;
 
-  if (permitSource === "file" && (!value || typeof value !== "string" || !value.trim())) {
+  if (permitSource === 'file' && (!value || typeof value !== 'string' || !value.trim())) {
     errors.push(
       validationError(
-        "permitFilePath",
-        "required",
+        'permitFilePath',
+        'required',
         value,
         "permitFilePath is required when permitSource is 'file'"
       )
@@ -244,12 +186,12 @@ function validatePermitUrlConditional(
   const permitSource = config.permitSource;
   const value = config.permitUrl;
 
-  if (permitSource === "server") {
-    if (!value || typeof value !== "string" || !value.trim()) {
+  if (permitSource === 'server') {
+    if (!value || typeof value !== 'string' || !value.trim()) {
       errors.push(
         validationError(
-          "permitUrl",
-          "required",
+          'permitUrl',
+          'required',
           value,
           "permitUrl is required when permitSource is 'auto'"
         )
@@ -257,10 +199,10 @@ function validatePermitUrlConditional(
     } else if (!isValidUrl(value)) {
       errors.push(
         validationError(
-          "permitUrl",
-          "invalid_format",
+          'permitUrl',
+          'invalid_format',
           value,
-          "permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)"
+          'permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)'
         )
       );
     }
@@ -285,21 +227,19 @@ function validatePermitUrlConditional(
  * }
  * ```
  */
-export function validateZTMChatConfig(
-  raw: unknown
-): ZTMChatConfigValidation {
+export function validateZTMChatConfig(raw: unknown): ZTMChatConfigValidation {
   const errors: ConfigValidationError[] = [];
 
   // Validate root object type - must be a plain object, not array or null
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {
       valid: false,
       errors: [
         {
-          field: "root",
-          reason: "type_mismatch",
+          field: 'root',
+          reason: 'type_mismatch',
           value: raw,
-          message: "Configuration must be a plain object",
+          message: 'Configuration must be a plain object',
         },
       ],
     };
@@ -340,46 +280,43 @@ export function validateZTMChatConfig(
       valid: false,
       errors: [
         {
-          field: "root",
-          reason: "type_mismatch",
+          field: 'root',
+          reason: 'type_mismatch',
           value: config,
-          message: "Missing required fields after validation",
+          message: 'Missing required fields after validation',
         },
       ],
     };
   }
 
   const rawPermitSource = config.permitSource;
-  const permitSource: "server" | "file" =
-    rawPermitSource === "server" || rawPermitSource === "file" ? rawPermitSource : "server";
+  const permitSource: 'server' | 'file' =
+    rawPermitSource === 'server' || rawPermitSource === 'file' ? rawPermitSource : 'server';
   const resolvedConfig: ZTMChatConfig = {
     agentUrl,
     permitSource,
-    permitUrl: permitSource === "server"
-      ? config.permitUrl?.toString().trim() ?? ""
-      : "",
-    permitFilePath: config.permitFilePath
-      ? config.permitFilePath.toString().trim()
-      : undefined,
+    permitUrl: permitSource === 'server' ? (config.permitUrl?.toString().trim() ?? '') : '',
+    permitFilePath: config.permitFilePath ? config.permitFilePath.toString().trim() : undefined,
     meshName,
     username,
     enableGroups: Boolean(config.enableGroups),
     autoReply: config.autoReply !== false,
     messagePath:
-      typeof config.messagePath === "string" && config.messagePath.trim()
+      typeof config.messagePath === 'string' && config.messagePath.trim()
         ? config.messagePath.trim()
-        : "/shared",
-    dmPolicy: (config.dmPolicy === "allow" || config.dmPolicy === "deny" || config.dmPolicy === "pairing")
-      ? config.dmPolicy
-      : "pairing",
+        : '/shared',
+    dmPolicy:
+      config.dmPolicy === 'allow' || config.dmPolicy === 'deny' || config.dmPolicy === 'pairing'
+        ? config.dmPolicy
+        : 'pairing',
     allowFrom: Array.isArray(config.allowFrom)
       ? config.allowFrom
-          .filter((v): v is string => typeof v === "string")
-          .map((v) => v.trim())
+          .filter((v): v is string => typeof v === 'string')
+          .map(v => v.trim())
           .filter(Boolean)
       : undefined,
     apiTimeout:
-      typeof config.apiTimeout === "number" && config.apiTimeout >= 1000
+      typeof config.apiTimeout === 'number' && config.apiTimeout >= 1000
         ? Math.min(config.apiTimeout, 300000)
         : 30000,
   };
@@ -396,10 +333,7 @@ export function validateZTMChatConfig(
  */
 export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean {
   return Boolean(
-    config.agentUrl &&
-      config.agentUrl.trim() &&
-      config.username &&
-      config.username.trim()
+    config.agentUrl && config.agentUrl.trim() && config.username && config.username.trim()
   );
 }
 
@@ -407,27 +341,19 @@ export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean 
  * Validate a single username format
  */
 export function isValidUsername(username: string): boolean {
-  return (
-    IDENTIFIER_PATTERN.test(username) &&
-    username.length > 0 &&
-    username.length <= 64
-  );
+  return IDENTIFIER_PATTERN.test(username) && username.length > 0 && username.length <= 64;
 }
 
 /**
  * Validate a mesh name format
  */
 export function isValidMeshName(meshName: string): boolean {
-  return (
-    IDENTIFIER_PATTERN.test(meshName) &&
-    meshName.length > 0 &&
-    meshName.length <= 64
-  );
+  return IDENTIFIER_PATTERN.test(meshName) && meshName.length > 0 && meshName.length <= 64;
 }
 
 /**
  * Validate DM policy value
  */
 export function isValidDmPolicy(policy: string): policy is DMPolicy {
-  return ["allow", "deny", "pairing"].includes(policy);
+  return ['allow', 'deny', 'pairing'].includes(policy);
 }

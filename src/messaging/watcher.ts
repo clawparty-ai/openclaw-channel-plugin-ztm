@@ -1,23 +1,28 @@
 // Message watching and polling for ZTM Chat
 // Monitors for new messages via Watch mechanism with fallback to polling
 
-import { logger } from "../utils/logger.js";
-import { sanitizeForLog } from "../utils/log-sanitize.js";
-import { getOrDefault, isNonEmptyArray } from "../utils/guards.js";
-import { container, DEPENDENCIES } from "../di/index.js";
-import type { PluginRuntime } from "openclaw/plugin-sdk";
-import { startPollingWatcher } from "./polling.js";
-import { processAndNotifyChat } from "./chat-processor.js";
+import { logger } from '../utils/logger.js';
+import { sanitizeForLog } from '../utils/log-sanitize.js';
+import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
+import { container, DEPENDENCIES } from '../di/index.js';
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
+import { startPollingWatcher } from './polling.js';
+import { processAndNotifyChat } from './chat-processor.js';
 import {
   processAndNotifyPeerMessages,
   processAndNotifyGroupMessages,
   handlePeerPolicyCheck,
-} from "./message-processor-helpers.js";
-import { Semaphore } from "../utils/concurrency.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
-import { isSuccess } from "../types/common.js";
-import type { ZTMChat, WatchChangeItem } from "../types/api.js";
-import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS, MESSAGE_SEMAPHORE_PERMITS, MESSAGE_PROCESS_TIMEOUT_MS } from "../constants.js";
+} from './message-processor-helpers.js';
+import { Semaphore } from '../utils/concurrency.js';
+import type { AccountRuntimeState } from '../types/runtime.js';
+import { isSuccess } from '../types/common.js';
+import type { ZTMChat, WatchChangeItem } from '../types/api.js';
+import {
+  FULL_SYNC_DELAY_MS,
+  WATCH_INTERVAL_MS,
+  MESSAGE_SEMAPHORE_PERMITS,
+  MESSAGE_PROCESS_TIMEOUT_MS,
+} from '../constants.js';
 
 /**
  * Start message watcher using ZTM's Watch mechanism
@@ -30,20 +35,20 @@ import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS, MESSAGE_SEMAPHORE_PERMITS, MESSA
  *
  * @param state - Account runtime state with config and API client
  */
-export async function startMessageWatcher(
-  state: AccountRuntimeState
-): Promise<void> {
+export async function startMessageWatcher(state: AccountRuntimeState): Promise<void> {
   const { config, apiClient } = state;
   if (!apiClient) return;
 
-  const messagePath = "/apps/ztm/chat/shared/";
+  const messagePath = '/apps/ztm/chat/shared/';
 
   // Step 1: Seed the API client's lastSeenTimes from persisted state
   await seedFileMetadata(state);
 
   // Step 2: Get initial allowFrom store (uses cache)
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
-  const storeAllowFrom = await container.get(DEPENDENCIES.ALLOW_FROM_REPO).getAllowFrom(state.accountId, rt);
+  const storeAllowFrom = await container
+    .get(DEPENDENCIES.ALLOW_FROM_REPO)
+    .getAllowFrom(state.accountId, rt);
   // If store read fails during init, use empty array to allow basic functionality
   const initAllowFrom = getOrDefault(storeAllowFrom, []);
 
@@ -64,7 +69,9 @@ export async function startMessageWatcher(
 async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
   if (!state.apiClient) return;
 
-  const persistedMetadata = container.get(DEPENDENCIES.MESSAGE_STATE_REPO).getFileMetadata(state.accountId);
+  const persistedMetadata = container
+    .get(DEPENDENCIES.MESSAGE_STATE_REPO)
+    .getFileMetadata(state.accountId);
   if (Object.keys(persistedMetadata).length > 0) {
     state.apiClient.seedFileMetadata(persistedMetadata);
     logger.info(
@@ -100,7 +107,9 @@ async function performInitialSync(
     }
   }
 
-  logger.info(`[${state.accountId}] Initial sync: ${chats.length} chats, ${processedCount} messages processed`);
+  logger.info(
+    `[${state.accountId}] Initial sync: ${chats.length} chats, ${processedCount} messages processed`
+  );
 
   return chats;
 }
@@ -116,7 +125,7 @@ async function handleInitialPairingRequests(
 ): Promise<void> {
   for (const chat of chats) {
     if (chat.peer && chat.peer !== state.config.username) {
-      await handlePeerPolicyCheck(chat.peer, state, storeAllowFrom, "Initial chat request");
+      await handlePeerPolicyCheck(chat.peer, state, storeAllowFrom, 'Initial chat request');
     }
   }
 }
@@ -219,13 +228,13 @@ class WatchLoopController {
    */
   private async executeWatch(): Promise<WatchResult> {
     if (!this.state.apiClient || !this.state.config) {
-      return { success: false, errorMessage: "API client or config not available" };
+      return { success: false, errorMessage: 'API client or config not available' };
     }
 
     const changedResult = await this.state.apiClient.watchChanges(this.messagePath);
 
     if (!changedResult.ok) {
-      return { success: false, errorMessage: changedResult.error?.message ?? "Watch failed" };
+      return { success: false, errorMessage: changedResult.error?.message ?? 'Watch failed' };
     }
 
     return { success: true, items: getOrDefault(changedResult.value, []) };
@@ -243,7 +252,9 @@ class WatchLoopController {
    */
   private handleWatchError(errorMessage: string): void {
     this.state.watchErrorCount++;
-    logger.warn(`[${this.state.accountId}] Watch error (${this.state.watchErrorCount}): ${errorMessage}`);
+    logger.warn(
+      `[${this.state.accountId}] Watch error (${this.state.watchErrorCount}): ${errorMessage}`
+    );
 
     // Fallback to polling after too many errors
     if (this.state.watchErrorCount > 5) {
@@ -280,7 +291,7 @@ class WatchLoopController {
       },
       items,
       previousMessagesReceived,
-      (storeAllowFrom) => this.scheduleFullSync(storeAllowFrom)
+      storeAllowFrom => this.scheduleFullSync(storeAllowFrom)
     );
   }
 
@@ -295,10 +306,9 @@ class WatchLoopController {
       logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
       await performFullSync(this.state, storeAllowFrom);
       if (this.state.apiClient) {
-        container.get(DEPENDENCIES.MESSAGE_STATE_REPO).setFileMetadataBulk(
-          this.state.accountId,
-          this.state.apiClient.exportFileMetadata()
-        );
+        container
+          .get(DEPENDENCIES.MESSAGE_STATE_REPO)
+          .setFileMetadataBulk(this.state.accountId, this.state.apiClient.exportFileMetadata());
       }
     }, FULL_SYNC_DELAY_MS);
   }
@@ -315,11 +325,7 @@ interface WatchContext {
 /**
  * Start the watch loop that monitors for changes
  */
-function startWatchLoop(
-  state: AccountRuntimeState,
-  rt: PluginRuntime,
-  messagePath: string
-): void {
+function startWatchLoop(state: AccountRuntimeState, rt: PluginRuntime, messagePath: string): void {
   const controller = new WatchLoopController(state, rt, messagePath);
   controller.start();
 }
@@ -350,10 +356,14 @@ async function processChangedPaths(
     }
   }
 
-  logger.debug(`[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`);
+  logger.debug(
+    `[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`
+  );
 
   // Use cached allowFrom to avoid redundant async calls every watch cycle
-  const loopStoreAllowFrom = await container.get(DEPENDENCIES.ALLOW_FROM_REPO).getAllowFrom(state.accountId, rt);
+  const loopStoreAllowFrom = await container
+    .get(DEPENDENCIES.ALLOW_FROM_REPO)
+    .getAllowFrom(state.accountId, rt);
   // If store read fails, use cached value or empty array
   const effectiveAllowFrom = getOrDefault(loopStoreAllowFrom, []);
 
@@ -362,12 +372,14 @@ async function processChangedPaths(
   for (const item of peerItems) {
     if (item.peer) {
       tasks.push(
-        messageSemaphore.execute(
-          () => processChangedPeer(state, rt, item.peer!, effectiveAllowFrom),
-          MESSAGE_PROCESS_TIMEOUT_MS
-        ).catch((err) => {
-          logger.error(`[${state.accountId}] Timeout processing peer message: ${err}`);
-        })
+        messageSemaphore
+          .execute(
+            () => processChangedPeer(state, rt, item.peer!, effectiveAllowFrom),
+            MESSAGE_PROCESS_TIMEOUT_MS
+          )
+          .catch(err => {
+            logger.error(`[${state.accountId}] Timeout processing peer message: ${err}`);
+          })
       );
     }
   }
@@ -375,12 +387,22 @@ async function processChangedPaths(
   for (const item of groupItems) {
     if (item.creator && item.group) {
       tasks.push(
-        messageSemaphore.execute(
-          () => processChangedGroup(state, rt, item.creator!, item.group!, item.name, effectiveAllowFrom),
-          MESSAGE_PROCESS_TIMEOUT_MS
-        ).catch((err) => {
-          logger.error(`[${state.accountId}] Timeout processing group message: ${err}`);
-        })
+        messageSemaphore
+          .execute(
+            () =>
+              processChangedGroup(
+                state,
+                rt,
+                item.creator!,
+                item.group!,
+                item.name,
+                effectiveAllowFrom
+              ),
+            MESSAGE_PROCESS_TIMEOUT_MS
+          )
+          .catch(err => {
+            logger.error(`[${state.accountId}] Timeout processing group message: ${err}`);
+          })
       );
     }
   }
@@ -389,7 +411,9 @@ async function processChangedPaths(
 
   scheduleFullSync(effectiveAllowFrom);
   if (state.apiClient) {
-    container.get(DEPENDENCIES.MESSAGE_STATE_REPO).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+    container
+      .get(DEPENDENCIES.MESSAGE_STATE_REPO)
+      .setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
   }
 
   return true;
@@ -410,19 +434,23 @@ async function processChangedPeer(
 
   if (!messagesResult.ok) {
     const safePeer = sanitizeForLog(peer);
-    logger.warn(`[${state.accountId}] Failed to get messages from peer "${safePeer}": ${messagesResult.error?.message ?? "Unknown error"}`);
+    logger.warn(
+      `[${state.accountId}] Failed to get messages from peer "${safePeer}": ${messagesResult.error?.message ?? 'Unknown error'}`
+    );
     return;
   }
 
   const messages = getOrDefault(messagesResult.value, []);
   const safePeer = sanitizeForLog(peer);
-  logger.debug(`[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}"`);
+  logger.debug(
+    `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}"`
+  );
 
   // Use shared message processing logic
   await processAndNotifyPeerMessages(messages, state, storeAllowFrom);
 
   // Handle DM policy check for pairing
-  await handlePeerPolicyCheck(peer, state, storeAllowFrom, "New message");
+  await handlePeerPolicyCheck(peer, state, storeAllowFrom, 'New message');
 }
 
 /**
@@ -445,7 +473,9 @@ async function processChangedGroup(
   const messagesResult = await state.apiClient.getGroupMessages(creator, group);
 
   if (!messagesResult.ok) {
-    logger.warn(`[${state.accountId}] Failed to get messages from group "${safeGroupKey}": ${messagesResult.error?.message ?? "Unknown error"}`);
+    logger.warn(
+      `[${state.accountId}] Failed to get messages from group "${safeGroupKey}": ${messagesResult.error?.message ?? 'Unknown error'}`
+    );
     return;
   }
 
@@ -480,6 +510,8 @@ async function performFullSync(
   }
 
   if (processedCount > 0) {
-    logger.debug(`[${state.accountId}] Full sync completed: ${processedCount} new messages from ${chats.length} peers`);
+    logger.debug(
+      `[${state.accountId}] Full sync completed: ${processedCount} new messages from ${chats.length} peers`
+    );
   }
 }

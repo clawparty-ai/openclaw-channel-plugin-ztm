@@ -2,8 +2,8 @@
 // Result Handling - Unified error handling for Result types
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-import type { Result } from "../types/common.js";
-import { success, failure } from "../types/common.js";
+import type { Result } from '../types/common.js';
+import { success, failure } from '../types/common.js';
 
 /**
  * Result handling options
@@ -21,7 +21,7 @@ interface HandleResultOptions<T, E extends Error> {
     error?: (message: string) => void;
   };
   /** Log level for error case (default: debug) */
-  logLevel?: "debug" | "info" | "warn" | "error";
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
   /** Callback on error */
   onError?: (error: E) => void;
   /** Callback on success */
@@ -66,11 +66,11 @@ export function handleResult<T, E extends Error = Error>(
     return result.value;
   }
 
-  const error = (result.error ?? new Error("Result was None")) as E;
-  const context = options.peer ? `[${options.peer}] ` : "";
+  const error = (result.error ?? new Error('Result was None')) as E;
+  const context = options.peer ? `[${options.peer}] ` : '';
   const message = `${context}${options.operation} failed: ${error.message}`;
 
-  const logLevel = options.logLevel ?? "debug";
+  const logLevel = options.logLevel ?? 'debug';
   options.logger?.[logLevel]?.(message);
   options.onError?.(error);
 
@@ -108,8 +108,8 @@ export function mustResult<T, E extends Error = Error>(
     return result.value;
   }
 
-  const error = result.error ?? new Error("Result was None");
-  const context = options.peer ? `[${options.peer}] ` : "";
+  const error = result.error ?? new Error('Result was None');
+  const context = options.peer ? `[${options.peer}] ` : '';
   const message = `${context}${options.operation} failed: ${error.message}`;
 
   options.logger?.error?.(message);

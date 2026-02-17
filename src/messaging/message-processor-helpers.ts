@@ -1,14 +1,14 @@
 // Shared message processing logic for watcher and polling
 // Eliminates code duplication between long-polling and watch modes
 
-import { logger } from "../utils/logger.js";
-import { sanitizeForLog } from "../utils/log-sanitize.js";
-import { processIncomingMessage } from "./processor.js";
-import { notifyMessageCallbacks } from "./dispatcher.js";
-import { checkDmPolicy } from "../core/dm-policy.js";
-import { handlePairingRequest } from "../connectivity/permit.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
+import { logger } from '../utils/logger.js';
+import { sanitizeForLog } from '../utils/log-sanitize.js';
+import { processIncomingMessage } from './processor.js';
+import { notifyMessageCallbacks } from './dispatcher.js';
+import { checkDmPolicy } from '../core/dm-policy.js';
+import { handlePairingRequest } from '../connectivity/permit.js';
+import type { AccountRuntimeState } from '../runtime/state.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
 
 /**
  * Result of processing a single message
@@ -33,7 +33,9 @@ export function processPeerMessage(
   storeAllowFrom: string[]
 ): ZTMChatMessage | null {
   const safeSender = sanitizeForLog(msg.sender);
-  logger.debug(`[${state.accountId}] Message check: sender="${safeSender}", botUsername="${state.config.username}"`);
+  logger.debug(
+    `[${state.accountId}] Message check: sender="${safeSender}", botUsername="${state.config.username}"`
+  );
 
   // Skip self-messages
   if (msg.sender === state.config.username) {
@@ -110,7 +112,7 @@ export async function handlePeerPolicyCheck(
   reason: string
 ): Promise<void> {
   const check = checkDmPolicy(peer, state.config, storeAllowFrom);
-  if (check.action === "request_pairing") {
+  if (check.action === 'request_pairing') {
     await handlePairingRequest(state, peer, reason, storeAllowFrom);
   }
 }

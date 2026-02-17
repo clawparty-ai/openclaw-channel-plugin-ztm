@@ -6,9 +6,9 @@
 // - "deny": Block all messages from unknown users (closed policy)
 // - "pairing": Require pairing approval before accepting messages
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { MessageCheckResult } from "../types/messaging.js";
-import { getOrDefault } from "../utils/guards.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { MessageCheckResult } from '../types/messaging.js';
+import { getOrDefault } from '../utils/guards.js';
 
 /**
  * Check if a sender is allowed to send messages based on DM policy.
@@ -41,40 +41,42 @@ export function checkDmPolicy(
 ): MessageCheckResult {
   // Reject empty or whitespace-only sender (security: prevent spoofing)
   if (!sender || !sender.trim()) {
-    return { allowed: false, reason: "denied", action: "ignore" };
+    return { allowed: false, reason: 'denied', action: 'ignore' };
   }
 
   const normalizedSender = sender.trim().toLowerCase();
 
   const allowFrom = getOrDefault(config.allowFrom, []);
-  const isWhitelisted = allowFrom.length > 0 &&
-    allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
+  const isWhitelisted =
+    allowFrom.length > 0 &&
+    allowFrom.some(entry => entry.trim().toLowerCase() === normalizedSender);
 
   if (isWhitelisted) {
-    return { allowed: true, reason: "whitelisted", action: "process" };
+    return { allowed: true, reason: 'whitelisted', action: 'process' };
   }
 
-  const isStoreApproved = storeAllowFrom.length > 0 &&
-    storeAllowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
+  const isStoreApproved =
+    storeAllowFrom.length > 0 &&
+    storeAllowFrom.some(entry => entry.trim().toLowerCase() === normalizedSender);
 
   if (isStoreApproved) {
-    return { allowed: true, reason: "whitelisted", action: "process" };
+    return { allowed: true, reason: 'whitelisted', action: 'process' };
   }
 
-  const policy = config.dmPolicy ?? "pairing";
+  const policy = config.dmPolicy ?? 'pairing';
 
   switch (policy) {
-    case "allow":
-      return { allowed: true, reason: "allowed", action: "process" };
+    case 'allow':
+      return { allowed: true, reason: 'allowed', action: 'process' };
 
-    case "deny":
-      return { allowed: false, reason: "denied", action: "ignore" };
+    case 'deny':
+      return { allowed: false, reason: 'denied', action: 'ignore' };
 
-    case "pairing":
-      return { allowed: false, reason: "pending", action: "request_pairing" };
+    case 'pairing':
+      return { allowed: false, reason: 'pending', action: 'request_pairing' };
 
     default:
-      return { allowed: true, reason: "allowed", action: "process" };
+      return { allowed: true, reason: 'allowed', action: 'process' };
   }
 }
 
@@ -102,8 +104,8 @@ export function isUserWhitelisted(
   const normalized = username.trim().toLowerCase();
   const allowFrom = getOrDefault(config.allowFrom, []);
 
-  const inConfig = allowFrom.some((entry) => entry.trim().toLowerCase() === normalized);
-  const inStore = storeAllowFrom.some((entry) => entry.trim().toLowerCase() === normalized);
+  const inConfig = allowFrom.some(entry => entry.trim().toLowerCase() === normalized);
+  const inStore = storeAllowFrom.some(entry => entry.trim().toLowerCase() === normalized);
 
   return inConfig || inStore;
 }
@@ -122,5 +124,5 @@ export function isUserWhitelisted(
  * // isPairing: true
  */
 export function isPairingMode(config: ZTMChatConfig): boolean {
-  return config.dmPolicy === "pairing";
+  return config.dmPolicy === 'pairing';
 }

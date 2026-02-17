@@ -1,8 +1,8 @@
 // ZTM Mesh connectivity management via Agent API
 
-import * as net from "net";
-import { logger } from "../utils/logger.js";
-import type { PermitData } from "../types/connectivity.js";
+import * as net from 'net';
+import { logger } from '../utils/logger.js';
+import type { PermitData } from '../types/connectivity.js';
 
 /**
  * Check if a TCP port is open and accepting connections.
@@ -19,21 +19,21 @@ import type { PermitData } from "../types/connectivity.js";
  * // isOpen: true if agent is running
  */
 export async function checkPortOpen(hostname: string, port: number): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const socket = new net.Socket();
     socket.setTimeout(5000);
 
-    socket.on("connect", () => {
+    socket.on('connect', () => {
       socket.destroy();
       resolve(true);
     });
 
-    socket.on("timeout", () => {
+    socket.on('timeout', () => {
       socket.destroy();
       resolve(false);
     });
 
-    socket.on("error", () => {
+    socket.on('error', () => {
       socket.destroy();
       resolve(false);
     });
@@ -58,26 +58,24 @@ export async function checkPortOpen(hostname: string, port: number): Promise<boo
 export async function getIdentity(agentUrl: string): Promise<string | null> {
   try {
     const response = await fetch(`${agentUrl}/api/identity`, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Accept": "text/plain",
+        Accept: 'text/plain',
       },
     });
 
     if (!response.ok) {
-      logger.error(
-        `Failed to get identity: ${response.status} ${response.statusText}`
-      );
+      logger.error(`Failed to get identity: ${response.status} ${response.statusText}`);
       return null;
     }
 
     const publicKey = await response.text();
 
     if (
-      !publicKey.includes("-----BEGIN PUBLIC KEY-----") ||
-      !publicKey.includes("-----END PUBLIC KEY-----")
+      !publicKey.includes('-----BEGIN PUBLIC KEY-----') ||
+      !publicKey.includes('-----END PUBLIC KEY-----')
     ) {
-      logger.error("Invalid identity format received from agent");
+      logger.error('Invalid identity format received from agent');
       return null;
     }
 
@@ -120,22 +118,19 @@ export async function joinMesh(
       agent: {
         name: endpointName,
         certificate: permitData.agent.certificate,
-        privateKey: permitData.agent.privateKey || "",
+        privateKey: permitData.agent.privateKey || '',
         labels: permitData.agent.labels || [],
       },
       bootstraps: permitData.bootstraps,
     };
 
-    const response = await fetch(
-      `${agentUrl}/api/meshes/${encodeURIComponent(meshName)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(permit),
-      }
-    );
+    const response = await fetch(`${agentUrl}/api/meshes/${encodeURIComponent(meshName)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(permit),
+    });
 
     if (response.ok) {
       logger.info(`Successfully joined mesh ${meshName} as ${endpointName}`);
@@ -147,7 +142,7 @@ export async function joinMesh(
       return true;
     }
 
-    const errorText = await response.text().catch(() => "Unknown error");
+    const errorText = await response.text().catch(() => 'Unknown error');
     logger.error(`Failed to join mesh: ${response.status} ${errorText}`);
     return false;
   } catch (error) {

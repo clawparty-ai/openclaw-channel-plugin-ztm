@@ -1,11 +1,11 @@
 // Message callback dispatching for ZTM Chat
 // Handles notification of registered message callbacks
 
-import { logger } from "../utils/logger.js";
-import { extractErrorMessage } from "../utils/error.js";
-import { getAccountMessageStateStore } from "../runtime/store.js";
-import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
+import { logger } from '../utils/logger.js';
+import { extractErrorMessage } from '../utils/error.js';
+import { getAccountMessageStateStore } from '../runtime/store.js';
+import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
 
 function getWatermarkKey(message: ZTMChatMessage): string {
   if (message.isGroup && message.groupCreator && message.groupId) {
@@ -77,16 +77,20 @@ export async function notifyMessageCallbacks(
 
   // Log summary if multiple callbacks
   if (state.messageCallbacks.size > 1) {
-    logger.debug(
-      `[${state.accountId}] Notified ${successCount} callbacks, ${errorCount} errors`
-    );
+    logger.debug(`[${state.accountId}] Notified ${successCount} callbacks, ${errorCount} errors`);
   }
 
   const watermarkKey = getWatermarkKey(message);
   if (successCount > 0) {
-    getAccountMessageStateStore(state.accountId).setWatermark(state.accountId, watermarkKey, message.timestamp.getTime());
+    getAccountMessageStateStore(state.accountId).setWatermark(
+      state.accountId,
+      watermarkKey,
+      message.timestamp.getTime()
+    );
   } else {
-    logger.warn(`[${state.accountId}] Message processing failed for ${watermarkKey}, watermark not updated`);
+    logger.warn(
+      `[${state.accountId}] Message processing failed for ${watermarkKey}, watermark not updated`
+    );
   }
 }
 
