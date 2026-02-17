@@ -4,7 +4,8 @@
 import { logger } from "../utils/logger.js";
 import { sanitizeForLog } from "../utils/log-sanitize.js";
 import { getOrDefault, isNonEmptyArray } from "../utils/guards.js";
-import { getZTMRuntime, getMessageStateRepository, getAllowFromRepository } from "../runtime/index.js";
+import { container, DEPENDENCIES } from "../di/index.js";
+import type { PluginRuntime } from "openclaw/plugin-sdk";
 import { startPollingWatcher } from "./polling.js";
 import { processAndNotifyChat } from "./chat-processor.js";
 import {
@@ -41,8 +42,8 @@ export async function startMessageWatcher(
   await seedFileMetadata(state);
 
   // Step 2: Get initial allowFrom store (uses cache)
-  const rt = getZTMRuntime();
-  const storeAllowFrom = await getAllowFromRepository().getAllowFrom(state.accountId, rt);
+  const rt = container.get(DEPENDENCIES.RUNTIME).get();
+  const storeAllowFrom = await container.get(DEPENDENCIES.ALLOW_FROM_REPO).getAllowFrom(state.accountId, rt);
   // If store read fails during init, use empty array to allow basic functionality
   const initAllowFrom = getOrDefault(storeAllowFrom, []);
 
@@ -63,7 +64,7 @@ export async function startMessageWatcher(
 async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
   if (!state.apiClient) return;
 
-  const persistedMetadata = getMessageStateRepository().getFileMetadata(state.accountId);
+  const persistedMetadata = container.get(DEPENDENCIES.MESSAGE_STATE_REPO).getFileMetadata(state.accountId);
   if (Object.keys(persistedMetadata).length > 0) {
     state.apiClient.seedFileMetadata(persistedMetadata);
     logger.info(
@@ -139,7 +140,7 @@ class WatchLoopController {
 
   constructor(
     private readonly state: AccountRuntimeState,
-    private readonly rt: ReturnType<typeof getZTMRuntime>,
+    private readonly rt: PluginRuntime,
     private readonly messagePath: string
   ) {
     this.messageSemaphore = new Semaphore(MESSAGE_SEMAPHORE_PERMITS);
@@ -294,7 +295,7 @@ class WatchLoopController {
       logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
       await performFullSync(this.state, storeAllowFrom);
       if (this.state.apiClient) {
-        getMessageStateRepository().setFileMetadataBulk(
+        container.get(DEPENDENCIES.MESSAGE_STATE_REPO).setFileMetadataBulk(
           this.state.accountId,
           this.state.apiClient.exportFileMetadata()
         );
@@ -306,7 +307,7 @@ class WatchLoopController {
 // Watch context for iteration execution
 interface WatchContext {
   state: AccountRuntimeState;
-  rt: ReturnType<typeof getZTMRuntime>;
+  rt: PluginRuntime;
   messagePath: string;
   messageSemaphore: Semaphore;
 }
@@ -316,7 +317,7 @@ interface WatchContext {
  */
 function startWatchLoop(
   state: AccountRuntimeState,
-  rt: ReturnType<typeof getZTMRuntime>,
+  rt: PluginRuntime,
   messagePath: string
 ): void {
   const controller = new WatchLoopController(state, rt, messagePath);
@@ -352,7 +353,7 @@ async function processChangedPaths(
   logger.debug(`[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`);
 
   // Use cached allowFrom to avoid redundant async calls every watch cycle
-  const loopStoreAllowFrom = await getAllowFromRepository().getAllowFrom(state.accountId, rt);
+  const loopStoreAllowFrom = await container.get(DEPENDENCIES.ALLOW_FROM_REPO).getAllowFrom(state.accountId, rt);
   // If store read fails, use cached value or empty array
   const effectiveAllowFrom = getOrDefault(loopStoreAllowFrom, []);
 
@@ -388,7 +389,7 @@ async function processChangedPaths(
 
   scheduleFullSync(effectiveAllowFrom);
   if (state.apiClient) {
-    getMessageStateRepository().setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+    container.get(DEPENDENCIES.MESSAGE_STATE_REPO).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
   }
 
   return true;
@@ -399,7 +400,7 @@ async function processChangedPaths(
  */
 async function processChangedPeer(
   state: AccountRuntimeState,
-  rt: ReturnType<typeof getZTMRuntime>,
+  rt: PluginRuntime,
   peer: string,
   storeAllowFrom: string[]
 ): Promise<void> {
@@ -429,7 +430,7 @@ async function processChangedPeer(
  */
 async function processChangedGroup(
   state: AccountRuntimeState,
-  rt: ReturnType<typeof getZTMRuntime>,
+  rt: PluginRuntime,
   creator: string,
   group: string,
   name: string | undefined,

@@ -32,6 +32,42 @@ vi.mock("../utils/log-sanitize.js", () => ({
   sanitizeForLog: vi.fn((input: string) => input),
 }));
 
+vi.mock("../di/index.js", () => ({
+  DEPENDENCIES: {
+    RUNTIME: Symbol("runtime"),
+    MESSAGE_STATE_REPO: Symbol("message-state-repo"),
+    ALLOW_FROM_REPO: Symbol("allow-from-repo"),
+  },
+  container: {
+    get: vi.fn((key) => {
+      if (String(key) === "Symbol(runtime)") {
+        return {
+          get: () => ({
+            channel: {
+              pairing: {
+                readAllowFromStore: vi.fn(() => Promise.resolve([])),
+              },
+            },
+          }),
+        };
+      }
+      if (String(key) === "Symbol(message-state-repo)") {
+        return {
+          getFileMetadata: vi.fn(() => ({})),
+          setFileMetadataBulk: vi.fn(),
+        };
+      }
+      if (String(key) === "Symbol(allow-from-repo)") {
+        return {
+          getAllowFrom: vi.fn(() => Promise.resolve([])),
+          clearCache: vi.fn(),
+        };
+      }
+      return null;
+    }),
+  },
+}));
+
 vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: () => ({
     channel: {
