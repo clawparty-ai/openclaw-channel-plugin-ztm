@@ -13,10 +13,11 @@ import { MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS } from '
 export class GroupPermissionLRUCache {
   private cache = new Map<
     string,
-    { permissions: GroupPermissions; lastAccess: number; expiresAt: number }
+    { permissions: GroupPermissions; accessOrder: number; expiresAt: number }
   >();
   private maxSize: number;
   private ttlMs: number;
+  private accessCounter = 0;
 
   constructor(
     maxSize: number = MAX_GROUP_PERMISSION_CACHE_SIZE,
@@ -50,12 +51,12 @@ export class GroupPermissionLRUCache {
    */
   private evictLRU(): void {
     let lruKey: string | null = null;
-    let lruTime = Infinity;
+    let oldestOrder = Infinity;
 
     for (const [cacheKey, entry] of this.cache.entries()) {
-      if (entry.lastAccess < lruTime) {
+      if (entry.accessOrder < oldestOrder) {
         lruKey = cacheKey;
-        lruTime = entry.lastAccess;
+        oldestOrder = entry.accessOrder;
       }
     }
 
@@ -76,8 +77,8 @@ export class GroupPermissionLRUCache {
         this.cache.delete(key);
         return undefined;
       }
-      // Update last access time for LRU
-      entry.lastAccess = Date.now();
+      // Update access order for LRU (using counter for deterministic ordering)
+      entry.accessOrder = ++this.accessCounter;
       return entry.permissions;
     }
     return undefined;
@@ -108,7 +109,7 @@ export class GroupPermissionLRUCache {
     const now = Date.now();
     this.cache.set(key, {
       permissions,
-      lastAccess: now,
+      accessOrder: ++this.accessCounter,
       expiresAt: now + this.ttlMs,
     });
   }
