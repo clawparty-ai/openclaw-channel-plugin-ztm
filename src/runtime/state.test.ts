@@ -76,6 +76,19 @@ vi.mock("../messaging/watcher.js", () => ({
   startMessageWatcher: vi.fn().mockResolvedValue(undefined),
 }));
 
+/**
+ * Helper function to get cache size from either Map or IGroupPermissionCache.
+ * Handles the union type used in AccountRuntimeState.groupPermissionCache.
+ */
+function getCacheSize(cache: AccountRuntimeState["groupPermissionCache"]): number {
+  if (!cache) return 0;
+  // Map has 'size' as property, IGroupPermissionCache has 'size()' as method
+  if ("size" in cache && typeof cache.size === "number") {
+    return cache.size;
+  }
+  return (cache as { size(): number }).size();
+}
+
 describe("Account Runtime State Management", () => {
   const testAccountId = "test-account";
   // Using testConfig from fixtures (see import at top of file)
@@ -660,25 +673,24 @@ describe("Account Runtime State Management", () => {
 
       // Create account with group permission cache
       const state = getOrCreateAccountState(accountId);
-      state.groupPermissionCache = new Map([
-        ["admin/test-group", {
-          creator: "admin",
-          group: "test-group",
-          groupPolicy: "open",
-          requireMention: false,
-          allowFrom: [],
-        }],
-        ["user/other-group", {
-          creator: "user",
-          group: "other-group",
-          groupPolicy: "allowlist",
-          requireMention: true,
-          allowFrom: ["alice", "bob"],
-        }],
-      ]);
+      // Populate cache using set() method
+      state.groupPermissionCache?.set("admin/test-group", {
+        creator: "admin",
+        group: "test-group",
+        groupPolicy: "open",
+        requireMention: false,
+        allowFrom: [],
+      });
+      state.groupPermissionCache?.set("user/other-group", {
+        creator: "user",
+        group: "other-group",
+        groupPolicy: "allowlist",
+        requireMention: true,
+        allowFrom: ["alice", "bob"],
+      });
 
       // Verify cache exists
-      expect(state.groupPermissionCache?.size).toBe(2);
+      expect(getCacheSize(state.groupPermissionCache)).toBe(2);
 
       // Remove account
       removeAccountState(accountId);
@@ -827,7 +839,7 @@ describe("getGroupPermissionCached", () => {
     getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
     getGroupPermissionCached("group-perm-test", "creator", "group2", testConfig);
 
-    expect(state.groupPermissionCache?.size).toBe(2);
+    expect(getCacheSize(state.groupPermissionCache)).toBe(2);
   });
 });
 
@@ -845,10 +857,10 @@ describe("clearGroupPermissionCache", () => {
 
     // Populate cache
     getGroupPermissionCached("clear-group-test", "creator", "group1", testConfig);
-    expect(state.groupPermissionCache?.size).toBe(1);
+    expect(getCacheSize(state.groupPermissionCache)).toBe(1);
 
     clearGroupPermissionCache("clear-group-test");
-    expect(state.groupPermissionCache?.size).toBe(0);
+    expect(getCacheSize(state.groupPermissionCache)).toBe(0);
   });
 
   it("should handle non-existent account gracefully", () => {

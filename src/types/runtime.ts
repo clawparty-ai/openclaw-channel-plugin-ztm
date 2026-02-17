@@ -22,6 +22,18 @@ export interface CacheEntry<T> {
   timestamp: number;
 }
 
+/**
+ * Interface for group permission cache with bounded size.
+ * Implementations must provide LRU eviction to prevent unbounded growth.
+ */
+export interface IGroupPermissionCache {
+  get(key: string): GroupPermissions | undefined;
+  has(key: string): boolean;
+  set(key: string, permissions: GroupPermissions): void;
+  clear(): void;
+  size(): number;
+}
+
 // Runtime state per account
 export interface AccountRuntimeState {
   accountId: string;
@@ -44,6 +56,8 @@ export interface AccountRuntimeState {
   // Not required in test fixtures - initialized in getOrCreateAccountState
   allowFromCache?: CacheEntry<string[]> | null;
   // Cached group permissions to avoid repeated lookups
+  // Uses LRU cache with bounded size to prevent unbounded memory growth
+  // Accepts Map for test compatibility, runtime always uses LRU cache
   // Not required in test fixtures - initialized in getOrCreateAccountState
-  groupPermissionCache?: Map<string, GroupPermissions>;
+  groupPermissionCache?: Map<string, GroupPermissions> | IGroupPermissionCache;
 }

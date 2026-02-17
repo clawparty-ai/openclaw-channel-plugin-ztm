@@ -45,6 +45,7 @@ export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling c
 export const MAX_PEERS_PER_ACCOUNT = 1000; // Maximum number of peers per account
 export const MAX_FILES_PER_ACCOUNT = 1000; // Maximum number of tracked files per account
 export const MAX_PAIRINGS_PER_ACCOUNT = 1000; // Maximum number of pending pairings
+export const MAX_GROUP_PERMISSION_CACHE_SIZE = 500; // Maximum cached group permissions per account
 
 // ============================================================================
 // String Constants
