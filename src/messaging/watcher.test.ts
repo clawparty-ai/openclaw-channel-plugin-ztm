@@ -612,8 +612,8 @@ describe("processChangedPaths scenarios", () => {
   it("should handle watch changes with peer and group items", async () => {
     await startMessageWatcher(mockState);
 
-    // Wait for processing
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // Wait for processing (WATCH_INTERVAL_MS + buffer)
+    await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Verify watchChanges was called with correct path
     const apiClient = mockState.apiClient as any;
@@ -627,7 +627,7 @@ describe("processChangedPaths scenarios", () => {
     );
 
     await startMessageWatcher(mockState);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Should not crash and should process without errors
     expect(apiClient.getPeerMessages).not.toHaveBeenCalled();
@@ -768,8 +768,8 @@ describe("watch error handling edge cases", () => {
   it("should handle API error result gracefully", async () => {
     await startMessageWatcher(mockState);
 
-    // Wait for error handling
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for error handling (WATCH_INTERVAL_MS + buffer)
+    await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Should not throw, should handle error gracefully
     expect(mockState.watchErrorCount).toBeGreaterThan(0);
@@ -778,8 +778,8 @@ describe("watch error handling edge cases", () => {
   it("should increment error count on API error", async () => {
     await startMessageWatcher(mockState);
 
-    // Wait for multiple iterations
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Wait for multiple iterations (2 * WATCH_INTERVAL_MS + buffer)
+    await new Promise((resolve) => setTimeout(resolve, 2100));
 
     // Error count should have incremented
     expect(mockState.watchErrorCount).toBeGreaterThan(0);
@@ -844,8 +844,8 @@ describe("multiple iteration scenarios", () => {
 
     await startMessageWatcher(mockState);
 
-    // Wait for at least one iteration
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for at least one iteration (WATCH_INTERVAL_MS + buffer)
+    await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Should have executed at least one iteration
     expect(apiClient.watchChanges).toHaveBeenCalled();

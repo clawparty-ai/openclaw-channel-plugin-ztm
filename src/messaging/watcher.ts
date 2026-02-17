@@ -121,6 +121,189 @@ async function handleInitialPairingRequests(
   }
 }
 
+/**
+ * Controller for managing the watch loop lifecycle
+ * Breaks down complex watch logic into smaller, testable methods
+ */
+
+// Result type for watch iteration
+type WatchResult =
+  | { success: false; errorMessage: string }
+  | { success: true; items: WatchChangeItem[] };
+
+class WatchLoopController {
+  private pendingIteration = false;
+  private lastMessageTime = Date.now();
+  private fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private messagesReceivedInCycle = false;
+  private messageSemaphore: Semaphore;
+
+  constructor(
+    private readonly state: AccountRuntimeState,
+    private readonly rt: ReturnType<typeof getZTMRuntime>,
+    private readonly messagePath: string
+  ) {
+    this.messageSemaphore = new Semaphore(5);
+  }
+
+  /**
+   * Start the watch loop
+   */
+  start(): void {
+    logger.debug(`[${this.state.accountId}] Starting watch loop`);
+    this.scheduleNextIteration();
+  }
+
+  /**
+   * Schedule the next watch iteration with proper timing
+   */
+  private scheduleNextIteration(delayMs?: number): void {
+    setTimeout(() => this.runIteration(), delayMs ?? WATCH_INTERVAL_MS);
+  }
+
+  /**
+   * Run a single watch iteration with proper error handling and scheduling
+   */
+  private async runIteration(): Promise<void> {
+    // Skip if an iteration is already in progress
+    if (this.pendingIteration) {
+      return;
+    }
+    this.pendingIteration = true;
+
+    try {
+      const loopStart = Date.now();
+
+      // Execute the watch iteration
+      const result = await this.executeWatch();
+
+      // Handle watch errors
+      if (this.isWatchError(result)) {
+        this.handleWatchError(result.errorMessage);
+        const elapsed = Date.now() - loopStart;
+        this.clearPendingFlag();
+        this.scheduleNextIteration(Math.max(0, WATCH_INTERVAL_MS - elapsed));
+        return;
+      }
+
+      // Process changed paths
+      this.messagesReceivedInCycle = await this.processChangedPaths(
+        result.items,
+        this.messagesReceivedInCycle
+      );
+
+      // Success - reset error count
+      this.state.watchErrorCount = 0;
+      const elapsed = Date.now() - loopStart;
+      this.clearPendingFlag();
+
+      // Schedule next iteration with proper delay
+      this.scheduleNextIteration(Math.max(0, WATCH_INTERVAL_MS - elapsed));
+    } catch (error) {
+      this.handleUnexpectedError(error);
+    } finally {
+      // Ensure flag is cleared even on early returns
+      this.clearPendingFlag();
+    }
+  }
+
+  /**
+   * Clear the pending iteration flag
+   */
+  private clearPendingFlag(): void {
+    this.pendingIteration = false;
+  }
+
+  /**
+   * Execute a single watch iteration and return changed items
+   */
+  private async executeWatch(): Promise<WatchResult> {
+    if (!this.state.apiClient || !this.state.config) {
+      return { success: false, errorMessage: "API client or config not available" };
+    }
+
+    const changedResult = await this.state.apiClient.watchChanges(this.messagePath);
+
+    if (!changedResult.ok) {
+      return { success: false, errorMessage: changedResult.error?.message ?? "Watch failed" };
+    }
+
+    return { success: true, items: changedResult.value ?? [] };
+  }
+
+  /**
+   * Type guard for watch error results
+   */
+  private isWatchError(result: WatchResult): result is { success: false; errorMessage: string } {
+    return !result.success;
+  }
+
+  /**
+   * Handle watch iteration errors with polling fallback
+   */
+  private handleWatchError(errorMessage: string): void {
+    this.state.watchErrorCount++;
+    logger.warn(`[${this.state.accountId}] Watch error (${this.state.watchErrorCount}): ${errorMessage}`);
+
+    // Fallback to polling after too many errors
+    if (this.state.watchErrorCount > 5) {
+      logger.warn(`[${this.state.accountId}] Too many watch errors, falling back to polling`);
+      this.state.watchErrorCount = 0;
+      startPollingWatcher(this.state);
+    }
+  }
+
+  /**
+   * Handle unexpected errors in watch loop
+   */
+  private handleUnexpectedError(error: unknown): void {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`[${this.state.accountId}] Unexpected error in watch loop: ${errorMsg}`);
+    this.clearPendingFlag();
+    // Restart the loop after a brief delay to prevent tight error loop
+    this.scheduleNextIteration(WATCH_INTERVAL_MS);
+  }
+
+  /**
+   * Process changed paths from watch result
+   */
+  private async processChangedPaths(
+    items: WatchChangeItem[],
+    previousMessagesReceived: boolean
+  ): Promise<boolean> {
+    return processChangedPaths(
+      {
+        state: this.state,
+        rt: this.rt,
+        messagePath: this.messagePath,
+        messageSemaphore: this.messageSemaphore,
+      },
+      items,
+      previousMessagesReceived,
+      (storeAllowFrom) => this.scheduleFullSync(storeAllowFrom)
+    );
+  }
+
+  /**
+   * Schedule a delayed full sync after inactivity
+   */
+  private scheduleFullSync(storeAllowFrom: string[]): void {
+    if (this.fullSyncTimer) {
+      clearTimeout(this.fullSyncTimer);
+    }
+    this.fullSyncTimer = setTimeout(async () => {
+      logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
+      await performFullSync(this.state, storeAllowFrom);
+      if (this.state.apiClient) {
+        getAccountMessageStateStore(this.state.accountId).setFileMetadataBulk(
+          this.state.accountId,
+          this.state.apiClient.exportFileMetadata()
+        );
+      }
+    }, FULL_SYNC_DELAY_MS);
+  }
+}
+
 // Watch context for iteration execution
 interface WatchContext {
   state: AccountRuntimeState;
@@ -137,130 +320,8 @@ function startWatchLoop(
   rt: ReturnType<typeof getZTMRuntime>,
   messagePath: string
 ): void {
-  const messageSemaphore = new Semaphore(5);
-  let lastMessageTime = Date.now();
-  let fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
-  let messagesReceivedInCycle = false;
-  // Track pending iteration instead of skipping - ensures no missed iterations
-  let pendingIteration = false;
-
-  const ctx: WatchContext = { state, rt, messagePath, messageSemaphore };
-
-  const scheduleFullSync = (storeAllowFrom: string[]): void => {
-    if (fullSyncTimer) {
-      clearTimeout(fullSyncTimer);
-    }
-    fullSyncTimer = setTimeout(async () => {
-      logger.debug(`[${state.accountId}] Performing delayed full sync after inactivity`);
-      await performFullSync(state, storeAllowFrom);
-      if (state.apiClient) {
-        getAccountMessageStateStore(state.accountId).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
-      }
-    }, FULL_SYNC_DELAY_MS);
-  };
-
-  const watchLoop = async (): Promise<void> => {
-    // If previous iteration is still running, mark as pending to run after it completes
-    if (pendingIteration) {
-      return;
-    }
-    pendingIteration = true;
-
-    try {
-      const loopStart = Date.now();
-
-      const result = await executeWatchIteration(ctx);
-
-      if (isWatchError(result)) {
-        handleWatchError(ctx.state, result.errorMessage, scheduleFullSync);
-        const elapsed = Date.now() - loopStart;
-        pendingIteration = false;
-        setTimeout(watchLoop, Math.max(0, WATCH_INTERVAL_MS - elapsed));
-        return;
-      }
-
-      messagesReceivedInCycle = await processChangedPaths(
-        ctx,
-        result.items,
-        messagesReceivedInCycle,
-        scheduleFullSync
-      );
-
-      state.watchErrorCount = 0;
-      const elapsed = Date.now() - loopStart;
-      pendingIteration = false;
-
-      // If there was a pending iteration request while we were processing,
-      // run immediately instead of waiting for the next interval
-      setTimeout(() => {
-        if (pendingIteration) {
-          // There was a request while we were running, process it now
-          watchLoop();
-        } else {
-          watchLoop();
-        }
-      }, Math.max(0, WATCH_INTERVAL_MS - elapsed));
-    } catch (error) {
-      // Unexpected error in watch loop - log and restart to prevent single point of failure
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error(`[${ctx.state.accountId}] Unexpected error in watch loop: ${errorMsg}`);
-      pendingIteration = false;
-      // Restart the loop after a brief delay to prevent tight error loop
-      setTimeout(watchLoop, WATCH_INTERVAL_MS);
-    } finally {
-      // Ensure flag is cleared even on early returns
-      if (pendingIteration) {
-        pendingIteration = false;
-      }
-    }
-  };
-
-  watchLoop();
-}
-
-// Result type for watch iteration
-type WatchResult =
-  | { success: false; errorMessage: string }
-  | { success: true; items: WatchChangeItem[] };
-
-function isWatchError(result: WatchResult): result is { success: false; errorMessage: string } {
-  return !result.success;
-}
-
-/**
- * Execute a single watch iteration and return changed items
- */
-async function executeWatchIteration(ctx: WatchContext): Promise<WatchResult> {
-  const { state, messagePath } = ctx;
-  if (!state.apiClient || !state.config) {
-    return { success: false, errorMessage: "API client or config not available" };
-  }
-
-  const changedResult = await state.apiClient.watchChanges(messagePath);
-  if (!isSuccess(changedResult)) {
-    return { success: false, errorMessage: changedResult.error?.message ?? "Unknown watch error" };
-  }
-
-  return { success: true, items: changedResult.value };
-}
-
-/**
- * Handle watch errors and decide whether to fallback to polling
- */
-function handleWatchError(
-  state: AccountRuntimeState,
-  errorMessage: string,
-  scheduleFullSync: (storeAllowFrom: string[]) => void
-): void {
-  state.watchErrorCount++;
-  logger.warn(`[${state.accountId}] Watch error (${state.watchErrorCount}): ${errorMessage}`);
-
-  if (state.watchErrorCount > 5) {
-    scheduleFullSync([]);
-    logger.warn(`[${state.accountId}] Too many watch errors, falling back to polling`);
-    state.watchErrorCount = 0;
-    startPollingWatcher(state);
-  }
+  const controller = new WatchLoopController(state, rt, messagePath);
+  controller.start();
 }
 
 /**
