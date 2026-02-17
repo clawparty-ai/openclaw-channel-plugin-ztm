@@ -10,5 +10,9 @@ export * from './state.js';
 // Persistent storage
 export * from './store.js';
 
+// Repository interfaces and implementations
+export * from './repository.js';
+export * from './repository-impl.js';
+
 // Type exports
 export type { AccountRuntimeState } from '../types/runtime.js';

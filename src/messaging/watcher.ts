@@ -4,9 +4,7 @@
 import { logger } from "../utils/logger.js";
 import { sanitizeForLog } from "../utils/log-sanitize.js";
 import { getOrDefault, isNonEmptyArray } from "../utils/guards.js";
-import { getZTMRuntime } from "../runtime/index.js";
-import { getAccountMessageStateStore } from "../runtime/store.js";
-import { getAllowFromCache } from "../runtime/state.js";
+import { getZTMRuntime, getMessageStateRepository, getAllowFromRepository } from "../runtime/index.js";
 import { startPollingWatcher } from "./polling.js";
 import { processAndNotifyChat } from "./chat-processor.js";
 import {
@@ -44,7 +42,7 @@ export async function startMessageWatcher(
 
   // Step 2: Get initial allowFrom store (uses cache)
   const rt = getZTMRuntime();
-  const storeAllowFrom = await getAllowFromCache(state.accountId, rt);
+  const storeAllowFrom = await getAllowFromRepository().getAllowFrom(state.accountId, rt);
   // If store read fails during init, use empty array to allow basic functionality
   const initAllowFrom = getOrDefault(storeAllowFrom, []);
 
@@ -65,7 +63,7 @@ export async function startMessageWatcher(
 async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
   if (!state.apiClient) return;
 
-  const persistedMetadata = getAccountMessageStateStore(state.accountId).getFileMetadata(state.accountId);
+  const persistedMetadata = getMessageStateRepository().getFileMetadata(state.accountId);
   if (Object.keys(persistedMetadata).length > 0) {
     state.apiClient.seedFileMetadata(persistedMetadata);
     logger.info(
@@ -296,7 +294,7 @@ class WatchLoopController {
       logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
       await performFullSync(this.state, storeAllowFrom);
       if (this.state.apiClient) {
-        getAccountMessageStateStore(this.state.accountId).setFileMetadataBulk(
+        getMessageStateRepository().setFileMetadataBulk(
           this.state.accountId,
           this.state.apiClient.exportFileMetadata()
         );
@@ -354,7 +352,7 @@ async function processChangedPaths(
   logger.debug(`[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`);
 
   // Use cached allowFrom to avoid redundant async calls every watch cycle
-  const loopStoreAllowFrom = await getAllowFromCache(state.accountId, rt);
+  const loopStoreAllowFrom = await getAllowFromRepository().getAllowFrom(state.accountId, rt);
   // If store read fails, use cached value or empty array
   const effectiveAllowFrom = getOrDefault(loopStoreAllowFrom, []);
 
@@ -390,7 +388,7 @@ async function processChangedPaths(
 
   scheduleFullSync(effectiveAllowFrom);
   if (state.apiClient) {
-    getAccountMessageStateStore(state.accountId).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+    getMessageStateRepository().setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
   }
 
   return true;
