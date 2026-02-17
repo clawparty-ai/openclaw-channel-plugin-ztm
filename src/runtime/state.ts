@@ -10,6 +10,7 @@
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "./index.js";
 import { getAccountMessageStateStore } from "./store.js";
+import { GroupPermissionLRUCache } from "./cache.js";
 import type { PluginRuntime } from "openclaw/plugin-sdk";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
@@ -27,120 +28,9 @@ import {
   RETRY_DELAY_MS,
 } from "../constants.js";
 
-// Re-export types for backward compatibility
+// Re-export types and cache for backward compatibility
 export type { AccountRuntimeState };
-
-/**
- * LRU Cache for group permissions with bounded size and TTL.
- * Prevents unbounded memory growth by evicting least recently used entries
- * and expired entries.
- */
-class GroupPermissionLRUCache {
-  private cache = new Map<string, { permissions: GroupPermissions; lastAccess: number; expiresAt: number }>();
-  private maxSize: number;
-  private ttlMs: number;
-
-  constructor(maxSize: number, ttlMs: number) {
-    if (maxSize <= 0) {
-      throw new Error(`maxSize must be positive, got: ${maxSize}`);
-    }
-    if (ttlMs <= 0) {
-      throw new Error(`ttlMs must be positive, got: ${ttlMs}`);
-    }
-    this.maxSize = maxSize;
-    this.ttlMs = ttlMs;
-  }
-
-  /**
-   * Evict expired entries and return current cache size
-   */
-  private evictExpired(): number {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.expiresAt < now) {
-        this.cache.delete(key);
-      }
-    }
-    return this.cache.size;
-  }
-
-  /**
-   * Evict least recently used entry to make room for new entry
-   */
-  private evictLRU(): void {
-    let lruKey: string | null = null;
-    let lruTime = Date.now();
-
-    for (const [cacheKey, entry] of this.cache.entries()) {
-      if (entry.lastAccess < lruTime) {
-        lruKey = cacheKey;
-        lruTime = entry.lastAccess;
-      }
-    }
-
-    if (lruKey) {
-      this.cache.delete(lruKey);
-      logger.debug(`Evicted LRU group permission cache entry: ${lruKey}`);
-    }
-  }
-
-  get(key: string): GroupPermissions | undefined {
-    // First evict any expired entries
-    this.evictExpired();
-
-    const entry = this.cache.get(key);
-    if (entry) {
-      // Check if entry has expired
-      if (entry.expiresAt < Date.now()) {
-        this.cache.delete(key);
-        return undefined;
-      }
-      // Update last access time for LRU
-      entry.lastAccess = Date.now();
-      return entry.permissions;
-    }
-    return undefined;
-  }
-
-  has(key: string): boolean {
-    this.evictExpired();
-    const entry = this.cache.get(key);
-    if (entry && entry.expiresAt >= Date.now()) {
-      return true;
-    }
-    // Clean up expired entry if present
-    if (entry) {
-      this.cache.delete(key);
-    }
-    return false;
-  }
-
-  set(key: string, permissions: GroupPermissions): void {
-    // First evict expired entries
-    this.evictExpired();
-
-    // Check if we need to evict LRU entry
-    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
-      this.evictLRU();
-    }
-
-    const now = Date.now();
-    this.cache.set(key, {
-      permissions,
-      lastAccess: now,
-      expiresAt: now + this.ttlMs,
-    });
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  size(): number {
-    this.evictExpired();
-    return this.cache.size;
-  }
-}
+export { GroupPermissionLRUCache } from "./cache.js";
 
 /**
  * AccountStateManager - Explicit state ownership for account runtime state

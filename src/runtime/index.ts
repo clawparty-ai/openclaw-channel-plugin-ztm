@@ -7,6 +7,9 @@ export * from './runtime.js';
 // Runtime state management
 export * from './state.js';
 
+// Cache utilities
+export * from './cache.js';
+
 // Persistent storage
 export * from './store.js';
 
