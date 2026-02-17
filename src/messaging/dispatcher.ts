@@ -65,6 +65,16 @@ export function notifyMessageCallbacks(
 
 /**
  * Get statistics about registered callbacks
+ *
+ * Provides insight into the current state of message callbacks for debugging
+ * and monitoring purposes.
+ *
+ * @param state - Account runtime state containing callbacks
+ * @returns Object with total and active callback counts
+ *
+ * @example
+ * const stats = getCallbackStats(state);
+ * console.log(`Active callbacks: ${stats.active}`);
  */
 export function getCallbackStats(state: AccountRuntimeState): {
   total: number;
@@ -78,13 +88,34 @@ export function getCallbackStats(state: AccountRuntimeState): {
 
 /**
  * Check if any callbacks are registered
+ *
+ * Quick check to determine if there are any message handlers registered
+ * for receiving incoming messages.
+ *
+ * @param state - Account runtime state containing callbacks
+ * @returns true if at least one callback is registered, false otherwise
+ *
+ * @example
+ * if (hasCallbacks(state)) {
+ *   console.log("Ready to receive messages");
+ * }
  */
 export function hasCallbacks(state: AccountRuntimeState): boolean {
   return state.messageCallbacks.size > 0;
 }
 
 /**
- * Clear all callbacks (useful for cleanup)
+ * Clear all callbacks
+ *
+ * Removes all registered message callbacks from the account state.
+ * Useful during account cleanup or when shutting down the plugin.
+ *
+ * @param state - Account runtime state containing callbacks to clear
+ *
+ * @example
+ * // Clear callbacks during account shutdown
+ * clearCallbacks(state);
+ * console.log("All callbacks cleared");
  */
 export function clearCallbacks(state: AccountRuntimeState): void {
   const count = state.messageCallbacks.size;
