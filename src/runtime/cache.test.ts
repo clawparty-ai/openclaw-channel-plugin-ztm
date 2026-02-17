@@ -1,6 +1,6 @@
 // Unit tests for GroupPermissionLRUCache
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { GroupPermissionLRUCache } from './cache.js';
 import type { GroupPermissions, GroupPolicy } from '../types/group-policy.js';
 

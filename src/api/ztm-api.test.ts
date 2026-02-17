@@ -1,9 +1,7 @@
 // Unit tests for ZTM API Client
 // Uses dependency injection pattern for easy mocking
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMApiClient } from '../types/api.js';
+import { describe, it, expect, vi } from 'vitest';
 import { testConfig } from '../test-utils/fixtures.js';
 import {
   createZTMApiClient,
@@ -11,7 +9,6 @@ import {
   createMockLogger,
   createMockFetch,
   createMockFetchWithRetry,
-  type MockLogger,
 } from './ztm-api.js';
 
 // Mock logger module to provide defaultLogger
@@ -61,7 +58,6 @@ describe('ZTM API Client', () => {
   it('should use config.agentUrl as base URL', () => {
     const client = createZTMApiClient(testConfig);
 
-    const expectedBaseUrl = testConfig.agentUrl.replace(/\/$/, '');
     expect(client.getMeshInfo).toBeDefined();
     expect(typeof client.getMeshInfo).toBe('function');
   });

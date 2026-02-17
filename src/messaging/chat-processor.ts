@@ -1,7 +1,7 @@
 // Shared chat message processing utilities
 // Used by both watcher.ts and polling.ts to process incoming messages
 
-import { processIncomingMessage, type ProcessMessageContext } from './processor.js';
+import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { ZTMChatConfig } from '../types/config.js';

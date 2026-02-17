@@ -6,12 +6,10 @@ import type {
   OpenClawConfig,
 } from 'openclaw/plugin-sdk';
 import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMApiClient, ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 import { resolveZTMChatConfig, validateZTMChatConfig } from '../config/index.js';
 import { isConfigMinimallyValid } from '../config/validation.js';
-import { isSuccess } from '../types/common.js';
 import { logger } from '../utils/logger.js';
 import { getOrDefault } from '../utils/guards.js';
 import { extractErrorMessage } from '../utils/error.js';
@@ -25,8 +23,6 @@ import {
 import { PAIRING_CLEANUP_INTERVAL_MS } from '../constants.js';
 import { startMessageWatcher } from '../messaging/watcher.js';
 import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
-import { requestPermit, savePermitData, loadPermitFromFile } from '../connectivity/permit.js';
-import type { PermitData } from '../types/connectivity.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
 import {
@@ -38,7 +34,6 @@ import {
 } from './connectivity-manager.js';
 import {
   createInboundContext,
-  handleInboundMessage,
   createMessageCallback,
 } from './message-dispatcher.js';
 
@@ -253,10 +248,8 @@ export async function startAccountGateway(ctx: {
  */
 export async function logoutAccountGateway({
   accountId,
-  cfg,
 }: {
   accountId: string;
-  cfg?: OpenClawConfig;
 }): Promise<{ cleared: boolean }> {
   await stopRuntime(accountId);
   removeAccountState(accountId);

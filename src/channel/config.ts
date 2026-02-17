@@ -4,7 +4,6 @@
 import type { TSchema } from '@sinclair/typebox';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
 import type { ZTMChatConfig } from '../types/config.js';
-import { ZTMChatConfigSchema } from '../config/index.js';
 import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../config/index.js';
 
 // ============================================================================

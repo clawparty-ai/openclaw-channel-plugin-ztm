@@ -706,7 +706,7 @@ describe('Account Runtime State Management', () => {
       getOrCreateAccountState(accountId);
 
       // Simulate concurrent removal and recreation
-      const [removeResult, createResult] = await Promise.all([
+      await Promise.all([
         Promise.resolve(removeAccountState(accountId)),
         Promise.resolve(getOrCreateAccountState(accountId)),
       ]);

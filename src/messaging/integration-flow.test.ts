@@ -5,14 +5,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
-import type { ProcessMessageContext } from './processor.js';
 import { sendZTMMessage } from './outbound.js';
 import {
   getOrCreateAccountState,
   removeAccountState,
   getAllAccountStates,
 } from '../runtime/state.js';
-import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { testConfig } from '../test-utils/fixtures.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import { isSuccess } from '../types/common.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
@@ -483,7 +482,6 @@ describe('Integration: Complete Message Flow', () => {
 
     it('should cleanup expired pairing requests', () => {
       const accountId = 'test-pairing-expiry';
-      const config = createBaseConfig({ dmPolicy: 'pairing' });
 
       // Setup mock to return 2 pairings
       mockLoadPendingPairings.mockReturnValue(
@@ -532,7 +530,6 @@ describe('Integration: Complete Message Flow', () => {
 
     it('should remove pairing after approval', () => {
       const accountId = 'test-pairing-remove';
-      const config = createBaseConfig({ dmPolicy: 'pairing' });
       const user = 'approved-and-remove';
 
       // Setup mock to return the user as pending

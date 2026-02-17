@@ -7,7 +7,6 @@ import { clearAllowFromCache } from '../runtime/state.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
@@ -130,7 +129,6 @@ describe('Interval Management', () => {
 
   it('should replace existing interval if already set', async () => {
     await startPollingWatcher(mockState);
-    const firstInterval = mockState.watchInterval;
 
     await startPollingWatcher(mockState);
     const secondInterval = mockState.watchInterval;

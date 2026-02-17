@@ -2,16 +2,7 @@
 // Types for ZTM Agent API communication
 
 import type { Result } from './common.js';
-import type {
-  ZTMApiError,
-  ZTMTimeoutError,
-  ZTMSendError,
-  ZTMReadError,
-  ZTMWriteError,
-  ZTMDiscoveryError,
-  ZTMParseError,
-  ZTMError,
-} from './errors.js';
+import type { ZTMApiError, ZTMSendError, ZTMReadError } from './errors.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Core ZTM Types

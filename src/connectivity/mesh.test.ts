@@ -9,7 +9,7 @@ const socketHandlers: Map<string, () => void> = new Map();
 
 vi.mock('net', () => ({
   Socket: class MockSocket {
-    setTimeout = vi.fn((ms: number) => {});
+    setTimeout = vi.fn((_ms: number) => {});
     on = vi.fn(function (this: any, event: string, handler: () => void) {
       socketHandlers.set(event, handler);
     });

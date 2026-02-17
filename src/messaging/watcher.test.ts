@@ -6,7 +6,6 @@ import { testConfig, testAccountId, createMockChat } from '../test-utils/fixture
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS } from '../constants.js';
 
 // Mock dependencies

@@ -1,7 +1,7 @@
 // Mesh operations API for ZTM Chat
 
 import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMUserInfo, ZTMPeer, ZTMMeshInfo } from '../types/api.js';
+import type { ZTMUserInfo, ZTMMeshInfo } from '../types/api.js';
 import { success, failure, isSuccess, type Result } from '../types/common.js';
 import { ZTMDiscoveryError, ZTMApiError, ZTMTimeoutError } from '../types/errors.js';
 import type { ZTMLogger, RequestHandler } from './request.js';

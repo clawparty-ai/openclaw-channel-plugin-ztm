@@ -1,8 +1,7 @@
 // Unit tests for MockZTMClient
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { ZTMMessage } from '../api/ztm-api.js';
-import type { ZTMChat, ZTMPeer, ZTMUserInfo } from '../api/ztm-api.js';
+import { describe, it, expect } from 'vitest';
+import type { ZTMChat } from '../api/ztm-api.js';
 import { MockZTMClient, createMockConfig } from './ztm-client.js';
 
 describe('MockZTMClient', () => {

@@ -281,7 +281,6 @@ export function createMockChat(
 
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 import { ZTMReadError } from '../types/errors.js';
 
 /**

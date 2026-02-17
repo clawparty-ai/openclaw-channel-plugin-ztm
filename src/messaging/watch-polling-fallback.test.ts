@@ -5,7 +5,6 @@ import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import { mockResolved } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 
 // Mock dependencies
 vi.mock('../utils/logger.js', () => ({
@@ -44,7 +43,6 @@ describe('Watch → Polling Fallback', () => {
 
   let mockState: ReturnType<typeof createMockState>;
   let mockStartPollingCalled = false;
-  let mockWatchErrorCount = 0;
 
   function createMockState(): AccountRuntimeState {
     return {
@@ -73,7 +71,6 @@ describe('Watch → Polling Fallback', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockWatchErrorCount = 0;
     mockStartPollingCalled = false;
 
     mockState = createMockState();
@@ -187,8 +184,6 @@ describe('Watch → Polling Fallback', () => {
 });
 
 describe('Integration: Watch Error with Pending Pairings', () => {
-  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: 'pairing' as const };
-
   it('should preserve pending pairings during fallback', () => {
     const pendingPairings = new Map<string, Date>();
     pendingPairings.set('alice', new Date());
@@ -202,7 +197,6 @@ describe('Integration: Watch Error with Pending Pairings', () => {
   it('should continue processing messages from approved users during fallback', () => {
     const allowFrom = ['alice', 'bob'];
     const sender = 'alice';
-    const config = { ...baseConfig, allowFrom };
 
     const isAllowed = allowFrom.some(allowed => allowed.toLowerCase() === sender.toLowerCase());
 

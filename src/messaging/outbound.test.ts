@@ -4,10 +4,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { sendZTMMessage, generateMessageId } from './outbound.js';
 import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import { mockSuccess } from '../test-utils/mocks.js';
-import { success, isSuccess } from '../types/common.js';
+import { isSuccess } from '../types/common.js';
 import { ZTMSendError } from '../types/errors.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 import type { ZTMApiClient } from '../types/api.js';
 
 // Create a fresh state for each test

@@ -40,7 +40,6 @@ describe('Complete Pairing Request Flow', () => {
   const baseConfig = testConfig;
 
   let mockState: ReturnType<typeof createMockState>;
-  let mockPairingRequests: string[] = [];
 
   function createMockState() {
     return {
@@ -66,7 +65,6 @@ describe('Complete Pairing Request Flow', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPairingRequests = [];
 
     mockState = createMockState();
   });
@@ -159,7 +157,6 @@ describe('Complete Pairing Request Flow', () => {
     it('should allow whitelisted user directly', () => {
       const sender = 'alice';
       const config = { ...baseConfig, allowFrom: ['alice'] };
-      const pendingPairings = new Map<string, Date>();
       const storeAllowFrom: string[] = [];
 
       const isAllowed =
@@ -172,8 +169,6 @@ describe('Complete Pairing Request Flow', () => {
     it('should not trigger pairing for whitelisted user', () => {
       const sender = 'alice';
       const config = { ...baseConfig, allowFrom: ['alice'] };
-      const pendingPairings = new Map<string, Date>();
-      const storeAllowFrom: string[] = [];
 
       const isWhitelisted = config.allowFrom?.some(
         allowed => allowed.toLowerCase() === sender.toLowerCase()
@@ -196,7 +191,6 @@ describe('Complete Pairing Request Flow', () => {
     it('should allow store-approved user directly', () => {
       const sender = 'bob';
       const config = { ...baseConfig, allowFrom: [] as string[] };
-      const pendingPairings = new Map<string, Date>();
       const storeAllowFrom = ['bob', 'charlie'];
 
       const isAllowed =

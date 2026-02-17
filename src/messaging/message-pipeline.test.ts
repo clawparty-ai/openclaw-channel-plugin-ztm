@@ -7,7 +7,6 @@ import { checkDmPolicy } from '../core/dm-policy.js';
 import { normalizeUsername } from '../utils/validation.js';
 import { startMessageWatcher } from './watcher.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
-import type { ProcessMessageContext } from './processor.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 import type { MessageCheckResult } from '../types/messaging.js';
 import { testConfig, testAccountId } from '../test-utils/fixtures.js';

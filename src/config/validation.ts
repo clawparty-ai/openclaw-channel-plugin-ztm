@@ -29,25 +29,6 @@ function validateAgentUrl(config: Record<string, unknown>, errors: ConfigValidat
 }
 
 /**
- * Validate permit URL field
- */
-function validatePermitUrl(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
-  const value = config.permitUrl;
-  if (!value || typeof value !== 'string' || !value.trim()) {
-    errors.push(validationError('permitUrl', 'required', value, 'permitUrl is required'));
-  } else if (!isValidUrl(value)) {
-    errors.push(
-      validationError(
-        'permitUrl',
-        'invalid_format',
-        value,
-        'permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)'
-      )
-    );
-  }
-}
-
-/**
  * Validate mesh name field
  */
 function validateMeshName(config: Record<string, unknown>, errors: ConfigValidationError[]): void {

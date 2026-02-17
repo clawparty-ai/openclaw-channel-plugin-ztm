@@ -8,14 +8,13 @@
 // - State retrieval utilities
 
 import { logger } from '../utils/logger.js';
-import { getZTMRuntime } from './index.js';
 import { getAccountMessageStateStore } from './store.js';
 import { GroupPermissionLRUCache } from './cache.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { createZTMApiClient } from '../api/ztm-api.js';
 import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMApiClient, ZTMMeshInfo } from '../types/api.js';
-import type { AccountRuntimeState, IGroupPermissionCache } from '../types/runtime.js';
+import type { ZTMMeshInfo } from '../types/api.js';
+import type { AccountRuntimeState } from '../types/runtime.js';
 import type { GroupPermissions } from '../types/group-policy.js';
 import { getGroupPermission } from '../core/group-policy.js';
 import { isSuccess } from '../types/common.js';

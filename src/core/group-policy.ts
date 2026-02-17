@@ -8,7 +8,6 @@
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type {
-  GroupPolicy,
   GroupPermissions,
   GroupMessageCheckResult,
 } from '../types/group-policy.js';

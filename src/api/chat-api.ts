@@ -4,7 +4,7 @@ import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChat } from '../types/api.js';
 import { success, failure, type Result } from '../types/common.js';
 import { ZTMReadError } from '../types/errors.js';
-import type { ZTMLogger, RequestHandler, ApiResult } from './request.js';
+import type { ZTMLogger, RequestHandler } from './request.js';
 import { getOrDefault } from '../utils/guards.js';
 
 /**

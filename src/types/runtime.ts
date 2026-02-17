@@ -6,16 +6,6 @@ import type { ZTMChatMessage } from './messaging.js';
 import type { ZTMApiClient } from './api.js';
 import type { GroupPermissions } from './group-policy.js';
 import type { Semaphore } from '../utils/concurrency.js';
-import type {
-  ZTMApiError,
-  ZTMTimeoutError,
-  ZTMSendError,
-  ZTMReadError,
-  ZTMWriteError,
-  ZTMDiscoveryError,
-  ZTMParseError,
-  ZTMError,
-} from './errors.js';
 
 // Cache entry with timestamp for TTL tracking
 export interface CacheEntry<T> {

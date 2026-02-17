@@ -1,7 +1,7 @@
 // E2E tests for startAccount gateway function
 // Tests the complete startup flow from config validation to message dispatch
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { PermitData } from '../types/connectivity.js';
 import { testConfig } from '../test-utils/fixtures.js';
 
@@ -226,7 +226,7 @@ describe('startAccount E2E Tests', () => {
 
       // These should not be called when permit.json exists
       const publicKey = await getIdentity('http://localhost:7777');
-      const permit = await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
+      await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
 
       // In a real flow, these wouldn't be called, but our mock still returns values
       // The test verifies the logic would skip these steps

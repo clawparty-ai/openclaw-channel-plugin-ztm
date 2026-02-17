@@ -2,7 +2,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMessageApi } from './message-api.js';
-import { testConfig, testMessage, testChats } from '../test-utils/fixtures.js';
+import { testConfig, testMessage } from '../test-utils/fixtures.js';
 
 describe('createMessageApi', () => {
   const mockLogger = {

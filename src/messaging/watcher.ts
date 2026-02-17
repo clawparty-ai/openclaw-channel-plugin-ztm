@@ -3,7 +3,7 @@
 
 import { logger } from '../utils/logger.js';
 import { sanitizeForLog } from '../utils/log-sanitize.js';
-import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
+import { getOrDefault } from '../utils/guards.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { startPollingWatcher } from './polling.js';
@@ -36,7 +36,7 @@ import {
  * @param state - Account runtime state with config and API client
  */
 export async function startMessageWatcher(state: AccountRuntimeState): Promise<void> {
-  const { config, apiClient } = state;
+  const { apiClient } = state;
   if (!apiClient) return;
 
   const messagePath = '/apps/ztm/chat/shared/';

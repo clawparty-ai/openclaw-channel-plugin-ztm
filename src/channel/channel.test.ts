@@ -1,7 +1,6 @@
 // Unit tests for ZTM Chat Channel Plugin
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { testConfig } from '../test-utils/fixtures.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('ZTM Chat Channel Plugin', () => {
   beforeEach(() => {
@@ -178,7 +177,6 @@ describe('ZTM Chat Channel Plugin', () => {
   describe('Pairing Request Message', () => {
     it('should generate pairing request with correct format', () => {
       const peer = 'alice';
-      const botUsername = 'test-bot';
 
       const message =
         `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +

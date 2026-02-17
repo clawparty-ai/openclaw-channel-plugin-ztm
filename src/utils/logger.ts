@@ -143,16 +143,6 @@ export function createLogger(context: Record<string, string>): {
 // ============================================================================
 
 /**
- * Type for runtime logger (from OpenClaw PluginRuntime)
- */
-type RuntimeLogger = {
-  debug?: (message: string) => void;
-  info?: (message: string) => void;
-  warn?: (message: string) => void;
-  error?: (message: string) => void;
-};
-
-/**
  * Get a logger that uses runtime logger if available, otherwise falls back to default logger.
  * This provides consistent logging access across all modules.
  *

@@ -2,7 +2,6 @@
 // Barrel exports for DI container and service factories
 
 import type {
-  DependencyKey,
   ILogger,
   IConfig,
   IApiClient,
@@ -13,7 +12,6 @@ import type {
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 
 import type { ZTMChatConfig } from '../types/config.js';
-import type { Result, AsyncResult } from '../types/common.js';
 
 export {
   DEPENDENCIES,
@@ -40,7 +38,7 @@ export type { IAllowFromRepository, IMessageStateRepository };
  */
 
 // Import implementations using ESM imports
-import { logger as loggerInstance, createLogger as createLoggerFn } from '../utils/logger.js';
+import { logger as loggerInstance } from '../utils/logger.js';
 import { getEffectiveChannelConfig } from '../channel/config.js';
 import { createZTMApiClient } from '../api/ztm-api.js';
 import { getZTMRuntime, isRuntimeInitialized } from '../runtime/runtime.js';
@@ -50,7 +48,7 @@ import { getAllowFromRepository, getMessageStateRepository } from '../runtime/re
  * Logger factory
  * Returns a factory function that creates a logger instance
  */
-export function createLogger(serviceName: string): () => ILogger {
+export function createLogger(_serviceName: string): () => ILogger {
   // Return logger instance with type cast for DI compatibility
   return () => loggerInstance as unknown as ILogger;
 }

@@ -1,7 +1,6 @@
 // Unit tests for ZTM Chat Onboarding Wizard
 
-import { describe, it, expect, beforeEach, afterEach, vi, test } from 'vitest';
-import { testConfig } from '../test-utils/fixtures.js';
+import { describe, it, expect, vi } from 'vitest';
 
 // MockPrompts class for testing wizard flows
 class MockPrompts {
@@ -49,7 +48,7 @@ class MockPrompts {
     return defaultYes ?? false;
   }
 
-  async select<T>(question: string, options: readonly T[], labels: string[]): Promise<T> {
+  async select<T>(question: string, options: readonly T[], _labels: string[]): Promise<T> {
     this.callOrder.push(`select:${question}`);
     // Return based on what we're selecting
     if (question.includes('permit') || question.includes('Permit') || question.includes('obtain')) {
@@ -128,7 +127,7 @@ vi.mock('path', () => ({
 vi.mock('net', () => ({
   Socket: vi.fn().mockImplementation(() => ({
     setTimeout: vi.fn(),
-    on: vi.fn((event, handler) => {
+    on: vi.fn((event, _handler) => {
       if (event === 'connect') {
         // Default: don't call handler (will be triggered by test)
       }
@@ -974,7 +973,7 @@ describe('ZTMChatWizard', () => {
 
       // Create a prompts that throws "Cancelled" error
       const cancellingPrompts = {
-        async ask(question: string): Promise<string> {
+        async ask(_question: string): Promise<string> {
           throw new Error('Cancelled');
         },
         async confirm(): Promise<boolean> {
