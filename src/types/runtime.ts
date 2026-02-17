@@ -5,6 +5,7 @@ import type { ZTMChatConfig } from './config.js';
 import type { ZTMChatMessage } from './messaging.js';
 import type { ZTMApiClient } from './api.js';
 import type { GroupPermissions } from './group-policy.js';
+import type { Semaphore } from '../utils/concurrency.js';
 import type {
   ZTMApiError,
   ZTMTimeoutError,
@@ -34,6 +35,9 @@ export interface IGroupPermissionCache {
   size(): number;
 }
 
+// Message callback type - must be async
+export type MessageCallback = (message: ZTMChatMessage) => Promise<void>;
+
 // Runtime state per account
 export interface AccountRuntimeState {
   accountId: string;
@@ -47,7 +51,11 @@ export interface AccountRuntimeState {
   lastInboundAt: Date | null;
   lastOutboundAt: Date | null;
   peerCount: number;
-  messageCallbacks: Set<(message: ZTMChatMessage) => void>;
+  messageCallbacks: Set<MessageCallback>;
+  // Semaphore for controlling concurrent callback execution
+  // Prevents slow callbacks from blocking the watch loop
+  // Not required in test fixtures - initialized in getOrCreateAccountState
+  callbackSemaphore?: Semaphore;
   watchInterval: ReturnType<typeof setInterval> | null;
   watchErrorCount: number;
   // Kept for test compatibility - not actively used in simplified flow

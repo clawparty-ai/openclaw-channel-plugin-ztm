@@ -5,7 +5,7 @@ import { startPollingWatcher } from "./polling.js";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import { clearAllowFromCache } from "../runtime/state.js";
 import { mockSuccess } from "../test-utils/mocks.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
@@ -76,7 +76,7 @@ describe("Interval Management", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -162,7 +162,7 @@ describe("Watch → Polling Transition", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),

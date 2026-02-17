@@ -44,6 +44,7 @@ export const STATE_FLUSH_MAX_DELAY_MS = 5000; // 5 seconds - max delay before fo
 export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling cycle
 export const MESSAGE_SEMAPHORE_PERMITS = 5; // Maximum concurrent message processing operations
 export const MESSAGE_PROCESS_TIMEOUT_MS = 30000; // 30 seconds - timeout for individual message processing
+export const CALLBACK_SEMAPHORE_PERMITS = 10; // Maximum concurrent callback executions
 
 // ============================================================================
 // Size Limits

@@ -13,14 +13,14 @@ import type { ZTMChatConfig } from "../types/config.js";
 import { handleResult } from "../utils/result.js";
 import { POLLING_INTERVAL_DEFAULT_MS, POLLING_INTERVAL_MIN_MS } from "../constants.js";
 
-// Process a group chat message (synchronous - no async operations needed)
-function processGroupChat(
+// Process a group chat message (async - uses async callback notification)
+async function processGroupChat(
   chat: { creator?: string; group?: string; name?: string; latest?: { time: number; message: string; sender?: string } | null },
   config: ZTMChatConfig,
   pollStoreAllowFrom: string[],
   accountId: string,
   state: AccountRuntimeState
-): void {
+): Promise<void> {
   if (!chat.latest || !chat.creator || !chat.group) return;
 
   const normalized = processGroupMessage(
@@ -36,7 +36,7 @@ function processGroupChat(
   );
 
   if (normalized) {
-    notifyMessageCallbacks(state, normalized);
+    await notifyMessageCallbacks(state, normalized);
   }
 }
 
@@ -62,7 +62,7 @@ async function processPeerChat(
   );
 
   if (normalized) {
-    notifyMessageCallbacks(state, normalized);
+    await notifyMessageCallbacks(state, normalized);
   }
 
   await handlePeerPolicyCheck(chat.peer, state, pollStoreAllowFrom, "Polling check");
@@ -80,7 +80,7 @@ async function processChats(
     const isGroup = !!(chat.creator && chat.group);
 
     if (isGroup) {
-      processGroupChat(chat, config, pollStoreAllowFrom, accountId, state);
+      await processGroupChat(chat, config, pollStoreAllowFrom, accountId, state);
       continue;
     }
 

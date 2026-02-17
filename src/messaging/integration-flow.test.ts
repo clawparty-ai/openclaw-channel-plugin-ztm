@@ -17,7 +17,7 @@ import { mockSuccess } from "../test-utils/mocks.js";
 import { isSuccess } from "../types/common.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { ZTMChatConfig } from "../types/config.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -98,7 +98,7 @@ function createMockState(accountId: string, config?: typeof testConfig): Account
     lastInboundAt: null,
     lastOutboundAt: null,
     peerCount: 5,
-    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+    messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),
@@ -537,7 +537,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Track message flow
       const receivedMessages: ZTMChatMessage[] = [];
-      const messageHandler = (msg: ZTMChatMessage) => {
+      const messageHandler = async (msg: ZTMChatMessage) => {
         receivedMessages.push(msg);
       };
       state.messageCallbacks.add(messageHandler);

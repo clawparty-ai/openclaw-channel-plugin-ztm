@@ -11,7 +11,7 @@ import type { ProcessMessageContext } from "./processor.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { MessageCheckResult } from "../types/messaging.js";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -62,7 +62,7 @@ describe("Inbound message processing", () => {
     lastInboundAt: null,
     lastOutboundAt: null,
     peerCount: 5,
-    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+    messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),
@@ -334,7 +334,7 @@ describe("Inbound message processing", () => {
   });
 
   describe("notifyMessageCallbacks", () => {
-    it("should call all registered callbacks", () => {
+    it("should call all registered callbacks", async () => {
       const mockCallback1 = vi.fn();
       const mockCallback2 = vi.fn();
       mockState.messageCallbacks.add(mockCallback1);
@@ -349,13 +349,13 @@ describe("Inbound message processing", () => {
         peer: "alice",
       };
 
-      notifyMessageCallbacks(mockState, message);
+      await notifyMessageCallbacks(mockState, message);
 
       expect(mockCallback1).toHaveBeenCalledWith(message);
       expect(mockCallback2).toHaveBeenCalledWith(message);
     });
 
-    it("should update lastInboundAt timestamp", () => {
+    it("should update lastInboundAt timestamp", async () => {
       const before = new Date();
       mockState.messageCallbacks.add(vi.fn());
 
@@ -368,7 +368,7 @@ describe("Inbound message processing", () => {
         peer: "alice",
       };
 
-      notifyMessageCallbacks(mockState, message);
+      await notifyMessageCallbacks(mockState, message);
 
       expect(mockState.lastInboundAt).toBeDefined();
       expect(mockState.lastInboundAt!.getTime()).toBeGreaterThanOrEqual(before.getTime());
@@ -403,13 +403,13 @@ describe("Inbound message processing", () => {
         peer: "alice",
       };
 
-      notifyMessageCallbacks(mockState, message);
+      await notifyMessageCallbacks(mockState, message);
 
       // Check that watermark was set
       expect(setWatermarkMock).toHaveBeenCalledWith(testAccountId, "alice", 1234567890);
     });
 
-    it("should handle callback errors gracefully", () => {
+    it("should handle callback errors gracefully", async () => {
       const errorCallback = vi.fn(() => {
         throw new Error("Callback error");
       });
@@ -428,12 +428,12 @@ describe("Inbound message processing", () => {
       };
 
       // Should not throw, should still call other callbacks
-      expect(() => notifyMessageCallbacks(mockState, message)).not.toThrow();
+      expect(async () => await notifyMessageCallbacks(mockState, message)).not.toThrow();
       expect(errorCallback).toHaveBeenCalled();
       expect(successCallback).toHaveBeenCalled();
     });
 
-    it("should handle empty callback set", () => {
+    it("should handle empty callback set", async () => {
       const message: ZTMChatMessage = {
         id: "test-id",
         content: "test message",
@@ -443,7 +443,7 @@ describe("Inbound message processing", () => {
         peer: "alice",
       };
 
-      expect(() => notifyMessageCallbacks(mockState, message)).not.toThrow();
+      expect(async () => await notifyMessageCallbacks(mockState, message)).not.toThrow();
     });
   });
 

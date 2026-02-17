@@ -3,6 +3,8 @@
 
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from "../api/ztm-api.js";
+import { Semaphore } from "../utils/concurrency.js";
+import type { MessageCallback } from "../types/runtime.js";
 
 // ============================================================================
 // Time Constants
@@ -315,7 +317,8 @@ export function createMockState(
     lastInboundAt: null,
     lastOutboundAt: null,
     peerCount: 5,
-    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+    messageCallbacks: new Set<MessageCallback>(),
+    callbackSemaphore: new Semaphore(10),
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),
