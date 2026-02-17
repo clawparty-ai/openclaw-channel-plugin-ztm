@@ -20,6 +20,7 @@ import type { ZTMChat, WatchChangeItem } from '../types/api.js';
 import {
   FULL_SYNC_DELAY_MS,
   WATCH_INTERVAL_MS,
+  WATCH_ERROR_THRESHOLD,
   MESSAGE_SEMAPHORE_PERMITS,
   MESSAGE_PROCESS_TIMEOUT_MS,
 } from '../constants.js';
@@ -257,7 +258,7 @@ class WatchLoopController {
     );
 
     // Fallback to polling after too many errors
-    if (this.state.watchErrorCount > 5) {
+    if (this.state.watchErrorCount > WATCH_ERROR_THRESHOLD) {
       logger.warn(`[${this.state.accountId}] Too many watch errors, falling back to polling`);
       this.state.watchErrorCount = 0;
       startPollingWatcher(this.state);

@@ -17,6 +17,7 @@ export const PROBE_TIMEOUT_MS = 10000; // 10 seconds - account probe timeout
 
 // Watch intervals
 export const WATCH_INTERVAL_MS = 1000; // 1 second - watch loop interval
+export const WATCH_ERROR_THRESHOLD = 5; // 5 consecutive errors before polling fallback
 export const FULL_SYNC_DELAY_MS = 30000; // 30 seconds - delay before full sync
 
 // Retry delays
