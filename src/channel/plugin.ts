@@ -4,6 +4,7 @@
 import type {
   ChannelPlugin,
   ChannelAccountSnapshot as BaseChannelAccountSnapshot,
+  OpenClawConfig,
 } from "openclaw/plugin-sdk";
 import { ZTMChatConfigSchema } from "../config/index.js";
 import type { ZTMChatConfig } from "../types/config.js";
@@ -48,6 +49,30 @@ function getZTMChatConfig(account: { config: unknown }): ZTMChatConfig | null {
 interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
   meshConnected?: boolean;
   peerCount?: number;
+}
+
+// Interface for resolveDmPolicy function parameters
+interface DmPolicyContext {
+  cfg?: OpenClawConfig | null;
+  accountId?: string | null;
+  account: ResolvedZTMChatAccount;
+}
+
+// Interface for collectWarnings function parameters
+interface CollectWarningsContext {
+  cfg?: OpenClawConfig | null;
+  accountId?: string | null;
+}
+
+// Interface for buildChannelSummary function parameters
+interface BuildChannelSummaryContext {
+  snapshot: ChannelAccountSnapshot;
+}
+
+// Interface for directory functions parameters
+interface DirectoryContext {
+  cfg?: OpenClawConfig | null;
+  accountId?: string | null;
 }
 
 // Local type for status issues
@@ -119,7 +144,7 @@ import {
 
 // Resolves DM policy configuration
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const resolveDmPolicyImpl = ({ cfg, accountId, account }: any) => {
+const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
   const resolvedAccountId = accountId ?? account.accountId ?? "default";
   const config = getZTMChatConfig(account);
   if (!config) return null;
@@ -145,7 +170,7 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: any) => {
 
 // Collects warnings for the account configuration
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const collectWarningsImpl = async ({ cfg, accountId }: any): Promise<string[]> => {
+const collectWarningsImpl = async ({ cfg, accountId }: CollectWarningsContext): Promise<string[]> => {
   const warnings: string[] = [];
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
   const config = getZTMChatConfig(account);
@@ -188,7 +213,7 @@ const collectWarningsImpl = async ({ cfg, accountId }: any): Promise<string[]> =
 
 // Builds channel summary from snapshot
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const buildChannelSummaryImpl = ({ snapshot }: any) => {
+const buildChannelSummaryImpl = ({ snapshot }: BuildChannelSummaryContext) => {
   const extendedSnapshot = snapshot;
   return {
     configured: snapshot.configured ?? false,
@@ -205,7 +230,7 @@ const buildChannelSummaryImpl = ({ snapshot }: any) => {
 
 // Gets self info from directory
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const directorySelfImpl = async ({ cfg, accountId }: any) => {
+const directorySelfImpl = async ({ cfg, accountId }: DirectoryContext) => {
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
   const config = getZTMChatConfig(account);
   if (!config) return null;
@@ -222,7 +247,7 @@ const directorySelfImpl = async ({ cfg, accountId }: any) => {
 
 // Lists peers from directory
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const directoryListPeersImpl = async ({ cfg, accountId }: any) => {
+const directoryListPeersImpl = async ({ cfg, accountId }: DirectoryContext) => {
   const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
   const config = getZTMChatConfig(account);
   const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
