@@ -12,6 +12,7 @@ import { logger } from "../utils/logger.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import { escapeHtml } from "../utils/validation.js";
+import { MAX_MESSAGE_LENGTH } from "../constants.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
@@ -62,6 +63,12 @@ export function processIncomingMessage(
   // Step 1: Skip empty or whitespace-only messages
   if (typeof msg.message !== "string" || msg.message.trim() === "") {
     logger.debug(`Skipping empty message from ${msg.sender}`);
+    return null;
+  }
+
+  // Step 1.5: Validate message length to prevent memory exhaustion
+  if (msg.message.length > MAX_MESSAGE_LENGTH) {
+    logger.warn(`Rejecting oversized message from ${msg.sender}: ${msg.message.length} bytes (max: ${MAX_MESSAGE_LENGTH})`);
     return null;
   }
 
