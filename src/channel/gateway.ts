@@ -25,7 +25,9 @@ import {
   initializeRuntime,
   stopRuntime,
   removeAccountState,
+  cleanupExpiredPairings,
 } from "../runtime/state.js";
+import { PAIRING_CLEANUP_INTERVAL_MS } from "../constants.js";
 import { startMessageWatcher } from "../messaging/watcher.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
 import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
@@ -236,7 +238,14 @@ export async function startAccountGateway(
   state.messageCallbacks.add(messageCallback);
   await startMessageWatcher(state);
 
+  // Setup periodic cleanup to prevent unbounded growth of pending pairings
+  const cleanupInterval = setInterval(() => {
+    cleanupExpiredPairings();
+  }, PAIRING_CLEANUP_INTERVAL_MS);
+
   return async () => {
+    // Clear cleanup interval
+    clearInterval(cleanupInterval);
     state.messageCallbacks.delete(messageCallback);
     await stopRuntime(account.accountId);
   };
