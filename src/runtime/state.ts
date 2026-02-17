@@ -142,26 +142,29 @@ class GroupPermissionLRUCache {
   }
 }
 
-// Multi-account state management
-const accountStates = new Map<string, AccountRuntimeState>();
-
 /**
- * Get an existing account state or create a new one.
+ * AccountStateManager - Explicit state ownership for account runtime state
  *
- * Each account (identified by accountId) has its own isolated runtime state,
- * including API client, connection status, message callbacks, and more.
- *
- * @param accountId - Unique identifier for the account
- * @returns AccountRuntimeState for the specified account
- *
- * @example
- * const state = getOrCreateAccountState("my-account");
- * // Returns existing state or creates new empty state
+ * Replaces module-level singleton Map with explicit class management.
+ * Provides better testability and lifecycle management.
  */
-export function getOrCreateAccountState(accountId: string): AccountRuntimeState {
-  let state = accountStates.get(accountId);
-  if (!state) {
-    state = {
+export class AccountStateManager {
+  private states = new Map<string, AccountRuntimeState>();
+
+  /**
+   * Get or create account state
+   */
+  getOrCreate(accountId: string): AccountRuntimeState {
+    let state = this.states.get(accountId);
+    if (!state) {
+      state = this.createEmptyState(accountId);
+      this.states.set(accountId, state);
+    }
+    return state;
+  }
+
+  private createEmptyState(accountId: string): AccountRuntimeState {
+    return {
       accountId,
       config: {} as ZTMChatConfig,
       apiClient: null,
@@ -180,9 +183,251 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
       allowFromCache: null,
       groupPermissionCache: new GroupPermissionLRUCache(MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS),
     };
-    accountStates.set(accountId, state);
   }
-  return state;
+
+  /**
+   * Remove account state and clean up resources
+   */
+  remove(accountId: string): void {
+    const state = this.states.get(accountId);
+    if (state) {
+      if (state.watchInterval) {
+        clearInterval(state.watchInterval);
+        state.watchInterval = null;
+      }
+      state.messageCallbacks.clear();
+      state.pendingPairings.clear();
+      state.allowFromCache = null;
+      state.groupPermissionCache?.clear();
+      this.states.delete(accountId);
+    }
+  }
+
+  /**
+   * Get all states
+   */
+  getAll(): Map<string, AccountRuntimeState> {
+    return this.states;
+  }
+
+  /**
+   * Clean up expired pending pairings from all accounts
+   */
+  cleanupExpiredPairings(): number {
+    const now = Date.now();
+    let totalRemoved = 0;
+
+    for (const [accountId, state] of this.states) {
+      if (state.pendingPairings.size === 0) continue;
+
+      let removed = 0;
+      for (const [peer, timestamp] of state.pendingPairings) {
+        if (now - timestamp.getTime() > PAIRING_MAX_AGE_MS) {
+          state.pendingPairings.delete(peer);
+          removed++;
+        }
+      }
+      if (removed > 0) {
+        logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
+        totalRemoved += removed;
+      }
+    }
+
+    return totalRemoved;
+  }
+
+  /**
+   * Get cached allowFrom store or refresh if expired
+   */
+  async getAllowFromCache(
+    accountId: string,
+    rt: PluginRuntime | (() => PluginRuntime)
+  ): Promise<string[] | null> {
+    const runtime = typeof rt === 'function' ? rt() : rt;
+    const state = this.states.get(accountId);
+
+    if (!state) {
+      try {
+        return await runtime.channel.pairing.readAllowFromStore("ztm-chat");
+      } catch (err) {
+        logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
+        return null;
+      }
+    }
+
+    const now = Date.now();
+
+    if (state.allowFromCache && now - state.allowFromCache.timestamp < ALLOW_FROM_CACHE_TTL_MS) {
+      return state.allowFromCache.value;
+    }
+
+    try {
+      const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore("ztm-chat");
+      state.allowFromCache = {
+        value: freshAllowFrom,
+        timestamp: now,
+      };
+      return freshAllowFrom;
+    } catch (err) {
+      logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
+      if (state.allowFromCache) {
+        return state.allowFromCache.value;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Clear the allowFrom cache for an account
+   */
+  clearAllowFromCache(accountId: string): void {
+    const state = this.states.get(accountId);
+    if (state) {
+      state.allowFromCache = null;
+    }
+  }
+
+  /**
+   * Get cached group permission or compute and cache if not present
+   */
+  getGroupPermissionCached(
+    accountId: string,
+    creator: string,
+    group: string,
+    config: ZTMChatConfig
+  ): GroupPermissions {
+    const state = this.states.get(accountId);
+    const cacheKey = `${creator}/${group}`;
+
+    if (!state) {
+      return getGroupPermission(creator, group, config);
+    }
+
+    const cached = state.groupPermissionCache?.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const permissions = getGroupPermission(creator, group, config);
+    state.groupPermissionCache?.set(cacheKey, permissions);
+    return permissions;
+  }
+
+  /**
+   * Clear the group permission cache for an account
+   */
+  clearGroupPermissionCache(accountId: string): void {
+    const state = this.states.get(accountId);
+    if (state) {
+      state.groupPermissionCache?.clear();
+    }
+  }
+
+  /**
+   * Initialize runtime for an account
+   */
+  async initializeRuntime(config: ZTMChatConfig, accountId: string): Promise<boolean> {
+    const state = this.getOrCreate(accountId);
+    state.config = config;
+
+    const apiClient = createZTMApiClient(config);
+
+    let meshInfo: ZTMMeshInfo | null = null;
+
+    for (let attempt = 1; attempt <= MESH_CONNECT_MAX_RETRIES; attempt++) {
+      const meshResult = await apiClient.getMeshInfo();
+      if (!isSuccess(meshResult)) {
+        if (attempt < MESH_CONNECT_MAX_RETRIES) {
+          logger.info(
+            `[${accountId}] Mesh info request failed (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        }
+        continue;
+      }
+      meshInfo = meshResult.value;
+      if (meshInfo.connected) break;
+      if (attempt < MESH_CONNECT_MAX_RETRIES) {
+        logger.info(
+          `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
+
+    if (!meshInfo) {
+      state.lastError = "Failed to get mesh info after retries";
+      state.connected = false;
+      state.meshConnected = false;
+      logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
+      return false;
+    }
+
+    state.apiClient = apiClient;
+    state.connected = true;
+    state.meshConnected = meshInfo.connected;
+    state.peerCount = meshInfo.endpoints;
+    state.lastError = meshInfo.connected ? null : "Not connected to ZTM mesh";
+
+    logger.info(
+      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
+    );
+
+    return meshInfo.connected;
+  }
+
+  /**
+   * Stop runtime for an account
+   */
+  async stopRuntime(accountId: string): Promise<void> {
+    const state = this.states.get(accountId);
+    if (!state) return;
+
+    if (state.watchInterval) {
+      clearInterval(state.watchInterval);
+      state.watchInterval = null;
+    }
+
+    state.messageCallbacks.clear();
+    state.pendingPairings.clear();
+    state.allowFromCache = null;
+    state.groupPermissionCache?.clear();
+    state.apiClient = null;
+    state.connected = false;
+    state.meshConnected = false;
+    state.lastStopAt = new Date();
+
+    getAccountMessageStateStore(accountId).flush();
+
+    logger.info(`[${accountId}] Stopped`);
+  }
+}
+
+// Singleton instance
+const accountStateManager = new AccountStateManager();
+
+/**
+ * Get the AccountStateManager singleton instance
+ */
+export function getAccountStateManager(): AccountStateManager {
+  return accountStateManager;
+}
+
+/**
+ * Get an existing account state or create a new one.
+ *
+ * Each account (identified by accountId) has its own isolated runtime state,
+ * including API client, connection status, message callbacks, and more.
+ *
+ * @param accountId - Unique identifier for the account
+ * @returns AccountRuntimeState for the specified account
+ *
+ * @example
+ * const state = getOrCreateAccountState("my-account");
+ * // Returns existing state or creates new empty state
+ */
+export function getOrCreateAccountState(accountId: string): AccountRuntimeState {
+  return accountStateManager.getOrCreate(accountId);
 }
 
 /**
@@ -198,18 +443,7 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
  * // Account state is removed and resources are cleaned up
  */
 export function removeAccountState(accountId: string): void {
-  const state = accountStates.get(accountId);
-  if (state) {
-    if (state.watchInterval) {
-      clearInterval(state.watchInterval);
-      state.watchInterval = null;
-    }
-    state.messageCallbacks.clear();
-    state.pendingPairings.clear();
-    state.allowFromCache = null;
-    state.groupPermissionCache?.clear();
-    accountStates.delete(accountId);
-  }
+  accountStateManager.remove(accountId);
 }
 
 /**
@@ -220,26 +454,7 @@ export function removeAccountState(accountId: string): void {
  * @returns Total number of expired pairings removed
  */
 export function cleanupExpiredPairings(): number {
-  const now = Date.now();
-  let totalRemoved = 0;
-
-  for (const [accountId, state] of accountStates) {
-    if (state.pendingPairings.size === 0) continue;
-
-    let removed = 0;
-    for (const [peer, timestamp] of state.pendingPairings) {
-      if (now - timestamp.getTime() > PAIRING_MAX_AGE_MS) {
-        state.pendingPairings.delete(peer);
-        removed++;
-      }
-    }
-    if (removed > 0) {
-      logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
-      totalRemoved += removed;
-    }
-  }
-
-  return totalRemoved;
+  return accountStateManager.cleanupExpiredPairings();
 }
 
 /**
@@ -254,43 +469,7 @@ export async function getAllowFromCache(
   accountId: string,
   rt: PluginRuntime | (() => PluginRuntime)
 ): Promise<string[] | null> {
-  // Handle case where a function is passed instead of runtime
-  const runtime = typeof rt === 'function' ? rt() : rt;
-  const state = accountStates.get(accountId);
-
-  // If state not found in registry, fetch fresh data without caching
-  if (!state) {
-    try {
-      return await runtime.channel.pairing.readAllowFromStore("ztm-chat");
-    } catch (err) {
-      logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
-    }
-  }
-
-  const now = Date.now();
-
-  // Check if cache is valid
-  if (state.allowFromCache && now - state.allowFromCache.timestamp < ALLOW_FROM_CACHE_TTL_MS) {
-    return state.allowFromCache.value;
-  }
-
-  // Cache expired or missing, fetch fresh data
-  try {
-    const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore("ztm-chat");
-    state.allowFromCache = {
-      value: freshAllowFrom,
-      timestamp: now,
-    };
-    return freshAllowFrom;
-  } catch (err) {
-    // On error, return cached value if available, otherwise null to skip cycle
-    logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
-    if (state.allowFromCache) {
-      return state.allowFromCache.value;
-    }
-    return null;
-  }
+  return accountStateManager.getAllowFromCache(accountId, rt);
 }
 
 /**
@@ -300,10 +479,7 @@ export async function getAllowFromCache(
  * @param accountId - The account identifier
  */
 export function clearAllowFromCache(accountId: string): void {
-  const state = accountStates.get(accountId);
-  if (state) {
-    state.allowFromCache = null;
-  }
+  accountStateManager.clearAllowFromCache(accountId);
 }
 
 /**
@@ -322,24 +498,7 @@ export function getGroupPermissionCached(
   group: string,
   config: ZTMChatConfig
 ): GroupPermissions {
-  const state = accountStates.get(accountId);
-  const cacheKey = `${creator}/${group}`;
-
-  // If no state found, compute without caching
-  if (!state) {
-    return getGroupPermission(creator, group, config);
-  }
-
-  // Check cache first
-  const cached = state.groupPermissionCache?.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  // Compute and cache
-  const permissions = getGroupPermission(creator, group, config);
-  state.groupPermissionCache?.set(cacheKey, permissions);
-  return permissions;
+  return accountStateManager.getGroupPermissionCached(accountId, creator, group, config);
 }
 
 /**
@@ -349,10 +508,7 @@ export function getGroupPermissionCached(
  * @param accountId - The account identifier
  */
 export function clearGroupPermissionCache(accountId: string): void {
-  const state = accountStates.get(accountId);
-  if (state) {
-    state.groupPermissionCache?.clear();
-  }
+  accountStateManager.clearGroupPermissionCache(accountId);
 }
 
 /**
@@ -367,7 +523,7 @@ export function clearGroupPermissionCache(accountId: string): void {
  * }
  */
 export function getAllAccountStates(): Map<string, AccountRuntimeState> {
-  return accountStates;
+  return accountStateManager.getAll();
 }
 
 /**
@@ -393,53 +549,7 @@ export async function initializeRuntime(
   config: ZTMChatConfig,
   accountId: string
 ): Promise<boolean> {
-  const state = getOrCreateAccountState(accountId);
-  state.config = config;
-
-  const apiClient = createZTMApiClient(config);
-
-  let meshInfo: ZTMMeshInfo | null = null;
-
-  for (let attempt = 1; attempt <= MESH_CONNECT_MAX_RETRIES; attempt++) {
-    const meshResult = await apiClient.getMeshInfo();
-    if (!isSuccess(meshResult)) {
-      if (attempt < MESH_CONNECT_MAX_RETRIES) {
-        logger.info(
-          `[${accountId}] Mesh info request failed (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-      }
-      continue;
-    }
-    meshInfo = meshResult.value;
-    if (meshInfo.connected) break;
-    if (attempt < MESH_CONNECT_MAX_RETRIES) {
-      logger.info(
-        `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
-      );
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-    }
-  }
-
-  if (!meshInfo) {
-    state.lastError = "Failed to get mesh info after retries";
-    state.connected = false;
-    state.meshConnected = false;
-    logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
-    return false;
-  }
-
-  state.apiClient = apiClient;
-  state.connected = true;
-  state.meshConnected = meshInfo.connected;
-  state.peerCount = meshInfo.endpoints;
-  state.lastError = meshInfo.connected ? null : "Not connected to ZTM mesh";
-
-  logger.info(
-    `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
-  );
-
-  return meshInfo.connected;
+  return accountStateManager.initializeRuntime(config, accountId);
 }
 
 // Stop runtime for an account
@@ -460,24 +570,5 @@ export async function initializeRuntime(
  * console.log("Runtime stopped");
  */
 export async function stopRuntime(accountId: string): Promise<void> {
-  const state = accountStates.get(accountId);
-  if (!state) return;
-
-  if (state.watchInterval) {
-    clearInterval(state.watchInterval);
-    state.watchInterval = null;
-  }
-
-  state.messageCallbacks.clear();
-  state.pendingPairings.clear();
-  state.allowFromCache = null;
-  state.groupPermissionCache?.clear();
-  state.apiClient = null;
-  state.connected = false;
-  state.meshConnected = false;
-  state.lastStopAt = new Date();
-
-  getAccountMessageStateStore(accountId).flush();
-
-  logger.info(`[${accountId}] Stopped`);
+  return accountStateManager.stopRuntime(accountId);
 }
