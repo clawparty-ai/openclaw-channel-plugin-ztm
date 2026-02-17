@@ -146,6 +146,55 @@ vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: mockGetZTMRuntime,
 }));
 
+vi.mock("../di/index.js", () => ({
+  DEPENDENCIES: {
+    RUNTIME: Symbol("runtime"),
+    MESSAGE_STATE_REPO: Symbol("message-state-repo"),
+    ALLOW_FROM_REPO: Symbol("allow-from-repo"),
+  },
+  container: {
+    get: vi.fn((key) => {
+      if (String(key) === "Symbol(runtime)") {
+        return {
+          get: () => ({
+            channel: {
+              routing: {
+                resolveAgentRoute: vi.fn(() => ({
+                  sessionKey: "session-123",
+                  agentId: "agent-456",
+                  matchedBy: "test-route",
+                })),
+              },
+              reply: {
+                finalizeInboundContext: vi.fn((ctx) => ctx),
+                dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockResolvedValue({ queuedFinal: true }),
+                resolveHumanDelayConfig: vi.fn(() => ({ delay: 0 })),
+              },
+              pairing: {
+                readAllowFromStore: vi.fn(() => Promise.resolve([])),
+              },
+            },
+          }),
+        };
+      }
+      if (String(key) === "Symbol(message-state-repo)") {
+        return {
+          getFileMetadata: vi.fn(() => ({})),
+          setFileMetadataBulk: vi.fn(),
+        };
+      }
+      if (String(key) === "Symbol(allow-from-repo)") {
+        return {
+          getAllowFrom: vi.fn(() => Promise.resolve([])),
+          addAllowFrom: vi.fn(),
+          removeAllowFrom: vi.fn(),
+        };
+      }
+      return null;
+    }),
+  },
+}));
+
 vi.mock("../utils/logger.js", () => ({
   logger: mockLogger,
 }));
@@ -698,7 +747,7 @@ describe("Channel Gateway", () => {
     });
 
     it("should dispatch message when callback is invoked", async () => {
-      const { getZTMRuntime } = await import("../runtime/index.js");
+      const { container, DEPENDENCIES } = await import("../di/index.js");
       const mockRuntime = {
         channel: {
           routing: {
@@ -717,7 +766,9 @@ describe("Channel Gateway", () => {
           },
         },
       };
-      (getZTMRuntime as any).mockReturnValue(mockRuntime);
+      (container.get as any).mockReturnValue({
+        get: () => mockRuntime,
+      });
 
       const callback = buildMessageCallback(mockState, "test-account", mockConfig);
       const msg = {
@@ -738,7 +789,7 @@ describe("Channel Gateway", () => {
     });
 
     it("should handle dispatch errors gracefully", async () => {
-      const { getZTMRuntime } = await import("../runtime/index.js");
+      const { container, DEPENDENCIES } = await import("../di/index.js");
       const mockRuntime = {
         channel: {
           routing: {
@@ -751,7 +802,9 @@ describe("Channel Gateway", () => {
           },
         },
       };
-      (getZTMRuntime as any).mockReturnValue(mockRuntime);
+      (container.get as any).mockReturnValue({
+        get: () => mockRuntime,
+      });
 
       const callback = buildMessageCallback(mockState, "test-account", mockConfig);
       const msg = {
