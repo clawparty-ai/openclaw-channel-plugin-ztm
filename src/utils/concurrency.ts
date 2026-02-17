@@ -91,12 +91,17 @@ export class Semaphore {
     const waiter = this.waiters.find(w => !w.resolved);
 
     if (waiter) {
-      // Remove from queue before resolving to prevent race conditions
+      // Mark as resolved BEFORE removing from queue to prevent race with timeout
+      // This ensures timeout callback will see resolved=true and not double-resolve
+      waiter.resolved = true;
+
+      // Remove from queue before resolving
       const index = this.waiters.indexOf(waiter);
       if (index !== -1) {
         this.waiters.splice(index, 1);
       }
-      // Now resolve - the resolved flag prevents timeout from also resolving
+
+      // Now safe to resolve
       waiter.resolve(true);
     } else {
       // No waiters, increment permits
