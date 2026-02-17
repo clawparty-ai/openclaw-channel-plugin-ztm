@@ -23,6 +23,8 @@ import {
   ALLOW_FROM_CACHE_TTL_MS,
   MAX_GROUP_PERMISSION_CACHE_SIZE,
   GROUP_PERMISSION_CACHE_TTL_MS,
+  MESH_CONNECT_MAX_RETRIES,
+  RETRY_DELAY_MS,
 } from "../constants.js";
 
 // Re-export types for backward compatibility
@@ -396,16 +398,14 @@ export async function initializeRuntime(
 
   const apiClient = createZTMApiClient(config);
 
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 100;
   let meshInfo: ZTMMeshInfo | null = null;
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 1; attempt <= MESH_CONNECT_MAX_RETRIES; attempt++) {
     const meshResult = await apiClient.getMeshInfo();
     if (!isSuccess(meshResult)) {
-      if (attempt < MAX_RETRIES) {
+      if (attempt < MESH_CONNECT_MAX_RETRIES) {
         logger.info(
-          `[${accountId}] Mesh info request failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+          `[${accountId}] Mesh info request failed (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       }
@@ -413,9 +413,9 @@ export async function initializeRuntime(
     }
     meshInfo = meshResult.value;
     if (meshInfo.connected) break;
-    if (attempt < MAX_RETRIES) {
+    if (attempt < MESH_CONNECT_MAX_RETRIES) {
       logger.info(
-        `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+        `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
       );
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
     }

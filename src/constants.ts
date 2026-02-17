@@ -21,8 +21,12 @@ export const FULL_SYNC_DELAY_MS = 30000; // 30 seconds - delay before full sync
 
 // Retry delays
 export const RETRY_INITIAL_DELAY_MS = 1000; // 1 second - initial retry delay
+export const RETRY_DELAY_MS = 1000; // 1 second - delay between retry attempts
 export const RETRY_MAX_DELAY_MS = 10000; // 10 seconds - maximum retry delay
 export const RETRY_TIMEOUT_MS = 30000; // 30 seconds - total retry timeout
+
+// Mesh connectivity
+export const MESH_CONNECT_MAX_RETRIES = 3; // Maximum retry attempts for mesh connection
 
 // Pairing cleanup
 export const PAIRING_CLEANUP_INTERVAL_MS = 1000; // 1 second - cleanup check interval
@@ -38,6 +42,8 @@ export const STATE_FLUSH_MAX_DELAY_MS = 5000; // 5 seconds - max delay before fo
 
 // Chat processing limits
 export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling cycle
+export const MESSAGE_SEMAPHORE_PERMITS = 5; // Maximum concurrent message processing operations
+export const MESSAGE_PROCESS_TIMEOUT_MS = 30000; // 30 seconds - timeout for individual message processing
 
 // ============================================================================
 // Size Limits

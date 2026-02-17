@@ -17,7 +17,7 @@ import { Semaphore } from "../utils/concurrency.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
 import type { ZTMChat, WatchChangeItem } from "../types/api.js";
-import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS } from "../constants.js";
+import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS, MESSAGE_SEMAPHORE_PERMITS, MESSAGE_PROCESS_TIMEOUT_MS } from "../constants.js";
 
 /**
  * Start message watcher using ZTM's Watch mechanism
@@ -143,7 +143,7 @@ class WatchLoopController {
     private readonly rt: ReturnType<typeof getZTMRuntime>,
     private readonly messagePath: string
   ) {
-    this.messageSemaphore = new Semaphore(5);
+    this.messageSemaphore = new Semaphore(MESSAGE_SEMAPHORE_PERMITS);
   }
 
   /**
@@ -358,9 +358,6 @@ async function processChangedPaths(
   const effectiveAllowFrom = loopStoreAllowFrom ?? [];
 
   const tasks: Promise<void>[] = [];
-
-  // Timeout for individual message processing to prevent indefinite blocking
-  const MESSAGE_PROCESS_TIMEOUT_MS = 30000;
 
   for (const item of peerItems) {
     if (item.peer) {
