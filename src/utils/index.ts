@@ -22,5 +22,8 @@ export * from './paths.js';
 // Error handling utilities
 export * from './error.js';
 
+// Type guards and null handling
+export * from './guards.js';
+
 // Type exports
 export type { Result, AsyncResult, ConnectionStatus, MessageDirection, PairingStatus } from '../types/common.js';
