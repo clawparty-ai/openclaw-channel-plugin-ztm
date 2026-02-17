@@ -24,11 +24,7 @@ export type {
   ZTMDiscoveryError,
 };
 
-import {
-  createRequestHandler,
-  defaultDeps,
-  type ZTMApiClientDeps,
-} from './request.js';
+import { createRequestHandler, defaultDeps, type ZTMApiClientDeps } from './request.js';
 
 import { createMeshApi } from './mesh-api.js';
 import { createChatApi } from './chat-api.js';
@@ -36,9 +32,7 @@ import { createMessageApi } from './message-api.js';
 import { createFileApi } from './file-api.js';
 
 // Re-export types for backward compatibility
-export type {
-  ZTMApiClientDeps,
-};
+export type { ZTMApiClientDeps };
 
 /**
  * Create ZTM API Client with dependency injection

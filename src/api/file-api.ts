@@ -9,7 +9,11 @@ const MAX_TRACKED_FILES = 500;
 /**
  * Create file operations API
  */
-export function createFileApi(_config: ZTMChatConfig, _request: RequestHandler, _logger: ZTMLogger) {
+export function createFileApi(
+  _config: ZTMChatConfig,
+  _request: RequestHandler,
+  _logger: ZTMLogger
+) {
   // Track both time and size for each file to detect changes in append-only files
   interface FileMetadata {
     time: number;

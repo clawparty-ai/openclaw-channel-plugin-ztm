@@ -133,7 +133,7 @@ import { buildAccountSnapshot as buildAccountSnapshotImpl } from './state.js';
 // ============================================================================
 
 // Resolves DM policy configuration
- 
+
 const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
   const resolvedAccountId = accountId ?? account.accountId ?? 'default';
   const config = getZTMChatConfig(account);
@@ -159,7 +159,7 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
 };
 
 // Collects warnings for the account configuration
- 
+
 const collectWarningsImpl = async ({
   cfg,
   accountId,
@@ -211,7 +211,7 @@ const collectWarningsImpl = async ({
 };
 
 // Builds channel summary from snapshot
- 
+
 const buildChannelSummaryImpl = ({ snapshot }: BuildChannelSummaryContext) => {
   const extendedSnapshot = snapshot;
   return {
@@ -228,7 +228,7 @@ const buildChannelSummaryImpl = ({ snapshot }: BuildChannelSummaryContext) => {
 };
 
 // Gets self info from directory
- 
+
 const directorySelfImpl = async ({ cfg, accountId }: DirectoryContext) => {
   const account = resolveZTMChatAccount({
     cfg: cfg ?? undefined,
@@ -248,7 +248,7 @@ const directorySelfImpl = async ({ cfg, accountId }: DirectoryContext) => {
 };
 
 // Lists peers from directory
- 
+
 const directoryListPeersImpl = async ({ cfg, accountId }: DirectoryContext) => {
   const account = resolveZTMChatAccount({
     cfg: cfg ?? undefined,
