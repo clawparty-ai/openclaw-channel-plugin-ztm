@@ -1,7 +1,7 @@
 // Fallback polling watcher for ZTM Chat
 
 import { logger } from "../utils/logger.js";
-import { getZTMRuntime, getAllowFromRepository } from "../runtime/index.js";
+import { container, DEPENDENCIES } from "../di/index.js";
 import {
   processPeerMessage,
   processGroupMessage,
@@ -106,7 +106,8 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
     if (!state.apiClient || !state.config) return;
 
     // Use cached allowFrom to avoid redundant async calls every poll cycle
-    const pollStoreAllowFrom = await getAllowFromRepository().getAllowFrom(state.accountId, getZTMRuntime());
+    const rt = container.get(DEPENDENCIES.RUNTIME).get();
+    const pollStoreAllowFrom = await container.get(DEPENDENCIES.ALLOW_FROM_REPO).getAllowFrom(state.accountId, rt);
     // Skip processing if we couldn't read the store (security: don't bypass allowFrom checks)
     if (pollStoreAllowFrom === null) {
       return;
