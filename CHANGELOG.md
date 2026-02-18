@@ -1,9 +1,4 @@
-## [unreleased]
-
-### 🚀 Features
-
-- Add changelog automation scripts and full changelog
-## [2026.2.18] - 2026-02-17
+## [2026.2.17] - 2026-02-18
 
 ### 🚀 Features
 
@@ -15,6 +10,8 @@
 - *(di)* Register AccountStateManager in DI container
 - Add npm publish workflow for third-party plugin distribution
 - Add auto changelog and GitHub Release generation
+- Add changelog automation scripts and full changelog
+- Add manual trigger workflow_dispatch for npm publish
 
 ### 🐛 Bug Fixes
 
@@ -60,6 +57,13 @@
 - Use incrementing counter instead of timestamp for LRU ordering
 - Extract WATCH_ERROR_THRESHOLD constant from hardcoded value
 - Update publish workflow tag pattern to match v*.*.* format
+- Use taiki-e/install-action for git-cliff in CI
+- Generate proper changelog in CI instead of using unreleased
+- Use local CHANGELOG.md for GitHub Release notes
+- Adjust tag pattern order for GitHub Actions
+- Use double quotes for tag pattern in publish.yml
+- Use glob patterns for tag trigger in publish.yml
+- Use specific glob patterns for tag trigger
 
 ### 💼 Other
 
@@ -151,7 +155,9 @@
 - Add ESLint and Prettier configuration
 - Add Dependabot for automated dependency updates
 - Update package-lock.json for npm publish setup
-- Release 2026.2.18
+- Migrate from conventional-changelog to git-cliff
+- Update GitHub Actions workflow for enhanced versioning support
+- Add tag flag for npm publish and support prerelease versions
 ## [2026.2.15] - 2026-02-15
 
 ### 🚀 Features
