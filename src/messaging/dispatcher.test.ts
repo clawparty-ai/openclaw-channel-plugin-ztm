@@ -9,7 +9,7 @@ import {
 } from "./dispatcher.js";
 import { testAccountId } from "../test-utils/fixtures.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 
 // Use vi.hoisted to ensure mocks are properly scoped
 const { mockSetWatermark: actualMockSetWatermark, mockLoggerDebug: actualMockLoggerDebug } = vi.hoisted(() => ({
@@ -61,7 +61,7 @@ describe("Message Dispatcher", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 0,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -76,7 +76,7 @@ describe("Message Dispatcher", () => {
   });
 
   describe("notifyMessageCallbacks", () => {
-    it("should update lastInboundAt timestamp", () => {
+    it("should update lastInboundAt timestamp", async () => {
       const before = mockState.lastInboundAt;
       const message: ZTMChatMessage = {
         id: "123",
@@ -87,13 +87,13 @@ describe("Message Dispatcher", () => {
         peer: "alice",
       };
 
-      notifyMessageCallbacks(mockState, message);
+      await notifyMessageCallbacks(mockState, message);
 
       expect(mockState.lastInboundAt).not.toBe(before);
       expect(mockState.lastInboundAt).toBeInstanceOf(Date);
     });
 
-    it("should call all registered callbacks", () => {
+    it("should call all registered callbacks", async () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
       mockState.messageCallbacks = new Set([callback1, callback2]);
@@ -107,13 +107,13 @@ describe("Message Dispatcher", () => {
         peer: "alice",
       };
 
-      notifyMessageCallbacks(mockState, message);
+      await notifyMessageCallbacks(mockState, message);
 
       expect(callback1).toHaveBeenCalledWith(message);
       expect(callback2).toHaveBeenCalledWith(message);
     });
 
-    it("should continue calling other callbacks if one throws", () => {
+    it("should continue calling other callbacks if one throws", async () => {
       const errorCallback = vi.fn(() => {
         throw new Error("Callback error");
       });
@@ -129,14 +129,14 @@ describe("Message Dispatcher", () => {
         peer: "alice",
       };
 
-      expect(() => {
-        notifyMessageCallbacks(mockState, message);
+      expect(async () => {
+        await notifyMessageCallbacks(mockState, message);
       }).not.toThrow();
 
       expect(successCallback).toHaveBeenCalled();
     });
 
-    it("should update watermark after successful callbacks", () => {
+    it("should update watermark after successful callbacks", async () => {
       const callback = vi.fn();
       mockState.messageCallbacks = new Set([callback]);
 
@@ -149,7 +149,7 @@ describe("Message Dispatcher", () => {
         peer: "alice",
       };
 
-      notifyMessageCallbacks(mockState, message);
+      await notifyMessageCallbacks(mockState, message);
 
       // Verify that setWatermark was called on the store
       expect(actualMockSetWatermark).toHaveBeenCalledWith(

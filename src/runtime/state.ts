@@ -19,6 +19,7 @@ import type { AccountRuntimeState, IGroupPermissionCache } from "../types/runtim
 import type { GroupPermissions } from "../types/group-policy.js";
 import { getGroupPermission } from "../core/group-policy.js";
 import { isSuccess } from "../types/common.js";
+import { Semaphore } from "../utils/concurrency.js";
 import {
   PAIRING_MAX_AGE_MS,
   ALLOW_FROM_CACHE_TTL_MS,
@@ -26,6 +27,7 @@ import {
   GROUP_PERMISSION_CACHE_TTL_MS,
   MESH_CONNECT_MAX_RETRIES,
   RETRY_DELAY_MS,
+  CALLBACK_SEMAPHORE_PERMITS,
 } from "../constants.js";
 
 // Re-export types and cache for backward compatibility
@@ -67,6 +69,7 @@ export class AccountStateManager {
       lastOutboundAt: null,
       peerCount: 0,
       messageCallbacks: new Set(),
+      callbackSemaphore: new Semaphore(CALLBACK_SEMAPHORE_PERMITS),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),

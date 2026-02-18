@@ -4,7 +4,7 @@
 import { logger } from "../utils/logger.js";
 import { extractErrorMessage } from "../utils/error.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
 function getWatermarkKey(message: ZTMChatMessage): string {
@@ -15,38 +15,65 @@ function getWatermarkKey(message: ZTMChatMessage): string {
 }
 
 /**
+ * Execute a single callback with semaphore control
+ */
+async function executeCallbackWithSemaphore(
+  callback: MessageCallback,
+  message: ZTMChatMessage,
+  state: AccountRuntimeState
+): Promise<boolean> {
+  try {
+    const executeFn = async () => {
+      await callback(message);
+    };
+
+    if (state.callbackSemaphore) {
+      await state.callbackSemaphore.execute(executeFn);
+    } else {
+      // Fallback for tests without semaphore
+      await executeFn();
+    }
+    return true;
+  } catch (error) {
+    const errorMsg = extractErrorMessage(error);
+    logger.error(`[${state.accountId}] Callback error: ${errorMsg}`);
+    return false;
+  }
+}
+
+/**
  * Notify all registered message callbacks for a received message
  *
  * This function:
  * 1. Updates the last inbound timestamp
- * 2. Calls all registered callbacks
+ * 2. Executes all registered callbacks asynchronously with semaphore control
  * 3. Handles callback errors gracefully
  * 4. Updates watermark after successful processing
  *
  * @param state - Account runtime state containing callbacks
  * @param message - Normalized message to dispatch
  */
-export function notifyMessageCallbacks(
+export async function notifyMessageCallbacks(
   state: AccountRuntimeState,
   message: ZTMChatMessage
-): void {
+): Promise<void> {
   // Update last inbound timestamp
   state.lastInboundAt = new Date();
 
-  // Notify all registered callbacks
-  let successCount = 0;
-  let errorCount = 0;
-
-  for (const callback of state.messageCallbacks) {
-    try {
-      callback(message);
-      successCount++;
-    } catch (error) {
-      errorCount++;
-      const errorMsg = extractErrorMessage(error);
-      logger.error(`[${state.accountId}] Callback error: ${errorMsg}`);
-    }
+  // If no callbacks registered, skip processing
+  if (state.messageCallbacks.size === 0) {
+    return;
   }
+
+  // Execute all callbacks concurrently with semaphore control
+  const tasks: Promise<boolean>[] = [];
+  for (const callback of state.messageCallbacks) {
+    tasks.push(executeCallbackWithSemaphore(callback, message, state));
+  }
+
+  const results = await Promise.all(tasks);
+  const successCount = results.filter(r => r).length;
+  const errorCount = results.filter(r => !r).length;
 
   // Log summary if multiple callbacks
   if (state.messageCallbacks.size > 1) {

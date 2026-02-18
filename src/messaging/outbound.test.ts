@@ -6,7 +6,7 @@ import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import { mockSuccess } from "../test-utils/mocks.js";
 import { success, isSuccess } from "../types/common.js";
 import { ZTMSendError } from "../types/errors.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { ZTMApiClient } from "../types/api.js";
 
@@ -24,7 +24,7 @@ function createMockState(): AccountRuntimeState {
     lastInboundAt: null,
     lastOutboundAt: null,
     peerCount: 5,
-    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+    messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),

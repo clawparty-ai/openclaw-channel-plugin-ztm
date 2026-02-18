@@ -91,7 +91,7 @@ export async function processAndNotifyChat(
       { config: state.config, storeAllowFrom, accountId: state.accountId, groupInfo: { creator: chat.creator!, group: chat.group! } }
     );
     if (normalized) {
-      notifyMessageCallbacks(state, {
+      await notifyMessageCallbacks(state, {
         ...normalized,
         isGroup: true,
         groupName: chat.name,
@@ -121,7 +121,7 @@ export async function processAndNotifyChat(
     { config: state.config, storeAllowFrom, accountId: state.accountId }
   );
   if (normalized) {
-    notifyMessageCallbacks(state, normalized);
+    await notifyMessageCallbacks(state, normalized);
   }
 
   const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);

@@ -164,8 +164,8 @@ export function createMessageCallback(
   cfg: Record<string, unknown> | undefined,
   state: AccountRuntimeState,
   ctx: { log?: { info: (...args: unknown[]) => void } }
-): (msg: ZTMChatMessage) => void {
-  return (msg: ZTMChatMessage) => {
+): (msg: ZTMChatMessage) => Promise<void> {
+  return async (msg: ZTMChatMessage) => {
     let msgType: string;
     if (msg.isGroup) {
       const name = msg.groupName;
@@ -179,6 +179,6 @@ export function createMessageCallback(
     );
 
     // Call the handler
-    handleInboundMessage(state, rt, cfg ?? {}, config, accountId, ctx, msg);
+    await handleInboundMessage(state, rt, cfg ?? {}, config, accountId, ctx, msg);
   };
 }

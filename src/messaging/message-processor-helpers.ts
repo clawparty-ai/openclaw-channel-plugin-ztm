@@ -131,7 +131,7 @@ export async function processAndNotifyPeerMessages(
   for (const msg of messages) {
     const normalized = processPeerMessage(msg, state, storeAllowFrom);
     if (normalized) {
-      notifyMessageCallbacks(state, normalized);
+      await notifyMessageCallbacks(state, normalized);
     }
   }
 }
@@ -146,17 +146,17 @@ export async function processAndNotifyPeerMessages(
  * @param groupInfo - Group metadata (creator, group)
  * @param groupName - Optional display name for the group
  */
-export function processAndNotifyGroupMessages(
+export async function processAndNotifyGroupMessages(
   messages: Array<{ time: number; message: string; sender: string }>,
   state: AccountRuntimeState,
   storeAllowFrom: string[],
   groupInfo: { creator: string; group: string },
   groupName?: string
-): void {
+): Promise<void> {
   for (const msg of messages) {
     const normalized = processGroupMessage(msg, state, storeAllowFrom, groupInfo, groupName);
     if (normalized) {
-      notifyMessageCallbacks(state, normalized);
+      await notifyMessageCallbacks(state, normalized);
     }
   }
 }

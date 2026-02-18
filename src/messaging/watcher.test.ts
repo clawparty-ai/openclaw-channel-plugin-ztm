@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startMessageWatcher } from "./watcher.js";
 import { testConfig, testAccountId, createMockChat } from "../test-utils/fixtures.js";
 import { mockSuccess } from "../test-utils/mocks.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import {
@@ -148,7 +148,7 @@ describe("startMessageWatcher", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -486,7 +486,7 @@ describe("watch loop timing", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -624,7 +624,7 @@ describe("processChangedPaths scenarios", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -712,7 +712,7 @@ describe("error threshold and polling fallback", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -787,7 +787,7 @@ describe("watch error handling edge cases", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -858,7 +858,7 @@ describe("multiple iteration scenarios", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
