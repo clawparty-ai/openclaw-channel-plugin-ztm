@@ -5,8 +5,10 @@ on:
     tags:
       # Supports: v2026.2.18, v2026.2.18-rc.1, v2026.2.18-alpha.1, v2026.2.18-beta.1
       # Format: vYYYY.M.D with optional prerelease suffix
-      - 'v*.*.*'
-      - 'v*.*.*-*.*'
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*-alpha.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*-beta.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*'
   workflow_dispatch:
     inputs:
       ref:
