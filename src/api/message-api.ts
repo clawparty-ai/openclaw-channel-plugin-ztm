@@ -9,6 +9,7 @@ import {
 } from "../types/errors.js";
 import type { ZTMLogger, RequestHandler } from "./request.js";
 import { normalizeMessageContent } from "./chat-api.js";
+import { sanitizeForLog } from "../utils/log-sanitize.js";
 
 /**
  * Create message operations API
@@ -32,7 +33,8 @@ export function createMessageApi(
       since?: number,
       before?: number
     ): Promise<Result<ZTMMessage[], ZTMReadError>> {
-      logger.debug?.(`[ZTM API] Fetching messages from peer "${peer}" since=${since}, before=${before}`);
+      const safePeer = sanitizeForLog(peer);
+      logger.debug?.(`[ZTM API] Fetching messages from peer "${safePeer}" since=${since}, before=${before}`);
 
       const queryParams = new URLSearchParams();
       if (since !== undefined) {
@@ -60,7 +62,7 @@ export function createMessageApi(
         message: normalizeMessageContent(msg.message),
       }));
 
-      logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
+      logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${safePeer}"`);
       return success(messages);
     },
 
@@ -68,7 +70,9 @@ export function createMessageApi(
      * Send a message to a peer
      */
     async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZTMSendError>> {
-      logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
+      const safePeer = sanitizeForLog(peer);
+      const safeText = sanitizeForLog(message.message.substring(0, 50));
+      logger.debug?.(`[ZTM API] Sending message to peer "${safePeer}" at time=${message.time}, text="${safeText}..."`);
 
       const ztmEntry = { text: message.message };
       const encodedPeer = encodeURIComponent(peer);
@@ -82,11 +86,11 @@ export function createMessageApi(
           contentPreview: message.message,
           cause: result.error ?? new Error("Unknown error"),
         });
-        logger.error?.(`[ZTM API] Failed to send message to ${peer}: ${error.message}`);
+        logger.error?.(`[ZTM API] Failed to send message to ${safePeer}: ${error.message}`);
         return failure(error);
       }
 
-      logger.debug?.(`[ZTM API] Successfully sent message to peer "${peer}"`);
+      logger.debug?.(`[ZTM API] Successfully sent message to peer "${safePeer}"`);
       return success(true);
     },
 
@@ -97,7 +101,8 @@ export function createMessageApi(
       creator: string,
       group: string
     ): Promise<Result<ZTMMessage[], ZTMReadError>> {
-      logger.debug?.(`[ZTM API] Fetching group messages from "${creator}/${group}"`);
+      const safeGroup = sanitizeForLog(`${creator}/${group}`);
+      logger.debug?.(`[ZTM API] Fetching group messages from "${safeGroup}"`);
 
       const result = await request<ZTMMessage[]>(
         "GET",
@@ -128,7 +133,7 @@ export function createMessageApi(
         };
       });
 
-      logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from group "${creator}/${group}"`);
+      logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from group "${safeGroup}"`);
       return success(messages);
     },
 
@@ -140,7 +145,9 @@ export function createMessageApi(
       group: string,
       message: ZTMMessage
     ): Promise<Result<boolean, ZTMSendError>> {
-      logger.debug?.(`[ZTM API] Sending message to group "${creator}/${group}", text="${message.message.substring(0, 50)}..."`);
+      const safeGroup = sanitizeForLog(`${creator}/${group}`);
+      const safeText = sanitizeForLog(message.message.substring(0, 50));
+      logger.debug?.(`[ZTM API] Sending message to group "${safeGroup}", text="${safeText}..."`);
 
       const ztmEntry = { text: message.message };
 
@@ -161,7 +168,7 @@ export function createMessageApi(
         return failure(error);
       }
 
-      logger.debug?.(`[ZTM API] Successfully sent message to group "${creator}/${group}"`);
+      logger.debug?.(`[ZTM API] Successfully sent message to group "${safeGroup}"`);
       return success(true);
     },
 
@@ -171,7 +178,8 @@ export function createMessageApi(
     async watchChanges(
       prefix: string
     ): Promise<Result<WatchChangeItem[], ZTMReadError>> {
-      logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
+      const safePrefix = sanitizeForLog(prefix);
+      logger.debug?.(`[ZTM API] Watching for changes with prefix="${safePrefix}"`);
 
       const chatsResult = await getChats();
       if (!chatsResult.ok) {
@@ -180,7 +188,7 @@ export function createMessageApi(
           operation: "list",
           cause: chatsResult.error ?? new Error("Unknown error"),
         });
-        logger.error?.(`[ZTM API] Watch failed for ${prefix}: ${error.message}`);
+        logger.error?.(`[ZTM API] Watch failed for ${safePrefix}: ${error.message}`);
         return failure(error);
       }
 

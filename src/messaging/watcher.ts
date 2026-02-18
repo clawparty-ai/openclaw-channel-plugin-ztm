@@ -2,6 +2,7 @@
 // Monitors for new messages via Watch mechanism with fallback to polling
 
 import { logger } from "../utils/logger.js";
+import { sanitizeForLog } from "../utils/log-sanitize.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
 import { startPollingWatcher } from "./polling.js";
@@ -321,18 +322,21 @@ async function processChangedPeer(
   const messagesResult = await state.apiClient.getPeerMessages(peer);
 
   if (!messagesResult.ok) {
-    logger.warn(`[${state.accountId}] Failed to get messages from peer "${peer}": ${messagesResult.error?.message ?? "Unknown error"}`);
+    const safePeer = sanitizeForLog(peer);
+    logger.warn(`[${state.accountId}] Failed to get messages from peer "${safePeer}": ${messagesResult.error?.message ?? "Unknown error"}`);
     return;
   }
 
   const messages = messagesResult.value ?? [];
+  const safePeer = sanitizeForLog(peer);
 
-  logger.debug(`[${state.accountId}] Processing ${messages.length} messages from peer "${peer}"`);
+  logger.debug(`[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}"`);
 
   for (const msg of messages) {
-    logger.debug(`[${state.accountId}] Message check: sender="${msg.sender}", botUsername="${state.config.username}"`);
+    const safeSender = sanitizeForLog(msg.sender);
+    logger.debug(`[${state.accountId}] Message check: sender="${safeSender}", botUsername="${state.config.username}"`);
     if (msg.sender === state.config.username) {
-      logger.debug(`[${state.accountId}] Skipping outbound message to ${peer} (sender=${msg.sender})`);
+      logger.debug(`[${state.accountId}] Skipping outbound message to ${safePeer} (sender=${safeSender})`);
       continue;
     }
     const normalized = processIncomingMessage(msg, { config: state.config, storeAllowFrom, accountId: state.accountId });
@@ -361,12 +365,13 @@ async function processChangedGroup(
   if (!state.apiClient) return;
 
   const groupKey = `${creator}/${group}`;
-  logger.debug(`[${state.accountId}] Processing group messages from "${groupKey}"`);
+  const safeGroupKey = sanitizeForLog(groupKey);
+  logger.debug(`[${state.accountId}] Processing group messages from "${safeGroupKey}"`);
 
   const messagesResult = await state.apiClient.getGroupMessages(creator, group);
 
   if (!messagesResult.ok) {
-    logger.warn(`[${state.accountId}] Failed to get messages from group "${groupKey}": ${messagesResult.error?.message ?? "Unknown error"}`);
+    logger.warn(`[${state.accountId}] Failed to get messages from group "${safeGroupKey}": ${messagesResult.error?.message ?? "Unknown error"}`);
     return;
   }
 
@@ -374,7 +379,7 @@ async function processChangedGroup(
 
   for (const msg of messages) {
     if (msg.sender === state.config.username) {
-      logger.debug(`[${state.accountId}] Skipping own message in group ${groupKey}`);
+      logger.debug(`[${state.accountId}] Skipping own message in group ${safeGroupKey}`);
       continue;
     }
     const normalized = processIncomingMessage(
