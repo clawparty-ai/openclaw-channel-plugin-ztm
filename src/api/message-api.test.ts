@@ -306,10 +306,11 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      await messageApi.getGroupMessages("Alice Smith", "My Group!");
+      // Use valid identifiers per IDENTIFIER_PATTERN (alphanumeric, hyphens, underscores)
+      await messageApi.getGroupMessages("Alice_Smith", "My_Group-Name");
 
-      expect(capturedPath).toContain(encodeURIComponent("Alice Smith"));
-      expect(capturedPath).toContain(encodeURIComponent("My Group!"));
+      expect(capturedPath).toContain(encodeURIComponent("Alice_Smith"));
+      expect(capturedPath).toContain(encodeURIComponent("My_Group-Name"));
     });
   });
 

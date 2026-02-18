@@ -601,11 +601,12 @@ describe("Group Message Operations", () => {
         sender: "test-bot",
       };
 
-      await client.sendGroupMessage("Alice Smith", "My Group!", message);
+      // Use valid identifiers per IDENTIFIER_PATTERN (alphanumeric, hyphens, underscores)
+      await client.sendGroupMessage("Alice_Smith", "My_Group-Name", message);
 
       expect(calls.length).toBe(1);
-      expect(calls[0].url).toContain(encodeURIComponent("Alice Smith"));
-      expect(calls[0].url).toContain(encodeURIComponent("My Group!"));
+      expect(calls[0].url).toContain(encodeURIComponent("Alice_Smith"));
+      expect(calls[0].url).toContain(encodeURIComponent("My_Group-Name"));
     });
   });
 

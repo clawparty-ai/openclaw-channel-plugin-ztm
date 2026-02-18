@@ -10,6 +10,7 @@ import {
 import type { ZTMLogger, RequestHandler } from "./request.js";
 import { normalizeMessageContent } from "./chat-api.js";
 import { sanitizeForLog } from "../utils/log-sanitize.js";
+import { validateUsername, validateGroupId, validateMessageContent } from "../utils/validation.js";
 
 /**
  * Create message operations API
@@ -33,6 +34,18 @@ export function createMessageApi(
       since?: number,
       before?: number
     ): Promise<Result<ZTMMessage[], ZTMReadError>> {
+      // Validate peer username format
+      const peerValidation = validateUsername(peer);
+      if (!peerValidation.valid) {
+        const error = new ZTMReadError({
+          peer,
+          operation: "read",
+          cause: new Error(peerValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid peer username "${sanitizeForLog(peer)}": ${peerValidation.error}`);
+        return failure(error);
+      }
+
       const safePeer = sanitizeForLog(peer);
       logger.debug?.(`[ZTM API] Fetching messages from peer "${safePeer}" since=${since}, before=${before}`);
 
@@ -70,6 +83,32 @@ export function createMessageApi(
      * Send a message to a peer
      */
     async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZTMSendError>> {
+      // Validate peer username format
+      const peerValidation = validateUsername(peer);
+      if (!peerValidation.valid) {
+        const error = new ZTMSendError({
+          peer,
+          messageTime: message.time,
+          contentPreview: message.message,
+          cause: new Error(peerValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid peer username "${sanitizeForLog(peer)}": ${peerValidation.error}`);
+        return failure(error);
+      }
+
+      // Validate message content
+      const contentValidation = validateMessageContent(message.message);
+      if (!contentValidation.valid) {
+        const error = new ZTMSendError({
+          peer,
+          messageTime: message.time,
+          contentPreview: message.message,
+          cause: new Error(contentValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid message content for peer "${sanitizeForLog(peer)}": ${contentValidation.error}`);
+        return failure(error);
+      }
+
       const safePeer = sanitizeForLog(peer);
       const safeText = sanitizeForLog(message.message.substring(0, 50));
       logger.debug?.(`[ZTM API] Sending message to peer "${safePeer}" at time=${message.time}, text="${safeText}..."`);
@@ -101,6 +140,30 @@ export function createMessageApi(
       creator: string,
       group: string
     ): Promise<Result<ZTMMessage[], ZTMReadError>> {
+      // Validate creator username format
+      const creatorValidation = validateUsername(creator);
+      if (!creatorValidation.valid) {
+        const error = new ZTMReadError({
+          peer: `${creator}/${group}`,
+          operation: "read",
+          cause: new Error(creatorValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid creator username "${sanitizeForLog(creator)}": ${creatorValidation.error}`);
+        return failure(error);
+      }
+
+      // Validate group ID format
+      const groupValidation = validateGroupId(group);
+      if (!groupValidation.valid) {
+        const error = new ZTMReadError({
+          peer: `${creator}/${group}`,
+          operation: "read",
+          cause: new Error(groupValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid group ID "${sanitizeForLog(group)}": ${groupValidation.error}`);
+        return failure(error);
+      }
+
       const safeGroup = sanitizeForLog(`${creator}/${group}`);
       logger.debug?.(`[ZTM API] Fetching group messages from "${safeGroup}"`);
 
@@ -145,6 +208,45 @@ export function createMessageApi(
       group: string,
       message: ZTMMessage
     ): Promise<Result<boolean, ZTMSendError>> {
+      // Validate creator username format
+      const creatorValidation = validateUsername(creator);
+      if (!creatorValidation.valid) {
+        const error = new ZTMSendError({
+          peer: `${creator}/${group}`,
+          messageTime: message.time,
+          contentPreview: message.message,
+          cause: new Error(creatorValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid creator username "${sanitizeForLog(creator)}": ${creatorValidation.error}`);
+        return failure(error);
+      }
+
+      // Validate group ID format
+      const groupValidation = validateGroupId(group);
+      if (!groupValidation.valid) {
+        const error = new ZTMSendError({
+          peer: `${creator}/${group}`,
+          messageTime: message.time,
+          contentPreview: message.message,
+          cause: new Error(groupValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid group ID "${sanitizeForLog(group)}": ${groupValidation.error}`);
+        return failure(error);
+      }
+
+      // Validate message content
+      const contentValidation = validateMessageContent(message.message);
+      if (!contentValidation.valid) {
+        const error = new ZTMSendError({
+          peer: `${creator}/${group}`,
+          messageTime: message.time,
+          contentPreview: message.message,
+          cause: new Error(contentValidation.error),
+        });
+        logger.warn?.(`[ZTM API] Invalid message content for group "${sanitizeForLog(`${creator}/${group}`)}": ${contentValidation.error}`);
+        return failure(error);
+      }
+
       const safeGroup = sanitizeForLog(`${creator}/${group}`);
       const safeText = sanitizeForLog(message.message.substring(0, 50));
       logger.debug?.(`[ZTM API] Sending message to group "${safeGroup}", text="${safeText}..."`);
