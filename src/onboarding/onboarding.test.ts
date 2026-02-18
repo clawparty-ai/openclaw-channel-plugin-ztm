@@ -946,4 +946,128 @@ describe("ZTMChatWizard", () => {
       expect(result!.config.permitFilePath).toBe("/path/to/permit.json");
     });
   });
+
+  describe("error handling in wizard steps", () => {
+    it("should reject invalid agent URL format", async () => {
+      const { ZTMChatWizard } = await import("./onboarding.js");
+
+      const mockPrompts = new MockPrompts({
+        agentUrl: "not-a-valid-url",
+      });
+
+      const wizard = new ZTMChatWizard(mockPrompts);
+      const result = await wizard.run();
+
+      // Should return null due to validation error
+      expect(result).toBeNull();
+    });
+
+    it("should handle wizard cancellation gracefully", async () => {
+      const { ZTMChatWizard } = await import("./onboarding.js");
+
+      // Create a prompts that throws "Cancelled" error
+      const cancellingPrompts = {
+        async ask(question: string): Promise<string> {
+          throw new Error("Cancelled");
+        },
+        async confirm(): Promise<boolean> {
+          return false;
+        },
+        async select<T>(): Promise<T> {
+          throw new Error("Cancelled");
+        },
+        async password(): Promise<string> {
+          throw new Error("Cancelled");
+        },
+        separator(): void {},
+        heading(): void {},
+        success(): void {},
+        info(): void {},
+        warning(): void {},
+        error(): void {},
+        close(): void {},
+      };
+
+      const wizard = new ZTMChatWizard(cancellingPrompts);
+      const result = await wizard.run();
+
+      // Should return null when cancelled
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("discoverConfig error handling", () => {
+    it("should return null when runtime is not available", async () => {
+      vi.mock("../runtime/index.js", () => ({
+        hasZTMRuntime: vi.fn(() => false),
+        getZTMRuntime: vi.fn(),
+      }));
+
+      const { discoverConfig } = await import("./onboarding.js");
+      const result = await discoverConfig();
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle config read errors gracefully", async () => {
+      vi.mock("../runtime/index.js", () => ({
+        hasZTMRuntime: vi.fn(() => true),
+        getZTMRuntime: vi.fn(() => ({
+          config: {
+            loadConfig: vi.fn(() => {
+              throw new Error("Config read error");
+            }),
+          },
+        })),
+      }));
+
+      const { discoverConfig } = await import("./onboarding.js");
+      const result = await discoverConfig();
+
+      // Should return null on error
+      expect(result).toBeNull();
+    });
+
+    it("should handle missing ztm-chat channel config", async () => {
+      vi.mock("../runtime/index.js", () => ({
+        hasZTMRuntime: vi.fn(() => true),
+        getZTMRuntime: vi.fn(() => ({
+          config: {
+            loadConfig: vi.fn(() => ({
+              channels: {},
+            })),
+          },
+        })),
+      }));
+
+      const { discoverConfig } = await import("./onboarding.js");
+      const result = await discoverConfig();
+
+      // Should return null when no ztm-chat config
+      expect(result).toBeNull();
+    });
+
+    it("should handle empty accounts in channel config", async () => {
+      vi.mock("../runtime/index.js", () => ({
+        hasZTMRuntime: vi.fn(() => true),
+        getZTMRuntime: vi.fn(() => ({
+          config: {
+            loadConfig: vi.fn(() => ({
+              channels: {
+                "ztm-chat": {
+                  accounts: {},
+                },
+              },
+            })),
+          },
+        })),
+      }));
+
+      const { discoverConfig } = await import("./onboarding.js");
+      const result = await discoverConfig();
+
+      // Should return null when no accounts
+      expect(result).toBeNull();
+    });
+  });
 });
