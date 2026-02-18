@@ -47,7 +47,7 @@ export class GroupPermissionLRUCache {
    */
   private evictLRU(): void {
     let lruKey: string | null = null;
-    let lruTime = Date.now();
+    let lruTime = Infinity;
 
     for (const [cacheKey, entry] of this.cache.entries()) {
       if (entry.lastAccess < lruTime) {
@@ -97,8 +97,8 @@ export class GroupPermissionLRUCache {
     // First evict expired entries
     this.evictExpired();
 
-    // Check if we need to evict LRU entry
-    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+    // Evict LRU entries until we have room
+    while (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       this.evictLRU();
     }
 
