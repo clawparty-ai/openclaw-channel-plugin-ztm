@@ -2,8 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
-[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[58a9f61](58a9f6114f15c94f03ac9e1853fff10f9143b993)
+## 2026.2.18-rc.3 - 2026-02-18
+
+[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[032b2bc](032b2bcefd13ec0b81113671d9dd1e9f1fe572e9)
 
 ### 🚨 BREAKING CHANGES
 
@@ -23,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - Add auto changelog and GitHub Release generation ([a7ea1a2](a7ea1a27c7647cc93acd4ee59670f02f78086c50)) - (Lin Yang)
 - Add changelog automation scripts and full changelog ([fa3bdc2](fa3bdc2e223850df739d5576db34f574c79eb6c9)) - (Lin Yang)
 - Add manual trigger workflow_dispatch for npm publish ([1869f12](1869f12b65b2cb5f0541e2370eb276d287b3da18)) - (Lin Yang)
+- Generate changelog based on tag type ([8b2f23b](8b2f23bd83f34ab06cb6fe39fd63dcc7790243ef)) - (Lin Yang)
 
 ### 🐛 Bug Fixes
 
@@ -75,6 +77,11 @@ All notable changes to this project will be documented in this file.
 - Use double quotes for tag pattern in publish.yml ([f878f2d](f878f2de184e2e1bf71c1b313c0fd243b03c9434)) - (Lin Yang)
 - Use glob patterns for tag trigger in publish.yml ([f395327](f395327bfcd6906e11f9a2744a9cf23f853a6f53)) - (Lin Yang)
 - Use specific glob patterns for tag trigger ([47beea2](47beea21d9ee523ff28f322bee7289e66a59319e)) - (Lin Yang)
+- Hide empty changelog groups and only show non-empty sections ([d64b37f](d64b37fd803d24dcb2c3a56279c78fc7b5b6ff89)) - (Lin Yang)
+- Use git-cliff binary directly instead of action ([54634d2](54634d2887bcf51dd313dbcc32729aca96baee30)) - (Lin Yang)
+- Use correct git-cliff range syntax ([9d6b99a](9d6b99a69a168367c2a3038a9d64f42a823e473e)) - (Lin Yang)
+- Detect CPU architecture when downloading git-cliff binary ([df46502](df46502b5c3c120498efc3743f845ec9594f2359)) - (Lin Yang)
+- Use taiki-e install-action for git-cliff ([032b2bc](032b2bcefd13ec0b81113671d9dd1e9f1fe572e9)) - (Lin Yang)
 
 ### 🔒 Security
 
