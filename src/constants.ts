@@ -28,6 +28,10 @@ export const RETRY_TIMEOUT_MS = 30000; // 30 seconds - total retry timeout
 export const PAIRING_CLEANUP_INTERVAL_MS = 1000; // 1 second - cleanup check interval
 export const PAIRING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour - max age for pending pairings
 
+// State persistence
+export const STATE_FLUSH_DEBOUNCE_MS = 1000; // 1 second - debounce delay for watermark writes
+export const STATE_FLUSH_MAX_DELAY_MS = 5000; // 5 seconds - max delay before forced flush
+
 // ============================================================================
 // Size Limits
 // ============================================================================

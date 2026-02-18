@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { defaultLogger, type Logger } from "../utils/logger.js";
 import { resolveStatePath, resolveZTMStateDir } from "../utils/paths.js";
-import { MAX_PEERS_PER_ACCOUNT, MAX_FILES_PER_ACCOUNT } from "../constants.js";
+import { MAX_PEERS_PER_ACCOUNT, MAX_FILES_PER_ACCOUNT, STATE_FLUSH_DEBOUNCE_MS, STATE_FLUSH_MAX_DELAY_MS } from "../constants.js";
 
 /**
  * FileSystem interface for dependency injection (enables testing without real I/O)
@@ -123,6 +123,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
   private data: MessageStateData;
   private dirty = false;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private maxDelayTimer: ReturnType<typeof setTimeout> | null = null;
   private loaded = false;
   private readonly fs: FileSystem;
   private readonly logger: Logger;
@@ -218,7 +219,18 @@ export class MessageStateStoreImpl implements MessageStateStore {
     this.flushTimer = setTimeout(async () => {
       this.flushTimer = null;
       await this.saveAsync();
-    }, 1000);
+    }, STATE_FLUSH_DEBOUNCE_MS);
+
+    // Schedule max-delay flush to prevent data loss on crash
+    // This ensures watermarks are persisted even if updates stop coming
+    if (!this.maxDelayTimer) {
+      this.maxDelayTimer = setTimeout(async () => {
+        this.maxDelayTimer = null;
+        if (this.dirty) {
+          await this.saveAsync();
+        }
+      }, STATE_FLUSH_MAX_DELAY_MS);
+    }
   }
 
   /**
@@ -255,6 +267,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
+    if (this.maxDelayTimer) {
+      clearTimeout(this.maxDelayTimer);
+      this.maxDelayTimer = null;
+    }
     this.save();
   }
 
@@ -263,6 +279,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
+    }
+    if (this.maxDelayTimer) {
+      clearTimeout(this.maxDelayTimer);
+      this.maxDelayTimer = null;
     }
     await this.saveAsync();
   }
