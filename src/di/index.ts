@@ -10,6 +10,8 @@ import type {
   IRuntime,
 } from "./container";
 
+import type { IAllowFromRepository, IMessageStateRepository } from "../runtime/repository.js";
+
 import type { ZTMChatConfig } from "../types/config.js";
 import type { Result, AsyncResult } from "../types/common.js";
 
@@ -25,6 +27,8 @@ export {
   type IApiClientFactory,
   type IRuntime,
 } from "./container";
+
+export type { IAllowFromRepository, IMessageStateRepository };
 
 // ============================================================================
 // SERVICE FACTORIES
