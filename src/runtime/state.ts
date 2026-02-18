@@ -14,14 +14,82 @@ import type { PluginRuntime } from "openclaw/plugin-sdk";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import type { AccountRuntimeState, IGroupPermissionCache } from "../types/runtime.js";
 import type { GroupPermissions } from "../types/group-policy.js";
 import { getGroupPermission } from "../core/group-policy.js";
 import { isSuccess } from "../types/common.js";
-import { PAIRING_MAX_AGE_MS, ALLOW_FROM_CACHE_TTL_MS } from "../constants.js";
+import {
+  PAIRING_MAX_AGE_MS,
+  ALLOW_FROM_CACHE_TTL_MS,
+  MAX_GROUP_PERMISSION_CACHE_SIZE,
+} from "../constants.js";
 
 // Re-export types for backward compatibility
 export type { AccountRuntimeState };
+
+/**
+ * LRU Cache for group permissions with bounded size.
+ * Prevents unbounded memory growth by evicting least recently used entries.
+ */
+class GroupPermissionLRUCache {
+  private cache = new Map<string, { permissions: GroupPermissions; lastAccess: number }>();
+  private maxSize: number;
+
+  constructor(maxSize: number) {
+    if (maxSize <= 0) {
+      throw new Error(`maxSize must be positive, got: ${maxSize}`);
+    }
+    this.maxSize = maxSize;
+  }
+
+  get(key: string): GroupPermissions | undefined {
+    const entry = this.cache.get(key);
+    if (entry) {
+      // Update last access time for LRU
+      entry.lastAccess = Date.now();
+      return entry.permissions;
+    }
+    return undefined;
+  }
+
+  has(key: string): boolean {
+    return this.cache.has(key);
+  }
+
+  set(key: string, permissions: GroupPermissions): void {
+    // Check if we need to evict
+    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+      // Find and remove the least recently used entry
+      let lruKey: string | null = null;
+      let lruTime = Date.now();
+
+      for (const [cacheKey, entry] of this.cache.entries()) {
+        if (entry.lastAccess < lruTime) {
+          lruKey = cacheKey;
+          lruTime = entry.lastAccess;
+        }
+      }
+
+      if (lruKey) {
+        this.cache.delete(lruKey);
+        logger.debug(`Evicted LRU group permission cache entry: ${lruKey}`);
+      }
+    }
+
+    this.cache.set(key, {
+      permissions,
+      lastAccess: Date.now(),
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+}
 
 // Multi-account state management
 const accountStates = new Map<string, AccountRuntimeState>();
@@ -59,7 +127,7 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
       watchErrorCount: 0,
       pendingPairings: new Map(),
       allowFromCache: null,
-      groupPermissionCache: new Map(),
+      groupPermissionCache: new GroupPermissionLRUCache(MAX_GROUP_PERMISSION_CACHE_SIZE),
     };
     accountStates.set(accountId, state);
   }
