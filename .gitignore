@@ -40,3 +40,6 @@ npm-debug.log*
 
 # Full Review
 .full-review/
+
+# AI
+CLAUDE.md
