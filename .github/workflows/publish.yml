@@ -3,7 +3,8 @@ name: Publish to npm
 on:
   push:
     tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
+      # Supports: v1.2.3, v1.2.3.1, v1.2.3-alpha.1, v1.2.3-beta.1, v1.2.3-rc.1
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
   publish:
@@ -13,7 +14,9 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -32,30 +35,19 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Generate release notes
-        id: changelog
-        env:
-          CURRENT_TAG: ${{ github.ref_name }}
-        run: |
-          # Use the already-generated CHANGELOG.md from the repository
-          # This was generated locally with `npm run changelog` before tagging
-          if [ -f CHANGELOG.md ]; then
-            # Extract content after "[unreleased]" section header
-            # This gets all the changes for the current release
-            awk '/^## \[unreleased\]/,0' CHANGELOG.md > RELEASE_NOTES.md
-            # If awk produced empty file, use a fallback
-            if [ ! -s RELEASE_NOTES.md ]; then
-              echo "Release v${CURRENT_TAG}" > RELEASE_NOTES.md
-            fi
-          else
-            echo "Release v${CURRENT_TAG}" > RELEASE_NOTES.md
-          fi
-          cat RELEASE_NOTES.md
-
       - name: Publish to npm
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --verbose --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
