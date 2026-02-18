@@ -44,6 +44,7 @@ import { logger as loggerInstance, createLogger as createLoggerFn } from "../uti
 import { getEffectiveChannelConfig } from "../channel/config.js";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import { getZTMRuntime, isRuntimeInitialized } from "../runtime/runtime.js";
+import { getAllowFromRepository, getMessageStateRepository } from "../runtime/repository-impl.js";
 
 /**
  * Logger factory
@@ -101,6 +102,22 @@ export function createRuntimeService(): () => IRuntime {
     get: () => getZTMRuntime(),
     isInitialized: () => isRuntimeInitialized(),
   });
+}
+
+/**
+ * AllowFrom repository factory
+ * Returns a factory function for DI container registration
+ */
+export function createAllowFromRepositoryService(): () => IAllowFromRepository {
+  return () => getAllowFromRepository();
+}
+
+/**
+ * MessageState repository factory
+ * Returns a factory function for DI container registration
+ */
+export function createMessageStateRepositoryService(): () => IMessageStateRepository {
+  return () => getMessageStateRepository();
 }
 
 /**
