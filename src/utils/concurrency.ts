@@ -144,6 +144,26 @@ export class Semaphore {
 
 /**
  * Create a semaphore with the specified number of permits
+ *
+ * Factory function for creating a new Semaphore instance.
+ * The semaphore limits the number of concurrent operations that can access
+ * a shared resource.
+ *
+ * @param permits - Number of concurrent permits available (must be > 0)
+ * @returns A new Semaphore instance
+ * @throws Error if permits is <= 0
+ *
+ * @example
+ * // Create a semaphore that allows 3 concurrent operations
+ * const semaphore = createSemaphore(3);
+ *
+ * // Use in async operations
+ * await semaphore.acquire();
+ * try {
+ *   // Do work
+ * } finally {
+ *   semaphore.release();
+ * }
  */
 export function createSemaphore(permits: number): Semaphore {
   return new Semaphore(permits);
