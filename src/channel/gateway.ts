@@ -1,21 +1,14 @@
 // ZTM Chat Gateway Implementation
 // Gateway methods for starting, stopping, and managing accounts
 
-import * as path from "node:path";
-import * as fs from "fs";
 import type {
   ChannelAccountSnapshot as BaseChannelAccountSnapshot,
   OpenClawConfig,
 } from "openclaw/plugin-sdk";
 import type {
   ZTMChatConfig,
-  ZTMChatConfigValidation,
 } from "../types/config.js";
-import {
-  checkGroupPolicy,
-  getGroupPermission,
-} from "../core/group-policy.js";
-import type { ZTMApiClient, ZTMMeshInfo, ZTMMessage } from "../api/ztm-api.js";
+import type { ZTMApiClient, ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatMessage } from "../messaging/inbound.js";
 import {
@@ -23,12 +16,9 @@ import {
   validateZTMChatConfig,
 } from "../config/index.js";
 import { isConfigMinimallyValid } from "../config/validation.js";
-import { createZTMApiClient } from "../api/ztm-api.js";
 import { isSuccess } from "../types/common.js";
 import { logger } from "../utils/logger.js";
-import { resolvePermitPath } from "../utils/paths.js";
 import { extractErrorMessage } from "../utils/error.js";
-import { PROBE_TIMEOUT_MS } from "../constants.js";
 import {
   getAllAccountStates,
   initializeRuntime,
@@ -37,13 +27,24 @@ import {
 } from "../runtime/state.js";
 import { startMessageWatcher } from "../messaging/inbound.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
-import { checkPortOpen, getIdentity, joinMesh } from "../connectivity/mesh.js";
 import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
 import type { PermitData } from "../types/connectivity.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import {
   resolveZTMChatAccount,
 } from "./config.js";
+import {
+  validateAgentConnectivity,
+  loadOrRequestPermit,
+  joinMeshIfNeeded,
+  probeAccount as probeAccountConnectivity,
+  resolveAccountPermitPath,
+} from "./connectivity-manager.js";
+import {
+  createInboundContext,
+  handleInboundMessage,
+  createMessageCallback,
+} from "./message-dispatcher.js";
 
 // ============================================================================
 // Local Types
@@ -60,55 +61,6 @@ interface ChannelStatusIssue {
   kind: "config" | "intent" | "permissions" | "auth" | "runtime";
   level?: "error" | "warn" | "info";
   message: string;
-}
-
-// ============================================================================
-// Inbound Context Builder
-// ============================================================================
-
-/**
- * Create inbound context payload for AI agent dispatch.
- * Centralized context construction to avoid code duplication.
- */
-function createInboundContext(params: {
-  rt: ReturnType<typeof getZTMRuntime>;
-  msg: ZTMChatMessage;
-  config: ZTMChatConfig;
-  accountId: string;
-  cfg?: Record<string, unknown>;
-}) {
-  const { rt, msg, config, accountId, cfg = {} } = params;
-
-  const route = rt.channel.routing.resolveAgentRoute({
-    channel: "ztm-chat",
-    accountId,
-    peer: { kind: "direct" as const, id: msg.sender },
-    cfg,
-  });
-
-  return {
-    ctxPayload: rt.channel.reply.finalizeInboundContext({
-      Body: msg.content,
-      RawBody: msg.content,
-      CommandBody: msg.content,
-      From: `ztm-chat:${msg.sender}`,
-      To: `ztm-chat:${config.username}`,
-      SessionKey: route.sessionKey,
-      AccountId: route.accountId,
-      ChatType: "direct" as const,
-      ConversationLabel: msg.sender,
-      SenderName: msg.sender,
-      SenderId: msg.sender,
-      Provider: "ztm-chat",
-      Surface: "ztm-chat",
-      MessageSid: msg.id,
-      Timestamp: msg.timestamp,
-      OriginatingChannel: "ztm-chat",
-      OriginatingTo: `ztm-chat:${msg.sender}`,
-    }),
-    matchedBy: route.matchedBy,
-    agentId: route.agentId,
-  };
 }
 
 // ============================================================================
@@ -149,7 +101,7 @@ export function collectStatusIssues(
 }
 
 // ============================================================================
-// Probe Account
+// Probe Account (delegated to connectivity manager)
 // ============================================================================
 
 /**
@@ -157,43 +109,16 @@ export function collectStatusIssues(
  */
 export async function probeAccountGateway({
   account,
-  timeoutMs = PROBE_TIMEOUT_MS,
+  timeoutMs,
 }: {
   account: { config: ZTMChatConfig };
   timeoutMs?: number;
 }): Promise<{
   ok: boolean;
   error: string | null;
-  meshInfo?: ZTMMeshInfo;
+  meshInfo?: import("../api/ztm-api.js").ZTMMeshInfo;
 }> {
-  const config = account.config as ZTMChatConfig;
-
-  if (!config?.agentUrl) {
-    return {
-      ok: false,
-      error: "No agent URL configured",
-    };
-  }
-
-  const probeConfig = resolveZTMChatConfig(config);
-  const apiClient = createZTMApiClient(probeConfig);
-  const meshResult = await apiClient.getMeshInfo();
-
-  if (!meshResult.ok || !meshResult.value) {
-    return {
-      ok: false,
-      error: meshResult.error?.message ?? "Unknown error",
-    };
-  }
-
-  const meshInfo = meshResult.value;
-  return {
-    ok: meshInfo.connected,
-    error: meshInfo.connected
-      ? null
-      : "ZTM Agent is not connected to mesh",
-    meshInfo,
-  };
+  return probeAccountConnectivity({ config: account.config, timeoutMs });
 }
 
 // ============================================================================
@@ -245,247 +170,6 @@ export async function sendTextGateway({
 // Start Account Gateway
 // ============================================================================
 
-/**
- * Handle inbound message dispatch to AI agent
- * Extracted from messageCallback to reduce nesting complexity
- */
-async function handleInboundMessage(
-  state: AccountRuntimeState,
-  rt: ReturnType<typeof getZTMRuntime>,
-  cfg: Record<string, unknown>,
-  config: ZTMChatConfig,
-  accountId: string,
-  ctx: { log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void } },
-  msg: ZTMChatMessage,
-): Promise<void> {
-  try {
-    // Check group policy for group messages
-    if (msg.isGroup && msg.groupId && msg.groupCreator) {
-      const permissions = getGroupPermission(msg.groupCreator, msg.groupId, config);
-      const policyResult = checkGroupPolicy(
-        msg.sender,
-        msg.content,
-        permissions,
-        config.username
-      );
-
-      if (!policyResult.allowed) {
-        ctx.log?.info(
-          `[${accountId}] Group message from ${msg.sender} blocked: ${policyResult.reason} (group: ${msg.groupCreator}/${msg.groupId})`
-        );
-        return; // Don't process the message
-      }
-
-      ctx.log?.info(
-        `[${accountId}] Group message from ${msg.sender} allowed: ${policyResult.reason}`
-      );
-    }
-
-    const { ctxPayload, matchedBy, agentId } = createInboundContext({ rt, msg, config, accountId, cfg });
-
-    ctx.log?.info(
-      `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`,
-    );
-
-    const { queuedFinal } =
-      await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-        ctx: ctxPayload,
-        cfg,
-        dispatcherOptions: {
-          humanDelay: rt.channel.reply.resolveHumanDelayConfig(
-            cfg,
-            agentId,
-          ),
-          deliver: async (payload: { text?: string; mediaUrl?: string }) => {
-            const replyText = payload.text ?? "";
-            if (!replyText) return;
-            const groupInfo = msg.isGroup && msg.groupId && msg.groupCreator
-              ? { creator: msg.groupCreator, group: msg.groupId }
-              : undefined;
-            await sendZTMMessage(state, msg.sender, replyText, groupInfo);
-            ctx.log?.info(
-              `[${accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? "..." : ""}`,
-            );
-          },
-          onError: (err: unknown) => {
-            ctx.log?.error?.(
-              `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`,
-            );
-          },
-        },
-      });
-
-    if (!queuedFinal) {
-      ctx.log?.info(
-        `[${accountId}] No response generated for message from ${msg.sender}`,
-      );
-    }
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error);
-    ctx.log?.error?.(
-      `[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`,
-    );
-  }
-}
-
-// ============================================================================
-
-/**
- * Start account gateway implementation
- */
-// ============================================================================
-// Account Gateway Helper Functions
-// ============================================================================
-
-/**
- * Validate connectivity to ZTM agent
- */
-async function validateAgentConnectivity(
-  agentUrl: string,
-  ctx: { log?: { info: (...args: unknown[]) => void } }
-): Promise<void> {
-  try {
-    const agentUrlObj = new URL(agentUrl);
-    const portStr =
-      agentUrlObj.port ||
-      (agentUrlObj.protocol === "https:" ? "443" : "80");
-    const agentPort = parseInt(portStr, 10);
-    const agentConnected = await checkPortOpen(agentUrlObj.hostname, agentPort);
-    if (!agentConnected) {
-      throw new Error(`Cannot connect to ZTM agent at ${agentUrl}`);
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("Cannot connect")) {
-      throw error;
-    }
-    throw new Error(`Invalid ZTM agent URL: ${agentUrl}`);
-  }
-}
-
-/**
- * Load or request permit data based on configuration
- */
-async function loadOrRequestPermit(
-  config: ZTMChatConfig,
-  permitPath: string,
-  ctx: { log?: { info: (...args: unknown[]) => void } }
-): Promise<PermitData> {
-  if (config.permitSource === "file") {
-    // Load from file
-    if (!config.permitFilePath) {
-      throw new Error("permitFilePath is required when permitSource is 'file'");
-    }
-    ctx.log?.info(`Loading permit from file: ${config.permitFilePath}...`);
-    const permitData = loadPermitFromFile(config.permitFilePath);
-    if (!permitData) {
-      throw new Error(`Failed to load permit from file: ${config.permitFilePath}`);
-    }
-    return permitData;
-  }
-
-  // Auto mode: Check if permit.json exists
-  const permitExists = fs.existsSync(permitPath);
-
-  if (!permitExists) {
-    // Step 3: Get identity from ZTM Agent API
-    ctx.log?.info("Getting identity from ZTM agent...");
-    const publicKey = await getIdentity(config.agentUrl);
-    if (!publicKey) {
-      throw new Error("Failed to get identity from ZTM agent");
-    }
-
-    // Step 4: Request permit from permit server
-    ctx.log?.info("Requesting permit from permit server...");
-    const permitData = await requestPermit(
-      config.permitUrl,
-      publicKey,
-      config.username,
-    );
-
-    if (!permitData) {
-      throw new Error("Failed to request permit from permit server");
-    }
-
-    // Step 5: Save permit data
-    if (!savePermitData(permitData, permitPath)) {
-      throw new Error("Failed to save permit data");
-    }
-
-    return permitData;
-  }
-
-  // Load existing permit
-  const permitData = loadPermitFromFile(permitPath);
-  if (!permitData) {
-    throw new Error("Failed to load existing permit data");
-  }
-  return permitData;
-}
-
-/**
- * Join mesh if not already connected
- */
-async function joinMeshIfNeeded(
-  config: ZTMChatConfig,
-  endpointName: string,
-  permitData: PermitData,
-  ctx: { log?: { info: (...args: unknown[]) => void } }
-): Promise<void> {
-  const preCheckClient = createZTMApiClient(config);
-  let alreadyConnected = false;
-  const preCheckResult = await preCheckClient.getMeshInfo();
-  if (isSuccess(preCheckResult)) {
-    alreadyConnected = preCheckResult.value.connected;
-  }
-
-  if (alreadyConnected) {
-    ctx.log?.info(
-      `Already connected to mesh ${config.meshName}, skipping join`,
-    );
-    return;
-  }
-
-  ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);
-  const joinSuccess = await joinMesh(
-    config.agentUrl,
-    config.meshName,
-    endpointName,
-    permitData,
-  );
-  if (!joinSuccess) {
-    throw new Error("Failed to join mesh");
-  }
-}
-
-/**
- * Create message callback for inbound messages
- */
-function createMessageCallback(
-  accountId: string,
-  config: ZTMChatConfig,
-  rt: ReturnType<typeof getZTMRuntime>,
-  cfg: Record<string, unknown> | undefined,
-  state: AccountRuntimeState,
-  ctx: { log?: { info: (...args: unknown[]) => void } }
-): (msg: ZTMChatMessage) => void {
-  return (msg: ZTMChatMessage) => {
-    let msgType: string;
-    if (msg.isGroup) {
-      const name = msg.groupName;
-      const id = msg.groupId;
-      msgType = name ? `group "${name}" (${id})` : `group ${id}`;
-    } else {
-      msgType = `peer "${msg.sender}"`;
-    }
-    ctx.log?.info(
-      `[${accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
-    );
-
-    // Call the local handleInboundMessage function
-    handleInboundMessage(state, rt, cfg ?? {}, config, accountId, ctx, msg);
-  };
-}
-
 export async function startAccountGateway(
   ctx: { account: { config: ZTMChatConfig; accountId: string }; log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void }; cfg?: Record<string, unknown> },
 ): Promise<() => Promise<void>> {
@@ -498,7 +182,7 @@ export async function startAccountGateway(
   }
 
   // Use cross-platform compatible path resolution
-  const permitPath = resolvePermitPath();
+  const permitPath = resolveAccountPermitPath();
   const endpointName = `${config.username}-ep`;
 
   // Step 1: Validate connectivity for agent URL
@@ -577,7 +261,7 @@ export async function logoutAccountGateway({
 }
 
 // ============================================================================
-// Message Callback Builder
+// Message Callback Builder (legacy - delegates to message-dispatcher)
 // ============================================================================
 
 /**
