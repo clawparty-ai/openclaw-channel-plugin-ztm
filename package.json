@@ -1,17 +1,30 @@
 {
-  "name": "ztm-chat",
+  "name": "@flomesh/ztm-chat",
   "version": "2026.2.15",
   "description": "ZTM Chat channel plugin for OpenClaw",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "overrides": {
     "tar": ">=7.5.7"
   },
   "scripts": {
+    "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.48",
@@ -30,6 +43,23 @@
   "openclaw": {
     "extensions": [
       "./index.ts"
-    ]
+    ],
+    "channel": {
+      "id": "ztm-chat",
+      "label": "ZTM Chat",
+      "selectionLabel": "ZTM Chat",
+      "blurb": "Decentralized P2P messaging via ZTM network",
+      "aliases": ["ztm"],
+      "order": 40,
+      "quickstartAllowFrom": true
+    },
+    "install": {
+      "npmSpec": "@flomesh/ztm-chat",
+      "localPath": "extensions/ztm-chat",
+      "defaultChoice": "npm"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
