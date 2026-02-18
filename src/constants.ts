@@ -29,7 +29,7 @@ export const RETRY_TIMEOUT_MS = 30000; // 30 seconds - total retry timeout
 export const MESH_CONNECT_MAX_RETRIES = 3; // Maximum retry attempts for mesh connection
 
 // Pairing cleanup
-export const PAIRING_CLEANUP_INTERVAL_MS = 1000; // 1 second - cleanup check interval
+export const PAIRING_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes - periodic cleanup interval
 export const PAIRING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour - max age for pending pairings
 
 // Cache TTL
