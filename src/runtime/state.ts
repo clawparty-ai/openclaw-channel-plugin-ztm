@@ -76,6 +76,7 @@ export function removeAccountState(accountId: string): void {
   if (state) {
     if (state.watchInterval) {
       clearInterval(state.watchInterval);
+      state.watchInterval = null;
     }
     state.messageCallbacks.clear();
     state.pendingPairings.clear();
