@@ -3,8 +3,9 @@ name: Publish to npm
 on:
   push:
     tags:
-      # Supports: v1.2.3, v1.2.3.1, v1.2.3-alpha.1, v1.2.3-beta.1, v1.2.3-rc.1
-      - 'v[0-9]+.[0-9]+.[0-9]+*'
+      # Supports: v1.2.3, v1.2.3-alpha.1, v1.2.3-beta.1, v1.2.3-rc.1
+      # Does NOT support: v1.2.3.1 (patch versions)
+      - 'v[0-9]+.[0-9]+.[0-9]+(-alpha.[0-9]+|-beta.[0-9]+|-rc.[0-9]+)?$'
 
 jobs:
   publish:
@@ -36,7 +37,15 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish
+        run: |
+          # Determine the appropriate tag based on version type
+          if [[ "${{ github.ref }}" =~ -alpha\.|-beta\.|-rc\. ]]; then
+            # Pre-release versions publish to 'next' tag
+            npm publish --tag next
+          else
+            # Stable versions publish to 'latest' tag
+            npm publish --tag latest
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
