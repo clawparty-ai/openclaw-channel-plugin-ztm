@@ -4,6 +4,9 @@
 // Message processing
 export * from './processor.js';
 
+// Shared message processing helpers (DRY: used by watcher and polling)
+export * from './message-processor-helpers.js';
+
 // Message watching and polling
 export * from './watcher.js';
 

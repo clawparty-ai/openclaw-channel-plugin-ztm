@@ -8,13 +8,14 @@ import { getAccountMessageStateStore } from "../runtime/store.js";
 import { getAllowFromCache } from "../runtime/state.js";
 import { startPollingWatcher } from "./polling.js";
 import { processAndNotifyChat } from "./chat-processor.js";
-import { processIncomingMessage } from "./processor.js";
-import { notifyMessageCallbacks } from "./dispatcher.js";
+import {
+  processAndNotifyPeerMessages,
+  processAndNotifyGroupMessages,
+  handlePeerPolicyCheck,
+} from "./message-processor-helpers.js";
 import { Semaphore } from "../utils/concurrency.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
-import { checkDmPolicy } from "../core/dm-policy.js";
-import { handlePairingRequest } from "../connectivity/permit.js";
 import type { ZTMChat, WatchChangeItem } from "../types/api.js";
 import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS } from "../constants.js";
 
@@ -115,10 +116,7 @@ async function handleInitialPairingRequests(
 ): Promise<void> {
   for (const chat of chats) {
     if (chat.peer && chat.peer !== state.config.username) {
-      const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);
-      if (check.action === "request_pairing") {
-        await handlePairingRequest(state, chat.peer, "Initial chat request", storeAllowFrom);
-      }
+      await handlePeerPolicyCheck(chat.peer, state, storeAllowFrom, "Initial chat request");
     }
   }
 }
@@ -360,26 +358,13 @@ async function processChangedPeer(
 
   const messages = messagesResult.value ?? [];
   const safePeer = sanitizeForLog(peer);
-
   logger.debug(`[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}"`);
 
-  for (const msg of messages) {
-    const safeSender = sanitizeForLog(msg.sender);
-    logger.debug(`[${state.accountId}] Message check: sender="${safeSender}", botUsername="${state.config.username}"`);
-    if (msg.sender === state.config.username) {
-      logger.debug(`[${state.accountId}] Skipping outbound message to ${safePeer} (sender=${safeSender})`);
-      continue;
-    }
-    const normalized = processIncomingMessage(msg, { config: state.config, storeAllowFrom, accountId: state.accountId });
-    if (normalized) {
-      notifyMessageCallbacks(state, normalized);
-    }
-  }
+  // Use shared message processing logic
+  await processAndNotifyPeerMessages(messages, state, storeAllowFrom);
 
-  const check = checkDmPolicy(peer, state.config, storeAllowFrom);
-  if (check.action === "request_pairing") {
-    await handlePairingRequest(state, peer, "New message", storeAllowFrom);
-  }
+  // Handle DM policy check for pairing
+  await handlePeerPolicyCheck(peer, state, storeAllowFrom, "New message");
 }
 
 /**
@@ -408,25 +393,8 @@ async function processChangedGroup(
 
   const messages = messagesResult.value ?? [];
 
-  for (const msg of messages) {
-    if (msg.sender === state.config.username) {
-      logger.debug(`[${state.accountId}] Skipping own message in group ${safeGroupKey}`);
-      continue;
-    }
-    const normalized = processIncomingMessage(
-      msg,
-      { config: state.config, storeAllowFrom, accountId: state.accountId, groupInfo: { creator, group } }
-    );
-    if (normalized) {
-      notifyMessageCallbacks(state, {
-        ...normalized,
-        isGroup: true,
-        groupId: group,
-        groupName: name,
-        groupCreator: creator,
-      });
-    }
-  }
+  // Use shared message processing logic
+  processAndNotifyGroupMessages(messages, state, storeAllowFrom, { creator, group }, name);
 }
 
 /**

@@ -3,10 +3,12 @@
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { getAllowFromCache } from "../runtime/state.js";
-import { processIncomingMessage } from "./processor.js";
+import {
+  processPeerMessage,
+  processGroupMessage,
+  handlePeerPolicyCheck,
+} from "./message-processor-helpers.js";
 import { notifyMessageCallbacks } from "./dispatcher.js";
-import { checkDmPolicy } from "../core/dm-policy.js";
-import { handlePairingRequest } from "../connectivity/permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import { handleResult } from "../utils/result.js";
@@ -20,27 +22,22 @@ function processGroupChat(
   accountId: string,
   state: AccountRuntimeState
 ): void {
-  if (!chat.latest) return;
+  if (!chat.latest || !chat.creator || !chat.group) return;
 
-  const sender = chat.latest.sender || "";
-  if (sender === config.username) return;
-
-  const normalized = processIncomingMessage(
+  const normalized = processGroupMessage(
     {
       time: chat.latest.time,
       message: chat.latest.message,
-      sender: sender,
+      sender: chat.latest.sender || "",
     },
-    { config, storeAllowFrom: pollStoreAllowFrom, accountId, groupInfo: { creator: chat.creator!, group: chat.group! } }
+    state,
+    pollStoreAllowFrom,
+    { creator: chat.creator, group: chat.group },
+    chat.name
   );
+
   if (normalized) {
-    notifyMessageCallbacks(state, {
-      ...normalized,
-      isGroup: true,
-      groupName: chat.name,
-      groupId: chat.group,
-      groupCreator: chat.creator,
-    });
+    notifyMessageCallbacks(state, normalized);
   }
 }
 
@@ -55,22 +52,21 @@ async function processPeerChat(
   if (!chat.peer || chat.peer === config.username) return;
   if (!chat.latest) return;
 
-  const normalized = processIncomingMessage(
+  const normalized = processPeerMessage(
     {
       time: chat.latest.time,
       message: chat.latest.message,
       sender: chat.peer,
     },
-    { config, storeAllowFrom: pollStoreAllowFrom, accountId }
+    state,
+    pollStoreAllowFrom
   );
+
   if (normalized) {
     notifyMessageCallbacks(state, normalized);
   }
 
-  const check = checkDmPolicy(chat.peer, config, pollStoreAllowFrom);
-  if (check.action === "request_pairing") {
-    await handlePairingRequest(state, chat.peer, "Polling check", pollStoreAllowFrom);
-  }
+  await handlePeerPolicyCheck(chat.peer, state, pollStoreAllowFrom, "Polling check");
 }
 
 // Process all chats in a polling cycle
