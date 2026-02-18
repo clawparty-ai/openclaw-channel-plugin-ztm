@@ -5,6 +5,8 @@ import {
   processIncomingMessage,
   checkDmPolicy,
   notifyMessageCallbacks,
+  startMessageWatcher,
+  normalizeUsername,
   type ProcessMessageContext,
   type ZTMChatMessage,
   type MessageCheckResult,
@@ -496,6 +498,28 @@ describe("Inbound message processing", () => {
       expect(result.allowed).toBe(false);
       expect(result.reason).toBe("pending");
       expect(result.action).toBe("request_pairing");
+    });
+  });
+});
+
+describe("re-exported functions from inbound.ts", () => {
+  describe("startMessageWatcher re-export", () => {
+    it("should be available via inbound.ts", () => {
+      expect(startMessageWatcher).toBeDefined();
+      expect(typeof startMessageWatcher).toBe("function");
+    });
+  });
+
+  describe("normalizeUsername re-export", () => {
+    it("should be available via inbound.ts", () => {
+      expect(normalizeUsername).toBeDefined();
+      expect(typeof normalizeUsername).toBe("function");
+    });
+
+    it("should normalize usernames correctly", () => {
+      expect(normalizeUsername("  alice  ")).toBe("alice");
+      expect(normalizeUsername("ALICE")).toBe("alice");
+      expect(normalizeUsername("alice")).toBe("alice");
     });
   });
 });
