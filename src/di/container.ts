@@ -30,6 +30,7 @@ const _pollingWatcherKey = Symbol("ztm:polling-watcher");
 const _messageDispatcherKey = Symbol("ztm:message-dispatcher");
 const _allowFromRepoKey = Symbol("ztm:allow-from-repo");
 const _messageStateRepoKey = Symbol("ztm:message-state-repo");
+const _accountStateManagerKey = Symbol("ztm:account-state-manager");
 
 export const DEPENDENCIES = {
   LOGGER: createDependencyKey<ILogger>(_loggerKey),
@@ -46,6 +47,7 @@ export const DEPENDENCIES = {
   MESSAGE_DISPATCHER: createDependencyKey<unknown>(_messageDispatcherKey),
   ALLOW_FROM_REPO: createDependencyKey<IAllowFromRepository>(_allowFromRepoKey),
   MESSAGE_STATE_REPO: createDependencyKey<IMessageStateRepository>(_messageStateRepoKey),
+  ACCOUNT_STATE_MANAGER: createDependencyKey<unknown>(_accountStateManagerKey),
 } as const;
 
 /**
