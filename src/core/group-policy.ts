@@ -6,25 +6,25 @@
 // - "disabled": Block all group messages
 // - "allowlist": Only allow whitelisted senders
 
-import type { ZTMChatConfig } from "../types/config.js";
+import type { ZTMChatConfig } from '../types/config.js';
 import type {
   GroupPolicy,
   GroupPermissions,
   GroupMessageCheckResult,
-} from "../types/group-policy.js";
-import { normalizeUsername } from "../utils/validation.js";
-import { getOrDefault } from "../utils/guards.js";
+} from '../types/group-policy.js';
+import { normalizeUsername } from '../utils/validation.js';
+import { getOrDefault } from '../utils/guards.js';
 
 // Default tool permissions for groups
-const DEFAULT_ALLOWED_TOOLS = ["group:messaging", "group:sessions"];
+const DEFAULT_ALLOWED_TOOLS = ['group:messaging', 'group:sessions'];
 
 /**
  * Default group permissions when no configuration is provided
  */
 const DEFAULT_GROUP_PERMISSIONS: GroupPermissions = {
-  creator: "",
-  group: "",
-  groupPolicy: "allowlist",
+  creator: '',
+  group: '',
+  groupPolicy: 'allowlist',
   requireMention: true,
   allowFrom: [],
   tools: {
@@ -50,7 +50,7 @@ export function getGroupPermission(
 ): GroupPermissions {
   const key = `${creator}/${group}`;
   const groupPermissions = config.groupPermissions ?? {};
-  const channelGroupPolicy = config.groupPolicy ?? "allowlist";
+  const channelGroupPolicy = config.groupPolicy ?? 'allowlist';
   // Get global requireMention (defaults to true if not specified)
   const channelRequireMention = config.requireMention ?? true;
 
@@ -92,12 +92,9 @@ function hasMention(content: string, botUsername: string): boolean {
   const normalizedBot = botUsername.toLowerCase();
 
   // Check for @username format
-  const mentionPatterns = [
-    `@${normalizedBot}`,
-    `@${normalizedBot.replace(/[^a-zA-Z0-9_-]/g, "")}`,
-  ];
+  const mentionPatterns = [`@${normalizedBot}`, `@${normalizedBot.replace(/[^a-zA-Z0-9_-]/g, '')}`];
 
-  return mentionPatterns.some((pattern) => normalizedContent.includes(pattern));
+  return mentionPatterns.some(pattern => normalizedContent.includes(pattern));
 }
 
 /**
@@ -109,7 +106,7 @@ function hasMention(content: string, botUsername: string): boolean {
  */
 function isWhitelisted(sender: string, allowFrom: string[]): boolean {
   const normalizedSender = normalizeUsername(sender);
-  return allowFrom.some((entry) => normalizeUsername(entry) === normalizedSender);
+  return allowFrom.some(entry => normalizeUsername(entry) === normalizedSender);
 }
 
 /**
@@ -155,7 +152,7 @@ export function checkGroupPolicy(
   botUsername: string
 ): GroupMessageCheckResult {
   if (!sender) {
-    return { allowed: false, reason: "denied", action: "ignore" };
+    return { allowed: false, reason: 'denied', action: 'ignore' };
   }
 
   const isSenderCreator = isCreator(sender, permissions.creator);
@@ -166,21 +163,21 @@ export function checkGroupPolicy(
   // If not creator, check groupPolicy and allowFrom
   if (!isSenderCreator) {
     switch (permissions.groupPolicy) {
-      case "disabled":
-        return { allowed: false, reason: "denied", action: "ignore" };
+      case 'disabled':
+        return { allowed: false, reason: 'denied', action: 'ignore' };
 
-      case "allowlist":
+      case 'allowlist':
         if (!isWhitelisted(sender, permissions.allowFrom)) {
-          return { allowed: false, reason: "whitelisted", action: "ignore" };
+          return { allowed: false, reason: 'whitelisted', action: 'ignore' };
         }
         break;
 
-      case "open":
+      case 'open':
         // open policy allows all non-creator senders
         break;
 
       default:
-        return { allowed: false, reason: "denied", action: "ignore" };
+        return { allowed: false, reason: 'denied', action: 'ignore' };
     }
   }
 
@@ -190,8 +187,8 @@ export function checkGroupPolicy(
     if (!mentioned) {
       return {
         allowed: false,
-        reason: "mention_required",
-        action: "ignore",
+        reason: 'mention_required',
+        action: 'ignore',
         wasMentioned: false,
       };
     }
@@ -200,8 +197,12 @@ export function checkGroupPolicy(
   // Passed all checks
   return {
     allowed: true,
-    reason: isSenderCreator ? "creator" : permissions.groupPolicy === "allowlist" ? "whitelisted" : "allowed",
-    action: "process",
+    reason: isSenderCreator
+      ? 'creator'
+      : permissions.groupPolicy === 'allowlist'
+        ? 'whitelisted'
+        : 'allowed',
+    action: 'process',
     wasMentioned: hasMention(content, botUsername),
   };
 }
@@ -268,12 +269,12 @@ export function applyGroupToolsPolicy(
 
   // Apply allow list first (if specified)
   if (effectiveAllow && effectiveAllow.length > 0) {
-    result = result.filter((tool) => effectiveAllow!.includes(tool));
+    result = result.filter(tool => effectiveAllow!.includes(tool));
   }
 
   // Apply deny list
   if (effectiveDeny.length > 0) {
-    result = result.filter((tool) => !effectiveDeny.includes(tool));
+    result = result.filter(tool => !effectiveDeny.includes(tool));
   }
 
   return result;

@@ -1,10 +1,10 @@
 // Unit tests for Message API
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { createMessageApi } from "./message-api.js";
-import { testConfig, testMessage, testChats } from "../test-utils/fixtures.js";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMessageApi } from './message-api.js';
+import { testConfig, testMessage, testChats } from '../test-utils/fixtures.js';
 
-describe("createMessageApi", () => {
+describe('createMessageApi', () => {
   const mockLogger = {
     debug: vi.fn(),
     info: vi.fn(),
@@ -16,8 +16,8 @@ describe("createMessageApi", () => {
     vi.clearAllMocks();
   });
 
-  describe("getPeerMessages", () => {
-    it("should return object with getPeerMessages method", () => {
+  describe('getPeerMessages', () => {
+    it('should return object with getPeerMessages method', () => {
       const mockRequest = async () => ({ ok: true, value: [], error: null });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -28,16 +28,16 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      expect(messageApi).toHaveProperty("getPeerMessages");
-      expect(typeof messageApi.getPeerMessages).toBe("function");
+      expect(messageApi).toHaveProperty('getPeerMessages');
+      expect(typeof messageApi.getPeerMessages).toBe('function');
     });
 
-    it("should fetch messages from peer", async () => {
+    it('should fetch messages from peer', async () => {
       const mockRequest = async () => ({
         ok: true,
         value: [
-          { time: Date.now() - 1000, message: "Hello", sender: "alice" },
-          { time: Date.now(), message: "World", sender: "alice" },
+          { time: Date.now() - 1000, message: 'Hello', sender: 'alice' },
+          { time: Date.now(), message: 'World', sender: 'alice' },
         ],
         error: null,
       });
@@ -50,7 +50,7 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getPeerMessages("alice");
+      const result = await messageApi.getPeerMessages('alice');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -58,12 +58,10 @@ describe("createMessageApi", () => {
       }
     });
 
-    it("should normalize message content", async () => {
+    it('should normalize message content', async () => {
       const mockRequest = async () => ({
         ok: true,
-        value: [
-          { time: Date.now(), message: { text: "Normalized" }, sender: "alice" },
-        ],
+        value: [{ time: Date.now(), message: { text: 'Normalized' }, sender: 'alice' }],
         error: null,
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
@@ -75,19 +73,19 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getPeerMessages("alice");
+      const result = await messageApi.getPeerMessages('alice');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value?.[0]?.message).toBe("Normalized");
+        expect(result.value?.[0]?.message).toBe('Normalized');
       }
     });
 
-    it("should handle API error", async () => {
+    it('should handle API error', async () => {
       const mockRequest = async () => ({
         ok: false,
         value: null,
-        error: new Error("Network error"),
+        error: new Error('Network error'),
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -98,13 +96,13 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getPeerMessages("alice");
+      const result = await messageApi.getPeerMessages('alice');
 
       expect(result.ok).toBe(false);
     });
 
-    it("should pass since and before query params", async () => {
-      let capturedPath = "";
+    it('should pass since and before query params', async () => {
+      let capturedPath = '';
       const mockRequest = async (method: string, path: string) => {
         capturedPath = path;
         return { ok: true, value: [], error: null };
@@ -118,13 +116,13 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      await messageApi.getPeerMessages("alice", 1000, 2000);
+      await messageApi.getPeerMessages('alice', 1000, 2000);
 
-      expect(capturedPath).toContain("since=1000");
-      expect(capturedPath).toContain("before=2000");
+      expect(capturedPath).toContain('since=1000');
+      expect(capturedPath).toContain('before=2000');
     });
 
-    it("should handle empty message array", async () => {
+    it('should handle empty message array', async () => {
       const mockRequest = async () => ({
         ok: true,
         value: [],
@@ -139,7 +137,7 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getPeerMessages("alice");
+      const result = await messageApi.getPeerMessages('alice');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -148,8 +146,8 @@ describe("createMessageApi", () => {
     });
   });
 
-  describe("sendPeerMessage", () => {
-    it("should return object with sendPeerMessage method", () => {
+  describe('sendPeerMessage', () => {
+    it('should return object with sendPeerMessage method', () => {
       const mockRequest = async () => ({ ok: true, value: undefined, error: null });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -160,11 +158,11 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      expect(messageApi).toHaveProperty("sendPeerMessage");
-      expect(typeof messageApi.sendPeerMessage).toBe("function");
+      expect(messageApi).toHaveProperty('sendPeerMessage');
+      expect(typeof messageApi.sendPeerMessage).toBe('function');
     });
 
-    it("should send message to peer", async () => {
+    it('should send message to peer', async () => {
       const mockRequest = async () => ({
         ok: true,
         value: undefined,
@@ -179,16 +177,16 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.sendPeerMessage("alice", testMessage);
+      const result = await messageApi.sendPeerMessage('alice', testMessage);
 
       expect(result.ok).toBe(true);
     });
 
-    it("should handle send error", async () => {
+    it('should handle send error', async () => {
       const mockRequest = async () => ({
         ok: false,
         value: null,
-        error: new Error("Send failed"),
+        error: new Error('Send failed'),
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -199,14 +197,14 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.sendPeerMessage("alice", testMessage);
+      const result = await messageApi.sendPeerMessage('alice', testMessage);
 
       expect(result.ok).toBe(false);
     });
   });
 
-  describe("getGroupMessages", () => {
-    it("should return object with getGroupMessages method", () => {
+  describe('getGroupMessages', () => {
+    it('should return object with getGroupMessages method', () => {
       const mockRequest = async () => ({ ok: true, value: [], error: null });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -217,16 +215,14 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      expect(messageApi).toHaveProperty("getGroupMessages");
-      expect(typeof messageApi.getGroupMessages).toBe("function");
+      expect(messageApi).toHaveProperty('getGroupMessages');
+      expect(typeof messageApi.getGroupMessages).toBe('function');
     });
 
-    it("should fetch group messages", async () => {
+    it('should fetch group messages', async () => {
       const mockRequest = async () => ({
         ok: true,
-        value: [
-          { time: Date.now() - 1000, message: "Hello group", sender: "alice" },
-        ],
+        value: [{ time: Date.now() - 1000, message: 'Hello group', sender: 'alice' }],
         error: null,
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
@@ -238,7 +234,7 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getGroupMessages("alice", "test-group");
+      const result = await messageApi.getGroupMessages('alice', 'test-group');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -246,12 +242,10 @@ describe("createMessageApi", () => {
       }
     });
 
-    it("should normalize message content in group messages", async () => {
+    it('should normalize message content in group messages', async () => {
       const mockRequest = async () => ({
         ok: true,
-        value: [
-          { time: Date.now(), message: { text: "Normalized" }, sender: "alice" },
-        ],
+        value: [{ time: Date.now(), message: { text: 'Normalized' }, sender: 'alice' }],
         error: null,
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
@@ -263,19 +257,19 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getGroupMessages("alice", "test-group");
+      const result = await messageApi.getGroupMessages('alice', 'test-group');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value?.[0]?.message).toBe("Normalized");
+        expect(result.value?.[0]?.message).toBe('Normalized');
       }
     });
 
-    it("should handle API error", async () => {
+    it('should handle API error', async () => {
       const mockRequest = async () => ({
         ok: false,
         value: null,
-        error: new Error("Group not found"),
+        error: new Error('Group not found'),
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -286,13 +280,13 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.getGroupMessages("alice", "test-group");
+      const result = await messageApi.getGroupMessages('alice', 'test-group');
 
       expect(result.ok).toBe(false);
     });
 
-    it("should encode special characters in creator and group", async () => {
-      let capturedPath = "";
+    it('should encode special characters in creator and group', async () => {
+      let capturedPath = '';
       const mockRequest = async (method: string, path: string) => {
         capturedPath = path;
         return { ok: true, value: [], error: null };
@@ -307,15 +301,15 @@ describe("createMessageApi", () => {
       );
 
       // Use valid identifiers per IDENTIFIER_PATTERN (alphanumeric, hyphens, underscores)
-      await messageApi.getGroupMessages("Alice_Smith", "My_Group-Name");
+      await messageApi.getGroupMessages('Alice_Smith', 'My_Group-Name');
 
-      expect(capturedPath).toContain(encodeURIComponent("Alice_Smith"));
-      expect(capturedPath).toContain(encodeURIComponent("My_Group-Name"));
+      expect(capturedPath).toContain(encodeURIComponent('Alice_Smith'));
+      expect(capturedPath).toContain(encodeURIComponent('My_Group-Name'));
     });
   });
 
-  describe("sendGroupMessage", () => {
-    it("should return object with sendGroupMessage method", () => {
+  describe('sendGroupMessage', () => {
+    it('should return object with sendGroupMessage method', () => {
       const mockRequest = async () => ({ ok: true, value: undefined, error: null });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -326,11 +320,11 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      expect(messageApi).toHaveProperty("sendGroupMessage");
-      expect(typeof messageApi.sendGroupMessage).toBe("function");
+      expect(messageApi).toHaveProperty('sendGroupMessage');
+      expect(typeof messageApi.sendGroupMessage).toBe('function');
     });
 
-    it("should send message to group", async () => {
+    it('should send message to group', async () => {
       const mockRequest = async () => ({
         ok: true,
         value: undefined,
@@ -345,20 +339,16 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.sendGroupMessage(
-        "alice",
-        "test-group",
-        testMessage
-      );
+      const result = await messageApi.sendGroupMessage('alice', 'test-group', testMessage);
 
       expect(result.ok).toBe(true);
     });
 
-    it("should handle send error", async () => {
+    it('should handle send error', async () => {
       const mockRequest = async () => ({
         ok: false,
         value: null,
-        error: new Error("Send failed"),
+        error: new Error('Send failed'),
       });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -369,18 +359,14 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      const result = await messageApi.sendGroupMessage(
-        "alice",
-        "test-group",
-        testMessage
-      );
+      const result = await messageApi.sendGroupMessage('alice', 'test-group', testMessage);
 
       expect(result.ok).toBe(false);
     });
   });
 
-  describe("watchChanges", () => {
-    it("should return object with watchChanges method", () => {
+  describe('watchChanges', () => {
+    it('should return object with watchChanges method', () => {
       const mockRequest = async () => ({ ok: true, value: [], error: null });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 
@@ -391,20 +377,20 @@ describe("createMessageApi", () => {
         mockGetChats as any
       );
 
-      expect(messageApi).toHaveProperty("watchChanges");
-      expect(typeof messageApi.watchChanges).toBe("function");
+      expect(messageApi).toHaveProperty('watchChanges');
+      expect(typeof messageApi.watchChanges).toBe('function');
     });
 
-    it("should detect peer message changes", async () => {
+    it('should detect peer message changes', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
-            peer: "alice",
+            peer: 'alice',
             time: now,
             updated: now,
-            latest: { time: now, message: "Hello", sender: "alice" },
+            latest: { time: now, message: 'Hello', sender: 'alice' },
           },
         ],
         error: null,
@@ -420,28 +406,28 @@ describe("createMessageApi", () => {
       // Set initial poll time to older than the message
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges("prefix");
+      const result = await messageApi.watchChanges('prefix');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value?.length).toBe(1);
-        expect(result.value?.[0]?.type).toBe("peer");
-        expect(result.value?.[0]?.peer).toBe("alice");
+        expect(result.value?.[0]?.type).toBe('peer');
+        expect(result.value?.[0]?.peer).toBe('alice');
       }
     });
 
-    it("should detect group message changes", async () => {
+    it('should detect group message changes', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
-            creator: "alice",
-            group: "test-group",
-            name: "Test Group",
+            creator: 'alice',
+            group: 'test-group',
+            name: 'Test Group',
             time: now,
             updated: now,
-            latest: { time: now, message: "Hello", sender: "alice" },
+            latest: { time: now, message: 'Hello', sender: 'alice' },
           },
         ],
         error: null,
@@ -456,17 +442,17 @@ describe("createMessageApi", () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges("prefix");
+      const result = await messageApi.watchChanges('prefix');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value?.length).toBe(1);
-        expect(result.value?.[0]?.type).toBe("group");
-        expect(result.value?.[0]?.group).toBe("test-group");
+        expect(result.value?.[0]?.type).toBe('group');
+        expect(result.value?.[0]?.group).toBe('test-group');
       }
     });
 
-    it("should not include messages from self", async () => {
+    it('should not include messages from self', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
@@ -475,7 +461,7 @@ describe("createMessageApi", () => {
             peer: testConfig.username, // Same as bot username
             time: now,
             updated: now,
-            latest: { time: now, message: "My message", sender: testConfig.username },
+            latest: { time: now, message: 'My message', sender: testConfig.username },
           },
         ],
         error: null,
@@ -490,7 +476,7 @@ describe("createMessageApi", () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges("prefix");
+      const result = await messageApi.watchChanges('prefix');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -498,16 +484,16 @@ describe("createMessageApi", () => {
       }
     });
 
-    it("should update lastPollTime after detecting changes", async () => {
+    it('should update lastPollTime after detecting changes', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
-            peer: "alice",
+            peer: 'alice',
             time: now,
             updated: now,
-            latest: { time: now, message: "Hello", sender: "alice" },
+            latest: { time: now, message: 'Hello', sender: 'alice' },
           },
         ],
         error: null,
@@ -523,22 +509,22 @@ describe("createMessageApi", () => {
       const initialTime = now - 10000;
       messageApi.setLastPollTime(initialTime);
 
-      await messageApi.watchChanges("prefix");
+      await messageApi.watchChanges('prefix');
 
       const lastPollTime = messageApi.getLastPollTime();
       expect(lastPollTime).toBe(now);
     });
 
-    it("should return empty array when no changes", async () => {
+    it('should return empty array when no changes', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
-            peer: "alice",
+            peer: 'alice',
             time: now - 20000,
             updated: now - 20000,
-            latest: { time: now - 20000, message: "Old message", sender: "alice" },
+            latest: { time: now - 20000, message: 'Old message', sender: 'alice' },
           },
         ],
         error: null,
@@ -553,7 +539,7 @@ describe("createMessageApi", () => {
 
       messageApi.setLastPollTime(now);
 
-      const result = await messageApi.watchChanges("prefix");
+      const result = await messageApi.watchChanges('prefix');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -562,8 +548,8 @@ describe("createMessageApi", () => {
     });
   });
 
-  describe("getLastPollTime and setLastPollTime", () => {
-    it("should get and set last poll time", () => {
+  describe('getLastPollTime and setLastPollTime', () => {
+    it('should get and set last poll time', () => {
       const mockRequest = async () => ({ ok: true, value: [], error: null });
       const mockGetChats = async () => ({ ok: true, value: [], error: null });
 

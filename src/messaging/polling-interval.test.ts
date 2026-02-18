@@ -1,18 +1,18 @@
 // Unit tests for Polling Interval Management
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { startPollingWatcher } from "./polling.js";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
-import { clearAllowFromCache } from "../runtime/state.js";
-import { mockSuccess } from "../test-utils/mocks.js";
-import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
-import type { ZTMApiClient } from "../types/api.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { startPollingWatcher } from './polling.js';
+import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { clearAllowFromCache } from '../runtime/state.js';
+import { mockSuccess } from '../test-utils/mocks.js';
+import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
+import type { ZTMApiClient } from '../types/api.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
 
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
 
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("../runtime/index.js", () => ({
+vi.mock('../runtime/index.js', () => ({
   getZTMRuntime: () => ({
     channel: {
       pairing: {
@@ -37,27 +37,27 @@ vi.mock("../runtime/index.js", () => ({
   }),
 }));
 
-vi.mock("./processor.js", () => ({
+vi.mock('./processor.js', () => ({
   processIncomingMessage: vi.fn(() => null),
 }));
-vi.mock("./dispatcher.js", () => ({
+vi.mock('./dispatcher.js', () => ({
   notifyMessageCallbacks: vi.fn(),
 }));
-vi.mock("../core/dm-policy.js", () => ({
-  checkDmPolicy: vi.fn(() => ({ allowed: true, reason: "allowed", action: "process" })),
+vi.mock('../core/dm-policy.js', () => ({
+  checkDmPolicy: vi.fn(() => ({ allowed: true, reason: 'allowed', action: 'process' })),
 }));
 
-vi.mock("../connectivity/permit.js", () => ({
+vi.mock('../connectivity/permit.js', () => ({
   handlePairingRequest: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock("../runtime/state.js", () => ({
+vi.mock('../runtime/state.js', () => ({
   getAllowFromCache: vi.fn(() => Promise.resolve([])),
   clearAllowFromCache: vi.fn(),
 }));
 
-describe("Interval Management", () => {
-  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
+describe('Interval Management', () => {
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: 'pairing' as const };
 
   let mockState: ReturnType<typeof createMockState>;
 
@@ -108,13 +108,13 @@ describe("Interval Management", () => {
     global.setInterval = originalSetInterval;
   });
 
-  it("should store interval reference in state", async () => {
+  it('should store interval reference in state', async () => {
     await startPollingWatcher(mockState);
 
     expect(mockState.watchInterval).not.toBeNull();
   });
 
-  it("should allow clearing interval via state reference", async () => {
+  it('should allow clearing interval via state reference', async () => {
     await startPollingWatcher(mockState);
 
     const intervalRef = mockState.watchInterval;
@@ -128,7 +128,7 @@ describe("Interval Management", () => {
     expect(mockState.watchInterval).toBeNull();
   });
 
-  it("should replace existing interval if already set", async () => {
+  it('should replace existing interval if already set', async () => {
     await startPollingWatcher(mockState);
     const firstInterval = mockState.watchInterval;
 
@@ -139,8 +139,8 @@ describe("Interval Management", () => {
   });
 });
 
-describe("Watch → Polling Transition", () => {
-  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
+describe('Watch → Polling Transition', () => {
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: 'pairing' as const };
 
   let createdIntervals: ReturnType<typeof setInterval>[] = [];
   const originalSetInterval = global.setInterval;
@@ -194,18 +194,18 @@ describe("Watch → Polling Transition", () => {
     global.setInterval = originalSetInterval;
   });
 
-  it("should preserve pendingPairings during transition", async () => {
-    mockState.pendingPairings.set("alice", new Date());
-    mockState.pendingPairings.set("bob", new Date());
+  it('should preserve pendingPairings during transition', async () => {
+    mockState.pendingPairings.set('alice', new Date());
+    mockState.pendingPairings.set('bob', new Date());
 
     await startPollingWatcher(mockState);
 
     expect(mockState.pendingPairings.size).toBe(2);
-    expect(mockState.pendingPairings.has("alice")).toBe(true);
-    expect(mockState.pendingPairings.has("bob")).toBe(true);
+    expect(mockState.pendingPairings.has('alice')).toBe(true);
+    expect(mockState.pendingPairings.has('bob')).toBe(true);
   });
 
-  it("should preserve messageCallbacks during transition", async () => {
+  it('should preserve messageCallbacks during transition', async () => {
     const mockCallback = vi.fn();
     mockState.messageCallbacks.add(mockCallback);
 
@@ -215,7 +215,7 @@ describe("Watch → Polling Transition", () => {
     expect(mockState.messageCallbacks.has(mockCallback)).toBe(true);
   });
 
-  it("should preserve connection state during transition", async () => {
+  it('should preserve connection state during transition', async () => {
     mockState.connected = true;
     mockState.meshConnected = true;
     mockState.peerCount = 10;

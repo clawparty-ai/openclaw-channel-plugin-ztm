@@ -1,15 +1,15 @@
 // ZTM Permit management
 
-import * as fs from "fs";
-import * as path from "path";
-import { logger } from "../utils/logger.js";
-import { getZTMRuntime } from "../runtime/index.js";
-import type { ZTMMessage } from "../api/ztm-api.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import { normalizeUsername } from "../utils/validation.js";
-import { extractErrorMessage } from "../utils/error.js";
-import { getOrDefault, isNonEmptyArray } from "../utils/guards.js";
-import type { PermitData } from "../types/connectivity.js";
+import * as fs from 'fs';
+import * as path from 'path';
+import { logger } from '../utils/logger.js';
+import { getZTMRuntime } from '../runtime/index.js';
+import type { ZTMMessage } from '../api/ztm-api.js';
+import type { AccountRuntimeState } from '../runtime/state.js';
+import { normalizeUsername } from '../utils/validation.js';
+import { extractErrorMessage } from '../utils/error.js';
+import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
+import type { PermitData } from '../types/connectivity.js';
 
 /**
  * Request permit from permit server
@@ -27,9 +27,9 @@ export async function requestPermit(
 ): Promise<PermitData | null> {
   try {
     const response = await fetch(permitUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         PublicKey: publicKey,
@@ -47,19 +47,19 @@ export async function requestPermit(
 
     // Validate required fields
     if (!permitData.ca) {
-      logger.error("Permit missing CA certificate");
+      logger.error('Permit missing CA certificate');
       return null;
     }
     if (!permitData.agent?.certificate) {
-      logger.error("Permit missing agent certificate");
+      logger.error('Permit missing agent certificate');
       return null;
     }
     if (!Array.isArray(permitData.bootstraps)) {
-      logger.error("Permit missing bootstraps");
+      logger.error('Permit missing bootstraps');
       return null;
     }
 
-    logger.info("Permit request successful");
+    logger.info('Permit request successful');
     return permitData;
   } catch (error) {
     const errorMsg = extractErrorMessage(error);
@@ -95,7 +95,7 @@ export function loadPermitFromFile(filePath: string): PermitData | null {
       logger.error(`Permit file not found: ${filePath}`);
       return null;
     }
-    const content = fs.readFileSync(filePath, "utf-8");
+    const content = fs.readFileSync(filePath, 'utf-8');
     const permitData = JSON.parse(content) as PermitData;
     logger.info(`Permit loaded from file: ${filePath}`);
     return permitData;
@@ -119,24 +119,27 @@ export async function handlePairingRequest(
   const normalizedPeer = normalizeUsername(peer);
 
   const allowFrom = getOrDefault(config.allowFrom, []);
-  if (allowFrom.some((entry) => normalizeUsername(entry) === normalizedPeer)) {
+  if (allowFrom.some(entry => normalizeUsername(entry) === normalizedPeer)) {
     logger.debug(`[${state.accountId}] ${peer} is already approved`);
     return;
   }
 
   // Check if already approved via pairing store (persisted across restarts)
-  if (storeAllowFrom.length > 0 && storeAllowFrom.some((entry) => normalizeUsername(entry) === normalizedPeer)) {
+  if (
+    storeAllowFrom.length > 0 &&
+    storeAllowFrom.some(entry => normalizeUsername(entry) === normalizedPeer)
+  ) {
     logger.debug(`[${state.accountId}] ${peer} is already approved via pairing store`);
     return;
   }
 
   // Register pairing request with openclaw's pairing store
-  let pairingCode = "";
+  let pairingCode = '';
   let pairingCreated = false;
   try {
     const rt = getZTMRuntime();
     const { code, created } = await rt.channel.pairing.upsertPairingRequest({
-      channel: "ztm-chat",
+      channel: 'ztm-chat',
       id: normalizedPeer,
       meta: { name: peer },
     });
@@ -146,7 +149,9 @@ export async function handlePairingRequest(
       logger.info(`[${state.accountId}] Registered new pairing request for ${peer} (code=${code})`);
     }
   } catch (error) {
-    logger.warn(`[${state.accountId}] Failed to register pairing request in store for ${peer}: ${error}`);
+    logger.warn(
+      `[${state.accountId}] Failed to register pairing request in store for ${peer}: ${error}`
+    );
   }
 
   // Build pairing reply message using openclaw's standard format
@@ -155,13 +160,14 @@ export async function handlePairingRequest(
     try {
       const rt = getZTMRuntime();
       messageText = rt.channel.pairing.buildPairingReply({
-        channel: "ztm-chat",
+        channel: 'ztm-chat',
         idLine: `Your ZTM Chat username: ${peer}`,
         code: pairingCode,
       });
     } catch {
       // Fallback if buildPairingReply is unavailable
-      messageText = `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
+      messageText =
+        `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `Pairing code: ${pairingCode}\n\n` +
         `To approve this user, run:\n` +
@@ -171,7 +177,8 @@ export async function handlePairingRequest(
         `━━━━━━━━━━━━━━━━━━━━━━`;
     }
   } else {
-    messageText = `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
+    messageText =
+      `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `To approve this user, run:\n` +
       `  openclaw pairing approve ztm-chat ${peer}\n\n` +
@@ -196,6 +203,8 @@ export async function handlePairingRequest(
       logger.warn(`[${state.accountId}] Failed to send pairing request to ${peer}: ${error}`);
     }
   } else {
-    logger.debug(`[${state.accountId}] Pairing request already exists for ${peer}, not re-sending message`);
+    logger.debug(
+      `[${state.accountId}] Pairing request already exists for ${peer}, not re-sending message`
+    );
   }
 }

@@ -1,12 +1,9 @@
 // Cache utilities for runtime state management
 // Provides bounded caches with TTL support
 
-import { logger } from "../utils/logger.js";
-import type { GroupPermissions } from "../types/group-policy.js";
-import {
-  MAX_GROUP_PERMISSION_CACHE_SIZE,
-  GROUP_PERMISSION_CACHE_TTL_MS,
-} from "../constants.js";
+import { logger } from '../utils/logger.js';
+import type { GroupPermissions } from '../types/group-policy.js';
+import { MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS } from '../constants.js';
 
 /**
  * LRU Cache for group permissions with bounded size and TTL.
@@ -14,11 +11,17 @@ import {
  * and expired entries.
  */
 export class GroupPermissionLRUCache {
-  private cache = new Map<string, { permissions: GroupPermissions; lastAccess: number; expiresAt: number }>();
+  private cache = new Map<
+    string,
+    { permissions: GroupPermissions; lastAccess: number; expiresAt: number }
+  >();
   private maxSize: number;
   private ttlMs: number;
 
-  constructor(maxSize: number = MAX_GROUP_PERMISSION_CACHE_SIZE, ttlMs: number = GROUP_PERMISSION_CACHE_TTL_MS) {
+  constructor(
+    maxSize: number = MAX_GROUP_PERMISSION_CACHE_SIZE,
+    ttlMs: number = GROUP_PERMISSION_CACHE_TTL_MS
+  ) {
     if (maxSize <= 0) {
       throw new Error(`maxSize must be positive, got: ${maxSize}`);
     }

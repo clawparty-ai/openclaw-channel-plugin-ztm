@@ -2,7 +2,7 @@
 // Handles HTTP communication with remote ZTM Agent for Chat operations
 // Supports both direct storage API access and Chat App HTTP endpoints
 
-import type { ZTMChatConfig } from "../types/config.js";
+import type { ZTMChatConfig } from '../types/config.js';
 import type {
   ZTMMessage,
   ZTMPeer,
@@ -11,8 +11,8 @@ import type {
   ZTMChat,
   ZTMApiClient,
   WatchChangeItem,
-} from "../types/api.js";
-import { success, failure, type Result } from "../types/common.js";
+} from '../types/api.js';
+import { success, failure, type Result } from '../types/common.js';
 import {
   ZTMApiError,
   ZTMTimeoutError,
@@ -21,10 +21,10 @@ import {
   ZTMDiscoveryError,
   ZTMParseError,
   ZTMError,
-} from "../types/errors.js";
-import type { Logger } from "../utils/logger.js";
-import { defaultLogger } from "../utils/logger.js";
-import { fetchWithRetry, type FetchWithRetry } from "../utils/retry.js";
+} from '../types/errors.js';
+import type { Logger } from '../utils/logger.js';
+import { defaultLogger } from '../utils/logger.js';
+import { fetchWithRetry, type FetchWithRetry } from '../utils/retry.js';
 
 import {
   createRequestHandler,
@@ -32,15 +32,23 @@ import {
   type ZTMApiClientDeps,
   type ZTMLogger,
   type RequestHandler,
-} from "./request.js";
+} from './request.js';
 
-import { createMeshApi } from "./mesh-api.js";
-import { createChatApi, normalizeMessageContent } from "./chat-api.js";
-import { createMessageApi } from "./message-api.js";
-import { createFileApi } from "./file-api.js";
+import { createMeshApi } from './mesh-api.js';
+import { createChatApi, normalizeMessageContent } from './chat-api.js';
+import { createMessageApi } from './message-api.js';
+import { createFileApi } from './file-api.js';
 
 // Re-export types for backward compatibility
-export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClient, ZTMApiClientDeps };
+export type {
+  ZTMMessage,
+  ZTMPeer,
+  ZTMUserInfo,
+  ZTMMeshInfo,
+  ZTMChat,
+  ZTMApiClient,
+  ZTMApiClientDeps,
+};
 
 /**
  * Escape special regex characters in string literals
@@ -53,7 +61,9 @@ function escapeRegExp(string: string): string {
  * Pre-compiled regex patterns for performance
  */
 function createPeerMessagePattern(username: string): RegExp {
-  return new RegExp(`^/apps/ztm/chat/shared/([^/]+)/publish/peers/${escapeRegExp(username)}/messages/`);
+  return new RegExp(
+    `^/apps/ztm/chat/shared/([^/]+)/publish/peers/${escapeRegExp(username)}/messages/`
+  );
 }
 
 /**
@@ -79,11 +89,13 @@ function parseMessageFileWithResult(
     return success(result);
   } catch (error) {
     const cause = error instanceof Error ? error : new Error(String(error));
-    return failure(new ZTMParseError({
-      peer,
-      filePath,
-      cause,
-    }));
+    return failure(
+      new ZTMParseError({
+        peer,
+        filePath,
+        cause,
+      })
+    );
   }
 }
 
@@ -104,7 +116,7 @@ function createEmptyChat(peer: string, time: number): ZTMChat {
     peer,
     time,
     updated: time,
-    latest: { time, message: "", sender: peer },
+    latest: { time, message: '', sender: peer },
   };
 }
 
@@ -142,12 +154,16 @@ export function createZTMApiClient(
   config: ZTMChatConfig,
   deps: Partial<ZTMApiClientDeps> = {}
 ): ZTMApiClient {
-  const { logger, fetch, fetchWithRetry: doFetchWithRetry }: ZTMApiClientDeps = {
+  const {
+    logger,
+    fetch,
+    fetchWithRetry: doFetchWithRetry,
+  }: ZTMApiClientDeps = {
     ...defaultDeps,
     ...deps,
   };
 
-  const baseUrl = config.agentUrl.replace(/\/$/, "");
+  const baseUrl = config.agentUrl.replace(/\/$/, '');
   const apiTimeout = config.apiTimeout || 30000;
 
   // Create the request handler
@@ -166,12 +182,7 @@ export function createZTMApiClient(
   const fileApi = createFileApi(config, request, logger);
 
   // Create message API with getChats dependency
-  const messageApi = createMessageApi(
-    config,
-    request,
-    logger,
-    () => chatApi.getChats()
-  );
+  const messageApi = createMessageApi(config, request, logger, () => chatApi.getChats());
 
   const client: ZTMApiClient = {
     getMeshInfo: meshApi.getMeshInfo,

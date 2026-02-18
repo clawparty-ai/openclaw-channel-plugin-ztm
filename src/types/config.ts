@@ -12,4 +12,4 @@ export type {
   ZTMChatConfigValidation,
   ConfigValidationError,
   ValidationErrorReason,
-} from "../config/schema.js";
+} from '../config/schema.js';

@@ -2,11 +2,16 @@
 // Tracks per-account, per-peer watermarks so that already-processed messages
 // are skipped across gateway restarts.
 
-import * as fs from "fs";
-import * as path from "path";
-import { defaultLogger, type Logger } from "../utils/logger.js";
-import { resolveStatePath, resolveZTMStateDir } from "../utils/paths.js";
-import { MAX_PEERS_PER_ACCOUNT, MAX_FILES_PER_ACCOUNT, STATE_FLUSH_DEBOUNCE_MS, STATE_FLUSH_MAX_DELAY_MS } from "../constants.js";
+import * as fs from 'fs';
+import * as path from 'path';
+import { defaultLogger, type Logger } from '../utils/logger.js';
+import { resolveStatePath, resolveZTMStateDir } from '../utils/paths.js';
+import {
+  MAX_PEERS_PER_ACCOUNT,
+  MAX_FILES_PER_ACCOUNT,
+  STATE_FLUSH_DEBOUNCE_MS,
+  STATE_FLUSH_MAX_DELAY_MS,
+} from '../constants.js';
 
 /**
  * FileSystem interface for dependency injection (enables testing without real I/O)
@@ -132,11 +137,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
   // Maximum number of peers to track per account (prevents unbounded state growth)
   // Uses constant from constants.ts
 
-  constructor(
-    statePath?: string,
-    fsImpl?: FileSystem,
-    loggerImpl?: Logger
-  ) {
+  constructor(statePath?: string, fsImpl?: FileSystem, loggerImpl?: Logger) {
     this.fs = fsImpl ?? nodeFs;
     this.logger = loggerImpl ?? defaultLogger;
 
@@ -173,10 +174,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
         return;
       }
 
-      const content = this.fs.readFileSync(this.statePath, "utf-8");
+      const content = this.fs.readFileSync(this.statePath, 'utf-8');
       const parsed = JSON.parse(content);
 
-      if (!parsed || typeof parsed !== "object") {
+      if (!parsed || typeof parsed !== 'object') {
         this.loaded = true;
         return;
       }
@@ -188,12 +189,14 @@ export class MessageStateStoreImpl implements MessageStateStore {
       };
     } catch {
       // Ignore read/parse errors — start fresh
-      this.logger.warn("Failed to load message state, starting fresh");
+      this.logger.warn('Failed to load message state, starting fresh');
     }
     this.loaded = true;
   }
 
-  private migrateFileMetadata(parsed: Record<string, unknown>): Record<string, Record<string, FileMetadata>> {
+  private migrateFileMetadata(
+    parsed: Record<string, unknown>
+  ): Record<string, Record<string, FileMetadata>> {
     const fileMetadata: Record<string, Record<string, FileMetadata>> = {};
 
     if (parsed.fileMetadata) {
@@ -201,7 +204,9 @@ export class MessageStateStoreImpl implements MessageStateStore {
       Object.assign(fileMetadata, parsed.fileMetadata);
     } else if (parsed.fileTimes) {
       // Old format: migrate time to metadata with size 0
-      for (const [accountId, files] of Object.entries(parsed.fileTimes as Record<string, Record<string, number>>)) {
+      for (const [accountId, files] of Object.entries(
+        parsed.fileTimes as Record<string, Record<string, number>>
+      )) {
         fileMetadata[accountId] = {};
         for (const [p, time] of Object.entries(files)) {
           fileMetadata[accountId][p] = { time, size: 0 };
@@ -244,7 +249,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
       await this.fs.promises.writeFile(this.statePath, JSON.stringify(this.data, null, 2));
       this.dirty = false;
     } catch {
-      this.logger.warn("Failed to persist message state");
+      this.logger.warn('Failed to persist message state');
     }
   }
 
@@ -257,7 +262,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
       this.fs.writeFileSync(this.statePath, JSON.stringify(this.data, null, 2));
       this.dirty = false;
     } catch {
-      this.logger.warn("Failed to persist message state");
+      this.logger.warn('Failed to persist message state');
     }
   }
 

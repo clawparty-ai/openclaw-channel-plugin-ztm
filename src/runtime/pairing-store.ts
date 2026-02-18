@@ -2,11 +2,11 @@
 // Tracks pending pairing requests so they survive gateway restarts
 // and can be cleaned up automatically after expiration
 
-import * as fs from "fs";
-import * as path from "path";
-import { defaultLogger, type Logger } from "../utils/logger.js";
-import { nodeFs, type FileSystem } from "./store.js";
-import { MAX_PAIRINGS_PER_ACCOUNT } from "../constants.js";
+import * as fs from 'fs';
+import * as path from 'path';
+import { defaultLogger, type Logger } from '../utils/logger.js';
+import { nodeFs, type FileSystem } from './store.js';
+import { MAX_PAIRINGS_PER_ACCOUNT } from '../constants.js';
 
 export type { FileSystem };
 
@@ -72,11 +72,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
   // Maximum number of pending pairings per account (prevents unbounded growth)
   // MAX_PAIRINGS_PER_ACCOUNT imported from constants.ts
 
-  constructor(
-    statePath?: string,
-    fsImpl?: FileSystem,
-    loggerImpl?: Logger
-  ) {
+  constructor(statePath?: string, fsImpl?: FileSystem, loggerImpl?: Logger) {
     this.fs = fsImpl ?? nodeFs;
     this.logger = loggerImpl ?? defaultLogger;
 
@@ -85,17 +81,9 @@ export class PairingStateStoreImpl implements PairingStateStore {
     if (statePath) {
       this.statePath = statePath;
     } else if (process.env.ZTM_STATE_PATH) {
-      this.statePath = process.env.ZTM_STATE_PATH.replace(
-        /state\.json$/,
-        "pairings.json"
-      );
+      this.statePath = process.env.ZTM_STATE_PATH.replace(/state\.json$/, 'pairings.json');
     } else {
-      this.statePath = path.join(
-        process.env.HOME || "",
-        ".openclaw",
-        "ztm",
-        "pairings.json",
-      );
+      this.statePath = path.join(process.env.HOME || '', '.openclaw', 'ztm', 'pairings.json');
     }
     this.stateDir = path.dirname(this.statePath);
 
@@ -110,16 +98,16 @@ export class PairingStateStoreImpl implements PairingStateStore {
   private load(): void {
     try {
       if (this.fs.existsSync(this.statePath)) {
-        const content = this.fs.readFileSync(this.statePath, "utf-8");
+        const content = this.fs.readFileSync(this.statePath, 'utf-8');
         const parsed = JSON.parse(content);
-        if (parsed && typeof parsed === "object" && parsed.accounts) {
+        if (parsed && typeof parsed === 'object' && parsed.accounts) {
           this.data = parsed as PairingStateData;
           this.logger.debug(`Loaded pairing state from ${this.statePath}`);
         }
       }
     } catch {
       // Ignore read/parse errors — start fresh
-      this.logger.warn("Failed to load pairing state, starting fresh");
+      this.logger.warn('Failed to load pairing state, starting fresh');
       this.data = { accounts: {} };
     }
   }
@@ -144,7 +132,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
       this.dirty = false;
       this.logger.debug(`Saved pairing state to ${this.statePath}`);
     } catch {
-      this.logger.warn("Failed to persist pairing state");
+      this.logger.warn('Failed to persist pairing state');
     }
   }
 
@@ -163,7 +151,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
   loadPendingPairings(accountId: string): Map<string, Date> {
     const pairings = new Map<string, Date>();
     const accountData = this.data.accounts[accountId];
-    
+
     if (accountData) {
       for (const [peer, dateStr] of Object.entries(accountData)) {
         const date = new Date(dateStr);
@@ -172,7 +160,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
         }
       }
     }
-    
+
     return pairings;
   }
 
@@ -183,12 +171,12 @@ export class PairingStateStoreImpl implements PairingStateStore {
     if (!this.data.accounts[accountId]) {
       this.data.accounts[accountId] = {};
     }
-    
+
     this.data.accounts[accountId][peer] = date.toISOString();
-    
+
     // Clean up if limits are exceeded
     this.cleanupIfNeeded(accountId);
-    
+
     this.scheduleSave();
     this.logger.debug(`[${accountId}] Saved pending pairing for ${peer}`);
   }
@@ -231,9 +219,7 @@ export class PairingStateStoreImpl implements PairingStateStore {
     if (removedCount > 0) {
       this.dirty = true;
       this.scheduleSave();
-      this.logger.info(
-        `[${accountId}] Cleaned up ${removedCount} expired pairing(s)`
-      );
+      this.logger.info(`[${accountId}] Cleaned up ${removedCount} expired pairing(s)`);
     }
 
     return removedCount;

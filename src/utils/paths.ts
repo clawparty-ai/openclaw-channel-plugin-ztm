@@ -3,25 +3,25 @@
  * Handles OpenClaw state directory resolution following OpenClaw SDK conventions
  */
 
-import os from "os";
-import path from "path";
+import os from 'os';
+import path from 'path';
 
 /**
  * Environment variables that can override the default state directory
  */
 export const STATE_DIR_ENV_VARS = {
   /** Explicit state directory override */
-  EXPLICIT: "ZTM_STATE_PATH",
+  EXPLICIT: 'ZTM_STATE_PATH',
   /** OpenClaw state directory (same as OPENCLAW_STATE_DIR) */
-  OPENCLAW_STATE: "OPENCLAW_STATE_DIR",
+  OPENCLAW_STATE: 'OPENCLAW_STATE_DIR',
   /** OpenClaw home directory */
-  OPENCLAW_HOME: "OPENCLAW_HOME",
+  OPENCLAW_HOME: 'OPENCLAW_HOME',
 } as const;
 
 /**
  * Default subdirectory for ZTM plugin data within the OpenClaw state directory
  */
-export const ZTM_SUBDIR = "ztm";
+export const ZTM_SUBDIR = 'ztm';
 
 /**
  * Resolve a path that might be a Windows absolute path
@@ -79,7 +79,7 @@ export function resolveOpenclawStateDir(): string {
   }
 
   // Fallback to OPENCLAW_HOME/.openclaw or ~/.openclaw
-  return path.join(resolveOpenclawHome(), ".openclaw");
+  return path.join(resolveOpenclawHome(), '.openclaw');
 }
 
 /**
@@ -114,13 +114,13 @@ export function resolveStatePath(): string {
     const resolved = resolvePath(process.env.ZTM_STATE_PATH);
     // If it's a directory, append state.json
     if (!path.extname(resolved)) {
-      return path.join(resolved, "state.json");
+      return path.join(resolved, 'state.json');
     }
     return resolved;
   }
 
   // Default: <openclaw-state-dir>/ztm/state.json
-  return path.join(resolveZTMStateDir(), "state.json");
+  return path.join(resolveZTMStateDir(), 'state.json');
 }
 
 /**
@@ -128,7 +128,7 @@ export function resolveStatePath(): string {
  * Uses the same directory as state files
  */
 export function resolvePermitPath(): string {
-  return path.join(resolveZTMStateDir(), "permit.json");
+  return path.join(resolveZTMStateDir(), 'permit.json');
 }
 
 /**
@@ -171,9 +171,7 @@ export interface ResolveStateDirOptions {
  * Resolve ZTM state directory with overrides (for testing)
  * @internal - exported for testing only
  */
-export function resolveZTMStateDirWithOverrides(
-  overrides?: ResolveStateDirOptions
-): string {
+export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptions): string {
   const env = overrides || {};
 
   // Check explicit ZTM_STATE_PATH override
@@ -204,37 +202,33 @@ export function resolveZTMStateDirWithOverrides(
     homeDir = os.homedir();
   }
 
-  return path.join(homeDir, ".openclaw", ZTM_SUBDIR);
+  return path.join(homeDir, '.openclaw', ZTM_SUBDIR);
 }
 
 /**
  * Resolve state file path with overrides (for testing)
  * @internal - exported for testing only
  */
-export function resolveStatePathWithOverrides(
-  overrides?: ResolveStateDirOptions
-): string {
+export function resolveStatePathWithOverrides(overrides?: ResolveStateDirOptions): string {
   const env = overrides || {};
 
   // Check explicit ZTM_STATE_PATH override
   if (env.ZTM_STATE_PATH) {
     const resolved = resolvePath(env.ZTM_STATE_PATH);
     if (!path.extname(resolved)) {
-      return path.join(resolved, "state.json");
+      return path.join(resolved, 'state.json');
     }
     return resolved;
   }
 
   // Default: <zmt-state-dir>/state.json
-  return path.join(resolveZTMStateDirWithOverrides(env), "state.json");
+  return path.join(resolveZTMStateDirWithOverrides(env), 'state.json');
 }
 
 /**
  * Resolve permit file path with overrides (for testing)
  * @internal - exported for testing only
  */
-export function resolvePermitPathWithOverrides(
-  overrides?: ResolveStateDirOptions
-): string {
-  return path.join(resolveZTMStateDirWithOverrides(overrides), "permit.json");
+export function resolvePermitPathWithOverrides(overrides?: ResolveStateDirOptions): string {
+  return path.join(resolveZTMStateDirWithOverrides(overrides), 'permit.json');
 }

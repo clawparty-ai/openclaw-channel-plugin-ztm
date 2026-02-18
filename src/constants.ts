@@ -60,6 +60,6 @@ export const MAX_MESSAGE_LENGTH = 10000; // Maximum message content length in by
 // String Constants
 // ============================================================================
 
-export const DEFAULT_ACCOUNT_ID = "default"; // Default account ID when none specified
-export const ZTM_CHANNEL_ID = "ztm-chat"; // Channel identifier for ZTM Chat
-export const ZTM_MESSAGE_PATH = "/apps/ztm/chat/shared/"; // Default message storage path
+export const DEFAULT_ACCOUNT_ID = 'default'; // Default account ID when none specified
+export const ZTM_CHANNEL_ID = 'ztm-chat'; // Channel identifier for ZTM Chat
+export const ZTM_MESSAGE_PATH = '/apps/ztm/chat/shared/'; // Default message storage path

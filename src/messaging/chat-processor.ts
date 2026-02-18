@@ -1,13 +1,13 @@
 // Shared chat message processing utilities
 // Used by both watcher.ts and polling.ts to process incoming messages
 
-import { processIncomingMessage, type ProcessMessageContext } from "./processor.js";
-import { notifyMessageCallbacks } from "./dispatcher.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMChat } from "../types/api.js";
-import { checkDmPolicy } from "../core/dm-policy.js";
-import { handlePairingRequest } from "../connectivity/permit.js";
+import { processIncomingMessage, type ProcessMessageContext } from './processor.js';
+import { notifyMessageCallbacks } from './dispatcher.js';
+import type { AccountRuntimeState } from '../types/runtime.js';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChat } from '../types/api.js';
+import { checkDmPolicy } from '../core/dm-policy.js';
+import { handlePairingRequest } from '../connectivity/permit.js';
 
 /**
  * Process a single chat message and notify callbacks if valid
@@ -24,7 +24,7 @@ export async function processChatMessage(
   if (isGroup) {
     if (!chat.latest) return false;
 
-    const sender = chat.latest.sender || "";
+    const sender = chat.latest.sender || '';
     if (sender === config.username) return false;
 
     const groupInfo = { creator: chat.creator!, group: chat.group! };
@@ -79,7 +79,7 @@ export async function processAndNotifyChat(
   if (isGroup) {
     if (!chat.latest) return false;
 
-    const sender = chat.latest.sender || "";
+    const sender = chat.latest.sender || '';
     if (sender === state.config.username) return false;
 
     const normalized = processIncomingMessage(
@@ -88,7 +88,12 @@ export async function processAndNotifyChat(
         message: chat.latest.message,
         sender: sender,
       },
-      { config: state.config, storeAllowFrom, accountId: state.accountId, groupInfo: { creator: chat.creator!, group: chat.group! } }
+      {
+        config: state.config,
+        storeAllowFrom,
+        accountId: state.accountId,
+        groupInfo: { creator: chat.creator!, group: chat.group! },
+      }
     );
     if (normalized) {
       await notifyMessageCallbacks(state, {
@@ -125,8 +130,8 @@ export async function processAndNotifyChat(
   }
 
   const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);
-  if (check.action === "request_pairing") {
-    await handlePairingRequest(state, chat.peer, "New message", storeAllowFrom);
+  if (check.action === 'request_pairing') {
+    await handlePairingRequest(state, chat.peer, 'New message', storeAllowFrom);
   }
 
   return normalized !== null;

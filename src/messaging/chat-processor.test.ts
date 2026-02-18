@@ -1,14 +1,14 @@
 // Unit tests for Chat Processor
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { processChatMessage, processAndNotifyChat } from "./chat-processor.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMChat, ZTMMessage } from "../types/api.js";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { processChatMessage, processAndNotifyChat } from './chat-processor.js';
+import type { AccountRuntimeState } from '../types/runtime.js';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChat, ZTMMessage } from '../types/api.js';
+import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 
 // Mock dependencies
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("../runtime/store.js", () => ({
+vi.mock('../runtime/store.js', () => ({
   getAccountMessageStateStore: vi.fn(() => ({
     getWatermark: vi.fn(() => -1),
     getGlobalWatermark: vi.fn(() => 0),
@@ -37,22 +37,22 @@ vi.mock("../runtime/store.js", () => ({
   })),
 }));
 
-vi.mock("../connectivity/permit.js", () => ({
+vi.mock('../connectivity/permit.js', () => ({
   handlePairingRequest: vi.fn(() => Promise.resolve()),
 }));
 
 function createMockMessage(overrides?: Partial<ZTMMessage>): ZTMMessage {
   return {
     time: Date.now(),
-    message: "Hello",
-    sender: "alice",
+    message: 'Hello',
+    sender: 'alice',
     ...overrides,
   };
 }
 
 function createMockChat(overrides?: Partial<ZTMChat>): ZTMChat {
   return {
-    peer: "alice",
+    peer: 'alice',
     time: Date.now(),
     updated: Date.now(),
     latest: createMockMessage(),
@@ -60,19 +60,19 @@ function createMockChat(overrides?: Partial<ZTMChat>): ZTMChat {
   };
 }
 
-describe("processChatMessage", () => {
+describe('processChatMessage', () => {
   const baseConfig: ZTMChatConfig = {
     ...testConfig,
-    username: "testuser",
-    dmPolicy: "allow",
+    username: 'testuser',
+    dmPolicy: 'allow',
   };
 
-  describe("group chat processing", () => {
-    it("should return false when no latest message", async () => {
+  describe('group chat processing', () => {
+    it('should return false when no latest message', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
         latest: undefined as unknown as ZTMMessage,
       });
 
@@ -80,36 +80,36 @@ describe("processChatMessage", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false when sender is self", async () => {
+    it('should return false when sender is self', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
-        latest: createMockMessage({ sender: "testuser" }),
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
+        latest: createMockMessage({ sender: 'testuser' }),
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
       expect(result).toBe(false);
     });
 
-    it("should process valid group message", async () => {
+    it('should process valid group message', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
-        latest: createMockMessage({ sender: "bob", message: "Hello from group" }),
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
+        latest: createMockMessage({ sender: 'bob', message: 'Hello from group' }),
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
       expect(result).toBe(true);
     });
 
-    it("should handle group with empty sender", async () => {
+    it('should handle group with empty sender', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
-        latest: createMockMessage({ sender: "" }),
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
+        latest: createMockMessage({ sender: '' }),
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
@@ -117,26 +117,26 @@ describe("processChatMessage", () => {
     });
   });
 
-  describe("peer chat processing", () => {
-    it("should return false when no peer", async () => {
+  describe('peer chat processing', () => {
+    it('should return false when no peer', async () => {
       const chat = createMockChat({
-        peer: "",
+        peer: '',
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
       expect(result).toBe(false);
     });
 
-    it("should return false when peer is self", async () => {
+    it('should return false when peer is self', async () => {
       const chat = createMockChat({
-        peer: "testuser",
+        peer: 'testuser',
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
       expect(result).toBe(false);
     });
 
-    it("should return false when no latest message", async () => {
+    it('should return false when no latest message', async () => {
       const chat = createMockChat({
         latest: undefined as unknown as ZTMMessage,
       });
@@ -145,27 +145,27 @@ describe("processChatMessage", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false when sender is self", async () => {
+    it('should return false when sender is self', async () => {
       const chat = createMockChat({
-        latest: createMockMessage({ sender: "testuser" }),
+        latest: createMockMessage({ sender: 'testuser' }),
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
       expect(result).toBe(false);
     });
 
-    it("should process valid peer message", async () => {
+    it('should process valid peer message', async () => {
       const chat = createMockChat({
-        latest: createMockMessage({ sender: "bob", message: "Hello from alice" }),
+        latest: createMockMessage({ sender: 'bob', message: 'Hello from alice' }),
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
       expect(result).toBe(true);
     });
 
-    it("should use peer as sender when sender is empty", async () => {
+    it('should use peer as sender when sender is empty', async () => {
       const chat = createMockChat({
-        latest: createMockMessage({ sender: "" }),
+        latest: createMockMessage({ sender: '' }),
       });
 
       const result = await processChatMessage(chat, baseConfig, [], testAccountId);
@@ -174,7 +174,7 @@ describe("processChatMessage", () => {
   });
 });
 
-describe("processAndNotifyChat", () => {
+describe('processAndNotifyChat', () => {
   let mockState: AccountRuntimeState;
 
   beforeEach(() => {
@@ -182,7 +182,7 @@ describe("processAndNotifyChat", () => {
 
     mockState = {
       accountId: testAccountId,
-      config: { ...testConfig, dmPolicy: "allow", username: "testuser" },
+      config: { ...testConfig, dmPolicy: 'allow', username: 'testuser' },
       apiClient: null,
       connected: true,
       meshConnected: true,
@@ -200,12 +200,12 @@ describe("processAndNotifyChat", () => {
     };
   });
 
-  describe("group chat processing with notification", () => {
-    it("should return false when no latest message", async () => {
+  describe('group chat processing with notification', () => {
+    it('should return false when no latest message', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
         latest: undefined as unknown as ZTMMessage,
       });
 
@@ -213,24 +213,24 @@ describe("processAndNotifyChat", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false when sender is self", async () => {
+    it('should return false when sender is self', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
-        latest: createMockMessage({ sender: "testuser" }),
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
+        latest: createMockMessage({ sender: 'testuser' }),
       });
 
       const result = await processAndNotifyChat(chat, mockState, []);
       expect(result).toBe(false);
     });
 
-    it("should process valid group message and notify", async () => {
+    it('should process valid group message and notify', async () => {
       const chat = createMockChat({
-        creator: "alice",
-        group: "test-group",
-        name: "Test Group",
-        latest: createMockMessage({ sender: "bob", message: "Hello from group" }),
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
+        latest: createMockMessage({ sender: 'bob', message: 'Hello from group' }),
       });
 
       const result = await processAndNotifyChat(chat, mockState, []);
@@ -238,26 +238,26 @@ describe("processAndNotifyChat", () => {
     });
   });
 
-  describe("peer chat processing with notification", () => {
-    it("should return false when no peer", async () => {
+  describe('peer chat processing with notification', () => {
+    it('should return false when no peer', async () => {
       const chat = createMockChat({
-        peer: "",
+        peer: '',
       });
 
       const result = await processAndNotifyChat(chat, mockState, []);
       expect(result).toBe(false);
     });
 
-    it("should return false when peer is self", async () => {
+    it('should return false when peer is self', async () => {
       const chat = createMockChat({
-        peer: "testuser",
+        peer: 'testuser',
       });
 
       const result = await processAndNotifyChat(chat, mockState, []);
       expect(result).toBe(false);
     });
 
-    it("should return false when no latest message", async () => {
+    it('should return false when no latest message', async () => {
       const chat = createMockChat({
         latest: undefined as unknown as ZTMMessage,
       });
@@ -266,33 +266,33 @@ describe("processAndNotifyChat", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false when sender is self", async () => {
+    it('should return false when sender is self', async () => {
       const chat = createMockChat({
-        latest: createMockMessage({ sender: "testuser" }),
+        latest: createMockMessage({ sender: 'testuser' }),
       });
 
       const result = await processAndNotifyChat(chat, mockState, []);
       expect(result).toBe(false);
     });
 
-    it("should process valid peer message", async () => {
+    it('should process valid peer message', async () => {
       const chat = createMockChat({
-        latest: createMockMessage({ sender: "bob", message: "Hello from alice" }),
+        latest: createMockMessage({ sender: 'bob', message: 'Hello from alice' }),
       });
 
       const result = await processAndNotifyChat(chat, mockState, []);
       expect(result).toBe(true);
     });
 
-    it("should trigger pairing request when policy requires", async () => {
+    it('should trigger pairing request when policy requires', async () => {
       const chat = createMockChat({
-        peer: "newuser",
-        latest: createMockMessage({ sender: "newuser", message: "Hello" }),
+        peer: 'newuser',
+        latest: createMockMessage({ sender: 'newuser', message: 'Hello' }),
       });
 
       const pairingConfig: ZTMChatConfig = {
         ...testConfig,
-        dmPolicy: "pairing" as const,
+        dmPolicy: 'pairing' as const,
       };
       const stateWithPairingConfig: AccountRuntimeState = {
         ...mockState,

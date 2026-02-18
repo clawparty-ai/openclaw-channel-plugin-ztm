@@ -37,7 +37,7 @@ export function isNullish(value: unknown): value is null | undefined {
  */
 export function requireDefined<T>(
   value: T | null | undefined,
-  message: string = "Value is required but was undefined"
+  message: string = 'Value is required but was undefined'
 ): T {
   if (!isDefined(value)) {
     throw new Error(message);
@@ -77,10 +77,7 @@ export function requireValue<T, E extends Error>(
  * @example
  * const arr = getOrDefault(config.items, []); // Returns string[] correctly
  */
-export function getOrDefault<T, D>(
-  value: T | null | undefined,
-  defaultValue: D
-): T {
+export function getOrDefault<T, D>(value: T | null | undefined, defaultValue: D): T {
   return (isDefined(value) ? value : defaultValue) as T;
 }
 
@@ -95,10 +92,7 @@ export function getOrDefault<T, D>(
  * @example
  * const cache = getOrCompute(cacheMap.get(key), () => expensiveLookup(key));
  */
-export function getOrCompute<T, D>(
-  value: T | null | undefined,
-  defaultFactory: () => D
-): T | D {
+export function getOrCompute<T, D>(value: T | null | undefined, defaultFactory: () => D): T | D {
   return isDefined(value) ? value : defaultFactory();
 }
 

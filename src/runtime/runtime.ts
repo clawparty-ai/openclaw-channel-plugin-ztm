@@ -1,9 +1,9 @@
 // ZTM Runtime - Manages ZTM network connection and message handling
 // Refactored to use Dependency Injection + Singleton pattern for testability
 
-import type { PluginRuntime } from "openclaw/plugin-sdk";
-import { setRuntimeLogger } from "../utils/logger.js";
-import { requireDefined, isDefined } from "../utils/guards.js";
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
+import { setRuntimeLogger } from '../utils/logger.js';
+import { requireDefined, isDefined } from '../utils/guards.js';
 
 // ============================================================================
 // RUNTIME PROVIDER INTERFACE
@@ -75,7 +75,7 @@ export class RuntimeManager implements RuntimeProvider {
    * @throws Error if runtime not initialized
    */
   getRuntime(): PluginRuntime {
-    return requireDefined(this.runtime, "ZTM runtime not initialized - call setZTMRuntime first");
+    return requireDefined(this.runtime, 'ZTM runtime not initialized - call setZTMRuntime first');
   }
 
   /**
@@ -107,7 +107,14 @@ export function setZTMRuntime(next: PluginRuntime): void {
 
   // Set runtime logger if available for consistent logging
   // Cast to any to access runtime.log which may not be in type definition
-  const rt = next as unknown as { log?: { debug?: (msg: string) => void; info?: (msg: string) => void; warn?: (msg: string) => void; error?: (msg: string) => void } };
+  const rt = next as unknown as {
+    log?: {
+      debug?: (msg: string) => void;
+      info?: (msg: string) => void;
+      warn?: (msg: string) => void;
+      error?: (msg: string) => void;
+    };
+  };
   if (rt.log) {
     setRuntimeLogger({
       debug: (msg: string) => rt.log?.debug?.(msg),
@@ -142,5 +149,3 @@ export function isRuntimeInitialized(): boolean {
 export function hasZTMRuntime(): boolean {
   return getRuntimeProvider().isInitialized();
 }
-
-

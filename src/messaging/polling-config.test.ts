@@ -1,19 +1,19 @@
 // Unit tests for Polling Configuration Edge Cases
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { startPollingWatcher } from "./polling.js";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
-import { mockSuccess } from "../test-utils/mocks.js";
-import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
-import type { ZTMApiClient } from "../types/api.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { startPollingWatcher } from './polling.js';
+import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { mockSuccess } from '../test-utils/mocks.js';
+import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
+import type { ZTMApiClient } from '../types/api.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
 
 type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: string]: unknown };
 
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
 
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("../runtime/index.js", () => ({
+vi.mock('../runtime/index.js', () => ({
   getZTMRuntime: () => ({
     channel: {
       pairing: {
@@ -38,22 +38,22 @@ vi.mock("../runtime/index.js", () => ({
   }),
 }));
 
-vi.mock("./processor.js", () => ({
+vi.mock('./processor.js', () => ({
   processIncomingMessage: vi.fn(() => null),
 }));
-vi.mock("./dispatcher.js", () => ({
+vi.mock('./dispatcher.js', () => ({
   notifyMessageCallbacks: vi.fn(),
 }));
-vi.mock("../core/dm-policy.js", () => ({
-  checkDmPolicy: vi.fn(() => ({ allowed: true, reason: "allowed", action: "process" })),
+vi.mock('../core/dm-policy.js', () => ({
+  checkDmPolicy: vi.fn(() => ({ allowed: true, reason: 'allowed', action: 'process' })),
 }));
 
-vi.mock("../connectivity/permit.js", () => ({
+vi.mock('../connectivity/permit.js', () => ({
   handlePairingRequest: vi.fn(() => Promise.resolve()),
 }));
 
-describe("Configuration Edge Cases", () => {
-  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
+describe('Configuration Edge Cases', () => {
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: 'pairing' as const };
 
   let mockState: ReturnType<typeof createMockState>;
 
@@ -102,7 +102,7 @@ describe("Configuration Edge Cases", () => {
     global.setInterval = originalSetInterval;
   });
 
-  it("should handle undefined pollingInterval", async () => {
+  it('should handle undefined pollingInterval', async () => {
     mockState.config = { ...baseConfig };
 
     await startPollingWatcher(mockState);
@@ -110,7 +110,7 @@ describe("Configuration Edge Cases", () => {
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 2000);
   });
 
-  it("should handle zero pollingInterval", async () => {
+  it('should handle zero pollingInterval', async () => {
     mockState.config = { ...baseConfig, pollingInterval: 0 } as ExtendedConfig;
 
     await startPollingWatcher(mockState);
@@ -118,7 +118,7 @@ describe("Configuration Edge Cases", () => {
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
   });
 
-  it("should handle negative pollingInterval", async () => {
+  it('should handle negative pollingInterval', async () => {
     mockState.config = { ...baseConfig, pollingInterval: -1000 } as ExtendedConfig;
 
     await startPollingWatcher(mockState);
@@ -126,7 +126,7 @@ describe("Configuration Edge Cases", () => {
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
   });
 
-  it("should handle very large pollingInterval", async () => {
+  it('should handle very large pollingInterval', async () => {
     mockState.config = { ...baseConfig, pollingInterval: 60000 } as ExtendedConfig;
 
     await startPollingWatcher(mockState);

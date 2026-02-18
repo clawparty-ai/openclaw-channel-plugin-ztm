@@ -1,15 +1,12 @@
 // Common request handling utilities for ZTM API Client
 
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient } from "../types/api.js";
-import { success, failure, type Result } from "../types/common.js";
-import {
-  ZTMApiError,
-  ZTMTimeoutError,
-} from "../types/errors.js";
-import { defaultLogger, type Logger } from "../utils/logger.js";
-import { fetchWithRetry, type FetchWithRetry, type RetryOptions } from "../utils/retry.js";
-import { API_TIMEOUT_MS } from "../constants.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient } from '../types/api.js';
+import { success, failure, type Result } from '../types/common.js';
+import { ZTMApiError, ZTMTimeoutError } from '../types/errors.js';
+import { defaultLogger, type Logger } from '../utils/logger.js';
+import { fetchWithRetry, type FetchWithRetry, type RetryOptions } from '../utils/retry.js';
+import { API_TIMEOUT_MS } from '../constants.js';
 
 /**
  * Logger interface for dependency injection
@@ -80,30 +77,36 @@ export function createRequestHandler(
     const url = `${baseUrl}${path}`;
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...additionalHeaders,
     };
 
     try {
-      const response = await doFetchWithRetry(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-      }, { timeout: apiTimeout, ...retryOverrides });
+      const response = await doFetchWithRetry(
+        url,
+        {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+        },
+        { timeout: apiTimeout, ...retryOverrides }
+      );
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        return failure(new ZTMApiError({
-          method,
-          path,
-          statusCode: response.status,
-          statusText: response.statusText,
-          responseBody: errorText,
-        }));
+        const errorText = await response.text().catch(() => '');
+        return failure(
+          new ZTMApiError({
+            method,
+            path,
+            statusCode: response.status,
+            statusText: response.statusText,
+            responseBody: errorText,
+          })
+        );
       }
 
-      const contentType = response.headers.get("content-type");
-      if (contentType?.includes("application/json")) {
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
         return success((await response.json()) as T);
       }
 
@@ -116,19 +119,23 @@ export function createRequestHandler(
     } catch (error) {
       const cause = error instanceof Error ? error : new Error(String(error));
       // Check if it's a timeout by looking at the error message or type
-      if (cause.name === "AbortError" || cause.message.includes("timeout")) {
-        return failure(new ZTMTimeoutError({
+      if (cause.name === 'AbortError' || cause.message.includes('timeout')) {
+        return failure(
+          new ZTMTimeoutError({
+            method,
+            path,
+            timeoutMs: apiTimeout,
+            cause,
+          })
+        );
+      }
+      return failure(
+        new ZTMApiError({
           method,
           path,
-          timeoutMs: apiTimeout,
           cause,
-        }));
-      }
-      return failure(new ZTMApiError({
-        method,
-        path,
-        cause,
-      }));
+        })
+      );
     }
   };
 }

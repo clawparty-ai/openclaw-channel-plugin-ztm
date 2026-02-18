@@ -1,11 +1,11 @@
 // Integration tests for Pairing Request Flow
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
-import { mockResolved } from "../test-utils/mocks.js";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { mockResolved } from '../test-utils/mocks.js';
 
 // Mock dependencies
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -14,21 +14,21 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("../runtime/index.js", () => ({
+vi.mock('../runtime/index.js', () => ({
   getZTMRuntime: () => ({
     channel: {
       pairing: {
-        upsertPairingRequest: vi.fn(() => Promise.resolve({ code: "ABC123", created: true })),
+        upsertPairingRequest: vi.fn(() => Promise.resolve({ code: 'ABC123', created: true })),
         readAllowFromStore: vi.fn(() => Promise.resolve([])),
       },
     },
   }),
 }));
 
-vi.mock("./store.js", () => ({
+vi.mock('./store.js', () => ({
   messageStateStore: {
     flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     getWatermark: () => -1,
     setWatermark: () => {},
     setFileMetadataBulk: () => {},
@@ -36,7 +36,7 @@ vi.mock("./store.js", () => ({
   },
 }));
 
-describe("Complete Pairing Request Flow", () => {
+describe('Complete Pairing Request Flow', () => {
   const baseConfig = testConfig;
 
   let mockState: ReturnType<typeof createMockState>;
@@ -71,32 +71,33 @@ describe("Complete Pairing Request Flow", () => {
     mockState = createMockState();
   });
 
-  describe("new user triggers pairing request", () => {
-    it("should check dmPolicy and trigger pairing for new user", async () => {
-      const sender = "alice";
+  describe('new user triggers pairing request', () => {
+    it('should check dmPolicy and trigger pairing for new user', async () => {
+      const sender = 'alice';
       const pendingPairings = new Map<string, Date>();
       const allowFrom: string[] = [];
 
-      const isNewUser = !pendingPairings.has(sender) &&
+      const isNewUser =
+        !pendingPairings.has(sender) &&
         !allowFrom.some(allowed => allowed.toLowerCase() === sender.toLowerCase());
 
       expect(isNewUser).toBe(true);
 
-      const action = isNewUser ? "request_pairing" : "process";
-      expect(action).toBe("request_pairing");
+      const action = isNewUser ? 'request_pairing' : 'process';
+      expect(action).toBe('request_pairing');
     });
 
-    it("should add user to pending pairings", () => {
-      const sender = "alice";
+    it('should add user to pending pairings', () => {
+      const sender = 'alice';
       mockState.pendingPairings.set(sender, new Date());
 
       expect(mockState.pendingPairings.has(sender)).toBe(true);
       expect(mockState.pendingPairings.size).toBe(1);
     });
 
-    it("should send pairing message to user", async () => {
-      const sender = "alice";
-      const pairingCode = "ABC123";
+    it('should send pairing message to user', async () => {
+      const sender = 'alice';
+      const pairingCode = 'ABC123';
 
       if (mockState.apiClient) {
         await mockState.apiClient.sendPeerMessage(sender, {
@@ -109,41 +110,41 @@ describe("Complete Pairing Request Flow", () => {
       expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
         sender,
         expect.objectContaining({
-          message: expect.stringContaining("ABC123"),
+          message: expect.stringContaining('ABC123'),
         })
       );
     });
   });
 
-  describe("already pending user is ignored", () => {
-    it("should detect already pending user", () => {
-      const sender = "alice";
+  describe('already pending user is ignored', () => {
+    it('should detect already pending user', () => {
+      const sender = 'alice';
       mockState.pendingPairings.set(sender, new Date());
 
       const isPending = mockState.pendingPairings.has(sender);
       expect(isPending).toBe(true);
     });
 
-    it("should skip pairing request for pending user", () => {
-      const sender = "alice";
+    it('should skip pairing request for pending user', () => {
+      const sender = 'alice';
       mockState.pendingPairings.set(sender, new Date());
 
       const isPending = mockState.pendingPairings.has(sender);
       if (isPending) {
-        const action = "ignore";
-        expect(action).toBe("ignore");
+        const action = 'ignore';
+        expect(action).toBe('ignore');
       }
     });
 
-    it("should not send message for pending user", async () => {
-      const sender = "alice";
+    it('should not send message for pending user', async () => {
+      const sender = 'alice';
       mockState.pendingPairings.set(sender, new Date());
 
       const isPending = mockState.pendingPairings.has(sender);
       if (!isPending) {
         if (mockState.apiClient) {
           await mockState.apiClient.sendPeerMessage(sender, {
-            message: "test",
+            message: 'test',
             time: Date.now(),
             sender: mockState.config.username,
           });
@@ -154,25 +155,23 @@ describe("Complete Pairing Request Flow", () => {
     });
   });
 
-  describe("allowFrom whitelist bypass", () => {
-    it("should allow whitelisted user directly", () => {
-      const sender = "alice";
-      const config = { ...baseConfig, allowFrom: ["alice"] };
+  describe('allowFrom whitelist bypass', () => {
+    it('should allow whitelisted user directly', () => {
+      const sender = 'alice';
+      const config = { ...baseConfig, allowFrom: ['alice'] };
       const pendingPairings = new Map<string, Date>();
       const storeAllowFrom: string[] = [];
 
-      const isAllowed = config.allowFrom?.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
-      ) || storeAllowFrom.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
-      );
+      const isAllowed =
+        config.allowFrom?.some(allowed => allowed.toLowerCase() === sender.toLowerCase()) ||
+        storeAllowFrom.some(allowed => allowed.toLowerCase() === sender.toLowerCase());
 
       expect(isAllowed).toBe(true);
     });
 
-    it("should not trigger pairing for whitelisted user", () => {
-      const sender = "alice";
-      const config = { ...baseConfig, allowFrom: ["alice"] };
+    it('should not trigger pairing for whitelisted user', () => {
+      const sender = 'alice';
+      const config = { ...baseConfig, allowFrom: ['alice'] };
       const pendingPairings = new Map<string, Date>();
       const storeAllowFrom: string[] = [];
 
@@ -180,66 +179,64 @@ describe("Complete Pairing Request Flow", () => {
         allowed => allowed.toLowerCase() === sender.toLowerCase()
       );
 
-      const action = isWhitelisted ? "process" : "request_pairing";
-      expect(action).toBe("process");
+      const action = isWhitelisted ? 'process' : 'request_pairing';
+      expect(action).toBe('process');
     });
 
-    it("should process message from whitelisted user", () => {
-      const sender = "alice";
-      const config = { ...baseConfig, allowFrom: ["alice", "bob"] };
+    it('should process message from whitelisted user', () => {
+      const sender = 'alice';
+      const config = { ...baseConfig, allowFrom: ['alice', 'bob'] };
 
       const isAllowed = config.allowFrom?.includes(sender);
       expect(isAllowed).toBe(true);
     });
   });
 
-  describe("store allowFrom bypass", () => {
-    it("should allow store-approved user directly", () => {
-      const sender = "bob";
+  describe('store allowFrom bypass', () => {
+    it('should allow store-approved user directly', () => {
+      const sender = 'bob';
       const config = { ...baseConfig, allowFrom: [] as string[] };
       const pendingPairings = new Map<string, Date>();
-      const storeAllowFrom = ["bob", "charlie"];
+      const storeAllowFrom = ['bob', 'charlie'];
 
-      const isAllowed = (config.allowFrom ?? []).some(
-        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
-      ) || storeAllowFrom.some(
-        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
-      );
+      const isAllowed =
+        (config.allowFrom ?? []).some(
+          (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
+        ) ||
+        storeAllowFrom.some((allowed: string) => allowed.toLowerCase() === sender.toLowerCase());
 
       expect(isAllowed).toBe(true);
     });
 
-    it("should prefer config allowFrom over store", () => {
-      const sender = "alice";
-      const config = { ...baseConfig, allowFrom: ["alice"] };
+    it('should prefer config allowFrom over store', () => {
+      const sender = 'alice';
+      const config = { ...baseConfig, allowFrom: ['alice'] };
       const storeAllowFrom: string[] = [];
 
-      const isAllowed = config.allowFrom?.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
-      ) || storeAllowFrom.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
-      );
+      const isAllowed =
+        config.allowFrom?.some(allowed => allowed.toLowerCase() === sender.toLowerCase()) ||
+        storeAllowFrom.some(allowed => allowed.toLowerCase() === sender.toLowerCase());
 
       expect(isAllowed).toBe(true);
     });
 
-    it("should fall back to store when config allowFrom is empty", () => {
-      const sender = "bob";
+    it('should fall back to store when config allowFrom is empty', () => {
+      const sender = 'bob';
       const config = { ...baseConfig, allowFrom: [] as string[] };
-      const storeAllowFrom = ["bob"];
+      const storeAllowFrom = ['bob'];
 
-      const isAllowed = (config.allowFrom ?? []).some(
-        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
-      ) || storeAllowFrom.some(
-        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
-      );
+      const isAllowed =
+        (config.allowFrom ?? []).some(
+          (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
+        ) ||
+        storeAllowFrom.some((allowed: string) => allowed.toLowerCase() === sender.toLowerCase());
 
       expect(isAllowed).toBe(true);
     });
   });
 
-  describe("pairing code generation", () => {
-    it("should generate unique pairing code", () => {
+  describe('pairing code generation', () => {
+    it('should generate unique pairing code', () => {
       const codes = new Set<string>();
 
       for (let i = 0; i < 10; i++) {
@@ -250,27 +247,27 @@ describe("Complete Pairing Request Flow", () => {
       expect(codes.size).toBeGreaterThan(5);
     });
 
-    it("should format pairing message correctly", () => {
-      const peer = "alice";
-      const code = "ABC123";
+    it('should format pairing message correctly', () => {
+      const peer = 'alice';
+      const code = 'ABC123';
 
       const message = `[PAIRING REQUEST]
 User: ${peer}
 Code: ${code}
 To approve, run: openclaw pairing approve ztm-chat ${peer}`;
 
-      expect(message).toContain("alice");
-      expect(message).toContain("ABC123");
-      expect(message).toContain("openclaw pairing approve");
+      expect(message).toContain('alice');
+      expect(message).toContain('ABC123');
+      expect(message).toContain('openclaw pairing approve');
     });
   });
 
-  describe("case-insensitive matching", () => {
-    it("should match allowFrom case-insensitively", () => {
-      const config = { ...baseConfig, allowFrom: ["Alice", "BOB"] };
-      const sender1 = "alice";
-      const sender2 = "ALICE";
-      const sender3 = "bob";
+  describe('case-insensitive matching', () => {
+    it('should match allowFrom case-insensitively', () => {
+      const config = { ...baseConfig, allowFrom: ['Alice', 'BOB'] };
+      const sender1 = 'alice';
+      const sender2 = 'ALICE';
+      const sender3 = 'bob';
 
       const match1 = config.allowFrom?.some(
         allowed => allowed.toLowerCase() === sender1.toLowerCase()
@@ -288,20 +285,20 @@ To approve, run: openclaw pairing approve ztm-chat ${peer}`;
     });
   });
 
-  describe("username normalization", () => {
-    it("should trim whitespace from usernames", () => {
-      const sender = "  alice  ";
+  describe('username normalization', () => {
+    it('should trim whitespace from usernames', () => {
+      const sender = '  alice  ';
       const normalized = sender.trim();
 
-      expect(normalized).toBe("alice");
+      expect(normalized).toBe('alice');
     });
 
-    it("should handle various username formats", () => {
+    it('should handle various username formats', () => {
       const testCases = [
-        { input: "alice", expected: "alice" },
-        { input: "  Alice  ", expected: "Alice" },
-        { input: "bob-123", expected: "bob-123" },
-        { input: "user_456", expected: "user_456" },
+        { input: 'alice', expected: 'alice' },
+        { input: '  Alice  ', expected: 'Alice' },
+        { input: 'bob-123', expected: 'bob-123' },
+        { input: 'user_456', expected: 'user_456' },
       ];
 
       for (const { input, expected } of testCases) {
@@ -311,9 +308,9 @@ To approve, run: openclaw pairing approve ztm-chat ${peer}`;
     });
   });
 
-  describe("pairing state persistence", () => {
-    it("should store pairing timestamp", () => {
-      const sender = "alice";
+  describe('pairing state persistence', () => {
+    it('should store pairing timestamp', () => {
+      const sender = 'alice';
       const timestamp = new Date();
 
       mockState.pendingPairings.set(sender, timestamp);
@@ -322,16 +319,16 @@ To approve, run: openclaw pairing approve ztm-chat ${peer}`;
       expect(stored).toBe(timestamp);
     });
 
-    it("should allow multiple pending pairings", () => {
-      mockState.pendingPairings.set("alice", new Date());
-      mockState.pendingPairings.set("bob", new Date());
-      mockState.pendingPairings.set("charlie", new Date());
+    it('should allow multiple pending pairings', () => {
+      mockState.pendingPairings.set('alice', new Date());
+      mockState.pendingPairings.set('bob', new Date());
+      mockState.pendingPairings.set('charlie', new Date());
 
       expect(mockState.pendingPairings.size).toBe(3);
     });
 
-    it("should remove user from pending after approval", () => {
-      const sender = "alice";
+    it('should remove user from pending after approval', () => {
+      const sender = 'alice';
       mockState.pendingPairings.set(sender, new Date());
 
       expect(mockState.pendingPairings.has(sender)).toBe(true);

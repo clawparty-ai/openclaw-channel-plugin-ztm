@@ -1,6 +1,6 @@
 // Unit tests for Account Runtime State Management
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getOrCreateAccountState,
   removeAccountState,
@@ -12,26 +12,28 @@ import {
   getGroupPermissionCached,
   clearGroupPermissionCache,
   type AccountRuntimeState,
-} from "./state.js";
-import { success } from "../types/common.js";
-import { testConfig } from "../test-utils/fixtures.js";
+} from './state.js';
+import { success } from '../types/common.js';
+import { testConfig } from '../test-utils/fixtures.js';
 
 // Mock state using mutable container
 const mockApiState = {
-  getMeshInfo: vi.fn().mockResolvedValue(success({
-    connected: true,
-    endpoints: 5,
-    errors: [],
-  })),
+  getMeshInfo: vi.fn().mockResolvedValue(
+    success({
+      connected: true,
+      endpoints: 5,
+      errors: [],
+    })
+  ),
 };
 
-vi.mock("../api/ztm-api.js", () => ({
+vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => mockApiState.getMeshInfo(),
   })),
 }));
 
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -40,10 +42,10 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("./store.js", () => ({
+vi.mock('./store.js', () => ({
   getAccountMessageStateStore: vi.fn(() => ({
     flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     getWatermark: () => -1,
     getGlobalWatermark: vi.fn(() => 0),
     setWatermark: vi.fn(),
@@ -57,14 +59,14 @@ vi.mock("./store.js", () => ({
   nodeFs: {},
 }));
 
-vi.mock("./pairing-store.js", () => ({
+vi.mock('./pairing-store.js', () => ({
   getPairingStateStore: vi.fn(() => ({
     loadPendingPairings: vi.fn(() => new Map()),
     savePendingPairing: vi.fn(),
     deletePendingPairing: vi.fn(),
     cleanupExpiredPairings: vi.fn(() => 0),
     flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   })),
   disposePairingStateStore: vi.fn(),
@@ -72,7 +74,7 @@ vi.mock("./pairing-store.js", () => ({
   nodeFs: {},
 }));
 
-vi.mock("../messaging/watcher.js", () => ({
+vi.mock('../messaging/watcher.js', () => ({
   startMessageWatcher: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -80,17 +82,17 @@ vi.mock("../messaging/watcher.js", () => ({
  * Helper function to get cache size from either Map or IGroupPermissionCache.
  * Handles the union type used in AccountRuntimeState.groupPermissionCache.
  */
-function getCacheSize(cache: AccountRuntimeState["groupPermissionCache"]): number {
+function getCacheSize(cache: AccountRuntimeState['groupPermissionCache']): number {
   if (!cache) return 0;
   // Map has 'size' as property, IGroupPermissionCache has 'size()' as method
-  if ("size" in cache && typeof cache.size === "number") {
+  if ('size' in cache && typeof cache.size === 'number') {
     return cache.size;
   }
   return (cache as { size(): number }).size();
 }
 
-describe("Account Runtime State Management", () => {
-  const testAccountId = "test-account";
+describe('Account Runtime State Management', () => {
+  const testAccountId = 'test-account';
   // Using testConfig from fixtures (see import at top of file)
 
   // Clean up all states before and after tests
@@ -103,11 +105,13 @@ describe("Account Runtime State Management", () => {
 
     // Reset mock calls and implementation, then set default behavior
     mockApiState.getMeshInfo.mockReset();
-    mockApiState.getMeshInfo.mockResolvedValue(success({
-      connected: true,
-      endpoints: 5,
-      errors: [],
-    }));
+    mockApiState.getMeshInfo.mockResolvedValue(
+      success({
+        connected: true,
+        endpoints: 5,
+        errors: [],
+      })
+    );
   });
 
   afterEach(() => {
@@ -117,8 +121,8 @@ describe("Account Runtime State Management", () => {
     }
   });
 
-  describe("getOrCreateAccountState", () => {
-    it("should create a new state for unknown account", () => {
+  describe('getOrCreateAccountState', () => {
+    it('should create a new state for unknown account', () => {
       const state = getOrCreateAccountState(testAccountId);
 
       expect(state).toBeDefined();
@@ -129,26 +133,26 @@ describe("Account Runtime State Management", () => {
       expect(state.apiClient).toBeNull();
     });
 
-    it("should return existing state for known account", () => {
+    it('should return existing state for known account', () => {
       const state1 = getOrCreateAccountState(testAccountId);
-      state1.lastError = "test error";
+      state1.lastError = 'test error';
 
       const state2 = getOrCreateAccountState(testAccountId);
 
       expect(state2).toBe(state1);
-      expect(state2.lastError).toBe("test error");
+      expect(state2.lastError).toBe('test error');
     });
 
-    it("should create separate states for different accounts", () => {
-      const state1 = getOrCreateAccountState("account1");
-      const state2 = getOrCreateAccountState("account2");
+    it('should create separate states for different accounts', () => {
+      const state1 = getOrCreateAccountState('account1');
+      const state2 = getOrCreateAccountState('account2');
 
       expect(state1).not.toBe(state2);
-      expect(state1.accountId).toBe("account1");
-      expect(state2.accountId).toBe("account2");
+      expect(state1.accountId).toBe('account1');
+      expect(state2.accountId).toBe('account2');
     });
 
-    it("should initialize with default values", () => {
+    it('should initialize with default values', () => {
       const state = getOrCreateAccountState(testAccountId);
 
       expect(state.connected).toBe(false);
@@ -165,7 +169,7 @@ describe("Account Runtime State Management", () => {
       expect(state.pendingPairings).toBeInstanceOf(Map);
     });
 
-    it("should initialize empty collections", () => {
+    it('should initialize empty collections', () => {
       const state = getOrCreateAccountState(testAccountId);
 
       expect(state.messageCallbacks.size).toBe(0);
@@ -173,8 +177,8 @@ describe("Account Runtime State Management", () => {
     });
   });
 
-  describe("removeAccountState", () => {
-    it("should remove existing account state", () => {
+  describe('removeAccountState', () => {
+    it('should remove existing account state', () => {
       getOrCreateAccountState(testAccountId);
       let allStates = getAllAccountStates();
       expect(allStates.has(testAccountId)).toBe(true);
@@ -185,7 +189,7 @@ describe("Account Runtime State Management", () => {
       expect(allStates.has(testAccountId)).toBe(false);
     });
 
-    it("should clear watch interval if set", () => {
+    it('should clear watch interval if set', () => {
       const state = getOrCreateAccountState(testAccountId);
       const mockInterval = setInterval(() => {}, 1000) as unknown as ReturnType<typeof setInterval>;
       state.watchInterval = mockInterval;
@@ -194,7 +198,7 @@ describe("Account Runtime State Management", () => {
       expect(() => removeAccountState(testAccountId)).not.toThrow();
     });
 
-    it("should clear message callbacks", () => {
+    it('should clear message callbacks', () => {
       const state = getOrCreateAccountState(testAccountId);
       const mockCallback = vi.fn();
       state.messageCallbacks.add(mockCallback);
@@ -206,10 +210,10 @@ describe("Account Runtime State Management", () => {
       expect(allStates.has(testAccountId)).toBe(false);
     });
 
-    it("should clear pendingPairings", () => {
+    it('should clear pendingPairings', () => {
       const state = getOrCreateAccountState(testAccountId);
-      state.pendingPairings.set("alice", new Date());
-      state.pendingPairings.set("bob", new Date());
+      state.pendingPairings.set('alice', new Date());
+      state.pendingPairings.set('bob', new Date());
       expect(state.pendingPairings.size).toBe(2);
 
       removeAccountState(testAccountId);
@@ -219,12 +223,12 @@ describe("Account Runtime State Management", () => {
       expect(allStates.has(testAccountId)).toBe(false);
     });
 
-    it("should handle removing unknown account gracefully", () => {
+    it('should handle removing unknown account gracefully', () => {
       // Should not throw
-      expect(() => removeAccountState("unknown-account")).not.toThrow();
+      expect(() => removeAccountState('unknown-account')).not.toThrow();
     });
 
-    it("should handle removing already removed account", () => {
+    it('should handle removing already removed account', () => {
       getOrCreateAccountState(testAccountId);
       removeAccountState(testAccountId);
 
@@ -233,37 +237,36 @@ describe("Account Runtime State Management", () => {
     });
   });
 
-  describe("getAllAccountStates", () => {
-    it("should return empty map when no accounts", () => {
+  describe('getAllAccountStates', () => {
+    it('should return empty map when no accounts', () => {
       const states = getAllAccountStates();
       expect(states.size).toBe(0);
     });
 
-    it("should return all account states", () => {
-      getOrCreateAccountState("account1");
-      getOrCreateAccountState("account2");
-      getOrCreateAccountState("account3");
+    it('should return all account states', () => {
+      getOrCreateAccountState('account1');
+      getOrCreateAccountState('account2');
+      getOrCreateAccountState('account3');
 
       const states = getAllAccountStates();
       expect(states.size).toBe(3);
-      expect(states.has("account1")).toBe(true);
-      expect(states.has("account2")).toBe(true);
-      expect(states.has("account3")).toBe(true);
+      expect(states.has('account1')).toBe(true);
+      expect(states.has('account2')).toBe(true);
+      expect(states.has('account3')).toBe(true);
     });
 
-    it("should reflect changes to state objects", () => {
+    it('should reflect changes to state objects', () => {
       const state = getOrCreateAccountState(testAccountId);
-      state.lastError = "test error";
+      state.lastError = 'test error';
 
       const states = getAllAccountStates();
       const retrievedState = states.get(testAccountId);
-      expect(retrievedState?.lastError).toBe("test error");
+      expect(retrievedState?.lastError).toBe('test error');
     });
   });
 
-  describe("initializeRuntime", () => {
-
-    it("should initialize runtime for valid config", async () => {
+  describe('initializeRuntime', () => {
+    it('should initialize runtime for valid config', async () => {
       const initialized = await initializeRuntime(testConfig, testAccountId);
 
       expect(initialized).toBe(true);
@@ -275,14 +278,14 @@ describe("Account Runtime State Management", () => {
       expect(state?.apiClient).toBeDefined();
     });
 
-    it("should set config on state", async () => {
+    it('should set config on state', async () => {
       await initializeRuntime(testConfig, testAccountId);
 
       const state = getAllAccountStates().get(testAccountId);
       expect(state?.config).toBe(testConfig);
     });
 
-    it("should set lastStartAt when connected", async () => {
+    it('should set lastStartAt when connected', async () => {
       await initializeRuntime(testConfig, testAccountId);
 
       const state = getAllAccountStates().get(testAccountId);
@@ -290,13 +293,15 @@ describe("Account Runtime State Management", () => {
       expect(state?.lastStartAt).toBeNull();
     });
 
-    it("should handle mesh connection failure", async () => {
+    it('should handle mesh connection failure', async () => {
       // Override mock to return disconnected state wrapped in success Result
-      mockApiState.getMeshInfo.mockResolvedValue(success({
-        connected: false,
-        endpoints: 0,
-        errors: [],
-      }));
+      mockApiState.getMeshInfo.mockResolvedValue(
+        success({
+          connected: false,
+          endpoints: 0,
+          errors: [],
+        })
+      );
 
       const initialized = await initializeRuntime(testConfig, testAccountId);
 
@@ -310,7 +315,7 @@ describe("Account Runtime State Management", () => {
       expect(state?.lastError).toBeDefined();
     });
 
-    it("should retry mesh connection check", async () => {
+    it('should retry mesh connection check', async () => {
       let attempts = 0;
       mockApiState.getMeshInfo.mockImplementation(async () => {
         attempts++;
@@ -327,9 +332,8 @@ describe("Account Runtime State Management", () => {
     });
   });
 
-  describe("stopRuntime", () => {
-
-    it("should stop runtime for account", async () => {
+  describe('stopRuntime', () => {
+    it('should stop runtime for account', async () => {
       // First initialize
       await initializeRuntime(testConfig, testAccountId);
       const state = getAllAccountStates().get(testAccountId);
@@ -344,7 +348,7 @@ describe("Account Runtime State Management", () => {
       expect(stoppedState?.apiClient).toBeNull();
     });
 
-    it("should clear watch interval if set", async () => {
+    it('should clear watch interval if set', async () => {
       await initializeRuntime(testConfig, testAccountId);
       const state = getAllAccountStates().get(testAccountId);
 
@@ -356,7 +360,7 @@ describe("Account Runtime State Management", () => {
       expect(state!.watchInterval).toBeNull();
     });
 
-    it("should clear message callbacks", async () => {
+    it('should clear message callbacks', async () => {
       await initializeRuntime(testConfig, testAccountId);
       const state = getAllAccountStates().get(testAccountId);
       const mockCallback = vi.fn();
@@ -367,11 +371,11 @@ describe("Account Runtime State Management", () => {
       expect(state!.messageCallbacks.size).toBe(0);
     });
 
-    it("should clear pendingPairings", async () => {
+    it('should clear pendingPairings', async () => {
       await initializeRuntime(testConfig, testAccountId);
       const state = getAllAccountStates().get(testAccountId);
-      state!.pendingPairings.set("alice", new Date());
-      state!.pendingPairings.set("bob", new Date());
+      state!.pendingPairings.set('alice', new Date());
+      state!.pendingPairings.set('bob', new Date());
       expect(state!.pendingPairings.size).toBe(2);
 
       await stopRuntime(testAccountId);
@@ -379,7 +383,7 @@ describe("Account Runtime State Management", () => {
       expect(state!.pendingPairings.size).toBe(0);
     });
 
-    it("should set lastStopAt", async () => {
+    it('should set lastStopAt', async () => {
       await initializeRuntime(testConfig, testAccountId);
 
       const beforeStop = new Date();
@@ -390,8 +394,8 @@ describe("Account Runtime State Management", () => {
       expect(state!.lastStopAt!.getTime()).toBeGreaterThanOrEqual(beforeStop.getTime());
     });
 
-    it("should flush message state store", async () => {
-      const { getAccountMessageStateStore, disposeMessageStateStore } = await import("./store.js");
+    it('should flush message state store', async () => {
+      const { getAccountMessageStateStore, disposeMessageStateStore } = await import('./store.js');
       const store = {
         flush: vi.fn(),
         flushAsync: vi.fn().mockResolvedValue(undefined),
@@ -414,12 +418,12 @@ describe("Account Runtime State Management", () => {
       expect(store.flush).toHaveBeenCalled();
     });
 
-    it("should handle stopping unknown account gracefully", async () => {
+    it('should handle stopping unknown account gracefully', async () => {
       // Should not throw
-      await expect(stopRuntime("unknown-account")).resolves.toBeUndefined();
+      await expect(stopRuntime('unknown-account')).resolves.toBeUndefined();
     });
 
-    it("should handle stopping already stopped account", async () => {
+    it('should handle stopping already stopped account', async () => {
       await initializeRuntime(testConfig, testAccountId);
       await stopRuntime(testAccountId);
 
@@ -428,28 +432,28 @@ describe("Account Runtime State Management", () => {
     });
   });
 
-  describe("AccountRuntimeState interface", () => {
-    it("should have all required properties", () => {
+  describe('AccountRuntimeState interface', () => {
+    it('should have all required properties', () => {
       const state = getOrCreateAccountState(testAccountId);
 
-      expect(state).toHaveProperty("accountId");
-      expect(state).toHaveProperty("config");
-      expect(state).toHaveProperty("apiClient");
-      expect(state).toHaveProperty("connected");
-      expect(state).toHaveProperty("meshConnected");
-      expect(state).toHaveProperty("lastError");
-      expect(state).toHaveProperty("lastStartAt");
-      expect(state).toHaveProperty("lastStopAt");
-      expect(state).toHaveProperty("lastInboundAt");
-      expect(state).toHaveProperty("lastOutboundAt");
-      expect(state).toHaveProperty("peerCount");
-      expect(state).toHaveProperty("messageCallbacks");
-      expect(state).toHaveProperty("watchInterval");
-      expect(state).toHaveProperty("watchErrorCount");
-      expect(state).toHaveProperty("pendingPairings");
+      expect(state).toHaveProperty('accountId');
+      expect(state).toHaveProperty('config');
+      expect(state).toHaveProperty('apiClient');
+      expect(state).toHaveProperty('connected');
+      expect(state).toHaveProperty('meshConnected');
+      expect(state).toHaveProperty('lastError');
+      expect(state).toHaveProperty('lastStartAt');
+      expect(state).toHaveProperty('lastStopAt');
+      expect(state).toHaveProperty('lastInboundAt');
+      expect(state).toHaveProperty('lastOutboundAt');
+      expect(state).toHaveProperty('peerCount');
+      expect(state).toHaveProperty('messageCallbacks');
+      expect(state).toHaveProperty('watchInterval');
+      expect(state).toHaveProperty('watchErrorCount');
+      expect(state).toHaveProperty('pendingPairings');
     });
 
-    it("should allow modification of state properties", () => {
+    it('should allow modification of state properties', () => {
       const state = getOrCreateAccountState(testAccountId);
 
       state.connected = true;
@@ -466,34 +470,33 @@ describe("Account Runtime State Management", () => {
     });
   });
 
-  describe("multi-account management", () => {
+  describe('multi-account management', () => {
+    it('should manage multiple independent accounts', async () => {
+      const config1 = { ...testConfig, username: 'bot1' };
+      const config2 = { ...testConfig, username: 'bot2' };
 
-    it("should manage multiple independent accounts", async () => {
-      const config1 = { ...testConfig, username: "bot1" };
-      const config2 = { ...testConfig, username: "bot2" };
+      await initializeRuntime(config1, 'account1');
+      await initializeRuntime(config2, 'account2');
 
-      await initializeRuntime(config1, "account1");
-      await initializeRuntime(config2, "account2");
+      const state1 = getAllAccountStates().get('account1');
+      const state2 = getAllAccountStates().get('account2');
 
-      const state1 = getAllAccountStates().get("account1");
-      const state2 = getAllAccountStates().get("account2");
-
-      expect(state1?.config.username).toBe("bot1");
-      expect(state2?.config.username).toBe("bot2");
+      expect(state1?.config.username).toBe('bot1');
+      expect(state2?.config.username).toBe('bot2');
       expect(state1).not.toBe(state2);
     });
 
-    it("should stop one account without affecting others", async () => {
-      const config1 = { ...testConfig, username: "bot1" };
-      const config2 = { ...testConfig, username: "bot2" };
+    it('should stop one account without affecting others', async () => {
+      const config1 = { ...testConfig, username: 'bot1' };
+      const config2 = { ...testConfig, username: 'bot2' };
 
-      await initializeRuntime(config1, "account1");
-      await initializeRuntime(config2, "account2");
+      await initializeRuntime(config1, 'account1');
+      await initializeRuntime(config2, 'account2');
 
-      await stopRuntime("account1");
+      await stopRuntime('account1');
 
-      const state1 = getAllAccountStates().get("account1");
-      const state2 = getAllAccountStates().get("account2");
+      const state1 = getAllAccountStates().get('account1');
+      const state2 = getAllAccountStates().get('account2');
 
       expect(state1?.connected).toBe(false);
       expect(state2?.connected).toBe(true);
@@ -504,8 +507,8 @@ describe("Account Runtime State Management", () => {
   // Race Condition Tests - Concurrent Account Initialization
   // ============================================================================
 
-  describe("concurrent account initialization", () => {
-    it("should handle concurrent getOrCreateAccountState calls", async () => {
+  describe('concurrent account initialization', () => {
+    it('should handle concurrent getOrCreateAccountState calls', async () => {
       const concurrentCalls = 10;
       const results: AccountRuntimeState[] = [];
 
@@ -513,7 +516,7 @@ describe("Account Runtime State Management", () => {
       const promises = Array(concurrentCalls)
         .fill(null)
         .map(() => {
-          const state = getOrCreateAccountState("race-test-account");
+          const state = getOrCreateAccountState('race-test-account');
           results.push(state);
           return Promise.resolve(state);
         });
@@ -525,13 +528,13 @@ describe("Account Runtime State Management", () => {
       expect(uniqueStates.size).toBe(1);
     });
 
-    it("should handle concurrent initializeRuntime for same account", async () => {
-      const accountId = "concurrent-init-account";
+    it('should handle concurrent initializeRuntime for same account', async () => {
+      const accountId = 'concurrent-init-account';
 
       // Simulate two concurrent initialization calls
       const [result1, result2] = await Promise.all([
-        initializeRuntime({ ...testConfig, username: "bot1" }, accountId),
-        initializeRuntime({ ...testConfig, username: "bot2" }, accountId),
+        initializeRuntime({ ...testConfig, username: 'bot1' }, accountId),
+        initializeRuntime({ ...testConfig, username: 'bot2' }, accountId),
       ]);
 
       // Both should succeed
@@ -543,24 +546,21 @@ describe("Account Runtime State Management", () => {
       expect(state?.config.username).toMatch(/^bot[12]$/);
     });
 
-    it("should handle concurrent stopRuntime calls", async () => {
-      const accountId = "concurrent-stop-account";
+    it('should handle concurrent stopRuntime calls', async () => {
+      const accountId = 'concurrent-stop-account';
 
       await initializeRuntime(testConfig, accountId);
 
       // Simulate two concurrent stop calls
-      await Promise.all([
-        stopRuntime(accountId),
-        stopRuntime(accountId),
-      ]);
+      await Promise.all([stopRuntime(accountId), stopRuntime(accountId)]);
 
       // Should not throw, state should be stopped
       const state = getAllAccountStates().get(accountId);
       expect(state?.connected).toBe(false);
     });
 
-    it("should handle concurrent removeAccountState calls", async () => {
-      const accountId = "concurrent-remove-account";
+    it('should handle concurrent removeAccountState calls', async () => {
+      const accountId = 'concurrent-remove-account';
 
       getOrCreateAccountState(accountId);
 
@@ -575,8 +575,8 @@ describe("Account Runtime State Management", () => {
       expect(states.has(accountId)).toBe(false);
     });
 
-    it("should handle interleaved initialize and stop", async () => {
-      const accountId = "interleaved-account";
+    it('should handle interleaved initialize and stop', async () => {
+      const accountId = 'interleaved-account';
 
       // Start multiple init/stop in sequence rapidly
       await initializeRuntime(testConfig, accountId);
@@ -590,9 +590,9 @@ describe("Account Runtime State Management", () => {
     });
   });
 
-  describe("account removal during operations", () => {
-    it("should handle removal while watch interval is active", async () => {
-      const accountId = "remove-during-watch";
+  describe('account removal during operations', () => {
+    it('should handle removal while watch interval is active', async () => {
+      const accountId = 'remove-during-watch';
 
       // Create account and simulate watch interval
       const state = getOrCreateAccountState(accountId);
@@ -609,14 +609,14 @@ describe("Account Runtime State Management", () => {
       clearInterval(state.watchInterval);
     });
 
-    it("should handle removal while pending pairings exist", async () => {
-      const accountId = "remove-during-pairing";
+    it('should handle removal while pending pairings exist', async () => {
+      const accountId = 'remove-during-pairing';
 
       // Create account with pending pairings
       const state = getOrCreateAccountState(accountId);
-      state.pendingPairings.set("alice", new Date());
-      state.pendingPairings.set("bob", new Date());
-      state.pendingPairings.set("charlie", new Date());
+      state.pendingPairings.set('alice', new Date());
+      state.pendingPairings.set('bob', new Date());
+      state.pendingPairings.set('charlie', new Date());
 
       // Verify pairings exist
       expect(state.pendingPairings.size).toBe(3);
@@ -628,8 +628,8 @@ describe("Account Runtime State Management", () => {
       expect(getAllAccountStates().has(accountId)).toBe(false);
     });
 
-    it("should handle removal while message callbacks are registered", async () => {
-      const accountId = "remove-during-callback";
+    it('should handle removal while message callbacks are registered', async () => {
+      const accountId = 'remove-during-callback';
 
       // Create account with message callbacks
       const state = getOrCreateAccountState(accountId);
@@ -648,13 +648,13 @@ describe("Account Runtime State Management", () => {
       expect(getAllAccountStates().has(accountId)).toBe(false);
     });
 
-    it("should handle removal while allowFromCache is populated", async () => {
-      const accountId = "remove-during-cache";
+    it('should handle removal while allowFromCache is populated', async () => {
+      const accountId = 'remove-during-cache';
 
       // Create account with cache
       const state = getOrCreateAccountState(accountId);
       state.allowFromCache = {
-        value: ["alice", "bob"],
+        value: ['alice', 'bob'],
         timestamp: Date.now(),
       };
 
@@ -668,25 +668,25 @@ describe("Account Runtime State Management", () => {
       expect(getAllAccountStates().has(accountId)).toBe(false);
     });
 
-    it("should handle removal while groupPermissionCache is populated", async () => {
-      const accountId = "remove-during-group-cache";
+    it('should handle removal while groupPermissionCache is populated', async () => {
+      const accountId = 'remove-during-group-cache';
 
       // Create account with group permission cache
       const state = getOrCreateAccountState(accountId);
       // Populate cache using set() method
-      state.groupPermissionCache?.set("admin/test-group", {
-        creator: "admin",
-        group: "test-group",
-        groupPolicy: "open",
+      state.groupPermissionCache?.set('admin/test-group', {
+        creator: 'admin',
+        group: 'test-group',
+        groupPolicy: 'open',
         requireMention: false,
         allowFrom: [],
       });
-      state.groupPermissionCache?.set("user/other-group", {
-        creator: "user",
-        group: "other-group",
-        groupPolicy: "allowlist",
+      state.groupPermissionCache?.set('user/other-group', {
+        creator: 'user',
+        group: 'other-group',
+        groupPolicy: 'allowlist',
         requireMention: true,
-        allowFrom: ["alice", "bob"],
+        allowFrom: ['alice', 'bob'],
       });
 
       // Verify cache exists
@@ -699,8 +699,8 @@ describe("Account Runtime State Management", () => {
       expect(getAllAccountStates().has(accountId)).toBe(false);
     });
 
-    it("should handle concurrent removal and getOrCreate", async () => {
-      const accountId = "concurrent-remove-create";
+    it('should handle concurrent removal and getOrCreate', async () => {
+      const accountId = 'concurrent-remove-create';
 
       // Create account first
       getOrCreateAccountState(accountId);
@@ -716,8 +716,8 @@ describe("Account Runtime State Management", () => {
       expect(states.has(accountId)).toBe(true);
     });
 
-    it("should handle rapid sequential remove and recreate", async () => {
-      const accountId = "sequential-remove-create";
+    it('should handle rapid sequential remove and recreate', async () => {
+      const accountId = 'sequential-remove-create';
 
       // Rapidly create and remove multiple times
       for (let i = 0; i < 10; i++) {
@@ -729,141 +729,141 @@ describe("Account Runtime State Management", () => {
       expect(getAllAccountStates().has(accountId)).toBe(false);
     });
 
-    it("should handle removal of non-existent account gracefully", () => {
+    it('should handle removal of non-existent account gracefully', () => {
       // Remove non-existent account should not throw
-      expect(() => removeAccountState("non-existent-account")).not.toThrow();
-      expect(getAllAccountStates().has("non-existent-account")).toBe(false);
+      expect(() => removeAccountState('non-existent-account')).not.toThrow();
+      expect(getAllAccountStates().has('non-existent-account')).toBe(false);
     });
   });
 });
 
-describe("cleanupExpiredPairings", () => {
+describe('cleanupExpiredPairings', () => {
   beforeEach(() => {
-    removeAccountState("cleanup-test");
+    removeAccountState('cleanup-test');
   });
 
   afterEach(() => {
-    removeAccountState("cleanup-test");
+    removeAccountState('cleanup-test');
   });
 
-  it("should return 0 when no accounts exist", () => {
+  it('should return 0 when no accounts exist', () => {
     const result = cleanupExpiredPairings();
     expect(result).toBe(0);
   });
 
-  it("should not remove fresh pairings", () => {
-    const state = getOrCreateAccountState("cleanup-test");
-    state.pendingPairings.set("alice", new Date());
+  it('should not remove fresh pairings', () => {
+    const state = getOrCreateAccountState('cleanup-test');
+    state.pendingPairings.set('alice', new Date());
 
     const result = cleanupExpiredPairings();
     expect(result).toBe(0);
     expect(state.pendingPairings.size).toBe(1);
   });
 
-  it("should remove expired pairings", () => {
-    const state = getOrCreateAccountState("cleanup-test");
+  it('should remove expired pairings', () => {
+    const state = getOrCreateAccountState('cleanup-test');
     // Add expired pairing (older than 1 hour)
     const expiredTime = new Date(Date.now() - 2 * 60 * 60 * 1000);
-    state.pendingPairings.set("alice", expiredTime);
+    state.pendingPairings.set('alice', expiredTime);
 
     const result = cleanupExpiredPairings();
     expect(result).toBe(1);
     expect(state.pendingPairings.size).toBe(0);
   });
 
-  it("should only remove expired pairings from each account", () => {
-    const state = getOrCreateAccountState("cleanup-test");
+  it('should only remove expired pairings from each account', () => {
+    const state = getOrCreateAccountState('cleanup-test');
     // Add both fresh and expired
-    state.pendingPairings.set("alice", new Date());
-    state.pendingPairings.set("bob", new Date(Date.now() - 2 * 60 * 60 * 1000));
+    state.pendingPairings.set('alice', new Date());
+    state.pendingPairings.set('bob', new Date(Date.now() - 2 * 60 * 60 * 1000));
 
     const result = cleanupExpiredPairings();
     expect(result).toBe(1);
     expect(state.pendingPairings.size).toBe(1);
-    expect(state.pendingPairings.has("alice")).toBe(true);
-    expect(state.pendingPairings.has("bob")).toBe(false);
+    expect(state.pendingPairings.has('alice')).toBe(true);
+    expect(state.pendingPairings.has('bob')).toBe(false);
   });
 });
 
-describe("clearAllowFromCache", () => {
+describe('clearAllowFromCache', () => {
   beforeEach(() => {
-    removeAccountState("cache-test");
+    removeAccountState('cache-test');
   });
 
   afterEach(() => {
-    removeAccountState("cache-test");
+    removeAccountState('cache-test');
   });
 
-  it("should clear allowFromCache for existing account", () => {
-    const state = getOrCreateAccountState("cache-test");
-    state.allowFromCache = { value: ["alice", "bob"], timestamp: Date.now() };
+  it('should clear allowFromCache for existing account', () => {
+    const state = getOrCreateAccountState('cache-test');
+    state.allowFromCache = { value: ['alice', 'bob'], timestamp: Date.now() };
 
-    clearAllowFromCache("cache-test");
+    clearAllowFromCache('cache-test');
 
     expect(state.allowFromCache).toBeNull();
   });
 
-  it("should handle non-existent account gracefully", () => {
-    expect(() => clearAllowFromCache("non-existent")).not.toThrow();
+  it('should handle non-existent account gracefully', () => {
+    expect(() => clearAllowFromCache('non-existent')).not.toThrow();
   });
 });
 
-describe("getGroupPermissionCached", () => {
+describe('getGroupPermissionCached', () => {
   beforeEach(() => {
-    removeAccountState("group-perm-test");
+    removeAccountState('group-perm-test');
   });
 
   afterEach(() => {
-    removeAccountState("group-perm-test");
+    removeAccountState('group-perm-test');
   });
 
-  it("should return permissions without cache when no state exists", () => {
-    const result = getGroupPermissionCached("non-existent", "creator", "group", testConfig);
+  it('should return permissions without cache when no state exists', () => {
+    const result = getGroupPermissionCached('non-existent', 'creator', 'group', testConfig);
     expect(result).toBeDefined();
   });
 
-  it("should cache permissions after first call", () => {
-    const state = getOrCreateAccountState("group-perm-test");
+  it('should cache permissions after first call', () => {
+    const state = getOrCreateAccountState('group-perm-test');
 
-    const result1 = getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
-    const result2 = getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
+    const result1 = getGroupPermissionCached('group-perm-test', 'creator', 'group1', testConfig);
+    const result2 = getGroupPermissionCached('group-perm-test', 'creator', 'group1', testConfig);
 
     // Second call should use cache
-    expect(state.groupPermissionCache?.has("creator/group1")).toBe(true);
+    expect(state.groupPermissionCache?.has('creator/group1')).toBe(true);
     expect(result1).toEqual(result2);
   });
 
-  it("should handle different groups separately", () => {
-    const state = getOrCreateAccountState("group-perm-test");
+  it('should handle different groups separately', () => {
+    const state = getOrCreateAccountState('group-perm-test');
 
-    getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
-    getGroupPermissionCached("group-perm-test", "creator", "group2", testConfig);
+    getGroupPermissionCached('group-perm-test', 'creator', 'group1', testConfig);
+    getGroupPermissionCached('group-perm-test', 'creator', 'group2', testConfig);
 
     expect(getCacheSize(state.groupPermissionCache)).toBe(2);
   });
 });
 
-describe("clearGroupPermissionCache", () => {
+describe('clearGroupPermissionCache', () => {
   beforeEach(() => {
-    removeAccountState("clear-group-test");
+    removeAccountState('clear-group-test');
   });
 
   afterEach(() => {
-    removeAccountState("clear-group-test");
+    removeAccountState('clear-group-test');
   });
 
-  it("should clear group permission cache for existing account", () => {
-    const state = getOrCreateAccountState("clear-group-test");
+  it('should clear group permission cache for existing account', () => {
+    const state = getOrCreateAccountState('clear-group-test');
 
     // Populate cache
-    getGroupPermissionCached("clear-group-test", "creator", "group1", testConfig);
+    getGroupPermissionCached('clear-group-test', 'creator', 'group1', testConfig);
     expect(getCacheSize(state.groupPermissionCache)).toBe(1);
 
-    clearGroupPermissionCache("clear-group-test");
+    clearGroupPermissionCache('clear-group-test');
     expect(getCacheSize(state.groupPermissionCache)).toBe(0);
   });
 
-  it("should handle non-existent account gracefully", () => {
-    expect(() => clearGroupPermissionCache("non-existent")).not.toThrow();
+  it('should handle non-existent account gracefully', () => {
+    expect(() => clearGroupPermissionCache('non-existent')).not.toThrow();
   });
 });

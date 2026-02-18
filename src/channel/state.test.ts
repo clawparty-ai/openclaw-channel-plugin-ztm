@@ -1,15 +1,15 @@
 // Unit tests for Channel State Management
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { buildAccountSnapshot } from "./state.js";
-import type { ResolvedZTMChatAccount } from "./config.js";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { buildAccountSnapshot } from './state.js';
+import type { ResolvedZTMChatAccount } from './config.js';
 
 // Mock the runtime state module
-vi.mock("../runtime/state.js", () => ({
+vi.mock('../runtime/state.js', () => ({
   getAllAccountStates: vi.fn(() => new Map()),
 }));
 
-describe("buildAccountSnapshot", () => {
+describe('buildAccountSnapshot', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -17,41 +17,41 @@ describe("buildAccountSnapshot", () => {
   const createMockAccount = (
     overrides: Partial<ResolvedZTMChatAccount> = {}
   ): ResolvedZTMChatAccount => ({
-    accountId: "test-account",
-    username: "test-bot",
+    accountId: 'test-account',
+    username: 'test-bot',
     enabled: true,
     config: {
-      agentUrl: "https://example.com:7777",
-      permitUrl: "https://example.com/permit",
-      permitSource: "server",
-      meshName: "test-mesh",
-      username: "test-bot",
-      dmPolicy: "pairing",
+      agentUrl: 'https://example.com:7777',
+      permitUrl: 'https://example.com/permit',
+      permitSource: 'server',
+      meshName: 'test-mesh',
+      username: 'test-bot',
+      dmPolicy: 'pairing',
       enableGroups: false,
       autoReply: true,
-      messagePath: "/shared",
+      messagePath: '/shared',
     },
     ...overrides,
   });
 
-  describe("basic snapshot properties", () => {
-    it("should return accountId from account", () => {
-      const account = createMockAccount({ accountId: "my-account" });
+  describe('basic snapshot properties', () => {
+    it('should return accountId from account', () => {
+      const account = createMockAccount({ accountId: 'my-account' });
 
       const snapshot = buildAccountSnapshot({ account });
 
-      expect(snapshot.accountId).toBe("my-account");
+      expect(snapshot.accountId).toBe('my-account');
     });
 
-    it("should return username as name", () => {
-      const account = createMockAccount({ username: "my-bot" });
+    it('should return username as name', () => {
+      const account = createMockAccount({ username: 'my-bot' });
 
       const snapshot = buildAccountSnapshot({ account });
 
-      expect(snapshot.name).toBe("my-bot");
+      expect(snapshot.name).toBe('my-bot');
     });
 
-    it("should return enabled status", () => {
+    it('should return enabled status', () => {
       const account = createMockAccount({ enabled: true });
 
       const snapshot = buildAccountSnapshot({ account });
@@ -59,7 +59,7 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.enabled).toBe(true);
     });
 
-    it("should return enabled as false when disabled", () => {
+    it('should return enabled as false when disabled', () => {
       const account = createMockAccount({ enabled: false });
 
       const snapshot = buildAccountSnapshot({ account });
@@ -68,19 +68,19 @@ describe("buildAccountSnapshot", () => {
     });
   });
 
-  describe("configured status", () => {
-    it("should return configured as true for valid config", () => {
+  describe('configured status', () => {
+    it('should return configured as true for valid config', () => {
       const account = createMockAccount({
         config: {
-          agentUrl: "https://example.com:7777",
-          permitUrl: "https://example.com/permit",
-          permitSource: "server",
-          meshName: "test-mesh",
-          username: "test-bot",
-          dmPolicy: "pairing",
+          agentUrl: 'https://example.com:7777',
+          permitUrl: 'https://example.com/permit',
+          permitSource: 'server',
+          meshName: 'test-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
           enableGroups: false,
           autoReply: true,
-          messagePath: "/shared",
+          messagePath: '/shared',
         },
       });
 
@@ -89,18 +89,18 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.configured).toBe(true);
     });
 
-    it("should return configured as false for missing agentUrl", () => {
+    it('should return configured as false for missing agentUrl', () => {
       const account = createMockAccount({
         config: {
-          agentUrl: "",
-          permitUrl: "https://example.com/permit",
-          permitSource: "server",
-          meshName: "test-mesh",
-          username: "test-bot",
-          dmPolicy: "pairing",
+          agentUrl: '',
+          permitUrl: 'https://example.com/permit',
+          permitSource: 'server',
+          meshName: 'test-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
           enableGroups: false,
           autoReply: true,
-          messagePath: "/shared",
+          messagePath: '/shared',
         },
       });
 
@@ -110,9 +110,9 @@ describe("buildAccountSnapshot", () => {
     });
   });
 
-  describe("runtime state integration", () => {
-    it("should return running false when no state exists", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+  describe('runtime state integration', () => {
+    it('should return running false when no state exists', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       (getAllAccountStates as any).mockReturnValue(new Map());
 
       const account = createMockAccount();
@@ -122,11 +122,11 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.running).toBe(false);
     });
 
-    it("should return connected true when state shows connected", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return connected true when state shows connected', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       const mockStates = new Map([
         [
-          "test-account",
+          'test-account',
           {
             connected: true,
             meshConnected: false,
@@ -143,11 +143,11 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.running).toBe(true);
     });
 
-    it("should return meshConnected from state", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return meshConnected from state', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       const mockStates = new Map([
         [
-          "test-account",
+          'test-account',
           {
             connected: true,
             meshConnected: true,
@@ -165,11 +165,11 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.peerCount).toBe(5);
     });
 
-    it("should return default values when state is incomplete", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return default values when state is incomplete', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       const mockStates = new Map([
         [
-          "test-account",
+          'test-account',
           {
             connected: true,
             // meshConnected not defined
@@ -186,9 +186,9 @@ describe("buildAccountSnapshot", () => {
     });
   });
 
-  describe("timestamp handling", () => {
-    it("should return null for lastStartAt when not set", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+  describe('timestamp handling', () => {
+    it('should return null for lastStartAt when not set', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       (getAllAccountStates as any).mockReturnValue(new Map());
 
       const account = createMockAccount();
@@ -198,12 +198,12 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.lastStartAt).toBeNull();
     });
 
-    it("should return lastStartAt from state", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return lastStartAt from state', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       const startTime = Date.now() - 60000;
       const mockStates = new Map([
         [
-          "test-account",
+          'test-account',
           {
             lastStartAt: startTime,
           },
@@ -218,8 +218,8 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.lastStartAt).toBe(startTime);
     });
 
-    it("should return null for lastStopAt when not set", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return null for lastStopAt when not set', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       (getAllAccountStates as any).mockReturnValue(new Map());
 
       const account = createMockAccount();
@@ -229,13 +229,13 @@ describe("buildAccountSnapshot", () => {
       expect(snapshot.lastStopAt).toBeNull();
     });
 
-    it("should return lastError from state", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return lastError from state', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       const mockStates = new Map([
         [
-          "test-account",
+          'test-account',
           {
-            lastError: "Connection failed",
+            lastError: 'Connection failed',
           },
         ],
       ]);
@@ -245,11 +245,11 @@ describe("buildAccountSnapshot", () => {
 
       const snapshot = buildAccountSnapshot({ account });
 
-      expect(snapshot.lastError).toBe("Connection failed");
+      expect(snapshot.lastError).toBe('Connection failed');
     });
 
-    it("should return null for lastError when not set", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return null for lastError when not set', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       (getAllAccountStates as any).mockReturnValue(new Map());
 
       const account = createMockAccount();
@@ -260,34 +260,28 @@ describe("buildAccountSnapshot", () => {
     });
   });
 
-  describe("account-specific state", () => {
-    it("should look up state by accountId", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+  describe('account-specific state', () => {
+    it('should look up state by accountId', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       const mockStates = new Map([
-        [
-          "other-account",
-          { connected: true },
-        ],
-        [
-          "test-account",
-          { connected: false },
-        ],
+        ['other-account', { connected: true }],
+        ['test-account', { connected: false }],
       ]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
 
-      const account = createMockAccount({ accountId: "test-account" });
+      const account = createMockAccount({ accountId: 'test-account' });
 
       const snapshot = buildAccountSnapshot({ account });
 
       expect(snapshot.running).toBe(false);
     });
 
-    it("should return defaults for non-existent account", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
-      const mockStates = new Map([["other-account", { connected: true }]]);
+    it('should return defaults for non-existent account', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      const mockStates = new Map([['other-account', { connected: true }]]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
 
-      const account = createMockAccount({ accountId: "non-existent" });
+      const account = createMockAccount({ accountId: 'non-existent' });
 
       const snapshot = buildAccountSnapshot({ account });
 

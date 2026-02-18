@@ -11,16 +11,16 @@ export interface ZTMChatMessage {
   peer: string;
   thread?: string;
   isGroup?: boolean;
-  groupName?: string;      // Display name (e.g., "Group-test1")
-  groupId?: string;        // Group ID (e.g., "98cfeaa5-...")
+  groupName?: string; // Display name (e.g., "Group-test1")
+  groupId?: string; // Group ID (e.g., "98cfeaa5-...")
   groupCreator?: string;
 }
 
 // Message processing result
 export interface MessageCheckResult {
   allowed: boolean;
-  reason?: "allowed" | "denied" | "pending" | "whitelisted";
-  action?: "process" | "ignore" | "request_pairing";
+  reason?: 'allowed' | 'denied' | 'pending' | 'whitelisted';
+  action?: 'process' | 'ignore' | 'request_pairing';
 }
 
 // Raw ZTM message format (from API)

@@ -50,12 +50,16 @@ export const err = failure;
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 /** Type guard: returns true if the Result is successful */
-export function isSuccess<T, E extends Error>(result: Result<T, E>): result is { ok: true; value: T } {
+export function isSuccess<T, E extends Error>(
+  result: Result<T, E>
+): result is { ok: true; value: T } {
   return result.ok === true;
 }
 
 /** Type guard: returns true if the Result is a failure */
-export function isFailure<T, E extends Error>(result: Result<T, E>): result is { ok: false; error: E } {
+export function isFailure<T, E extends Error>(
+  result: Result<T, E>
+): result is { ok: false; error: E } {
   return result.ok === false;
 }
 
@@ -71,7 +75,7 @@ export function unwrap<T, E>(result: Result<T, E>): T {
   if (result.ok && result.value !== undefined) {
     return result.value;
   }
-  throw result.error ?? new Error("Result was None");
+  throw result.error ?? new Error('Result was None');
 }
 
 /**
@@ -149,10 +153,10 @@ export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 /** Connection status for ZTM agents */
-export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 /** Message direction (inbound received, outbound sent) */
-export type MessageDirection = "inbound" | "outbound";
+export type MessageDirection = 'inbound' | 'outbound';
 
 /** Pairing status for peer authentication */
-export type PairingStatus = "none" | "pending" | "approved" | "rejected";
+export type PairingStatus = 'none' | 'pending' | 'approved' | 'rejected';

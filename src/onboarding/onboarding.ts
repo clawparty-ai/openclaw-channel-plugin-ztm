@@ -1,12 +1,12 @@
 // ZTM Chat Onboarding Wizard
 // Interactive CLI wizard for configuring the ZTM Chat channel
 
-import * as readline from "readline";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { DMPolicy, GroupPolicy } from "../config/schema.js";
-import { isValidUrl, IDENTIFIER_PATTERN } from "../utils/validation.js";
-import { extractErrorMessage } from "../utils/error.js";
-import { getZTMRuntime, hasZTMRuntime } from "../runtime/index.js";
+import * as readline from 'readline';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { DMPolicy, GroupPolicy } from '../config/schema.js';
+import { isValidUrl, IDENTIFIER_PATTERN } from '../utils/validation.js';
+import { extractErrorMessage } from '../utils/error.js';
+import { getZTMRuntime, hasZTMRuntime } from '../runtime/index.js';
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -16,7 +16,7 @@ interface WizardConfig extends Partial<ZTMChatConfig> {
   autoReply?: boolean;
   allowFrom?: string[];
   dmPolicy?: DMPolicy;
-  permitSource?: "server" | "file";
+  permitSource?: 'server' | 'file';
   permitUrl?: string;
   permitFilePath?: string;
 }
@@ -56,14 +56,12 @@ export class ConsolePrompts implements WizardPrompts {
   }
 
   private async _ask(question: string, defaultValue?: string, isPassword = false): Promise<string> {
-    const prompt = defaultValue
-      ? `${question} [${defaultValue}]: `
-      : `${question}: `;
+    const prompt = defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `;
 
     return new Promise((resolve, reject) => {
-      this.rl.question(prompt, (answer) => {
-        if (answer.trim() === "") {
-          resolve(defaultValue || "");
+      this.rl.question(prompt, answer => {
+        if (answer.trim() === '') {
+          resolve(defaultValue || '');
         } else {
           resolve(isPassword ? answer : answer.trim());
         }
@@ -80,9 +78,9 @@ export class ConsolePrompts implements WizardPrompts {
   }
 
   async confirm(question: string, defaultYes = false): Promise<boolean> {
-    const suffix = defaultYes ? " (Y/n): " : " (y/N): ";
-    const answer = await this._ask(question + suffix, defaultYes ? "y" : "n");
-    return answer.toLowerCase().startsWith("y");
+    const suffix = defaultYes ? ' (Y/n): ' : ' (y/N): ';
+    const answer = await this._ask(question + suffix, defaultYes ? 'y' : 'n');
+    return answer.toLowerCase().startsWith('y');
   }
 
   async select<T>(question: string, options: readonly T[], labels: string[]): Promise<T> {
@@ -92,23 +90,23 @@ export class ConsolePrompts implements WizardPrompts {
     for (let i = 0; i < options.length; i++) {
       console.log(`  [${i + 1}] ${labels[i] || String(options[i])}`);
     }
-    console.log("  [0] Cancel");
+    console.log('  [0] Cancel');
 
-    const answer = await this._ask("Select", "1");
+    const answer = await this._ask('Select', '1');
 
     const index = parseInt(answer, 10) - 1;
     if (index === -1) {
-      throw new Error("Cancelled");
+      throw new Error('Cancelled');
     }
     if (index < 0 || index >= options.length) {
-      throw new Error("Invalid selection");
+      throw new Error('Invalid selection');
     }
 
     return options[index];
   }
 
   separator(): void {
-    console.log("");
+    console.log('');
   }
 
   heading(text: string): void {
@@ -151,13 +149,13 @@ export class ZTMChatWizard {
   constructor(prompts?: WizardPrompts) {
     this.prompts = prompts || new ConsolePrompts();
     this.config = {
-      messagePath: "/shared",
+      messagePath: '/shared',
       enableGroups: false,
       autoReply: true,
       allowFrom: undefined,
-      dmPolicy: "pairing",
-      permitSource: "server",
-      permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+      dmPolicy: 'pairing',
+      permitSource: 'server',
+      permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
     };
   }
 
@@ -167,8 +165,8 @@ export class ZTMChatWizard {
   async run(): Promise<WizardResult | null> {
     try {
       this.prompts.separator();
-      this.prompts.heading("🤖 ZTM Chat Setup Wizard");
-      this.prompts.heading("=".repeat(40));
+      this.prompts.heading('🤖 ZTM Chat Setup Wizard');
+      this.prompts.heading('='.repeat(40));
       this.prompts.separator();
 
       // Step 1: Agent URL
@@ -192,8 +190,8 @@ export class ZTMChatWizard {
       this.prompts.close();
       return result;
     } catch (error) {
-      if (error instanceof Error && error.message === "Cancelled") {
-        this.prompts.warning("Wizard cancelled.");
+      if (error instanceof Error && error.message === 'Cancelled') {
+        this.prompts.warning('Wizard cancelled.');
       } else {
         this.prompts.error(`Wizard failed: ${error}`);
       }
@@ -206,18 +204,15 @@ export class ZTMChatWizard {
    * Step 1: Configure Agent URL
    */
   private async stepAgentUrl(): Promise<void> {
-    this.prompts.heading("Step 1: ZTM Agent URL (Required)");
+    this.prompts.heading('Step 1: ZTM Agent URL (Required)');
     this.prompts.separator();
 
-    const agentUrl = await this.prompts.ask(
-      "ZTM Agent URL",
-      "http://localhost:7777"
-    );
+    const agentUrl = await this.prompts.ask('ZTM Agent URL', 'http://localhost:7777');
 
     // Validate URL format (only format, not connectivity - that's handled by gateway lifecycle)
     if (!isValidUrl(agentUrl)) {
       this.prompts.error(`Invalid URL format: ${agentUrl}`);
-      throw new Error("Invalid URL format");
+      throw new Error('Invalid URL format');
     }
     this.config.agentUrl = agentUrl;
     this.prompts.success(`URL validated: ${agentUrl}`);
@@ -228,17 +223,17 @@ export class ZTMChatWizard {
    */
   private async stepPermitSource(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 2: Permit Source (Required)");
+    this.prompts.heading('Step 2: Permit Source (Required)');
     this.prompts.separator();
 
-    const sources = ["server", "file"] as const;
+    const sources = ['server', 'file'] as const;
     const sourceLabels = [
-      "Server - Request permit from permit server (requires agent API access)",
-      "File - Use existing permit.json file",
+      'Server - Request permit from permit server (requires agent API access)',
+      'File - Use existing permit.json file',
     ];
 
-    const permitSource = await this.prompts.select<"server" | "file">(
-      "How to obtain permit.json?",
+    const permitSource = await this.prompts.select<'server' | 'file'>(
+      'How to obtain permit.json?',
       sources,
       sourceLabels
     );
@@ -247,7 +242,7 @@ export class ZTMChatWizard {
     this.prompts.success(`Permit source set to: ${permitSource}`);
 
     // Conditionally ask for permitUrl or permitFilePath
-    if (permitSource === "server") {
+    if (permitSource === 'server') {
       await this.stepPermitUrl();
     } else {
       await this.stepPermitFilePath();
@@ -259,13 +254,13 @@ export class ZTMChatWizard {
    */
   private async stepPermitUrl(): Promise<void> {
     const permitUrl = await this.prompts.ask(
-      "Permit Server URL",
-      "https://ztm-portal.flomesh.io:7779/permit"
+      'Permit Server URL',
+      'https://ztm-portal.flomesh.io:7779/permit'
     );
 
     if (!isValidUrl(permitUrl)) {
       this.prompts.error(`Invalid URL format: ${permitUrl}`);
-      throw new Error("Invalid URL format");
+      throw new Error('Invalid URL format');
     }
     this.config.permitUrl = permitUrl;
     this.prompts.success(`URL validated: ${permitUrl}`);
@@ -275,14 +270,11 @@ export class ZTMChatWizard {
    * Step 2b: Permit File Path (when file)
    */
   private async stepPermitFilePath(): Promise<void> {
-    const permitFilePath = await this.prompts.ask(
-      "Permit File Path",
-      "/path/to/permit.json"
-    );
+    const permitFilePath = await this.prompts.ask('Permit File Path', '/path/to/permit.json');
 
     if (!permitFilePath || !permitFilePath.trim()) {
-      this.prompts.error("Permit file path is required");
-      throw new Error("Permit file path is required");
+      this.prompts.error('Permit file path is required');
+      throw new Error('Permit file path is required');
     }
     this.config.permitFilePath = permitFilePath;
     this.prompts.success(`Permit file path set to: ${permitFilePath}`);
@@ -293,25 +285,20 @@ export class ZTMChatWizard {
    */
   private async stepUserSelection(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 3: Bot Username (Required)");
+    this.prompts.heading('Step 3: Bot Username (Required)');
     this.prompts.separator();
 
-    const username = await this.prompts.ask(
-      "Bot username",
-      "openclaw-bot"
-    );
+    const username = await this.prompts.ask('Bot username', 'openclaw-bot');
 
     if (!username.trim()) {
-      this.prompts.error("Username is required");
-      throw new Error("Username is required");
+      this.prompts.error('Username is required');
+      throw new Error('Username is required');
     }
 
     // Validate username format
     if (!IDENTIFIER_PATTERN.test(username)) {
-      this.prompts.error(
-        "Username must contain only letters, numbers, hyphens, and underscores"
-      );
-      throw new Error("Invalid username format");
+      this.prompts.error('Username must contain only letters, numbers, hyphens, and underscores');
+      throw new Error('Invalid username format');
     }
 
     this.config.username = username;
@@ -323,19 +310,19 @@ export class ZTMChatWizard {
    */
   private async stepSecuritySettings(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 4: Security Settings");
+    this.prompts.heading('Step 4: Security Settings');
     this.prompts.separator();
 
     // DM Policy - pairing is the default
-    const policies = ["pairing", "allow", "deny"] as const;
+    const policies = ['pairing', 'allow', 'deny'] as const;
     const policyLabels = [
-      "Require explicit pairing (approval needed)",
-      "Allow messages from all users",
-      "Deny messages from all users",
+      'Require explicit pairing (approval needed)',
+      'Allow messages from all users',
+      'Deny messages from all users',
     ];
 
     const policy = await this.prompts.select<DMPolicy>(
-      "Direct Message Policy",
+      'Direct Message Policy',
       policies,
       policyLabels
     );
@@ -345,14 +332,14 @@ export class ZTMChatWizard {
 
     // Allow list (only used if policy is deny or pairing, or for whitelisting)
     const allowFrom = await this.prompts.ask(
-      "Allow messages from (comma-separated usernames, * for all users)",
-      "*"
+      'Allow messages from (comma-separated usernames, * for all users)',
+      '*'
     );
 
-    if (allowFrom !== "*") {
+    if (allowFrom !== '*') {
       this.config.allowFrom = allowFrom
-        .split(",")
-        .map((s) => s.trim())
+        .split(',')
+        .map(s => s.trim())
         .filter(Boolean);
     }
   }
@@ -362,34 +349,31 @@ export class ZTMChatWizard {
    */
   private async stepGroupSettings(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 5: Group Chat Settings");
+    this.prompts.heading('Step 5: Group Chat Settings');
     this.prompts.separator();
 
     // Ask if user wants to enable groups
-    const enableGroups = await this.prompts.confirm(
-      "Enable group chat support?",
-      false
-    );
+    const enableGroups = await this.prompts.confirm('Enable group chat support?', false);
 
     this.config.enableGroups = enableGroups;
 
     if (!enableGroups) {
-      this.prompts.info("Group chat disabled.");
+      this.prompts.info('Group chat disabled.');
       return;
     }
 
-    this.prompts.success("Group chat enabled.");
+    this.prompts.success('Group chat enabled.');
 
     // Group Policy
-    const groupPolicies = ["allowlist", "open", "disabled"] as const;
+    const groupPolicies = ['allowlist', 'open', 'disabled'] as const;
     const groupPolicyLabels = [
-      "Allowlist - Only allow whitelisted senders",
-      "Open - Allow all group messages",
-      "Disabled - Block all group messages",
+      'Allowlist - Only allow whitelisted senders',
+      'Open - Allow all group messages',
+      'Disabled - Block all group messages',
     ];
 
     const groupPolicy = await this.prompts.select<GroupPolicy>(
-      "Default Group Policy",
+      'Default Group Policy',
       groupPolicies,
       groupPolicyLabels
     );
@@ -399,7 +383,7 @@ export class ZTMChatWizard {
 
     // Require Mention
     const requireMention = await this.prompts.confirm(
-      "Require @mention to process group messages?",
+      'Require @mention to process group messages?',
       true
     );
 
@@ -412,45 +396,42 @@ export class ZTMChatWizard {
    */
   private async summary(): Promise<WizardResult> {
     this.prompts.separator();
-    this.prompts.heading("Configuration Summary");
+    this.prompts.heading('Configuration Summary');
     this.prompts.separator();
 
-    console.log("  Agent URL:", this.config.agentUrl);
-    console.log("  Permit Source:", this.config.permitSource);
-    if (this.config.permitSource === "server") {
-      console.log("  Permit Server URL:", this.config.permitUrl);
+    console.log('  Agent URL:', this.config.agentUrl);
+    console.log('  Permit Source:', this.config.permitSource);
+    if (this.config.permitSource === 'server') {
+      console.log('  Permit Server URL:', this.config.permitUrl);
     } else {
-      console.log("  Permit File Path:", this.config.permitFilePath);
+      console.log('  Permit File Path:', this.config.permitFilePath);
     }
-    console.log("  Username:", this.config.username);
-    console.log("  Message Path:", this.config.messagePath);
-    console.log("  Auto Reply:", this.config.autoReply);
-    console.log("  DM Policy:", this.config.dmPolicy);
-    console.log("  Allow From:", this.config.allowFrom?.join(", ") || "* (all users)");
-    console.log("  Enable Groups:", this.config.enableGroups ?? false);
+    console.log('  Username:', this.config.username);
+    console.log('  Message Path:', this.config.messagePath);
+    console.log('  Auto Reply:', this.config.autoReply);
+    console.log('  DM Policy:', this.config.dmPolicy);
+    console.log('  Allow From:', this.config.allowFrom?.join(', ') || '* (all users)');
+    console.log('  Enable Groups:', this.config.enableGroups ?? false);
     if (this.config.enableGroups) {
-      console.log("  Group Policy:", this.config.groupPolicy ?? "allowlist");
-      console.log("  Require Mention:", this.config.requireMention ?? true);
+      console.log('  Group Policy:', this.config.groupPolicy ?? 'allowlist');
+      console.log('  Require Mention:', this.config.requireMention ?? true);
     }
 
     this.prompts.separator();
 
-    const save = await this.prompts.confirm(
-      "Save this configuration?",
-      true
-    );
+    const save = await this.prompts.confirm('Save this configuration?', true);
 
     let savePath: string | undefined;
     if (save) {
       const config = this.buildConfig();
-      const accountId = this.config.username || "default";
+      const accountId = this.config.username || 'default';
 
       // Write to openclaw.yaml using runtime
       if (!hasZTMRuntime()) {
-        this.prompts.error("Runtime not available. Please run through OpenClaw CLI.");
+        this.prompts.error('Runtime not available. Please run through OpenClaw CLI.');
         return {
           config: this.buildConfig(),
-          accountId: this.config.username || "default",
+          accountId: this.config.username || 'default',
           savePath: undefined,
         };
       }
@@ -460,7 +441,8 @@ export class ZTMChatWizard {
         const currentConfig = rt.config.loadConfig();
 
         // Build channel config in openclaw.yaml format
-        const channelConfig = currentConfig.channels?.["ztm-chat"] as Record<string, unknown> || {};
+        const channelConfig =
+          (currentConfig.channels?.['ztm-chat'] as Record<string, unknown>) || {};
         const accounts = (channelConfig.accounts as Record<string, unknown>) || {};
         accounts[accountId] = config;
 
@@ -468,7 +450,7 @@ export class ZTMChatWizard {
           ...currentConfig,
           channels: {
             ...currentConfig.channels,
-            "ztm-chat": {
+            'ztm-chat': {
               ...channelConfig,
               accounts,
             },
@@ -476,19 +458,19 @@ export class ZTMChatWizard {
         };
 
         await rt.config.writeConfigFile(newConfig);
-        savePath = "openclaw.yaml (channels.ztm-chat)";
+        savePath = 'openclaw.yaml (channels.ztm-chat)';
         this.prompts.success(`Configuration saved to openclaw.yaml`);
 
         // Show pairing mode info
-        if (this.config.dmPolicy === "pairing") {
+        if (this.config.dmPolicy === 'pairing') {
           this.prompts.separator();
-          this.prompts.heading("Pairing Mode Enabled");
-          this.prompts.warning("Your bot is in pairing mode.");
-          this.prompts.info("To allow users to message you:");
-          console.log("   1. Users send a message to your bot");
-          this.prompts.info("   2. The bot will send them a pairing request");
-          console.log("   3. Approve them: openclaw pairing approve ztm-chat <code>");
-          this.prompts.info("   4. After approval, their messages will be accepted");
+          this.prompts.heading('Pairing Mode Enabled');
+          this.prompts.warning('Your bot is in pairing mode.');
+          this.prompts.info('To allow users to message you:');
+          console.log('   1. Users send a message to your bot');
+          this.prompts.info('   2. The bot will send them a pairing request');
+          console.log('   3. Approve them: openclaw pairing approve ztm-chat <code>');
+          this.prompts.info('   4. After approval, their messages will be accepted');
         }
       } catch (error) {
         const errorMsg = extractErrorMessage(error);
@@ -498,7 +480,7 @@ export class ZTMChatWizard {
 
     return {
       config: this.buildConfig(),
-      accountId: this.config.username || "default",
+      accountId: this.config.username || 'default',
       savePath,
     };
   }
@@ -508,18 +490,18 @@ export class ZTMChatWizard {
    */
   private buildConfig(): ZTMChatConfig & { allowFrom?: string[] } {
     return {
-      agentUrl: this.config.agentUrl || "http://localhost:7777",
-      permitSource: (this.config.permitSource || "server") as "server" | "file",
-      permitUrl: this.config.permitUrl || "",
+      agentUrl: this.config.agentUrl || 'http://localhost:7777',
+      permitSource: (this.config.permitSource || 'server') as 'server' | 'file',
+      permitUrl: this.config.permitUrl || '',
       permitFilePath: this.config.permitFilePath,
-      meshName: this.config.meshName || "openclaw-mesh",
-      username: this.config.username || "openclaw-bot",
+      meshName: this.config.meshName || 'openclaw-mesh',
+      username: this.config.username || 'openclaw-bot',
       enableGroups: this.config.enableGroups ?? false,
       autoReply: this.config.autoReply ?? true,
-      messagePath: this.config.messagePath || "/shared",
-      dmPolicy: this.config.dmPolicy ?? "pairing",
+      messagePath: this.config.messagePath || '/shared',
+      dmPolicy: this.config.dmPolicy ?? 'pairing',
       allowFrom: this.config.allowFrom,
-      groupPolicy: this.config.groupPolicy ?? "allowlist",
+      groupPolicy: this.config.groupPolicy ?? 'allowlist',
       requireMention: this.config.requireMention ?? true,
     };
   }
@@ -547,7 +529,7 @@ export interface DiscoveredConfig {
  */
 export async function discoverConfig(): Promise<DiscoveredConfig | null> {
   // Check environment variables first
-  const agentUrl = process.env.ZTM_AGENT_URL || "http://localhost:7777";
+  const agentUrl = process.env.ZTM_AGENT_URL || 'http://localhost:7777';
 
   // Try to read from openclaw.yaml via runtime API
   if (!hasZTMRuntime()) {
@@ -559,15 +541,15 @@ export async function discoverConfig(): Promise<DiscoveredConfig | null> {
     const config = rt.config.loadConfig();
 
     // Look for ztm-chat channel config
-    const channelConfig = config.channels?.["ztm-chat"] as Record<string, unknown> | undefined;
+    const channelConfig = config.channels?.['ztm-chat'] as Record<string, unknown> | undefined;
     const accounts = channelConfig?.accounts as Record<string, unknown> | undefined;
-    const firstAccount = accounts ? Object.values(accounts)[0] as Record<string, unknown> : null;
+    const firstAccount = accounts ? (Object.values(accounts)[0] as Record<string, unknown>) : null;
 
     if (firstAccount) {
       return {
         agentUrl: (firstAccount.agentUrl as string) || agentUrl,
-        meshName: (firstAccount.meshName as string) || "",
-        username: (firstAccount.username as string) || "",
+        meshName: (firstAccount.meshName as string) || '',
+        username: (firstAccount.username as string) || '',
       };
     }
   } catch {

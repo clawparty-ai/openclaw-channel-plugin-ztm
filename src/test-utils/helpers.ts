@@ -1,10 +1,10 @@
 // Test Helpers - Utility functions for ZTM Chat tests
 // Provides common test operations like waiting, cleaning up, assertions, etc.
 
-import { vi, beforeEach, afterEach, expect, describe } from "vitest";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient } from "../api/ztm-api.js";
-import { success } from "../types/common.js";
+import { vi, beforeEach, afterEach, expect, describe } from 'vitest';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient } from '../api/ztm-api.js';
+import { success } from '../types/common.js';
 
 // ============================================================================
 // Timer Helpers
@@ -37,7 +37,7 @@ export async function waitFor(
     if (await condition()) {
       return true;
     }
-    await new Promise((r) => setTimeout(r, interval));
+    await new Promise(r => setTimeout(r, interval));
   }
   return false;
 }
@@ -52,7 +52,7 @@ export async function waitForPromise<T>(
   try {
     const result = await Promise.race([
       promise,
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeout)),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout)),
     ]);
     return { settled: true, result };
   } catch (error) {
@@ -91,7 +91,10 @@ export function createAfterEach(cleanup: () => void | Promise<void>) {
 /**
  * Assert that a function throws an error
  */
-export async function expectToThrow(fn: () => unknown | Promise<unknown>, expectedMessage?: string) {
+export async function expectToThrow(
+  fn: () => unknown | Promise<unknown>,
+  expectedMessage?: string
+) {
   let threw = false;
   let error: unknown;
   try {
@@ -159,21 +162,21 @@ export function describeWithTimers(name: string, fn: () => void) {
  * Helper to flush promises in tests
  */
 export function flushPromises() {
-  return new Promise((resolve) => setImmediate(resolve));
+  return new Promise(resolve => setImmediate(resolve));
 }
 
 /**
  * Helper to wait for next tick
  */
 export function nextTick() {
-  return new Promise((resolve) => process.nextTick(resolve));
+  return new Promise(resolve => process.nextTick(resolve));
 }
 
 /**
  * Helper to wait for a specific amount of time
  */
 export function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ============================================================================
@@ -225,7 +228,7 @@ export function uniqueItems<T>(count: number, generator: (i: number) => T): T[] 
  */
 export async function cleanupAccountStates() {
   try {
-    const { getAllAccountStates, removeAccountState } = await import("../runtime/state.js");
+    const { getAllAccountStates, removeAccountState } = await import('../runtime/state.js');
     const states = getAllAccountStates();
     for (const [accountId] of states) {
       removeAccountState(accountId);
@@ -244,15 +247,15 @@ export async function cleanupAccountStates() {
  */
 export function minimalConfig(overrides: Partial<ZTMChatConfig> = {}): ZTMChatConfig {
   return {
-    agentUrl: "http://localhost:7777",
-    permitUrl: "http://localhost:7777/permit",
-    permitSource: "server",
-    meshName: "test-mesh",
-    username: "test-bot",
-    dmPolicy: "pairing",
+    agentUrl: 'http://localhost:7777',
+    permitUrl: 'http://localhost:7777/permit',
+    permitSource: 'server',
+    meshName: 'test-mesh',
+    username: 'test-bot',
+    dmPolicy: 'pairing',
     enableGroups: false,
     autoReply: false,
-    messagePath: "/shared",
+    messagePath: '/shared',
     ...overrides,
   };
 }
@@ -262,15 +265,15 @@ export function minimalConfig(overrides: Partial<ZTMChatConfig> = {}): ZTMChatCo
  */
 export function failingConfig(): ZTMChatConfig {
   return {
-    agentUrl: "http://invalid-host:9999",
-    permitUrl: "http://invalid-host:9999/permit",
-    permitSource: "server",
-    meshName: "test-mesh",
-    username: "test-bot",
-    dmPolicy: "pairing",
+    agentUrl: 'http://invalid-host:9999',
+    permitUrl: 'http://invalid-host:9999/permit',
+    permitSource: 'server',
+    meshName: 'test-mesh',
+    username: 'test-bot',
+    dmPolicy: 'pairing',
     enableGroups: false,
     autoReply: false,
-    messagePath: "/shared",
+    messagePath: '/shared',
   };
 }
 
@@ -281,17 +284,21 @@ export function failingConfig(): ZTMChatConfig {
 /**
  * Create a config for test client
  */
-export function createTestClientConfig(baseUrl: string, meshName = "test-mesh", username = "test-bot"): ZTMChatConfig {
+export function createTestClientConfig(
+  baseUrl: string,
+  meshName = 'test-mesh',
+  username = 'test-bot'
+): ZTMChatConfig {
   return {
     agentUrl: baseUrl,
     permitUrl: `${baseUrl}/permit`,
-    permitSource: "server",
+    permitSource: 'server',
     meshName,
     username,
-    dmPolicy: "pairing",
+    dmPolicy: 'pairing',
     enableGroups: false,
     autoReply: false,
-    messagePath: "/shared",
+    messagePath: '/shared',
   };
 }
 
@@ -303,14 +310,18 @@ export async function waitForApiCall(
   checkInterval = 10,
   timeout = 1000
 ): Promise<boolean> {
-  return waitFor(() => {
-    try {
-      apiCall();
-      return true;
-    } catch {
-      return false;
-    }
-  }, timeout, checkInterval);
+  return waitFor(
+    () => {
+      try {
+        apiCall();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    timeout,
+    checkInterval
+  );
 }
 
 // ============================================================================

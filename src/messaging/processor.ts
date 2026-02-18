@@ -8,13 +8,13 @@
 // 4. Enforce DM policy rules
 // 5. Return normalized ZTMChatMessage
 
-import { logger } from "../utils/logger.js";
-import { getAccountMessageStateStore } from "../runtime/store.js";
-import { checkDmPolicy } from "../core/dm-policy.js";
-import { escapeHtml } from "../utils/validation.js";
-import { MAX_MESSAGE_LENGTH } from "../constants.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
+import { logger } from '../utils/logger.js';
+import { getAccountMessageStateStore } from '../runtime/store.js';
+import { checkDmPolicy } from '../core/dm-policy.js';
+import { escapeHtml } from '../utils/validation.js';
+import { MAX_MESSAGE_LENGTH } from '../constants.js';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
 
 /**
  * Context for message processing
@@ -54,21 +54,21 @@ export function processIncomingMessage(
   msg: { time: number; message: string; sender: string },
   context: ProcessMessageContext
 ): ZTMChatMessage | null {
-  const { config, storeAllowFrom = [], accountId = "default", groupInfo } = context;
+  const { config, storeAllowFrom = [], accountId = 'default', groupInfo } = context;
 
-  const watermarkKey = groupInfo
-    ? `group:${groupInfo.creator}/${groupInfo.group}`
-    : msg.sender;
+  const watermarkKey = groupInfo ? `group:${groupInfo.creator}/${groupInfo.group}` : msg.sender;
 
   // Step 1: Skip empty or whitespace-only messages
-  if (typeof msg.message !== "string" || msg.message.trim() === "") {
+  if (typeof msg.message !== 'string' || msg.message.trim() === '') {
     logger.debug(`Skipping empty message from ${msg.sender}`);
     return null;
   }
 
   // Step 1.5: Validate message length to prevent memory exhaustion
   if (msg.message.length > MAX_MESSAGE_LENGTH) {
-    logger.warn(`Rejecting oversized message from ${msg.sender}: ${msg.message.length} bytes (max: ${MAX_MESSAGE_LENGTH})`);
+    logger.warn(
+      `Rejecting oversized message from ${msg.sender}: ${msg.message.length} bytes (max: ${MAX_MESSAGE_LENGTH})`
+    );
     return null;
   }
 
@@ -81,16 +81,18 @@ export function processIncomingMessage(
   // Step 3: Check watermark (skip already-processed messages)
   const watermark = getAccountMessageStateStore(accountId).getWatermark(accountId, watermarkKey);
   if (msg.time <= watermark) {
-    logger.debug(`Skipping already-processed message from ${watermarkKey} (time=${msg.time} <= watermark=${watermark})`);
+    logger.debug(
+      `Skipping already-processed message from ${watermarkKey} (time=${msg.time} <= watermark=${watermark})`
+    );
     return null;
   }
 
   const check = checkDmPolicy(msg.sender, config, storeAllowFrom);
 
   if (!check.allowed) {
-    if (check.action === "request_pairing") {
+    if (check.action === 'request_pairing') {
       logger.debug(`[DM Policy] Pairing request from ${msg.sender}`);
-    } else if (check.action === "ignore") {
+    } else if (check.action === 'ignore') {
       logger.debug(`[DM Policy] Ignoring message from ${msg.sender} (${check.reason})`);
     }
     return null;
@@ -112,13 +114,15 @@ export function processIncomingMessage(
 /**
  * Validate if a message object has required fields
  */
-export function isValidMessage(msg: unknown): msg is { time: number; message: string; sender: string } {
-  if (!msg || typeof msg !== "object") return false;
+export function isValidMessage(
+  msg: unknown
+): msg is { time: number; message: string; sender: string } {
+  if (!msg || typeof msg !== 'object') return false;
   const obj = msg as { time?: unknown; message?: unknown; sender?: unknown };
   return (
-    typeof obj.time === "number" &&
-    typeof obj.message === "string" &&
-    typeof obj.sender === "string" &&
+    typeof obj.time === 'number' &&
+    typeof obj.message === 'string' &&
+    typeof obj.sender === 'string' &&
     obj.sender.length > 0
   );
 }
@@ -134,10 +138,10 @@ export function createMessageId(time: number, sender: string): string {
  * Parse and normalize message content
  */
 export function parseMessageContent(raw: unknown): string {
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "object" && raw !== null) {
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object' && raw !== null) {
     const msg = raw as { text?: string; message?: string };
     return msg.text || msg.message || JSON.stringify(raw);
   }
-  return String(raw ?? "");
+  return String(raw ?? '');
 }

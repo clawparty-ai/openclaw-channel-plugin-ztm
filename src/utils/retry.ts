@@ -1,12 +1,8 @@
 // Retry utilities for ZTM Chat
 // Provides retry logic with exponential backoff for network operations
 
-import { logger } from "./logger.js";
-import {
-  RETRY_INITIAL_DELAY_MS,
-  RETRY_MAX_DELAY_MS,
-  RETRY_TIMEOUT_MS,
-} from "../constants.js";
+import { logger } from './logger.js';
+import { RETRY_INITIAL_DELAY_MS, RETRY_MAX_DELAY_MS, RETRY_TIMEOUT_MS } from '../constants.js';
 
 export interface RetryOptions {
   maxRetries?: number;
@@ -41,16 +37,13 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
  * Sleep for specified milliseconds
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
  * Calculate delay for a given retry attempt
  */
-export function getRetryDelay(
-  attempt: number,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG
-): number {
+export function getRetryDelay(attempt: number, config: RetryConfig = DEFAULT_RETRY_CONFIG): number {
   const delay = config.initialDelay * Math.pow(config.backoffMultiplier, attempt - 1);
   return Math.min(delay, config.maxDelay);
 }
@@ -70,10 +63,7 @@ export function createTimeoutController(timeoutMs: number): {
 /**
  * Execute a function with retry logic
  */
-export async function retryAsync<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {}
-): Promise<T> {
+export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const config: RetryConfig = {
     ...DEFAULT_RETRY_CONFIG,
     ...options,
@@ -96,13 +86,15 @@ export async function retryAsync<T>(
       // Wait before retry
       if (attempt < config.maxRetries) {
         const delay = getRetryDelay(attempt + 1, config);
-        logger.debug?.(`[Retry] Attempt ${attempt + 1}/${config.maxRetries + 1} failed, retrying in ${delay}ms: ${lastError.message}`);
+        logger.debug?.(
+          `[Retry] Attempt ${attempt + 1}/${config.maxRetries + 1} failed, retrying in ${delay}ms: ${lastError.message}`
+        );
         await sleep(delay);
       }
     }
   }
 
-  throw lastError || new Error("Retry failed");
+  throw lastError || new Error('Retry failed');
 }
 
 /**
@@ -115,26 +107,23 @@ function isAuthError(error: Error): boolean {
 
   // Check for auth-related keywords
   const authKeywords = [
-    "unauthorized",
-    "forbidden",
-    "authentication",
-    "auth",
-    "credential",
-    "token",
-    "jwt",
-    "bearer",
-    "api key",
-    "apikey",
-    "invalid token",
-    "expired token",
-    "invalid credentials",
-    "access denied",
+    'unauthorized',
+    'forbidden',
+    'authentication',
+    'auth',
+    'credential',
+    'token',
+    'jwt',
+    'bearer',
+    'api key',
+    'apikey',
+    'invalid token',
+    'expired token',
+    'invalid credentials',
+    'access denied',
   ];
 
-  return (
-    errorName.includes("auth") ||
-    authKeywords.some((keyword) => errorMessage.includes(keyword))
-  );
+  return errorName.includes('auth') || authKeywords.some(keyword => errorMessage.includes(keyword));
 }
 
 /**
@@ -150,14 +139,14 @@ export function isRetriableError(error: Error): boolean {
   }
 
   return (
-    errorName.includes("aborterror") ||
-    errorMessage.includes("timeout") ||
-    errorMessage.includes("fetch") ||
-    errorMessage.includes("network") ||
-    errorMessage.includes("econnrefused") ||
-    errorMessage.includes("enotfound") ||
-    errorMessage.includes("etimedout") ||
-    errorMessage.includes("econnreset")
+    errorName.includes('aborterror') ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('fetch') ||
+    errorMessage.includes('network') ||
+    errorMessage.includes('econnrefused') ||
+    errorMessage.includes('enotfound') ||
+    errorMessage.includes('etimedout') ||
+    errorMessage.includes('econnreset')
   );
 }
 
@@ -194,10 +183,7 @@ export async function fetchWithRetry(
 /**
  * Wrap any function with retry logic
  */
-export function withRetry<T extends (...args: any[]) => any>(
-  fn: T,
-  options: RetryOptions = {}
-): T {
+export function withRetry<T extends (...args: any[]) => any>(fn: T, options: RetryOptions = {}): T {
   return (async (...args: Parameters<T>) => {
     return retryAsync(() => fn(...args), options);
   }) as T;

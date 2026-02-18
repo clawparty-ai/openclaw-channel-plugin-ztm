@@ -1,10 +1,10 @@
 // ZTM Chat State Management
 // Account snapshot building and state utilities
 
-import type { ZTMChatConfig } from "../types/config.js";
-import { isConfigMinimallyValid } from "../config/validation.js";
-import { getAllAccountStates } from "../runtime/state.js";
-import type { ResolvedZTMChatAccount } from "./config.js";
+import type { ZTMChatConfig } from '../types/config.js';
+import { isConfigMinimallyValid } from '../config/validation.js';
+import { getAllAccountStates } from '../runtime/state.js';
+import type { ResolvedZTMChatAccount } from './config.js';
 
 // ============================================================================
 // Build Account Snapshot
@@ -13,11 +13,7 @@ import type { ResolvedZTMChatAccount } from "./config.js";
 /**
  * Build account snapshot for status display
  */
-export function buildAccountSnapshot({
-  account,
-}: {
-  account: ResolvedZTMChatAccount;
-}): {
+export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAccount }): {
   accountId: string;
   name: string;
   enabled: boolean;

@@ -1,16 +1,16 @@
 // Connectivity Management for ZTM Chat
 // Handles agent connectivity, permit loading, and mesh joining
 
-import * as fs from "fs";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMMeshInfo } from "../api/ztm-api.js";
-import { createZTMApiClient } from "../api/ztm-api.js";
-import { isSuccess } from "../types/common.js";
-import { resolvePermitPath } from "../utils/paths.js";
-import { checkPortOpen, getIdentity, joinMesh } from "../connectivity/mesh.js";
-import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
-import type { PermitData } from "../types/connectivity.js";
-import { PROBE_TIMEOUT_MS } from "../constants.js";
+import * as fs from 'fs';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMMeshInfo } from '../api/ztm-api.js';
+import { createZTMApiClient } from '../api/ztm-api.js';
+import { isSuccess } from '../types/common.js';
+import { resolvePermitPath } from '../utils/paths.js';
+import { checkPortOpen, getIdentity, joinMesh } from '../connectivity/mesh.js';
+import { requestPermit, savePermitData, loadPermitFromFile } from '../connectivity/permit.js';
+import type { PermitData } from '../types/connectivity.js';
+import { PROBE_TIMEOUT_MS } from '../constants.js';
 
 /**
  * Validate connectivity to ZTM agent
@@ -21,16 +21,14 @@ export async function validateAgentConnectivity(
 ): Promise<void> {
   try {
     const agentUrlObj = new URL(agentUrl);
-    const portStr =
-      agentUrlObj.port ||
-      (agentUrlObj.protocol === "https:" ? "443" : "80");
+    const portStr = agentUrlObj.port || (agentUrlObj.protocol === 'https:' ? '443' : '80');
     const agentPort = parseInt(portStr, 10);
     const agentConnected = await checkPortOpen(agentUrlObj.hostname, agentPort);
     if (!agentConnected) {
       throw new Error(`Cannot connect to ZTM agent at ${agentUrl}`);
     }
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Cannot connect")) {
+    if (error instanceof Error && error.message.includes('Cannot connect')) {
       throw error;
     }
     throw new Error(`Invalid ZTM agent URL: ${agentUrl}`);
@@ -45,7 +43,7 @@ export async function loadOrRequestPermit(
   permitPath: string,
   ctx: { log?: { info: (...args: unknown[]) => void } }
 ): Promise<PermitData> {
-  if (config.permitSource === "file") {
+  if (config.permitSource === 'file') {
     // Load from file
     if (!config.permitFilePath) {
       throw new Error("permitFilePath is required when permitSource is 'file'");
@@ -63,27 +61,23 @@ export async function loadOrRequestPermit(
 
   if (!permitExists) {
     // Step 3: Get identity from ZTM Agent API
-    ctx.log?.info("Getting identity from ZTM agent...");
+    ctx.log?.info('Getting identity from ZTM agent...');
     const publicKey = await getIdentity(config.agentUrl);
     if (!publicKey) {
-      throw new Error("Failed to get identity from ZTM agent");
+      throw new Error('Failed to get identity from ZTM agent');
     }
 
     // Step 4: Request permit from permit server
-    ctx.log?.info("Requesting permit from permit server...");
-    const permitData = await requestPermit(
-      config.permitUrl,
-      publicKey,
-      config.username,
-    );
+    ctx.log?.info('Requesting permit from permit server...');
+    const permitData = await requestPermit(config.permitUrl, publicKey, config.username);
 
     if (!permitData) {
-      throw new Error("Failed to request permit from permit server");
+      throw new Error('Failed to request permit from permit server');
     }
 
     // Step 5: Save permit data
     if (!savePermitData(permitData, permitPath)) {
-      throw new Error("Failed to save permit data");
+      throw new Error('Failed to save permit data');
     }
 
     return permitData;
@@ -92,7 +86,7 @@ export async function loadOrRequestPermit(
   // Load existing permit
   const permitData = loadPermitFromFile(permitPath);
   if (!permitData) {
-    throw new Error("Failed to load existing permit data");
+    throw new Error('Failed to load existing permit data');
   }
   return permitData;
 }
@@ -114,21 +108,14 @@ export async function joinMeshIfNeeded(
   }
 
   if (alreadyConnected) {
-    ctx.log?.info(
-      `Already connected to mesh ${config.meshName}, skipping join`,
-    );
+    ctx.log?.info(`Already connected to mesh ${config.meshName}, skipping join`);
     return;
   }
 
   ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);
-  const joinSuccess = await joinMesh(
-    config.agentUrl,
-    config.meshName,
-    endpointName,
-    permitData,
-  );
+  const joinSuccess = await joinMesh(config.agentUrl, config.meshName, endpointName, permitData);
   if (!joinSuccess) {
-    throw new Error("Failed to join mesh");
+    throw new Error('Failed to join mesh');
   }
 }
 
@@ -149,7 +136,7 @@ export async function probeAccount({
   if (!config?.agentUrl) {
     return {
       ok: false,
-      error: "No agent URL configured",
+      error: 'No agent URL configured',
     };
   }
 
@@ -159,16 +146,14 @@ export async function probeAccount({
   if (!meshResult.ok || !meshResult.value) {
     return {
       ok: false,
-      error: meshResult.error?.message ?? "Unknown error",
+      error: meshResult.error?.message ?? 'Unknown error',
     };
   }
 
   const meshInfo = meshResult.value;
   return {
     ok: meshInfo.connected,
-    error: meshInfo.connected
-      ? null
-      : "ZTM Agent is not connected to mesh",
+    error: meshInfo.connected ? null : 'ZTM Agent is not connected to mesh',
     meshInfo,
   };
 }

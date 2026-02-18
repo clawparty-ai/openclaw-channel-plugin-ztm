@@ -26,4 +26,10 @@ export * from './error.js';
 export * from './guards.js';
 
 // Type exports
-export type { Result, AsyncResult, ConnectionStatus, MessageDirection, PairingStatus } from '../types/common.js';
+export type {
+  Result,
+  AsyncResult,
+  ConnectionStatus,
+  MessageDirection,
+  PairingStatus,
+} from '../types/common.js';

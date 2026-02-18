@@ -1,13 +1,13 @@
 // Unit tests for Channel Gateway
 
-import * as fs from "fs";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { OpenClawConfig } from "openclaw/plugin-sdk";
-import type { ZTMChatConfig, ZTMMeshInfo, ZTMMessage } from "../types/index.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
-import { createMockLoggerFns, createMockApiClient, mockSuccess } from "../test-utils/mocks.js";
+import * as fs from 'fs';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { ZTMChatConfig, ZTMMeshInfo, ZTMMessage } from '../types/index.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
+import type { AccountRuntimeState } from '../runtime/state.js';
+import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { createMockLoggerFns, createMockApiClient, mockSuccess } from '../test-utils/mocks.js';
 import {
   collectStatusIssues,
   probeAccountGateway,
@@ -15,26 +15,28 @@ import {
   startAccountGateway,
   logoutAccountGateway,
   buildMessageCallback,
-} from "./gateway.js";
+} from './gateway.js';
 
 // Mock all dependencies using vi.hoisted
-const { mockResolveZTMChatConfig, mockValidateZTMChatConfig, mockGetDefaultConfig } = vi.hoisted(() => ({
-  mockResolveZTMChatConfig: vi.fn((config) => config),
-  mockValidateZTMChatConfig: vi.fn(() => ({ valid: true, errors: [] })),
-  mockGetDefaultConfig: vi.fn(() => ({
-    agentUrl: "http://localhost:7777",
-    permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-    meshName: "openclaw-mesh",
-    username: "openclaw-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    dmPolicy: "pairing",
-  })),
-}));
+const { mockResolveZTMChatConfig, mockValidateZTMChatConfig, mockGetDefaultConfig } = vi.hoisted(
+  () => ({
+    mockResolveZTMChatConfig: vi.fn(config => config),
+    mockValidateZTMChatConfig: vi.fn(() => ({ valid: true, errors: [] })),
+    mockGetDefaultConfig: vi.fn(() => ({
+      agentUrl: 'http://localhost:7777',
+      permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+      meshName: 'openclaw-mesh',
+      username: 'openclaw-bot',
+      enableGroups: false,
+      autoReply: true,
+      messagePath: '/shared',
+      dmPolicy: 'pairing',
+    })),
+  })
+);
 
 const { mockIsConfigMinimallyValid } = vi.hoisted(() => ({
-  mockIsConfigMinimallyValid: vi.fn((config) => !!config?.agentUrl && !!config?.username),
+  mockIsConfigMinimallyValid: vi.fn(config => !!config?.agentUrl && !!config?.username),
 }));
 
 const { mockCreateZTMApiClient } = vi.hoisted(() => ({
@@ -44,28 +46,29 @@ const { mockCreateZTMApiClient } = vi.hoisted(() => ({
   })),
 }));
 
-const { mockGetAllAccountStates, mockInitializeRuntime, mockStopRuntime, mockRemoveAccountState } = vi.hoisted(() => ({
-  mockGetAllAccountStates: vi.fn().mockReturnValue(new Map()),
-  mockInitializeRuntime: vi.fn().mockResolvedValue(true),
-  mockStopRuntime: vi.fn().mockResolvedValue(undefined),
-  mockRemoveAccountState: vi.fn(),
-}));
+const { mockGetAllAccountStates, mockInitializeRuntime, mockStopRuntime, mockRemoveAccountState } =
+  vi.hoisted(() => ({
+    mockGetAllAccountStates: vi.fn().mockReturnValue(new Map()),
+    mockInitializeRuntime: vi.fn().mockResolvedValue(true),
+    mockStopRuntime: vi.fn().mockResolvedValue(undefined),
+    mockRemoveAccountState: vi.fn(),
+  }));
 
 const { mockSendZTMMessage, mockGenerateMessageId } = vi.hoisted(() => ({
   mockSendZTMMessage: vi.fn().mockResolvedValue({ ok: true }),
-  mockGenerateMessageId: vi.fn(() => "msg-123"),
+  mockGenerateMessageId: vi.fn(() => 'msg-123'),
 }));
 
 const { mockCheckPortOpen, mockGetIdentity, mockJoinMesh } = vi.hoisted(() => ({
   mockCheckPortOpen: vi.fn().mockResolvedValue(true),
-  mockGetIdentity: vi.fn().mockResolvedValue("public-key-123"),
+  mockGetIdentity: vi.fn().mockResolvedValue('public-key-123'),
   mockJoinMesh: vi.fn().mockResolvedValue(true),
 }));
 
 const { mockRequestPermit, mockSavePermitData, mockLoadPermitFromFile } = vi.hoisted(() => ({
-  mockRequestPermit: vi.fn().mockResolvedValue({ token: "permit-token" }),
+  mockRequestPermit: vi.fn().mockResolvedValue({ token: 'permit-token' }),
   mockSavePermitData: vi.fn().mockReturnValue(true),
-  mockLoadPermitFromFile: vi.fn().mockResolvedValue({ key: "value" }),
+  mockLoadPermitFromFile: vi.fn().mockResolvedValue({ key: 'value' }),
 }));
 
 const { mockStartMessageWatcher } = vi.hoisted(() => ({
@@ -77,13 +80,13 @@ const { mockGetZTMRuntime } = vi.hoisted(() => ({
     channel: {
       routing: {
         resolveAgentRoute: vi.fn(() => ({
-          sessionKey: "session-123",
-          agentId: "agent-456",
-          matchedBy: "test-route",
+          sessionKey: 'session-123',
+          agentId: 'agent-456',
+          matchedBy: 'test-route',
         })),
       },
       reply: {
-        finalizeInboundContext: vi.fn((ctx) => ctx),
+        finalizeInboundContext: vi.fn(ctx => ctx),
         dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockResolvedValue({ queuedFinal: true }),
         resolveHumanDelayConfig: vi.fn(() => ({ delay: 0 })),
       },
@@ -100,74 +103,76 @@ const { mockLogger } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../config/index.js", () => ({
+vi.mock('../config/index.js', () => ({
   resolveZTMChatConfig: mockResolveZTMChatConfig,
   validateZTMChatConfig: mockValidateZTMChatConfig,
   getDefaultConfig: mockGetDefaultConfig,
 }));
 
-vi.mock("../config/validation.js", () => ({
+vi.mock('../config/validation.js', () => ({
   isConfigMinimallyValid: mockIsConfigMinimallyValid,
 }));
 
-vi.mock("../api/ztm-api.js", () => ({
+vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: mockCreateZTMApiClient,
 }));
 
-vi.mock("../runtime/state.js", () => ({
+vi.mock('../runtime/state.js', () => ({
   getAllAccountStates: mockGetAllAccountStates,
   initializeRuntime: mockInitializeRuntime,
   stopRuntime: mockStopRuntime,
   removeAccountState: mockRemoveAccountState,
 }));
 
-vi.mock("../messaging/outbound.js", () => ({
+vi.mock('../messaging/outbound.js', () => ({
   sendZTMMessage: mockSendZTMMessage,
   generateMessageId: mockGenerateMessageId,
 }));
 
-vi.mock("../connectivity/mesh.js", () => ({
+vi.mock('../connectivity/mesh.js', () => ({
   checkPortOpen: mockCheckPortOpen,
   getIdentity: mockGetIdentity,
   joinMesh: mockJoinMesh,
 }));
 
-vi.mock("../connectivity/permit.js", () => ({
+vi.mock('../connectivity/permit.js', () => ({
   requestPermit: mockRequestPermit,
   savePermitData: mockSavePermitData,
   loadPermitFromFile: mockLoadPermitFromFile,
 }));
 
-vi.mock("../messaging/watcher.js", () => ({
+vi.mock('../messaging/watcher.js', () => ({
   startMessageWatcher: mockStartMessageWatcher,
 }));
 
-vi.mock("../runtime/index.js", () => ({
+vi.mock('../runtime/index.js', () => ({
   getZTMRuntime: mockGetZTMRuntime,
 }));
 
-vi.mock("../di/index.js", () => ({
+vi.mock('../di/index.js', () => ({
   DEPENDENCIES: {
-    RUNTIME: Symbol("runtime"),
-    MESSAGE_STATE_REPO: Symbol("message-state-repo"),
-    ALLOW_FROM_REPO: Symbol("allow-from-repo"),
+    RUNTIME: Symbol('runtime'),
+    MESSAGE_STATE_REPO: Symbol('message-state-repo'),
+    ALLOW_FROM_REPO: Symbol('allow-from-repo'),
   },
   container: {
-    get: vi.fn((key) => {
-      if (String(key) === "Symbol(runtime)") {
+    get: vi.fn(key => {
+      if (String(key) === 'Symbol(runtime)') {
         return {
           get: () => ({
             channel: {
               routing: {
                 resolveAgentRoute: vi.fn(() => ({
-                  sessionKey: "session-123",
-                  agentId: "agent-456",
-                  matchedBy: "test-route",
+                  sessionKey: 'session-123',
+                  agentId: 'agent-456',
+                  matchedBy: 'test-route',
                 })),
               },
               reply: {
-                finalizeInboundContext: vi.fn((ctx) => ctx),
-                dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockResolvedValue({ queuedFinal: true }),
+                finalizeInboundContext: vi.fn(ctx => ctx),
+                dispatchReplyWithBufferedBlockDispatcher: vi
+                  .fn()
+                  .mockResolvedValue({ queuedFinal: true }),
                 resolveHumanDelayConfig: vi.fn(() => ({ delay: 0 })),
               },
               pairing: {
@@ -177,13 +182,13 @@ vi.mock("../di/index.js", () => ({
           }),
         };
       }
-      if (String(key) === "Symbol(message-state-repo)") {
+      if (String(key) === 'Symbol(message-state-repo)') {
         return {
           getFileMetadata: vi.fn(() => ({})),
           setFileMetadataBulk: vi.fn(),
         };
       }
-      if (String(key) === "Symbol(allow-from-repo)") {
+      if (String(key) === 'Symbol(allow-from-repo)') {
         return {
           getAllowFrom: vi.fn(() => Promise.resolve([])),
           addAllowFrom: vi.fn(),
@@ -195,27 +200,27 @@ vi.mock("../di/index.js", () => ({
   },
 }));
 
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: mockLogger,
 }));
 
 const { mockResolveZTMChatAccount } = vi.hoisted(() => ({
   mockResolveZTMChatAccount: vi.fn(({ cfg, accountId }) => {
-    const accountKey = accountId ?? "default";
+    const accountKey = accountId ?? 'default';
     const accountConfig = cfg?.accounts?.[accountKey] || cfg?.accounts?.default || {};
     return {
       accountId: accountKey,
-      username: accountConfig.username || "",
+      username: accountConfig.username || '',
       enabled: true,
       config: {
-        agentUrl: accountConfig.agentUrl || "",
-        permitUrl: accountConfig.permitUrl || "",
-        meshName: accountConfig.meshName || "",
-        username: accountConfig.username || "",
+        agentUrl: accountConfig.agentUrl || '',
+        permitUrl: accountConfig.permitUrl || '',
+        meshName: accountConfig.meshName || '',
+        username: accountConfig.username || '',
         enableGroups: accountConfig.enableGroups ?? false,
         autoReply: accountConfig.autoReply ?? true,
-        messagePath: accountConfig.messagePath || "/shared",
-        dmPolicy: accountConfig.dmPolicy || "pairing",
+        messagePath: accountConfig.messagePath || '/shared',
+        dmPolicy: accountConfig.dmPolicy || 'pairing',
         allowFrom: accountConfig.allowFrom,
       },
     };
@@ -223,45 +228,47 @@ const { mockResolveZTMChatAccount } = vi.hoisted(() => ({
 }));
 
 const { mockGetEffectiveChannelConfig } = vi.hoisted(() => ({
-  mockGetEffectiveChannelConfig: vi.fn((cfg) => {
+  mockGetEffectiveChannelConfig: vi.fn(cfg => {
     if (!cfg) return null;
-    return cfg.channels?.["ztm-chat"] || null;
+    return cfg.channels?.['ztm-chat'] || null;
   }),
 }));
 
-vi.mock("./config.js", () => ({
+vi.mock('./config.js', () => ({
   resolveZTMChatAccount: mockResolveZTMChatAccount,
   getEffectiveChannelConfig: mockGetEffectiveChannelConfig,
 }));
 
-const { mockFsExistsSync, mockFsReadFileSync, mockFsWriteFileSync, mockFsUnlinkSync } = vi.hoisted(() => ({
-  mockFsExistsSync: vi.fn(),
-  mockFsReadFileSync: vi.fn(),
-  mockFsWriteFileSync: vi.fn(),
-  mockFsUnlinkSync: vi.fn(),
-}));
+const { mockFsExistsSync, mockFsReadFileSync, mockFsWriteFileSync, mockFsUnlinkSync } = vi.hoisted(
+  () => ({
+    mockFsExistsSync: vi.fn(),
+    mockFsReadFileSync: vi.fn(),
+    mockFsWriteFileSync: vi.fn(),
+    mockFsUnlinkSync: vi.fn(),
+  })
+);
 
 const { mockPathJoin } = vi.hoisted(() => ({
-  mockPathJoin: vi.fn((...args: string[]) => args.join("/")),
+  mockPathJoin: vi.fn((...args: string[]) => args.join('/')),
 }));
 
-vi.mock("fs", () => ({
+vi.mock('fs', () => ({
   existsSync: mockFsExistsSync,
   readFileSync: mockFsReadFileSync,
   writeFileSync: mockFsWriteFileSync,
   unlinkSync: mockFsUnlinkSync,
 }));
 
-vi.mock("node:path", () => ({
+vi.mock('node:path', () => ({
   join: mockPathJoin,
 }));
 
 // Mock the paths module to return a fixed permit path for testing
-vi.mock("../utils/paths.js", () => ({
-  resolvePermitPath: vi.fn(() => "/mock/permit.json"),
+vi.mock('../utils/paths.js', () => ({
+  resolvePermitPath: vi.fn(() => '/mock/permit.json'),
 }));
 
-describe("Channel Gateway", () => {
+describe('Channel Gateway', () => {
   let mockConfig: ZTMChatConfig;
   let mockState: AccountRuntimeState;
 
@@ -290,21 +297,19 @@ describe("Channel Gateway", () => {
     } as any;
 
     // Set default mock for getAllAccountStates
-    mockGetAllAccountStates.mockReturnValue(
-      new Map([["default", mockState]])
-    );
+    mockGetAllAccountStates.mockReturnValue(new Map([['default', mockState]]));
 
     // Don't call mockClear() here - it will be called in afterEach
     // and this will interfere with nested describe blocks' beforeEach
 
-    process.env.HOME = "/test/home";
+    process.env.HOME = '/test/home';
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("collectStatusIssues", () => {
+  describe('collectStatusIssues', () => {
     beforeEach(() => {
       // Reset to default - validation errors should be detected
       // Use mockImplementation to check config properties
@@ -314,75 +319,75 @@ describe("Channel Gateway", () => {
       });
     });
 
-    it("should return empty array for valid config", () => {
+    it('should return empty array for valid config', () => {
       // Override mock to return true for this specific test
       mockIsConfigMinimallyValid.mockReturnValueOnce(true);
 
       const cfgWithAccounts = {
         channels: {
-          "ztm-chat": {
+          'ztm-chat': {
             ...mockConfig,
             accounts: { test: mockConfig },
           },
         },
       };
-      const accounts = [{ accountId: "test", config: mockConfig, cfg: cfgWithAccounts } as any];
+      const accounts = [{ accountId: 'test', config: mockConfig, cfg: cfgWithAccounts } as any];
 
       const result = collectStatusIssues(accounts);
 
       expect(result).toEqual([]);
     });
 
-    it("should return error for missing agentUrl", () => {
-      const invalidConfig = { ...mockConfig, agentUrl: "" };
-      const accounts = [{ accountId: "test", config: invalidConfig } as any];
+    it('should return error for missing agentUrl', () => {
+      const invalidConfig = { ...mockConfig, agentUrl: '' };
+      const accounts = [{ accountId: 'test', config: invalidConfig } as any];
 
       const result = collectStatusIssues(accounts);
 
       expect(result).toHaveLength(1);
-      expect(result[0].kind).toBe("config");
-      expect(result[0].level).toBe("error");
-      expect(result[0].message).toContain("Missing required configuration");
+      expect(result[0].kind).toBe('config');
+      expect(result[0].level).toBe('error');
+      expect(result[0].message).toContain('Missing required configuration');
     });
 
-    it("should return error for missing username", () => {
-      const invalidConfig = { ...mockConfig, username: "" };
-      const accounts = [{ accountId: "test", config: invalidConfig } as any];
+    it('should return error for missing username', () => {
+      const invalidConfig = { ...mockConfig, username: '' };
+      const accounts = [{ accountId: 'test', config: invalidConfig } as any];
 
       const result = collectStatusIssues(accounts);
 
       expect(result).toHaveLength(1);
-      expect(result[0].accountId).toBe("test");
+      expect(result[0].accountId).toBe('test');
     });
 
-    it("should return error for both missing agentUrl and username", () => {
-      const invalidConfig = { agentUrl: "", username: "" };
-      const accounts = [{ accountId: "test", config: invalidConfig } as any];
+    it('should return error for both missing agentUrl and username', () => {
+      const invalidConfig = { agentUrl: '', username: '' };
+      const accounts = [{ accountId: 'test', config: invalidConfig } as any];
 
       const result = collectStatusIssues(accounts);
 
       expect(result).toHaveLength(1);
-      expect(result[0].message).toContain("agentUrl");
-      expect(result[0].message).toContain("username");
+      expect(result[0].message).toContain('agentUrl');
+      expect(result[0].message).toContain('username');
     });
 
-    it("should handle empty accounts array", () => {
+    it('should handle empty accounts array', () => {
       const result = collectStatusIssues([]);
 
       expect(result).toEqual([]);
     });
 
-    it("should handle missing accountId", () => {
+    it('should handle missing accountId', () => {
       const accounts = [{} as any];
 
       const result = collectStatusIssues(accounts);
 
-      expect(result[0].accountId).toBe("default");
+      expect(result[0].accountId).toBe('default');
     });
   });
 
-  describe("probeAccountGateway", () => {
-    it("should return ok: true for connected mesh", async () => {
+  describe('probeAccountGateway', () => {
+    it('should return ok: true for connected mesh', async () => {
       const account = { config: mockConfig };
 
       const result = await probeAccountGateway({ account });
@@ -392,24 +397,24 @@ describe("Channel Gateway", () => {
       expect(result.meshInfo?.connected).toBe(true);
     });
 
-    it("should return error when no agentUrl configured", async () => {
-      const account = { config: { ...mockConfig, agentUrl: "" } };
+    it('should return error when no agentUrl configured', async () => {
+      const account = { config: { ...mockConfig, agentUrl: '' } };
 
       const result = await probeAccountGateway({ account });
 
       expect(result.ok).toBe(false);
-      expect(result.error).toBe("No agent URL configured");
+      expect(result.error).toBe('No agent URL configured');
       expect(result.meshInfo).toBeUndefined();
     });
 
-    it("should return error when mesh info fails", async () => {
+    it('should return error when mesh info fails', async () => {
       const mockClient = {
         getMeshInfo: vi.fn().mockResolvedValue({
           ok: false,
-          error: new Error("Mesh info failed"),
+          error: new Error('Mesh info failed'),
         }),
       };
-      const { createZTMApiClient } = await import("../api/ztm-api.js");
+      const { createZTMApiClient } = await import('../api/ztm-api.js');
       (createZTMApiClient as any).mockReturnValue(mockClient);
 
       const account = { config: mockConfig };
@@ -417,17 +422,17 @@ describe("Channel Gateway", () => {
       const result = await probeAccountGateway({ account });
 
       expect(result.ok).toBe(false);
-      expect(result.error).toContain("Mesh info failed");
+      expect(result.error).toContain('Mesh info failed');
     });
 
-    it("should return error when mesh not connected", async () => {
+    it('should return error when mesh not connected', async () => {
       const mockClient = {
         getMeshInfo: vi.fn().mockResolvedValue({
           ok: true,
           value: { connected: false, peers: 0 },
         }),
       };
-      const { createZTMApiClient } = await import("../api/ztm-api.js");
+      const { createZTMApiClient } = await import('../api/ztm-api.js');
       (createZTMApiClient as any).mockReturnValue(mockClient);
 
       const account = { config: mockConfig };
@@ -435,10 +440,10 @@ describe("Channel Gateway", () => {
       const result = await probeAccountGateway({ account });
 
       expect(result.ok).toBe(false);
-      expect(result.error).toBe("ZTM Agent is not connected to mesh");
+      expect(result.error).toBe('ZTM Agent is not connected to mesh');
     });
 
-    it("should use default timeout", async () => {
+    it('should use default timeout', async () => {
       const account = { config: mockConfig };
 
       await probeAccountGateway({ account, timeoutMs: undefined });
@@ -447,7 +452,7 @@ describe("Channel Gateway", () => {
       expect(true).toBe(true);
     });
 
-    it("should handle custom timeout", async () => {
+    it('should handle custom timeout', async () => {
       const account = { config: mockConfig };
 
       await probeAccountGateway({ account, timeoutMs: 5000 });
@@ -457,133 +462,123 @@ describe("Channel Gateway", () => {
     });
   });
 
-  describe("sendTextGateway", () => {
-    it("should send message successfully", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
-      (getAllAccountStates as any).mockReturnValueOnce(
-        new Map([["default", mockState]])
-      );
+  describe('sendTextGateway', () => {
+    it('should send message successfully', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValueOnce(new Map([['default', mockState]]));
 
       const result = await sendTextGateway({
-        to: "peer-user",
-        text: "Hello, world!",
+        to: 'peer-user',
+        text: 'Hello, world!',
       });
 
-      expect(result.channel).toBe("ztm-chat");
+      expect(result.channel).toBe('ztm-chat');
       expect(result.ok).toBe(true);
       expect(result.messageId).toBeTruthy();
       expect(result.error).toBeUndefined();
     });
 
-    it("should strip ztm-chat prefix from peer", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
-      (getAllAccountStates as any).mockReturnValueOnce(
-        new Map([["default", mockState]])
-      );
+    it('should strip ztm-chat prefix from peer', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValueOnce(new Map([['default', mockState]]));
 
       const result = await sendTextGateway({
-        to: "ztm-chat:peer-user",
-        text: "test",
+        to: 'ztm-chat:peer-user',
+        text: 'test',
       });
 
       expect(result.ok).toBe(true);
     });
 
-    it("should return error when account not initialized", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
+    it('should return error when account not initialized', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
       // Use mockReturnValueOnce so the default mockReturnValue from beforeEach is restored after
       (getAllAccountStates as any).mockReturnValueOnce(new Map());
 
       const result = await sendTextGateway({
-        to: "peer-user",
-        text: "test",
+        to: 'peer-user',
+        text: 'test',
       });
 
-      expect(result.channel).toBe("ztm-chat");
+      expect(result.channel).toBe('ztm-chat');
       expect(result.ok).toBe(false);
-      expect(result.error).toBe("Account not initialized");
-      expect(result.messageId).toBe("");
+      expect(result.error).toBe('Account not initialized');
+      expect(result.messageId).toBe('');
     });
 
-    it("should use specific accountId", async () => {
-      const { getAllAccountStates } = await import("../runtime/state.js");
-      (getAllAccountStates as any).mockReturnValueOnce(
-        new Map([["custom-account", mockState]])
-      );
+    it('should use specific accountId', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValueOnce(new Map([['custom-account', mockState]]));
 
       const result = await sendTextGateway({
-        to: "peer",
-        text: "test",
-        accountId: "custom-account",
+        to: 'peer',
+        text: 'test',
+        accountId: 'custom-account',
       });
 
       expect(result.ok).toBe(true);
     });
 
-    it("should return error from sendZTMMessage", async () => {
-      const stateModule = await import("../runtime/state.js");
-      const outboundModule = await import("../messaging/outbound.js");
+    it('should return error from sendZTMMessage', async () => {
+      const stateModule = await import('../runtime/state.js');
+      const outboundModule = await import('../messaging/outbound.js');
       const { getAllAccountStates } = stateModule;
       const { sendZTMMessage } = outboundModule;
-      (getAllAccountStates as any).mockReturnValueOnce(
-        new Map([["default", mockState]])
-      );
+      (getAllAccountStates as any).mockReturnValueOnce(new Map([['default', mockState]]));
       (sendZTMMessage as any).mockResolvedValueOnce({
         ok: false,
-        error: new Error("Send failed"),
+        error: new Error('Send failed'),
       });
 
       const result = await sendTextGateway({
-        to: "peer",
-        text: "test",
+        to: 'peer',
+        text: 'test',
       });
 
       expect(result.ok).toBe(false);
       expect(result.error).toBeDefined();
     });
 
-    it("should include error message from state", async () => {
+    it('should include error message from state', async () => {
       const stateWithError = {
         ...mockState,
-        lastError: "Connection lost",
+        lastError: 'Connection lost',
       };
-      const stateModule = await import("../runtime/state.js");
-      const outboundModule = await import("../messaging/outbound.js");
+      const stateModule = await import('../runtime/state.js');
+      const outboundModule = await import('../messaging/outbound.js');
       const { getAllAccountStates } = stateModule;
       const { sendZTMMessage } = outboundModule;
-      (getAllAccountStates as any).mockReturnValueOnce(
-        new Map([["default", stateWithError]])
-      );
+      (getAllAccountStates as any).mockReturnValueOnce(new Map([['default', stateWithError]]));
       (sendZTMMessage as any).mockResolvedValueOnce({
         ok: false,
-        error: new Error("Send failed"),
+        error: new Error('Send failed'),
       });
 
       const result = await sendTextGateway({
-        to: "peer",
-        text: "test",
+        to: 'peer',
+        text: 'test',
       });
 
-      expect(result.error).toBe("Send failed");
+      expect(result.error).toBe('Send failed');
     });
   });
 
-  describe("logoutAccountGateway", () => {
-    it("should clear account state", async () => {
-      const { stopRuntime, removeAccountState } = await import("../runtime/state.js");
+  describe('logoutAccountGateway', () => {
+    it('should clear account state', async () => {
+      const { stopRuntime, removeAccountState } = await import('../runtime/state.js');
 
-      const result = await logoutAccountGateway({ accountId: "test-account" });
+      const result = await logoutAccountGateway({ accountId: 'test-account' });
 
       expect(result.cleared).toBe(true);
-      expect(stopRuntime).toHaveBeenCalledWith("test-account");
-      expect(removeAccountState).toHaveBeenCalledWith("test-account");
+      expect(stopRuntime).toHaveBeenCalledWith('test-account');
+      expect(removeAccountState).toHaveBeenCalledWith('test-account');
     });
 
-    it("should handle optional cfg parameter", async () => {
-      const { stopRuntime, removeAccountState } = await import("../runtime/state.js");
+    it('should handle optional cfg parameter', async () => {
+      const { stopRuntime, removeAccountState } = await import('../runtime/state.js');
 
       const result = await logoutAccountGateway({
-        accountId: "test-account",
+        accountId: 'test-account',
         cfg: undefined,
       });
 
@@ -591,11 +586,11 @@ describe("Channel Gateway", () => {
       expect(stopRuntime).toHaveBeenCalled();
     });
 
-    it("should handle cfg parameter", async () => {
-      const { stopRuntime, removeAccountState } = await import("../runtime/state.js");
+    it('should handle cfg parameter', async () => {
+      const { stopRuntime, removeAccountState } = await import('../runtime/state.js');
       const cfg: OpenClawConfig = {};
 
-      const result = await logoutAccountGateway({ accountId: "test", cfg });
+      const result = await logoutAccountGateway({ accountId: 'test', cfg });
 
       expect(result.cleared).toBe(true);
     });
@@ -739,26 +734,26 @@ describe("Channel Gateway", () => {
     });
   }); */
 
-  describe("buildMessageCallback", () => {
-    it("should create callback function", () => {
-      const callback = buildMessageCallback(mockState, "test-account", mockConfig);
+  describe('buildMessageCallback', () => {
+    it('should create callback function', () => {
+      const callback = buildMessageCallback(mockState, 'test-account', mockConfig);
 
-      expect(typeof callback).toBe("function");
+      expect(typeof callback).toBe('function');
     });
 
-    it("should dispatch message when callback is invoked", async () => {
-      const { container, DEPENDENCIES } = await import("../di/index.js");
+    it('should dispatch message when callback is invoked', async () => {
+      const { container, DEPENDENCIES } = await import('../di/index.js');
       const mockRuntime = {
         channel: {
           routing: {
             resolveAgentRoute: vi.fn(() => ({
-              sessionKey: "session-123",
-              agentId: "agent-456",
-              matchedBy: "test-route",
+              sessionKey: 'session-123',
+              agentId: 'agent-456',
+              matchedBy: 'test-route',
             })),
           },
           reply: {
-            finalizeInboundContext: vi.fn((ctx) => ctx),
+            finalizeInboundContext: vi.fn(ctx => ctx),
             dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockResolvedValue({
               queuedFinal: true,
             }),
@@ -770,35 +765,35 @@ describe("Channel Gateway", () => {
         get: () => mockRuntime,
       });
 
-      const callback = buildMessageCallback(mockState, "test-account", mockConfig);
+      const callback = buildMessageCallback(mockState, 'test-account', mockConfig);
       const msg = {
-        id: "msg-123",
-        sender: "peer",
-        senderId: "peer",
-        content: "test",
+        id: 'msg-123',
+        sender: 'peer',
+        senderId: 'peer',
+        content: 'test',
         timestamp: new Date(),
-        peer: "peer",
+        peer: 'peer',
       } as unknown as ZTMChatMessage;
 
       callback(msg);
 
       // Wait for async operations
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(mockRuntime.channel.reply.dispatchReplyWithBufferedBlockDispatcher).toHaveBeenCalled();
     });
 
-    it("should handle dispatch errors gracefully", async () => {
-      const { container, DEPENDENCIES } = await import("../di/index.js");
+    it('should handle dispatch errors gracefully', async () => {
+      const { container, DEPENDENCIES } = await import('../di/index.js');
       const mockRuntime = {
         channel: {
           routing: {
             resolveAgentRoute: vi.fn(() => {
-              throw new Error("Route error");
+              throw new Error('Route error');
             }),
           },
           reply: {
-            finalizeInboundContext: vi.fn((ctx) => ctx),
+            finalizeInboundContext: vi.fn(ctx => ctx),
           },
         },
       };
@@ -806,21 +801,21 @@ describe("Channel Gateway", () => {
         get: () => mockRuntime,
       });
 
-      const callback = buildMessageCallback(mockState, "test-account", mockConfig);
+      const callback = buildMessageCallback(mockState, 'test-account', mockConfig);
       const msg = {
-        id: "msg-123",
-        sender: "peer",
-        senderId: "peer",
-        content: "test",
+        id: 'msg-123',
+        sender: 'peer',
+        senderId: 'peer',
+        content: 'test',
         timestamp: new Date(),
-        peer: "peer",
+        peer: 'peer',
       } as unknown as ZTMChatMessage;
 
       expect(() => callback(msg)).not.toThrow();
     });
   });
 
-  describe("startAccountGateway", () => {
+  describe('startAccountGateway', () => {
     beforeEach(() => {
       mockValidateZTMChatConfig.mockReturnValue({ valid: true, errors: [] });
       mockCheckPortOpen.mockResolvedValue(true);
@@ -828,58 +823,60 @@ describe("Channel Gateway", () => {
       // Note: Some tests use "test" as accountId, so include both
       mockGetAllAccountStates.mockReturnValue(
         new Map([
-          ["test-account", mockState],
-          ["test", { ...mockState, accountId: "test" }],
+          ['test-account', mockState],
+          ['test', { ...mockState, accountId: 'test' }],
         ])
       );
     });
 
-    it("should throw error for invalid config", async () => {
-      const { validateZTMChatConfig } = await import("../config/index.js");
+    it('should throw error for invalid config', async () => {
+      const { validateZTMChatConfig } = await import('../config/index.js');
       (validateZTMChatConfig as any).mockReturnValue({
         valid: false,
-        errors: ["agentUrl is required", "username is required"],
+        errors: ['agentUrl is required', 'username is required'],
       });
 
       const ctx = {
-        account: { accountId: "test", config: mockConfig },
+        account: { accountId: 'test', config: mockConfig },
         log: createMockLoggerFns(),
       };
 
-      await expect(startAccountGateway(ctx)).rejects.toThrow("agentUrl is required; username is required");
+      await expect(startAccountGateway(ctx)).rejects.toThrow(
+        'agentUrl is required; username is required'
+      );
     });
 
-    it("should throw error when cannot connect to agent", async () => {
-      const { checkPortOpen } = await import("../connectivity/mesh.js");
+    it('should throw error when cannot connect to agent', async () => {
+      const { checkPortOpen } = await import('../connectivity/mesh.js');
       (checkPortOpen as any).mockResolvedValue(false);
 
       const ctx = {
-        account: { accountId: "test", config: mockConfig },
+        account: { accountId: 'test', config: mockConfig },
         log: createMockLoggerFns(),
       };
 
-      await expect(startAccountGateway(ctx)).rejects.toThrow("Cannot connect to ZTM agent");
+      await expect(startAccountGateway(ctx)).rejects.toThrow('Cannot connect to ZTM agent');
     });
 
-    it("should throw error for invalid URL", async () => {
-      const { checkPortOpen } = await import("../connectivity/mesh.js");
+    it('should throw error for invalid URL', async () => {
+      const { checkPortOpen } = await import('../connectivity/mesh.js');
       (checkPortOpen as any).mockImplementation(() => {
-        throw new Error("Invalid URL");
+        throw new Error('Invalid URL');
       });
 
       const ctx = {
-        account: { accountId: "test", config: { ...mockConfig, agentUrl: "invalid-url" } },
+        account: { accountId: 'test', config: { ...mockConfig, agentUrl: 'invalid-url' } },
         log: createMockLoggerFns(),
       };
 
-      await expect(startAccountGateway(ctx)).rejects.toThrow("Invalid ZTM agent URL");
+      await expect(startAccountGateway(ctx)).rejects.toThrow('Invalid ZTM agent URL');
     });
 
-    it("should log pairing mode info", async () => {
-      const { checkPortOpen, joinMesh } = await import("../connectivity/mesh.js");
-      const stateModule = await import("../runtime/state.js");
-      const watcherModule = await import("../messaging/watcher.js");
-      const runtimeModule = await import("../runtime/index.js");
+    it('should log pairing mode info', async () => {
+      const { checkPortOpen, joinMesh } = await import('../connectivity/mesh.js');
+      const stateModule = await import('../runtime/state.js');
+      const watcherModule = await import('../messaging/watcher.js');
+      const runtimeModule = await import('../runtime/index.js');
       const { initializeRuntime } = stateModule;
       const { startMessageWatcher } = watcherModule;
       const { getZTMRuntime } = runtimeModule;
@@ -891,10 +888,14 @@ describe("Channel Gateway", () => {
 
       const mockRuntime = {
         channel: {
-          routing: { resolveAgentRoute: vi.fn(() => ({ sessionKey: "s", agentId: "a", matchedBy: "r" })) },
+          routing: {
+            resolveAgentRoute: vi.fn(() => ({ sessionKey: 's', agentId: 'a', matchedBy: 'r' })),
+          },
           reply: {
-            finalizeInboundContext: vi.fn((ctx) => ctx),
-            dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockResolvedValue({ queuedFinal: true }),
+            finalizeInboundContext: vi.fn(ctx => ctx),
+            dispatchReplyWithBufferedBlockDispatcher: vi
+              .fn()
+              .mockResolvedValue({ queuedFinal: true }),
             resolveHumanDelayConfig: vi.fn(() => ({ delay: 0 })),
           },
         },
@@ -903,8 +904,8 @@ describe("Channel Gateway", () => {
 
       const ctx = {
         account: {
-          accountId: "test",
-          config: { ...mockConfig, dmPolicy: "pairing" as const, allowFrom: [] },
+          accountId: 'test',
+          config: { ...mockConfig, dmPolicy: 'pairing' as const, allowFrom: [] },
         },
         log: createMockLoggerFns(),
       };
@@ -912,15 +913,15 @@ describe("Channel Gateway", () => {
       await startAccountGateway(ctx);
 
       expect(ctx.log?.info).toHaveBeenCalledWith(
-        expect.stringContaining("Pairing mode active - no approved users")
+        expect.stringContaining('Pairing mode active - no approved users')
       );
     });
   });
 
-  describe("permit loading with permitSource", () => {
-    it("should load permit from file when permitSource is file", async () => {
-      const mockPermitData = { key: "value" };
-      const mockFilePath = "/tmp/mock-permit.json";
+  describe('permit loading with permitSource', () => {
+    it('should load permit from file when permitSource is file', async () => {
+      const mockPermitData = { key: 'value' };
+      const mockFilePath = '/tmp/mock-permit.json';
       fs.writeFileSync(mockFilePath, JSON.stringify(mockPermitData));
 
       // Test the loading logic
@@ -931,54 +932,53 @@ describe("Channel Gateway", () => {
     });
   });
 
-  describe("Edge Cases", () => {
-
-    it("should handle empty message content", async () => {
+  describe('Edge Cases', () => {
+    it('should handle empty message content', async () => {
       const result = await sendTextGateway({
-        to: "peer",
-        text: "",
+        to: 'peer',
+        text: '',
       });
 
       expect(result.ok).toBe(true);
     });
 
-    it("should handle special characters in message", async () => {
+    it('should handle special characters in message', async () => {
       const result = await sendTextGateway({
-        to: "peer",
-        text: "Test unicode: 你好 🌍",
+        to: 'peer',
+        text: 'Test unicode: 你好 🌍',
       });
 
       expect(result.ok).toBe(true);
     });
 
-    it("should handle very long messages", async () => {
-      const longText = "a".repeat(10000);
+    it('should handle very long messages', async () => {
+      const longText = 'a'.repeat(10000);
 
       const result = await sendTextGateway({
-        to: "peer",
+        to: 'peer',
         text: longText,
       });
 
       expect(result.ok).toBe(true);
     });
 
-    it("should handle peer with special characters", async () => {
+    it('should handle peer with special characters', async () => {
       const result = await sendTextGateway({
-        to: "user_123-test.dev",
-        text: "test",
+        to: 'user_123-test.dev',
+        text: 'test',
       });
 
       expect(result.ok).toBe(true);
     });
 
-    it("should handle multiple rapid sends", async () => {
+    it('should handle multiple rapid sends', async () => {
       const sends = Array.from({ length: 10 }, (_, i) =>
-        sendTextGateway({ to: "peer", text: `message ${i}` })
+        sendTextGateway({ to: 'peer', text: `message ${i}` })
       );
 
       const results = await Promise.all(sends);
 
-      expect(results.every((r) => r.ok)).toBe(true);
+      expect(results.every(r => r.ok)).toBe(true);
     });
   });
 });

@@ -1,17 +1,17 @@
 // Unit tests for Runtime
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   setZTMRuntime,
   getZTMRuntime,
   isRuntimeInitialized,
   hasZTMRuntime,
   RuntimeManager,
-} from "./runtime.js";
-import type { PluginRuntime } from "openclaw/plugin-sdk";
+} from './runtime.js';
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
 
 // Mock logger - must be hoisted
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   setRuntimeLogger: vi.fn(() => undefined),
   logger: {
     info: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-describe("Runtime Management", () => {
+describe('Runtime Management', () => {
   beforeEach(() => {
     // Reset singleton before each test
     RuntimeManager.reset();
@@ -33,12 +33,12 @@ describe("Runtime Management", () => {
     RuntimeManager.reset();
   });
 
-  describe("getZTMRuntime", () => {
-    it("should throw error when runtime not initialized", () => {
-      expect(() => getZTMRuntime()).toThrow("ZTM runtime not initialized");
+  describe('getZTMRuntime', () => {
+    it('should throw error when runtime not initialized', () => {
+      expect(() => getZTMRuntime()).toThrow('ZTM runtime not initialized');
     });
 
-    it("should return runtime after initialization", () => {
+    it('should return runtime after initialization', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -49,7 +49,7 @@ describe("Runtime Management", () => {
       expect(getZTMRuntime()).toBe(mockRuntime);
     });
 
-    it("should return same instance on multiple calls", () => {
+    it('should return same instance on multiple calls', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -63,8 +63,8 @@ describe("Runtime Management", () => {
     });
   });
 
-  describe("setZTMRuntime", () => {
-    it("should set runtime instance", () => {
+  describe('setZTMRuntime', () => {
+    it('should set runtime instance', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -74,7 +74,7 @@ describe("Runtime Management", () => {
       expect(getZTMRuntime()).toBe(mockRuntime);
     });
 
-    it("should replace existing runtime", () => {
+    it('should replace existing runtime', () => {
       const mockRuntime1 = {
         id: 1,
         channel: { routing: { resolveAgentRoute: vi.fn() } },
@@ -91,7 +91,7 @@ describe("Runtime Management", () => {
       expect(getZTMRuntime()).toBe(mockRuntime2);
     });
 
-    it("should call setRuntimeLogger when runtime has log property", () => {
+    it('should call setRuntimeLogger when runtime has log property', () => {
       // This test verifies the runtime can be set with a log property
       // The actual logger integration uses require() which doesn't work well with ESM mocks
       const mockRuntime = {
@@ -109,7 +109,7 @@ describe("Runtime Management", () => {
       expect(getZTMRuntime()).toBe(mockRuntime);
     });
 
-    it("should handle runtime without logger", () => {
+    it('should handle runtime without logger', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -119,12 +119,12 @@ describe("Runtime Management", () => {
     });
   });
 
-  describe("isRuntimeInitialized", () => {
-    it("should return false when runtime not set", () => {
+  describe('isRuntimeInitialized', () => {
+    it('should return false when runtime not set', () => {
       expect(isRuntimeInitialized()).toBe(false);
     });
 
-    it("should return true after runtime is set", () => {
+    it('should return true after runtime is set', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -134,7 +134,7 @@ describe("Runtime Management", () => {
       expect(isRuntimeInitialized()).toBe(true);
     });
 
-    it("should return false after reset", () => {
+    it('should return false after reset', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -146,12 +146,12 @@ describe("Runtime Management", () => {
     });
   });
 
-  describe("hasZTMRuntime", () => {
-    it("should return false when runtime not set", () => {
+  describe('hasZTMRuntime', () => {
+    it('should return false when runtime not set', () => {
       expect(hasZTMRuntime()).toBe(false);
     });
 
-    it("should return true after runtime is set", () => {
+    it('should return true after runtime is set', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -161,7 +161,7 @@ describe("Runtime Management", () => {
       expect(hasZTMRuntime()).toBe(true);
     });
 
-    it("should be alias for isRuntimeInitialized", () => {
+    it('should be alias for isRuntimeInitialized', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
@@ -173,7 +173,7 @@ describe("Runtime Management", () => {
   });
 });
 
-describe("RuntimeManager Singleton", () => {
+describe('RuntimeManager Singleton', () => {
   beforeEach(() => {
     RuntimeManager.reset();
   });
@@ -183,14 +183,14 @@ describe("RuntimeManager Singleton", () => {
     RuntimeManager.reset();
   });
 
-  it("should return same instance on multiple getInstance calls", () => {
+  it('should return same instance on multiple getInstance calls', () => {
     const instance1 = RuntimeManager.getInstance();
     const instance2 = RuntimeManager.getInstance();
 
     expect(instance1).toBe(instance2);
   });
 
-  it("should allow setting and getting runtime", () => {
+  it('should allow setting and getting runtime', () => {
     const manager = RuntimeManager.getInstance();
     const mockRuntime = {
       channel: { routing: { resolveAgentRoute: vi.fn() } },
@@ -202,19 +202,19 @@ describe("RuntimeManager Singleton", () => {
     expect(manager.isInitialized()).toBe(true);
   });
 
-  it("should throw error when getting runtime before set", () => {
+  it('should throw error when getting runtime before set', () => {
     const manager = RuntimeManager.getInstance();
 
-    expect(() => manager.getRuntime()).toThrow("ZTM runtime not initialized");
+    expect(() => manager.getRuntime()).toThrow('ZTM runtime not initialized');
   });
 
-  it("should report uninitialized state correctly", () => {
+  it('should report uninitialized state correctly', () => {
     const manager = RuntimeManager.getInstance();
 
     expect(manager.isInitialized()).toBe(false);
   });
 
-  it("should report initialized state after setting runtime", () => {
+  it('should report initialized state after setting runtime', () => {
     const manager = RuntimeManager.getInstance();
     const mockRuntime = {
       channel: { routing: { resolveAgentRoute: vi.fn() } },

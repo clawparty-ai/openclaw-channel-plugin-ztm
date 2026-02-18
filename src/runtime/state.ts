@@ -7,19 +7,19 @@
 // - Runtime start/stop operations
 // - State retrieval utilities
 
-import { logger } from "../utils/logger.js";
-import { getZTMRuntime } from "./index.js";
-import { getAccountMessageStateStore } from "./store.js";
-import { GroupPermissionLRUCache } from "./cache.js";
-import type { PluginRuntime } from "openclaw/plugin-sdk";
-import { createZTMApiClient } from "../api/ztm-api.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
-import type { AccountRuntimeState, IGroupPermissionCache } from "../types/runtime.js";
-import type { GroupPermissions } from "../types/group-policy.js";
-import { getGroupPermission } from "../core/group-policy.js";
-import { isSuccess } from "../types/common.js";
-import { Semaphore } from "../utils/concurrency.js";
+import { logger } from '../utils/logger.js';
+import { getZTMRuntime } from './index.js';
+import { getAccountMessageStateStore } from './store.js';
+import { GroupPermissionLRUCache } from './cache.js';
+import type { PluginRuntime } from 'openclaw/plugin-sdk';
+import { createZTMApiClient } from '../api/ztm-api.js';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMApiClient, ZTMMeshInfo } from '../types/api.js';
+import type { AccountRuntimeState, IGroupPermissionCache } from '../types/runtime.js';
+import type { GroupPermissions } from '../types/group-policy.js';
+import { getGroupPermission } from '../core/group-policy.js';
+import { isSuccess } from '../types/common.js';
+import { Semaphore } from '../utils/concurrency.js';
 import {
   PAIRING_MAX_AGE_MS,
   ALLOW_FROM_CACHE_TTL_MS,
@@ -28,11 +28,11 @@ import {
   MESH_CONNECT_MAX_RETRIES,
   RETRY_DELAY_MS,
   CALLBACK_SEMAPHORE_PERMITS,
-} from "../constants.js";
+} from '../constants.js';
 
 // Re-export types and cache for backward compatibility
 export type { AccountRuntimeState };
-export { GroupPermissionLRUCache } from "./cache.js";
+export { GroupPermissionLRUCache } from './cache.js';
 
 /**
  * AccountStateManager - Explicit state ownership for account runtime state
@@ -74,7 +74,10 @@ export class AccountStateManager {
       watchErrorCount: 0,
       pendingPairings: new Map(),
       allowFromCache: null,
-      groupPermissionCache: new GroupPermissionLRUCache(MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS),
+      groupPermissionCache: new GroupPermissionLRUCache(
+        MAX_GROUP_PERMISSION_CACHE_SIZE,
+        GROUP_PERMISSION_CACHE_TTL_MS
+      ),
     };
   }
 
@@ -141,9 +144,11 @@ export class AccountStateManager {
 
     if (!state) {
       try {
-        return await runtime.channel.pairing.readAllowFromStore("ztm-chat");
+        return await runtime.channel.pairing.readAllowFromStore('ztm-chat');
       } catch (err) {
-        logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
+        logger.error(
+          `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
+        );
         return null;
       }
     }
@@ -155,14 +160,16 @@ export class AccountStateManager {
     }
 
     try {
-      const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore("ztm-chat");
+      const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore('ztm-chat');
       state.allowFromCache = {
         value: freshAllowFrom,
         timestamp: now,
       };
       return freshAllowFrom;
     } catch (err) {
-      logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
+      logger.error(
+        `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
+      );
       if (state.allowFromCache) {
         return state.allowFromCache.value;
       }
@@ -234,7 +241,7 @@ export class AccountStateManager {
           logger.info(
             `[${accountId}] Mesh info request failed (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
           );
-          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
         }
         continue;
       }
@@ -244,12 +251,12 @@ export class AccountStateManager {
         logger.info(
           `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
         );
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
       }
     }
 
     if (!meshInfo) {
-      state.lastError = "Failed to get mesh info after retries";
+      state.lastError = 'Failed to get mesh info after retries';
       state.connected = false;
       state.meshConnected = false;
       logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
@@ -260,11 +267,9 @@ export class AccountStateManager {
     state.connected = true;
     state.meshConnected = meshInfo.connected;
     state.peerCount = meshInfo.endpoints;
-    state.lastError = meshInfo.connected ? null : "Not connected to ZTM mesh";
+    state.lastError = meshInfo.connected ? null : 'Not connected to ZTM mesh';
 
-    logger.info(
-      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
-    );
+    logger.info(`[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`);
 
     return meshInfo.connected;
   }

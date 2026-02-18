@@ -1,26 +1,26 @@
 // Integration tests for complete message flow
 // Tests the full pipeline from receiving a message to sending a reply
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { processIncomingMessage } from "./processor.js";
-import { notifyMessageCallbacks } from "./dispatcher.js";
-import { checkDmPolicy } from "../core/dm-policy.js";
-import type { ProcessMessageContext } from "./processor.js";
-import { sendZTMMessage } from "./outbound.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { processIncomingMessage } from './processor.js';
+import { notifyMessageCallbacks } from './dispatcher.js';
+import { checkDmPolicy } from '../core/dm-policy.js';
+import type { ProcessMessageContext } from './processor.js';
+import { sendZTMMessage } from './outbound.js';
 import {
   getOrCreateAccountState,
   removeAccountState,
   getAllAccountStates,
-} from "../runtime/state.js";
-import { testConfig, testAccountId } from "../test-utils/fixtures.js";
-import { mockSuccess } from "../test-utils/mocks.js";
-import { isSuccess } from "../types/common.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { AccountRuntimeState, MessageCallback } from "../types/runtime.js";
+} from '../runtime/state.js';
+import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { mockSuccess } from '../test-utils/mocks.js';
+import { isSuccess } from '../types/common.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 
 // Mock dependencies
-vi.mock("../utils/logger.js", () => ({
+vi.mock('../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -36,7 +36,7 @@ vi.mock("../utils/logger.js", () => ({
 }));
 
 // Mock store with fresh instances for each call
-vi.mock("../runtime/store.js", () => ({
+vi.mock('../runtime/store.js', () => ({
   getAccountMessageStateStore: vi.fn(function () {
     return {
       getWatermark: vi.fn(() => -1),
@@ -46,7 +46,7 @@ vi.mock("../runtime/store.js", () => ({
       setFileMetadata: vi.fn(),
       setFileMetadataBulk: vi.fn(),
       flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+      flushAsync: vi.fn().mockResolvedValue(undefined),
       dispose: vi.fn(),
     };
   }),
@@ -54,19 +54,19 @@ vi.mock("../runtime/store.js", () => ({
 }));
 
 // Mock API
-vi.mock("../api/ztm-api.js", () => ({
+vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: vi.fn(() => ({})),
 }));
 
 // Mock pairing store
-vi.mock("../runtime/pairing-store.js", () => {
+vi.mock('../runtime/pairing-store.js', () => {
   const mockPairingStore = {
     loadPendingPairings: vi.fn(() => new Map()),
     savePendingPairing: vi.fn(),
     deletePendingPairing: vi.fn(),
     cleanupExpiredPairings: vi.fn(() => 0),
     flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+    flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
   };
   return {
@@ -113,20 +113,20 @@ function createMockApiClient(overrides?: {
   return {
     sendPeerMessage: overrides?.sendPeerMessage ?? mockSuccess(true),
     sendGroupMessage: overrides?.sendGroupMessage ?? mockSuccess(true),
-  } as unknown as ReturnType<typeof createMockState>["apiClient"];
+  } as unknown as ReturnType<typeof createMockState>['apiClient'];
 }
 
 // Helper to create a unique message
 function createMessage(overrides?: Partial<{ time: number; message: string; sender: string }>) {
   return {
     time: Date.now() + Math.floor(Math.random() * 1000000),
-    message: "Hello, world!",
-    sender: "alice",
+    message: 'Hello, world!',
+    sender: 'alice',
     ...overrides,
   };
 }
 
-describe("Integration: Complete Message Flow", () => {
+describe('Integration: Complete Message Flow', () => {
   // Get the mocked pairing store functions - typed as Mock to have .mockReturnValue
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockLoadPendingPairings: any;
@@ -139,7 +139,7 @@ describe("Integration: Complete Message Flow", () => {
 
   beforeEach(async () => {
     // Get mock functions from the mocked module
-    const pairingModule = await import("../runtime/pairing-store.js");
+    const pairingModule = await import('../runtime/pairing-store.js');
     mockLoadPendingPairings = vi.fn((_accountId: string) => new Map<string, Date>());
     mockSavePendingPairing = vi.fn((_accountId: string, _peer: string, _date?: Date) => {});
     mockDeletePendingPairing = vi.fn((_accountId: string, _peer: string) => {});
@@ -152,7 +152,7 @@ describe("Integration: Complete Message Flow", () => {
       deletePendingPairing: mockDeletePendingPairing,
       cleanupExpiredPairings: mockCleanupExpiredPairings,
       flush: vi.fn(),
-        flushAsync: vi.fn().mockResolvedValue(undefined),
+      flushAsync: vi.fn().mockResolvedValue(undefined),
       dispose: vi.fn(),
     });
 
@@ -173,10 +173,10 @@ describe("Integration: Complete Message Flow", () => {
     vi.restoreAllMocks();
   });
 
-  describe("1. Complete Message Flow (DM)", () => {
-    it("should process message from inbound to outbound for DM", async () => {
-      const accountId = "test-account-dm";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+  describe('1. Complete Message Flow (DM)', () => {
+    it('should process message from inbound to outbound for DM', async () => {
+      const accountId = 'test-account-dm';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
       const state = createMockState(accountId, config);
 
       // Setup mock API client
@@ -184,12 +184,12 @@ describe("Integration: Complete Message Flow", () => {
       state.apiClient = createMockApiClient({ sendPeerMessage: mockSendPeerMessage });
 
       // Step 1: Receive inbound message
-      const inboundMessage = createMessage({ sender: "bob", message: "Hello from Bob!" });
+      const inboundMessage = createMessage({ sender: 'bob', message: 'Hello from Bob!' });
       const processedMessage = processInboundMessage(inboundMessage, config, [], accountId);
 
       expect(processedMessage).not.toBeNull();
-      expect(processedMessage?.sender).toBe("bob");
-      expect(processedMessage?.content).toBe("Hello from Bob!");
+      expect(processedMessage?.sender).toBe('bob');
+      expect(processedMessage?.content).toBe('Hello from Bob!');
 
       // Step 2: Register callback and notify
       const messageHandler = vi.fn();
@@ -202,49 +202,60 @@ describe("Integration: Complete Message Flow", () => {
       expect(messageHandler).toHaveBeenCalledWith(processedMessage);
 
       // Step 3: Send outbound reply
-      const replyResult = await sendZTMMessage(state, "bob", "Hello Bob, this is a reply!");
+      const replyResult = await sendZTMMessage(state, 'bob', 'Hello Bob, this is a reply!');
 
       expect(isSuccess(replyResult)).toBe(true);
-      expect(mockSendPeerMessage).toHaveBeenCalledWith("bob", expect.objectContaining({
-        message: "Hello Bob, this is a reply!",
-        sender: "test-bot",
-      }));
+      expect(mockSendPeerMessage).toHaveBeenCalledWith(
+        'bob',
+        expect.objectContaining({
+          message: 'Hello Bob, this is a reply!',
+          sender: 'test-bot',
+        })
+      );
       expect(state.lastOutboundAt).not.toBeNull();
     });
 
-    it("should handle message with allowFrom whitelist", () => {
-      const accountId = "test-account-whitelist";
-      const config = createBaseConfig({ dmPolicy: "pairing", allowFrom: ["alice", "bob"] });
+    it('should handle message with allowFrom whitelist', () => {
+      const accountId = 'test-account-whitelist';
+      const config = createBaseConfig({ dmPolicy: 'pairing', allowFrom: ['alice', 'bob'] });
 
       // Alice is whitelisted - should be allowed
-      const messageFromAlice = createMessage({ sender: "alice" });
-      const result = processIncomingMessage(messageFromAlice, { config, storeAllowFrom: [], accountId });
+      const messageFromAlice = createMessage({ sender: 'alice' });
+      const result = processIncomingMessage(messageFromAlice, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
       expect(result).not.toBeNull();
-      expect(result?.sender).toBe("alice");
+      expect(result?.sender).toBe('alice');
 
       // Charlie is not whitelisted - should be denied in pairing mode
-      const messageFromCharlie = createMessage({ sender: "charlie" });
-      const resultCharlie = processIncomingMessage(messageFromCharlie, { config, storeAllowFrom: [], accountId });
+      const messageFromCharlie = createMessage({ sender: 'charlie' });
+      const resultCharlie = processIncomingMessage(messageFromCharlie, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
       expect(resultCharlie).toBeNull();
     });
 
-    it("should handle message with store-approved whitelist", () => {
-      const accountId = "test-account-store";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
-      const storeAllowFrom = ["dave"];
+    it('should handle message with store-approved whitelist', () => {
+      const accountId = 'test-account-store';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
+      const storeAllowFrom = ['dave'];
 
       // Dave is store-approved - should be allowed
-      const messageFromDave = createMessage({ sender: "dave" });
+      const messageFromDave = createMessage({ sender: 'dave' });
       const result = processIncomingMessage(messageFromDave, { config, storeAllowFrom, accountId });
       expect(result).not.toBeNull();
-      expect(result?.sender).toBe("dave");
+      expect(result?.sender).toBe('dave');
     });
   });
 
-  describe("2. Complete Message Flow (Group)", () => {
-    it("should process group message from inbound to outbound", async () => {
-      const accountId = "test-account-group";
-      const config = createBaseConfig({ dmPolicy: "allow", enableGroups: true });
+  describe('2. Complete Message Flow (Group)', () => {
+    it('should process group message from inbound to outbound', async () => {
+      const accountId = 'test-account-group';
+      const config = createBaseConfig({ dmPolicy: 'allow', enableGroups: true });
       const state = createMockState(accountId, config);
 
       // Setup mock API client
@@ -252,89 +263,86 @@ describe("Integration: Complete Message Flow", () => {
       state.apiClient = createMockApiClient({ sendGroupMessage: mockSendGroupMessage });
 
       // Step 1: Receive inbound group message
-      const groupInfo = { creator: "group-admin", group: "test-group" };
+      const groupInfo = { creator: 'group-admin', group: 'test-group' };
       const inboundMessage = createMessage({
-        sender: "charlie",
-        message: "Hello from group!",
+        sender: 'charlie',
+        message: 'Hello from group!',
       });
 
-      const processedMessage = processIncomingMessage(
-        inboundMessage,
-        { config, storeAllowFrom: [], accountId, groupInfo }
-      );
+      const processedMessage = processIncomingMessage(inboundMessage, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+        groupInfo,
+      });
 
       // Note: processIncomingMessage processes the message but doesn't include
       // group info in the returned ZTMChatMessage - that's handled separately
       expect(processedMessage).not.toBeNull();
-      expect(processedMessage?.sender).toBe("charlie");
-      expect(processedMessage?.content).toBe("Hello from group!");
+      expect(processedMessage?.sender).toBe('charlie');
+      expect(processedMessage?.content).toBe('Hello from group!');
 
       // Step 2: Send reply to group using the groupInfo
-      const replyResult = await sendZTMMessage(
-        state,
-        "charlie",
-        "Hello group!",
-        groupInfo
-      );
+      const replyResult = await sendZTMMessage(state, 'charlie', 'Hello group!', groupInfo);
 
       expect(isSuccess(replyResult)).toBe(true);
       expect(mockSendGroupMessage).toHaveBeenCalledWith(
-        "group-admin",
-        "test-group",
+        'group-admin',
+        'test-group',
         expect.objectContaining({
-          message: "Hello group!",
-          sender: "test-bot",
+          message: 'Hello group!',
+          sender: 'test-bot',
         })
       );
     });
   });
 
-  describe("3. DM Policy Variations", () => {
+  describe('3. DM Policy Variations', () => {
     it("should allow all messages when dmPolicy='allow'", () => {
-      const accountId = "test-account-allow";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+      const accountId = 'test-account-allow';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
 
-      const message = createMessage({ sender: "stranger" });
+      const message = createMessage({ sender: 'stranger' });
       const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       expect(result).not.toBeNull();
     });
 
     it("should deny all messages when dmPolicy='deny'", () => {
-      const accountId = "test-account-deny";
-      const config = createBaseConfig({ dmPolicy: "deny" });
+      const accountId = 'test-account-deny';
+      const config = createBaseConfig({ dmPolicy: 'deny' });
 
-      const message = createMessage({ sender: "friend" });
+      const message = createMessage({ sender: 'friend' });
       const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull();
     });
 
     it("should request pairing when dmPolicy='pairing' and sender not whitelisted", () => {
-      const accountId = "test-account-pairing";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
+      const accountId = 'test-account-pairing';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
 
-      const message = createMessage({ sender: "new-user" });
+      const message = createMessage({ sender: 'new-user' });
       const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
 
       // Should return null (not processed) because pairing is required
       expect(result).toBeNull();
 
       // Check DM policy result
-      const policyResult = checkDmPolicy("new-user", config, []);
+      const policyResult = checkDmPolicy('new-user', config, []);
       expect(policyResult.allowed).toBe(false);
-      expect(policyResult.action).toBe("request_pairing");
+      expect(policyResult.action).toBe('request_pairing');
     });
   });
 
-  describe("4. Multi-Account Integration", () => {
-    it("should route message to correct account", () => {
+  describe('4. Multi-Account Integration', () => {
+    it('should route message to correct account', () => {
       // Create two separate account states
-      const account1Id = "account-1";
-      const account2Id = "account-2";
+      const account1Id = 'account-1';
+      const account2Id = 'account-2';
 
-      const config1 = createBaseConfig({ username: "bot-1", dmPolicy: "allow" });
-      const config2 = createBaseConfig({ username: "bot-2", dmPolicy: "allow" });
+      const config1 = createBaseConfig({ username: 'bot-1', dmPolicy: 'allow' });
+      const config2 = createBaseConfig({ username: 'bot-2', dmPolicy: 'allow' });
 
       const state1 = getOrCreateAccountState(account1Id);
       state1.config = config1;
@@ -345,35 +353,47 @@ describe("Integration: Complete Message Flow", () => {
       // Verify they are separate
       expect(state1.accountId).toBe(account1Id);
       expect(state2.accountId).toBe(account2Id);
-      expect(state1.config.username).toBe("bot-1");
-      expect(state2.config.username).toBe("bot-2");
+      expect(state1.config.username).toBe('bot-1');
+      expect(state2.config.username).toBe('bot-2');
 
       // Process messages for each account
-      const message1 = createMessage({ sender: "user-1" });
-      const result1 = processIncomingMessage(message1, { config: config1, storeAllowFrom: [], accountId: account1Id });
+      const message1 = createMessage({ sender: 'user-1' });
+      const result1 = processIncomingMessage(message1, {
+        config: config1,
+        storeAllowFrom: [],
+        accountId: account1Id,
+      });
 
-      const message2 = createMessage({ sender: "user-2" });
-      const result2 = processIncomingMessage(message2, { config: config2, storeAllowFrom: [], accountId: account2Id });
+      const message2 = createMessage({ sender: 'user-2' });
+      const result2 = processIncomingMessage(message2, {
+        config: config2,
+        storeAllowFrom: [],
+        accountId: account2Id,
+      });
 
       expect(result1).not.toBeNull();
       expect(result2).not.toBeNull();
-      expect(result1?.sender).toBe("user-1");
-      expect(result2?.sender).toBe("user-2");
+      expect(result1?.sender).toBe('user-1');
+      expect(result2?.sender).toBe('user-2');
     });
 
-    it("should handle concurrent messages to different accounts", () => {
-      const accountIds = ["account-a", "account-b", "account-c"];
+    it('should handle concurrent messages to different accounts', () => {
+      const accountIds = ['account-a', 'account-b', 'account-c'];
 
       // Create states for multiple accounts
-      accountIds.forEach((id) => {
+      accountIds.forEach(id => {
         const state = getOrCreateAccountState(id);
-        state.config = createBaseConfig({ dmPolicy: "allow" });
+        state.config = createBaseConfig({ dmPolicy: 'allow' });
       });
 
       // Process messages concurrently
       const messages = accountIds.map((accountId, index) => {
         const message = createMessage({ sender: `user-${index}` });
-        return processIncomingMessage(message, { config: createBaseConfig({ dmPolicy: "allow" }), storeAllowFrom: [], accountId });
+        return processIncomingMessage(message, {
+          config: createBaseConfig({ dmPolicy: 'allow' }),
+          storeAllowFrom: [],
+          accountId,
+        });
       });
 
       // All messages should be processed
@@ -387,12 +407,12 @@ describe("Integration: Complete Message Flow", () => {
       expect(allStates.size).toBe(3);
     });
 
-    it("should use account-specific configuration", () => {
-      const account1Id = "account-allow";
-      const account2Id = "account-deny";
+    it('should use account-specific configuration', () => {
+      const account1Id = 'account-allow';
+      const account2Id = 'account-deny';
 
-      const config1 = createBaseConfig({ dmPolicy: "allow" });
-      const config2 = createBaseConfig({ dmPolicy: "deny" });
+      const config1 = createBaseConfig({ dmPolicy: 'allow' });
+      const config2 = createBaseConfig({ dmPolicy: 'deny' });
 
       // Account 1: allow
       const state1 = getOrCreateAccountState(account1Id);
@@ -402,23 +422,31 @@ describe("Integration: Complete Message Flow", () => {
       const state2 = getOrCreateAccountState(account2Id);
       state2.config = config2;
 
-      const message = createMessage({ sender: "test-user" });
+      const message = createMessage({ sender: 'test-user' });
 
       // Account 1 allows
-      const result1 = processIncomingMessage(message, { config: config1, storeAllowFrom: [], accountId: account1Id });
+      const result1 = processIncomingMessage(message, {
+        config: config1,
+        storeAllowFrom: [],
+        accountId: account1Id,
+      });
       expect(result1).not.toBeNull();
 
       // Account 2 denies
-      const result2 = processIncomingMessage(message, { config: config2, storeAllowFrom: [], accountId: account2Id });
+      const result2 = processIncomingMessage(message, {
+        config: config2,
+        storeAllowFrom: [],
+        accountId: account2Id,
+      });
       expect(result2).toBeNull();
     });
   });
 
-  describe("5. Complete Pairing Flow", () => {
-    it("should handle new user pairing request flow", () => {
-      const accountId = "test-pairing-account";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
-      const newUser = "new-user";
+  describe('5. Complete Pairing Flow', () => {
+    it('should handle new user pairing request flow', () => {
+      const accountId = 'test-pairing-account';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
+      const newUser = 'new-user';
 
       // Step 1: New user sends message - should be blocked
       const message = createMessage({ sender: newUser });
@@ -428,7 +456,7 @@ describe("Integration: Complete Message Flow", () => {
 
       // Step 2: Check policy - should request pairing
       const policyResult = checkDmPolicy(newUser, config, []);
-      expect(policyResult.action).toBe("request_pairing");
+      expect(policyResult.action).toBe('request_pairing');
 
       // Step 3: Save pairing request via mock
       mockSavePendingPairing(accountId, newUser);
@@ -437,10 +465,10 @@ describe("Integration: Complete Message Flow", () => {
       expect(mockSavePendingPairing).toHaveBeenCalledWith(accountId, newUser);
     });
 
-    it("should allow message after pairing approval", () => {
-      const accountId = "test-pairing-approval";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
-      const approvedUser = "approved-user";
+    it('should allow message after pairing approval', () => {
+      const accountId = 'test-pairing-approval';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
+      const approvedUser = 'approved-user';
 
       // Pre-approve the user via store
       const storeAllowFrom = [approvedUser];
@@ -453,15 +481,17 @@ describe("Integration: Complete Message Flow", () => {
       expect(result?.sender).toBe(approvedUser);
     });
 
-    it("should cleanup expired pairing requests", () => {
-      const accountId = "test-pairing-expiry";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
+    it('should cleanup expired pairing requests', () => {
+      const accountId = 'test-pairing-expiry';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
 
       // Setup mock to return 2 pairings
-      mockLoadPendingPairings.mockReturnValue(new Map([
-        ["user-1", new Date()],
-        ["user-2", new Date()],
-      ]));
+      mockLoadPendingPairings.mockReturnValue(
+        new Map([
+          ['user-1', new Date()],
+          ['user-2', new Date()],
+        ])
+      );
 
       // Verify we can check pairings
       const pairings = mockLoadPendingPairings(accountId);
@@ -472,10 +502,10 @@ describe("Integration: Complete Message Flow", () => {
       expect(expiredCount).toBe(0); // Mock always returns 0
     });
 
-    it("should handle pairing request timeout", () => {
-      const accountId = "test-pairing-timeout";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
-      const user = "timeout-user";
+    it('should handle pairing request timeout', () => {
+      const accountId = 'test-pairing-timeout';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
+      const user = 'timeout-user';
 
       // User sends message initially
       const message1 = createMessage({ sender: user, time: Date.now() });
@@ -500,10 +530,10 @@ describe("Integration: Complete Message Flow", () => {
       expect(stillPending.has(user)).toBe(true);
     });
 
-    it("should remove pairing after approval", () => {
-      const accountId = "test-pairing-remove";
-      const config = createBaseConfig({ dmPolicy: "pairing" });
-      const user = "approved-and-remove";
+    it('should remove pairing after approval', () => {
+      const accountId = 'test-pairing-remove';
+      const config = createBaseConfig({ dmPolicy: 'pairing' });
+      const user = 'approved-and-remove';
 
       // Setup mock to return the user as pending
       mockLoadPendingPairings.mockReturnValue(new Map([[user, new Date()]]));
@@ -525,10 +555,10 @@ describe("Integration: Complete Message Flow", () => {
     });
   });
 
-  describe("6. End-to-End Message Flow with Callbacks", () => {
-    it("should execute full pipeline: receive -> process -> callback -> reply", async () => {
-      const accountId = "test-e2e-flow";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+  describe('6. End-to-End Message Flow with Callbacks', () => {
+    it('should execute full pipeline: receive -> process -> callback -> reply', async () => {
+      const accountId = 'test-e2e-flow';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
       const state = createMockState(accountId, config);
 
       // Setup mock API
@@ -543,8 +573,12 @@ describe("Integration: Complete Message Flow", () => {
       state.messageCallbacks.add(messageHandler);
 
       // Step 1: Receive and process message
-      const inboundMsg = createMessage({ sender: "eve", message: "Testing full flow!" });
-      const processed = processIncomingMessage(inboundMsg, { config, storeAllowFrom: [], accountId });
+      const inboundMsg = createMessage({ sender: 'eve', message: 'Testing full flow!' });
+      const processed = processIncomingMessage(inboundMsg, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
 
       expect(processed).not.toBeNull();
 
@@ -554,24 +588,27 @@ describe("Integration: Complete Message Flow", () => {
       }
 
       expect(receivedMessages.length).toBe(1);
-      expect(receivedMessages[0].sender).toBe("eve");
+      expect(receivedMessages[0].sender).toBe('eve');
 
       // Step 3: Send reply
-      const reply = await sendZTMMessage(state, "eve", "Full flow test complete!");
+      const reply = await sendZTMMessage(state, 'eve', 'Full flow test complete!');
 
       expect(isSuccess(reply)).toBe(true);
-      expect(mockSendPeerMessage).toHaveBeenCalledWith("eve", expect.objectContaining({
-        message: "Full flow test complete!",
-      }));
+      expect(mockSendPeerMessage).toHaveBeenCalledWith(
+        'eve',
+        expect.objectContaining({
+          message: 'Full flow test complete!',
+        })
+      );
 
       // Verify state updates
       expect(state.lastInboundAt).not.toBeNull();
       expect(state.lastOutboundAt).not.toBeNull();
     });
 
-    it("should handle multiple callbacks in pipeline", () => {
-      const accountId = "test-multi-callbacks";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+    it('should handle multiple callbacks in pipeline', () => {
+      const accountId = 'test-multi-callbacks';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
       const state = createMockState(accountId, config);
 
       // Add multiple callbacks
@@ -584,8 +621,12 @@ describe("Integration: Complete Message Flow", () => {
       state.messageCallbacks.add(callback3);
 
       // Process message
-      const inboundMsg = createMessage({ sender: "multi-callback-user" });
-      const processed = processIncomingMessage(inboundMsg, { config, storeAllowFrom: [], accountId });
+      const inboundMsg = createMessage({ sender: 'multi-callback-user' });
+      const processed = processIncomingMessage(inboundMsg, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
 
       expect(processed).not.toBeNull();
 
@@ -599,14 +640,14 @@ describe("Integration: Complete Message Flow", () => {
       expect(callback3).toHaveBeenCalledWith(processed);
     });
 
-    it("should handle callback errors gracefully", () => {
-      const accountId = "test-callback-error";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+    it('should handle callback errors gracefully', () => {
+      const accountId = 'test-callback-error';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
       const state = createMockState(accountId, config);
 
       // Add callbacks where one throws
       const errorCallback = vi.fn(() => {
-        throw new Error("Callback failed");
+        throw new Error('Callback failed');
       });
       const successCallback = vi.fn();
 
@@ -614,8 +655,12 @@ describe("Integration: Complete Message Flow", () => {
       state.messageCallbacks.add(successCallback);
 
       // Process message
-      const inboundMsg = createMessage({ sender: "error-handling-user" });
-      const processed = processIncomingMessage(inboundMsg, { config, storeAllowFrom: [], accountId });
+      const inboundMsg = createMessage({ sender: 'error-handling-user' });
+      const processed = processIncomingMessage(inboundMsg, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
 
       expect(processed).not.toBeNull();
 
@@ -631,25 +676,25 @@ describe("Integration: Complete Message Flow", () => {
     });
   });
 
-  describe("7. Edge Cases", () => {
-    it("should skip own messages", () => {
-      const accountId = "test-skip-own";
-      const config = createBaseConfig({ username: "my-bot", dmPolicy: "allow" });
+  describe('7. Edge Cases', () => {
+    it('should skip own messages', () => {
+      const accountId = 'test-skip-own';
+      const config = createBaseConfig({ username: 'my-bot', dmPolicy: 'allow' });
 
       // Message from self
-      const ownMessage = createMessage({ sender: "my-bot" });
+      const ownMessage = createMessage({ sender: 'my-bot' });
       const result = processIncomingMessage(ownMessage, { config, storeAllowFrom: [], accountId });
 
       expect(result).toBeNull();
     });
 
-    it("should skip duplicate messages based on watermark", async () => {
-      const accountId = "test-watermark";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+    it('should skip duplicate messages based on watermark', async () => {
+      const accountId = 'test-watermark';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
       const state = createMockState(accountId, config);
 
       const timestamp = Date.now();
-      const message = createMessage({ time: timestamp, sender: "watermark-user" });
+      const message = createMessage({ time: timestamp, sender: 'watermark-user' });
 
       // First message should be processed
       const result1 = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
@@ -662,7 +707,7 @@ describe("Integration: Complete Message Flow", () => {
       }
 
       // Import store to manipulate watermark
-      const { getAccountMessageStateStore } = await import("../runtime/store.js");
+      const { getAccountMessageStateStore } = await import('../runtime/store.js');
       const store = getAccountMessageStateStore(accountId);
       vi.mocked(store.getWatermark).mockReturnValue(timestamp + 1);
 
@@ -676,22 +721,30 @@ describe("Integration: Complete Message Flow", () => {
       expect(result2).toBeDefined();
     });
 
-    it("should handle empty message content", () => {
-      const accountId = "test-empty";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+    it('should handle empty message content', () => {
+      const accountId = 'test-empty';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
 
-      const emptyMessage = createMessage({ message: "" });
-      const result = processIncomingMessage(emptyMessage, { config, storeAllowFrom: [], accountId });
+      const emptyMessage = createMessage({ message: '' });
+      const result = processIncomingMessage(emptyMessage, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
 
       expect(result).toBeNull();
     });
 
-    it("should handle whitespace-only message", () => {
-      const accountId = "test-whitespace";
-      const config = createBaseConfig({ dmPolicy: "allow" });
+    it('should handle whitespace-only message', () => {
+      const accountId = 'test-whitespace';
+      const config = createBaseConfig({ dmPolicy: 'allow' });
 
-      const whitespaceMessage = createMessage({ message: "   \n\t  " });
-      const result = processIncomingMessage(whitespaceMessage, { config, storeAllowFrom: [], accountId });
+      const whitespaceMessage = createMessage({ message: '   \n\t  ' });
+      const result = processIncomingMessage(whitespaceMessage, {
+        config,
+        storeAllowFrom: [],
+        accountId,
+      });
 
       expect(result).toBeNull();
     });
@@ -703,7 +756,7 @@ function processInboundMessage(
   msg: { time: number; message: string; sender: string },
   config: ZTMChatConfig,
   storeAllowFrom: string[] = [],
-  accountId: string = "default"
+  accountId: string = 'default'
 ): ZTMChatMessage | null {
   return processIncomingMessage(msg, { config, storeAllowFrom, accountId });
 }

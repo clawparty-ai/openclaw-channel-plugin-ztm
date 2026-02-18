@@ -1,7 +1,7 @@
 // ZTM Chat Plugin Logger
 // Structured logging with level support
 
-export type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
  * Logger interface for dependency injection
@@ -23,13 +23,13 @@ interface LogEntry {
 
 class ZTMChatLogger {
   private static instance: ZTMChatLogger;
-  private logLevel: LogLevel = "info";
-  private channel = "ztm-chat";
+  private logLevel: LogLevel = 'info';
+  private channel = 'ztm-chat';
 
   private constructor() {
     // Read log level from environment
-    const envLevel = process.env["ZTM_CHAT_LOG_LEVEL"];
-    if (envLevel && ["debug", "info", "warn", "error"].includes(envLevel)) {
+    const envLevel = process.env['ZTM_CHAT_LOG_LEVEL'];
+    if (envLevel && ['debug', 'info', 'warn', 'error'].includes(envLevel)) {
       this.logLevel = envLevel as LogLevel;
     }
   }
@@ -42,14 +42,12 @@ class ZTMChatLogger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ["debug", "info", "warn", "error"];
+    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
     return levels.indexOf(level) >= levels.indexOf(this.logLevel);
   }
 
   private formatEntry(entry: LogEntry): string {
-    const contextStr = entry.context
-      ? ` ${JSON.stringify(entry.context)}`
-      : "";
+    const contextStr = entry.context ? ` ${JSON.stringify(entry.context)}` : '';
     return `[${entry.timestamp.toISOString()}] [${entry.level.toUpperCase()}] [${entry.channel}] ${entry.message}${contextStr}`;
   }
 
@@ -69,35 +67,35 @@ class ZTMChatLogger {
     const formatted = this.formatEntry(entry);
 
     switch (level) {
-      case "debug":
+      case 'debug':
         console.debug(formatted);
         break;
-      case "info":
+      case 'info':
         console.info(formatted);
         break;
-      case "warn":
+      case 'warn':
         console.warn(formatted);
         break;
-      case "error":
+      case 'error':
         console.error(formatted);
         break;
     }
   }
 
   debug(message: string, context?: Record<string, unknown>): void {
-    this.log("debug", message, context);
+    this.log('debug', message, context);
   }
 
   info(message: string, context?: Record<string, unknown>): void {
-    this.log("info", message, context);
+    this.log('info', message, context);
   }
 
   warn(message: string, context?: Record<string, unknown>): void {
-    this.log("warn", message, context);
+    this.log('warn', message, context);
   }
 
   error(message: string, context?: Record<string, unknown>): void {
-    this.log("error", message, context);
+    this.log('error', message, context);
   }
 
   errorWithException(error: unknown, message: string): void {
@@ -105,7 +103,7 @@ class ZTMChatLogger {
       exception: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     };
-    this.log("error", message, context);
+    this.log('error', message, context);
   }
 
   setChannel(channel: string): void {
@@ -113,7 +111,7 @@ class ZTMChatLogger {
   }
 
   setLevel(level: LogLevel): void {
-    if (["debug", "info", "warn", "error"].includes(level)) {
+    if (['debug', 'info', 'warn', 'error'].includes(level)) {
       this.logLevel = level;
     }
   }
@@ -133,10 +131,10 @@ export function createLogger(context: Record<string, string>): {
   error: (message: string) => void;
 } {
   return {
-    debug: (msg) => logger.debug(msg, context),
-    info: (msg) => logger.info(msg, context),
-    warn: (msg) => logger.warn(msg, context),
-    error: (msg) => logger.error(msg, context),
+    debug: msg => logger.debug(msg, context),
+    info: msg => logger.info(msg, context),
+    warn: msg => logger.warn(msg, context),
+    error: msg => logger.error(msg, context),
   };
 }
 
