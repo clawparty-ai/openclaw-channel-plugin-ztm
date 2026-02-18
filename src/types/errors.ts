@@ -2,8 +2,6 @@
 // Specialized error types for ZTM Chat operations with rich context information
 // Follows the Result<T, E> error handling pattern
 
-import type { ZTMMessage } from './api.js';
-import type { ZTMPeer, ZTMUserInfo } from './api.js';
 import { success, failure, type Result } from './common.js';
 
 // ═════════════════════════════════════════════════════════════════════════════

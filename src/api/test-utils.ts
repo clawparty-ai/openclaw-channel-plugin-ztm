@@ -4,7 +4,6 @@
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMApiClientDeps } from './ztm-api.js';
 import { createZTMApiClient } from './ztm-api.js';
 import { fetchWithRetry } from '../utils/retry.js';
 

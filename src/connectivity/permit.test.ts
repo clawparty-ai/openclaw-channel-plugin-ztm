@@ -5,7 +5,6 @@ import { requestPermit, savePermitData, handlePairingRequest } from './permit.js
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { PermitData } from '../types/connectivity.js';
 import { testConfig } from '../test-utils/fixtures.js';
-import { createMockLoggerFns } from '../test-utils/mocks.js';
 
 // Valid PermitData for testing
 const validPermitData: PermitData = {

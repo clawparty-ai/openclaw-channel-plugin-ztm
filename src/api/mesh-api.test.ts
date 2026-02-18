@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMeshApi } from './mesh-api.js';
 import { testConfig } from '../test-utils/fixtures.js';
-import type { ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from '../types/api.js';
+import type { ZTMMeshInfo } from '../types/api.js';
 import type { ZTMLogger, RequestHandler } from './request.js';
 
 // Mock logger module
@@ -27,7 +27,6 @@ vi.mock('../utils/logger.js', async () => {
 });
 
 describe('Mesh API', () => {
-  let mockRequest: RequestHandler;
   let mockLogger: ZTMLogger;
 
   beforeEach(() => {

@@ -8,7 +8,7 @@ import {
   processIncomingMessage,
 } from './processor.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
-import { testConfig, testConfigOpenDM } from '../test-utils/fixtures.js';
+import { testConfigOpenDM } from '../test-utils/fixtures.js';
 
 describe('Message Processor', () => {
   describe('isValidMessage', () => {

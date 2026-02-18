@@ -11,8 +11,6 @@ describe('DM Policy Integration', () => {
   describe("dmPolicy='allow' bypasses all checks", () => {
     it("should allow all users when dmPolicy is 'allow'", () => {
       const config = { ...baseConfig, dmPolicy: 'allow' as const };
-      const sender = 'stranger';
-      const pendingPairings = new Map<string, Date>();
 
       const shouldAllow = config.dmPolicy === 'allow';
       const action = shouldAllow ? 'process' : 'request_pairing';
@@ -24,8 +22,6 @@ describe('DM Policy Integration', () => {
   describe("dmPolicy='deny' blocks all messages", () => {
     it("should deny all users when dmPolicy is 'deny'", () => {
       const config = { ...baseConfig, dmPolicy: 'deny' as const };
-      const sender = 'alice';
-      const allowFrom = ['alice'];
 
       const shouldDeny = config.dmPolicy === 'deny';
       const action = shouldDeny ? 'ignore' : 'process';

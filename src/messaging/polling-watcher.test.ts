@@ -9,7 +9,6 @@ import {
   createMockState,
   createMockChat,
   createChatsFailure,
-  NOW,
 } from '../test-utils/fixtures.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import { success } from '../types/common.js';
@@ -17,7 +16,6 @@ import { ZTMReadError } from '../types/errors.js';
 import type { ZTMChat } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 
 type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: string]: unknown };
 
@@ -301,7 +299,6 @@ describe('Polling Watcher', () => {
     });
 
     it('should process valid messages through inbound pipeline', async () => {
-      const now = Date.now();
       const mockChats = [createMockChat('alice', 'Test message', 1234567890)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 

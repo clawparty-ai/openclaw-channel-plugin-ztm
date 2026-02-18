@@ -17,7 +17,7 @@ import { PROBE_TIMEOUT_MS } from '../constants.js';
  */
 export async function validateAgentConnectivity(
   agentUrl: string,
-  ctx: { log?: { info: (...args: unknown[]) => void } }
+  _ctx: { log?: { info: (...args: unknown[]) => void } }
 ): Promise<void> {
   try {
     const agentUrlObj = new URL(agentUrl);
@@ -124,10 +124,10 @@ export async function joinMeshIfNeeded(
  */
 export async function probeAccount({
   config,
-  timeoutMs = PROBE_TIMEOUT_MS,
+  _timeoutMs = PROBE_TIMEOUT_MS,
 }: {
   config: ZTMChatConfig;
-  timeoutMs?: number;
+  _timeoutMs?: number;
 }): Promise<{
   ok: boolean;
   error: string | null;

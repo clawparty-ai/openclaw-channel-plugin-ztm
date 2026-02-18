@@ -2,7 +2,6 @@
 // Tracks pending pairing requests so they survive gateway restarts
 // and can be cleaned up automatically after expiration
 
-import * as fs from 'fs';
 import * as path from 'path';
 import { defaultLogger, type Logger } from '../utils/logger.js';
 import { nodeFs, type FileSystem } from './store.js';

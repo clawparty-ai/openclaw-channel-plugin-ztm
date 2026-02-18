@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createPairingStateStore, PairingStateStoreImpl } from './pairing-store.js';
+import { createPairingStateStore } from './pairing-store.js';
 import type { PairingStateData, FileSystem } from './pairing-store.js';
 import { createMockLoggerFns } from '../test-utils/mocks.js';
 

@@ -1,6 +1,6 @@
 // Unit tests for DM Policy enforcement
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { checkDmPolicy, isUserWhitelisted, isPairingMode } from './dm-policy.js';
 import { normalizeUsername } from '../utils/validation.js';
 import { testConfig } from '../test-utils/fixtures.js';

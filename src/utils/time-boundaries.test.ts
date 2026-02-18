@@ -225,7 +225,7 @@ describe('createTimeoutController edge cases', () => {
 
   it('should trigger timeout after specified time', () => {
     const fn = vi.fn();
-    const { controller, timeoutId } = createTimeoutController(100);
+    const { controller } = createTimeoutController(100);
 
     controller.signal.addEventListener('abort', fn);
 
@@ -238,7 +238,7 @@ describe('createTimeoutController edge cases', () => {
 
   it('should handle zero timeout', () => {
     const fn = vi.fn();
-    const { controller, timeoutId } = createTimeoutController(0);
+    const { controller } = createTimeoutController(0);
 
     controller.signal.addEventListener('abort', fn);
 

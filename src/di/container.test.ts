@@ -11,17 +11,12 @@ import {
   type IApiClient,
   type IApiClientFactory,
   type IRuntime,
-  container,
 } from './container.js';
 import { createMockLoggerFns } from '../test-utils/mocks.js';
 
 // Mock service interfaces for testing
 interface IMockService {
   getValue(): string;
-}
-
-interface IMockFactoryService {
-  create(): IMockService;
 }
 
 describe('DI Container', () => {

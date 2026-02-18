@@ -1,6 +1,6 @@
 // Unit tests for Retry utilities
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   sleep,
   getRetryDelay,
@@ -10,7 +10,6 @@ import {
   isRetriableError,
   withRetry,
 } from './retry.js';
-import { mockResolved } from '../test-utils/mocks.js';
 
 describe('Retry utilities', () => {
   describe('sleep', () => {

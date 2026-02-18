@@ -1,6 +1,6 @@
 // Integration tests for Concurrent Message Handling
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('Concurrent Message Handling', () => {
   it('should handle multiple messages arriving simultaneously', async () => {
@@ -13,7 +13,7 @@ describe('Concurrent Message Handling', () => {
     let processedCount = 0;
 
     await Promise.all(
-      messages.map(async msg => {
+      messages.map(async _msg => {
         await new Promise(resolve => setTimeout(resolve, 10));
         processedCount++;
       })

@@ -1,11 +1,8 @@
 // Integration tests for Message Timestamp Ordering
 
 import { describe, it, expect } from 'vitest';
-import { testConfig } from '../test-utils/fixtures.js';
 
 describe('Message Timestamp Ordering', () => {
-  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: 'allow' as const };
-
   it('should process messages in timestamp order', () => {
     const messages = [
       { time: 1000, message: 'First', sender: 'alice' },
@@ -84,7 +81,6 @@ describe('Message Timestamp Ordering', () => {
   });
 
   it('should handle zero timestamp as special case', () => {
-    const watermark = 1000;
     const message = { time: 0, message: 'Zero time' };
 
     expect(message.time).toBe(0);

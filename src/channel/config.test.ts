@@ -1,18 +1,14 @@
 // Unit tests for Channel Config
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { testConfig } from '../test-utils/fixtures.js';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import type { ZTMChatConfig } from '../types/config.js';
 import type { TSchema } from '@sinclair/typebox';
 import {
   getEffectiveChannelConfig,
   listZTMChatAccountIds,
   resolveZTMChatAccount,
   buildChannelConfigSchemaWithHints,
-  type ResolvedZTMChatAccount,
 } from './config.js';
-import { getDefaultConfig } from '../config/index.js';
 
 // Mock config functions
 vi.mock('../config/index.js', () => ({
@@ -359,7 +355,7 @@ describe('Channel Config', () => {
         } as any,
       };
 
-      const result = resolveZTMChatAccount({ cfg, accountId: 'test' });
+      void resolveZTMChatAccount({ cfg, accountId: 'test' });
 
       expect(mergeAccountConfig).toHaveBeenCalled();
     });

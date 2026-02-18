@@ -1,11 +1,10 @@
 // Unit tests for MessageStateStore
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { MessageStateStoreImpl, createMessageStateStore, type MessageStateStore } from './store.js';
+import { MessageStateStoreImpl, type MessageStateStore } from './store.js';
 import { STATE_FLUSH_DEBOUNCE_MS, STATE_FLUSH_MAX_DELAY_MS } from '../constants.js';
 
 /**

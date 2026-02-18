@@ -120,12 +120,12 @@ describe('Mapping methods', () => {
 
   describe('mapErr', () => {
     it('should transform error', () => {
-      const result = mapErr(failure(new Error('original')), e => new Error('transformed'));
+      const result = mapErr(failure(new Error('original')), _e => new Error('transformed'));
       expect(result.error?.message).toBe('transformed');
     });
 
     it('should leave success unchanged', () => {
-      const result = mapErr(success('hello'), e => new Error('transformed'));
+      const result = mapErr(success('hello'), _e => new Error('transformed'));
       expect(result.value).toBe('hello');
     });
   });
@@ -143,7 +143,7 @@ describe('Mapping methods', () => {
 
     it('should short-circuit on error', () => {
       const transform = vi.fn((v: number) => success(v * 2));
-      const result = flatMap(failure<number>(new Error('fail')), transform);
+      flatMap(failure<number>(new Error('fail')), transform);
       expect(transform).not.toHaveBeenCalled();
     });
   });

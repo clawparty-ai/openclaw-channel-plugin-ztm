@@ -2,7 +2,6 @@
 // Simulates the ZTM Chat API endpoints
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
-import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import type { ZTMChat, ZTMPeer, ZTMUserInfo } from '../api/ztm-api.js';
 
@@ -48,7 +47,7 @@ export class MockZTMClient {
     return new Promise(resolve => {
       this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
         // Handle async request handler and catch errors
-        this.handleRequest(req, res).catch(err => {
+        this.handleRequest(req, res).catch(_err => {
           if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Internal Server Error' }));
@@ -148,7 +147,7 @@ export class MockZTMClient {
       // 404 for unknown routes
       res.writeHead(404);
       res.end(JSON.stringify({ error: 'Not Found' }));
-    } catch (error) {
+    } catch {
       res.writeHead(500);
       res.end(JSON.stringify({ error: 'Internal Server Error' }));
     }
@@ -230,7 +229,6 @@ export class MockZTMClient {
   }
 
   private handleWatch(prefix: string, url: URL, res: ServerResponse): void {
-    const pollingInterval = Number(url.searchParams.get('pollingInterval')) || 2000;
     this.lastWatchPrefix = prefix;
     this.watchPollCount++;
 

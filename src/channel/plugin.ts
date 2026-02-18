@@ -21,7 +21,6 @@ import {
   createMessageStateRepositoryService,
   createAccountStateManagerService,
   type ILogger,
-  type IConfig,
   type IApiClient,
   type IApiClientFactory,
   type IRuntime,
@@ -117,11 +116,9 @@ container.register(DEPENDENCIES.ACCOUNT_STATE_MANAGER, createAccountStateManager
 import {
   resolveZTMChatAccount,
   listZTMChatAccountIds,
-  getEffectiveChannelConfig,
   buildChannelConfigSchemaWithHints,
 } from './config.js';
 import { isConfigMinimallyValid } from '../config/index.js';
-import { isSuccess } from '../types/common.js';
 import {
   collectStatusIssues as collectStatusIssuesImpl,
   probeAccountGateway,
@@ -136,7 +133,7 @@ import { buildAccountSnapshot as buildAccountSnapshotImpl } from './state.js';
 // ============================================================================
 
 // Resolves DM policy configuration
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
   const resolvedAccountId = accountId ?? account.accountId ?? 'default';
   const config = getZTMChatConfig(account);
@@ -162,7 +159,7 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
 };
 
 // Collects warnings for the account configuration
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const collectWarningsImpl = async ({
   cfg,
   accountId,
@@ -214,7 +211,7 @@ const collectWarningsImpl = async ({
 };
 
 // Builds channel summary from snapshot
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const buildChannelSummaryImpl = ({ snapshot }: BuildChannelSummaryContext) => {
   const extendedSnapshot = snapshot;
   return {
@@ -231,7 +228,7 @@ const buildChannelSummaryImpl = ({ snapshot }: BuildChannelSummaryContext) => {
 };
 
 // Gets self info from directory
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const directorySelfImpl = async ({ cfg, accountId }: DirectoryContext) => {
   const account = resolveZTMChatAccount({
     cfg: cfg ?? undefined,
@@ -251,7 +248,7 @@ const directorySelfImpl = async ({ cfg, accountId }: DirectoryContext) => {
 };
 
 // Lists peers from directory
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const directoryListPeersImpl = async ({ cfg, accountId }: DirectoryContext) => {
   const account = resolveZTMChatAccount({
     cfg: cfg ?? undefined,
@@ -317,6 +314,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       if (!config) return;
       const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
       const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const runtime = container.get<IRuntime>(DEPENDENCIES.RUNTIME);
       const message: ZTMMessage = {
         time: Date.now(),

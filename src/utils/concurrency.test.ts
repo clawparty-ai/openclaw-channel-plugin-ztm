@@ -1,7 +1,6 @@
 // Unit tests for Semaphore concurrency control
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mockResolved } from '../test-utils/mocks.js';
+import { describe, it, expect } from 'vitest';
 import { Semaphore, createSemaphore } from './concurrency.js';
 
 describe('Semaphore', () => {
@@ -309,16 +308,12 @@ describe('Race condition tests', () => {
     it('should not resolve promise after timeout when already released', async () => {
       const semaphore = new Semaphore(1);
       let releaseCalled = false;
-      let timeoutResolved = false;
 
       // Acquire the only permit
       await semaphore.acquire();
 
       // Start a timed acquire that will timeout
-      const acquirePromise = semaphore.acquire(50).then(result => {
-        timeoutResolved = true;
-        return result;
-      });
+      const acquirePromise = semaphore.acquire(50);
 
       // Wait a tiny bit for the acquire to queue
       await new Promise(resolve => setTimeout(resolve, 5));
@@ -430,13 +425,10 @@ describe('Race condition tests', () => {
       const semaphore = new Semaphore(1);
       let resolveCount = 0;
 
-      // Patch to track resolve calls
-      const originalAcquire = semaphore.acquire.bind(semaphore);
-
       await semaphore.acquire();
 
       // Queue an acquire with very long timeout
-      const acquirePromise = semaphore.acquire(10000).then(result => {
+      semaphore.acquire(10000).then(result => {
         resolveCount++;
         return result;
       });

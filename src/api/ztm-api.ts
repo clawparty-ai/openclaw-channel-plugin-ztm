@@ -4,44 +4,26 @@
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type {
-  ZTMMessage,
   ZTMPeer,
   ZTMUserInfo,
   ZTMMeshInfo,
   ZTMChat,
   ZTMApiClient,
-  WatchChangeItem,
 } from '../types/api.js';
-import { success, failure, type Result } from '../types/common.js';
-import {
-  ZTMApiError,
-  ZTMTimeoutError,
-  ZTMSendError,
-  ZTMReadError,
-  ZTMDiscoveryError,
-  ZTMParseError,
-  ZTMError,
-} from '../types/errors.js';
-import type { Logger } from '../utils/logger.js';
-import { defaultLogger } from '../utils/logger.js';
-import { fetchWithRetry, type FetchWithRetry } from '../utils/retry.js';
 
 import {
   createRequestHandler,
   defaultDeps,
   type ZTMApiClientDeps,
-  type ZTMLogger,
-  type RequestHandler,
 } from './request.js';
 
 import { createMeshApi } from './mesh-api.js';
-import { createChatApi, normalizeMessageContent } from './chat-api.js';
+import { createChatApi } from './chat-api.js';
 import { createMessageApi } from './message-api.js';
 import { createFileApi } from './file-api.js';
 
 // Re-export types for backward compatibility
 export type {
-  ZTMMessage,
   ZTMPeer,
   ZTMUserInfo,
   ZTMMeshInfo,
@@ -49,103 +31,6 @@ export type {
   ZTMApiClient,
   ZTMApiClientDeps,
 };
-
-/**
- * Escape special regex characters in string literals
- */
-function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Pre-compiled regex patterns for performance
- */
-function createPeerMessagePattern(username: string): RegExp {
-  return new RegExp(
-    `^/apps/ztm/chat/shared/([^/]+)/publish/peers/${escapeRegExp(username)}/messages/`
-  );
-}
-
-/**
- * Parse message file content and return Result
- */
-function parseMessageFileWithResult(
-  fileContent: unknown,
-  peer: string,
-  filePath: string
-): Result<ZTMMessage[], ZTMParseError> {
-  try {
-    const entries = Array.isArray(fileContent) ? fileContent : [fileContent];
-    const result: ZTMMessage[] = [];
-    for (const entry of entries) {
-      if (!entry?.time) continue;
-      const messageText = normalizeMessageContent(entry.message);
-      result.push({
-        time: entry.time,
-        message: messageText,
-        sender: entry.sender || peer,
-      });
-    }
-    return success(result);
-  } catch (error) {
-    const cause = error instanceof Error ? error : new Error(String(error));
-    return failure(
-      new ZTMParseError({
-        peer,
-        filePath,
-        cause,
-      })
-    );
-  }
-}
-
-/**
- * Parse timestamp from filename
- * @example "123.json" -> 123
- */
-function parseTimestampFromFilename(filename: string): number {
-  const match = filename.match(/^(\d+)\.json$/);
-  return match ? parseInt(match[1], 10) : 0;
-}
-
-/**
- * Create an empty chat placeholder when file read/parse fails
- */
-function createEmptyChat(peer: string, time: number): ZTMChat {
-  return {
-    peer,
-    time,
-    updated: time,
-    latest: { time, message: '', sender: peer },
-  };
-}
-
-/**
- * Find latest file for each peer from file list
- */
-function findLatestFilesByPeer(
-  fileList: Record<string, { time?: number }>,
-  pattern: RegExp
-): Map<string, { path: string; time: number; filename: string }> {
-  const latestByPeer = new Map<string, { path: string; time: number; filename: string }>();
-
-  for (const filePath of Object.keys(fileList)) {
-    const match = filePath.match(pattern);
-    if (!match) continue;
-
-    const peer = match[1];
-    const meta = fileList[filePath];
-    const fileTime = meta?.time ?? 0;
-    const existing = latestByPeer.get(peer);
-
-    if (!existing || fileTime > existing.time) {
-      const filename = filePath.split('/').pop() ?? '';
-      latestByPeer.set(peer, { path: filePath, time: fileTime, filename });
-    }
-  }
-
-  return latestByPeer;
-}
 
 /**
  * Create ZTM API Client with dependency injection
@@ -172,9 +57,6 @@ export function createZTMApiClient(
     fetch,
     fetchWithRetry: doFetchWithRetry,
   });
-
-  // Pre-compiled regex pattern for peer message path matching
-  const peerMessagePattern = createPeerMessagePattern(config.username);
 
   // Create the various API modules
   const meshApi = createMeshApi(config, request, logger);

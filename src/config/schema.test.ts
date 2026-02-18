@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { testConfig } from '../test-utils/fixtures.js';
-import { ZTMChatConfigSchema, validateZTMChatConfig, type ZTMChatConfig } from './index.js';
+import { validateZTMChatConfig } from './index.js';
 
 describe('ZTMChatConfigSchema', () => {
   describe('agentUrl validation', () => {

@@ -1,10 +1,8 @@
 // Common request handling utilities for ZTM API Client
 
-import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMApiClient } from '../types/api.js';
 import { success, failure, type Result } from '../types/common.js';
 import { ZTMApiError, ZTMTimeoutError } from '../types/errors.js';
-import { defaultLogger, type Logger } from '../utils/logger.js';
+import { defaultLogger } from '../utils/logger.js';
 import { fetchWithRetry, type FetchWithRetry, type RetryOptions } from '../utils/retry.js';
 import { API_TIMEOUT_MS } from '../constants.js';
 

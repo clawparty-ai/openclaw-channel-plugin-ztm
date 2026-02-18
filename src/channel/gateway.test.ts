@@ -3,7 +3,7 @@
 import * as fs from 'fs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import type { ZTMChatConfig, ZTMMeshInfo, ZTMMessage } from '../types/index.js';
+import type { ZTMChatConfig } from '../types/index.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import { testConfig, testAccountId } from '../test-utils/fixtures.js';
@@ -575,7 +575,7 @@ describe('Channel Gateway', () => {
     });
 
     it('should handle optional cfg parameter', async () => {
-      const { stopRuntime, removeAccountState } = await import('../runtime/state.js');
+      const { stopRuntime } = await import('../runtime/state.js');
 
       const result = await logoutAccountGateway({
         accountId: 'test-account',
@@ -587,7 +587,6 @@ describe('Channel Gateway', () => {
     });
 
     it('should handle cfg parameter', async () => {
-      const { stopRuntime, removeAccountState } = await import('../runtime/state.js');
       const cfg: OpenClawConfig = {};
 
       const result = await logoutAccountGateway({ accountId: 'test', cfg });
@@ -742,7 +741,7 @@ describe('Channel Gateway', () => {
     });
 
     it('should dispatch message when callback is invoked', async () => {
-      const { container, DEPENDENCIES } = await import('../di/index.js');
+      const { container } = await import('../di/index.js');
       const mockRuntime = {
         channel: {
           routing: {
@@ -784,7 +783,7 @@ describe('Channel Gateway', () => {
     });
 
     it('should handle dispatch errors gracefully', async () => {
-      const { container, DEPENDENCIES } = await import('../di/index.js');
+      const { container } = await import('../di/index.js');
       const mockRuntime = {
         channel: {
           routing: {

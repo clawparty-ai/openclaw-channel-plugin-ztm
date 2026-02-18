@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 import type { Result } from '../types/common.js';
-import { success, failure } from '../types/common.js';
+import { failure } from '../types/common.js';
 
 /**
  * Result handling options

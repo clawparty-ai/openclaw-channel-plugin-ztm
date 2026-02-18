@@ -1,7 +1,7 @@
 // ZTM Chat Configuration Defaults and Resolution
 // Default values and configuration resolution logic
 
-import type { ZTMChatConfig, ExtendedZTMChatConfig } from '../types/config.js';
+import type { ZTMChatConfig } from '../types/config.js';
 import type { DMPolicy } from './schema.js';
 
 /**
@@ -102,6 +102,7 @@ export function mergeAccountConfig(
   baseConfig: Record<string, unknown>,
   accountConfig: Record<string, unknown>
 ): Record<string, unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { accounts: _ignored, ...cleanBase } = baseConfig;
   return { ...cleanBase, ...accountConfig };
 }

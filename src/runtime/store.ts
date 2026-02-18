@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { defaultLogger, type Logger } from '../utils/logger.js';
-import { resolveStatePath, resolveZTMStateDir } from '../utils/paths.js';
+import { resolveStatePath } from '../utils/paths.js';
 import {
   MAX_PEERS_PER_ACCOUNT,
   MAX_FILES_PER_ACCOUNT,

@@ -3,8 +3,6 @@
 
 import { vi, beforeEach, afterEach, expect, describe } from 'vitest';
 import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMApiClient } from '../api/ztm-api.js';
-import { success } from '../types/common.js';
 
 // ============================================================================
 // Timer Helpers

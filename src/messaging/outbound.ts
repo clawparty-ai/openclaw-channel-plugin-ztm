@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { logger } from '../utils/logger.js';
 import { type ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
-import { success, failure, type Result } from '../types/common.js';
+import { failure, type Result } from '../types/common.js';
 import { ZTMSendError } from '../types/errors.js';
 
 export function generateMessageId(): string {

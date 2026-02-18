@@ -1,11 +1,11 @@
 // Test Mocks - Reusable mock functions and objects for ZTM Chat tests
 // Provides mock implementations for API clients, loggers, stores, etc.
 
-import { vi, type Mock } from 'vitest';
+import { vi } from 'vitest';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMApiClient } from '../api/ztm-api.js';
 import { success, failure } from '../types/common.js';
-import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from '../api/ztm-api.js';
+import type { ZTMMessage, ZTMChat } from '../api/ztm-api.js';
 
 // ============================================================================
 // Logger Mocks

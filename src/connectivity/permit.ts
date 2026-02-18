@@ -8,7 +8,7 @@ import type { ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import { normalizeUsername } from '../utils/validation.js';
 import { extractErrorMessage } from '../utils/error.js';
-import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
+import { getOrDefault } from '../utils/guards.js';
 import type { PermitData } from '../types/connectivity.js';
 
 /**

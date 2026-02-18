@@ -4,7 +4,7 @@
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMApiClient } from '../types/api.js';
 import type { ZTMMessage } from '../types/api.js';
-import type { Result, AsyncResult } from '../types/common.js';
+import type { AsyncResult } from '../types/common.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 

@@ -58,7 +58,7 @@ export class ConsolePrompts implements WizardPrompts {
   private async _ask(question: string, defaultValue?: string, isPassword = false): Promise<string> {
     const prompt = defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       this.rl.question(prompt, answer => {
         if (answer.trim() === '') {
           resolve(defaultValue || '');

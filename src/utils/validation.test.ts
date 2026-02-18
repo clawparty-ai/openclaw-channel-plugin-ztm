@@ -17,7 +17,7 @@ import {
   MAX_GROUP_ID_LENGTH,
 } from './validation.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
-import type { ConfigValidationError, ValidationErrorReason } from '../types/config.js';
+import type { ValidationErrorReason } from '../types/config.js';
 
 describe('validation utilities', () => {
   describe('validationError', () => {

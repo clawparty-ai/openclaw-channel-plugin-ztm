@@ -6,7 +6,6 @@ import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 
 type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: string]: unknown };
 
