@@ -39,6 +39,48 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
+// Mock DI container
+vi.mock("../di/index.js", () => ({
+  DEPENDENCIES: {
+    RUNTIME: Symbol("runtime"),
+    ALLOW_FROM_REPO: Symbol("allow-from-repo"),
+  },
+  container: {
+    get: vi.fn((key) => {
+      if (String(key) === "Symbol(runtime)") {
+        return {
+          get: () => ({
+            channel: {
+              pairing: {
+                readAllowFromStore: ((...args: unknown[]) => mockReadAllowFromFn(...args)) as (
+                  domain: string,
+                  username: string,
+                  defaultList: string[]
+                ) => Promise<string[]>,
+              },
+            },
+          }),
+        };
+      }
+      if (String(key) === "Symbol(allow-from-repo)") {
+        return {
+          getAllowFrom: async (...args: unknown[]) => {
+            // Simulate error handling similar to getAllowFromCache in state.ts
+            try {
+              return await mockReadAllowFromFn(...args);
+            } catch {
+              // Return null on error to skip the polling cycle (security measure)
+              return null;
+            }
+          },
+          clearCache: vi.fn(),
+        };
+      }
+      return null;
+    }),
+  },
+}));
+
 let mockReadAllowFromFn: (...args: unknown[]) => Promise<string[]> = vi.fn(() => Promise.resolve([]));
 vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: () => ({
