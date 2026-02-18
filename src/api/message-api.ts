@@ -42,7 +42,8 @@ export function createMessageApi(
         queryParams.set('before', before.toString());
       }
 
-      const result = await request<ZTMMessage[]>("GET", `${CHAT_API_BASE}/peers/${peer}/messages?${queryParams.toString()}`);
+      const encodedPeer = encodeURIComponent(peer);
+      const result = await request<ZTMMessage[]>("GET", `${CHAT_API_BASE}/peers/${encodedPeer}/messages?${queryParams.toString()}`);
 
       if (!result.ok) {
         const error = new ZTMReadError({
@@ -70,8 +71,9 @@ export function createMessageApi(
       logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
 
       const ztmEntry = { text: message.message };
+      const encodedPeer = encodeURIComponent(peer);
 
-      const result = await request<void>("POST", `${CHAT_API_BASE}/peers/${peer}/messages`, ztmEntry);
+      const result = await request<void>("POST", `${CHAT_API_BASE}/peers/${encodedPeer}/messages`, ztmEntry);
 
       if (!result.ok) {
         const error = new ZTMSendError({
