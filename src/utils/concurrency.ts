@@ -2,12 +2,24 @@
 // Provides Semaphore for limiting concurrent operations
 
 /**
+ * Waiter entry in the semaphore queue
+ * Uses a resolved flag to prevent race conditions in timeout scenarios
+ */
+interface Waiter {
+  resolve: (value: boolean) => void;
+  resolved: boolean; // Flag to prevent double-resolution
+}
+
+/**
  * Semaphore implementation for concurrency control
  * Limits the number of concurrent operations accessing a resource
+ *
+ * Thread-safety: This implementation is safe for single-threaded JavaScript
+ * but uses proper synchronization to prevent race conditions in async scenarios.
  */
 export class Semaphore {
   private permits: number;
-  private waiters: Array<{ resolve: () => void }> = [];
+  private waiters: Waiter[] = [];
 
   constructor(permits: number) {
     if (permits <= 0) {
@@ -22,6 +34,7 @@ export class Semaphore {
    * @returns True if permit was acquired, false if timed out
    */
   async acquire(timeoutMs?: number): Promise<boolean> {
+    // Fast path: permit available immediately
     if (this.permits > 0) {
       this.permits--;
       return true;
@@ -29,42 +42,66 @@ export class Semaphore {
 
     // If no timeout specified, wait indefinitely
     if (timeoutMs === undefined) {
-      return new Promise((resolve) => {
-        this.waiters.push({ resolve: () => resolve(true) });
+      return new Promise<boolean>((resolve) => {
+        this.waiters.push({
+          resolve: (value) => resolve(value),
+          resolved: false,
+        });
       });
     }
 
     // With timeout, race between permit availability and timeout
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        // Check if this waiter is still in the queue
-        const index = this.waiters.findIndex(w => w.resolve === timedResolve);
-        if (index !== -1) {
-          this.waiters.splice(index, 1);
-        }
-        resolve(false);
-      }, timeoutMs);
-
-      const timedResolve = () => {
-        clearTimeout(timeoutId);
-        resolve(true);
+    return new Promise<boolean>((resolve) => {
+      const waiter: Waiter = {
+        resolve: (value: boolean) => {
+          // Mark as resolved before calling the actual resolve
+          // This prevents double-resolution in race conditions
+          waiter.resolved = true;
+          clearTimeout(timeoutId);
+          resolve(value);
+        },
+        resolved: false,
       };
 
-      this.waiters.push({ resolve: timedResolve });
+      // Set up timeout handler
+      const timeoutId = setTimeout(() => {
+        // Check if this waiter is still in the queue and not yet resolved
+        const index = this.waiters.indexOf(waiter);
+        if (index !== -1 && !waiter.resolved) {
+          // Remove from queue before resolving to prevent re-resolution
+          this.waiters.splice(index, 1);
+          // Now safe to resolve(false) - removed from queue so release() won't find it
+          waiter.resolve(false);
+        }
+        // If already removed and resolved by release(), do nothing
+      }, timeoutMs);
+
+      // Add to queue after timeout is set up
+      this.waiters.push(waiter);
     });
   }
 
   /**
    * Release a permit, making it available to waiting acquire calls
+   *
+   * Thread-safety: Uses resolved flag to prevent race conditions with timeout
    */
   release(): void {
-    if (this.waiters.length === 0) {
+    // Find the first unresolved waiter
+    const waiter = this.waiters.find(w => !w.resolved);
+
+    if (waiter) {
+      // Remove from queue before resolving to prevent race conditions
+      const index = this.waiters.indexOf(waiter);
+      if (index !== -1) {
+        this.waiters.splice(index, 1);
+      }
+      // Now resolve - the resolved flag prevents timeout from also resolving
+      waiter.resolve(true);
+    } else {
+      // No waiters, increment permits
       this.permits++;
-      return;
     }
-    // If there are waiters, transfer the permit directly
-    const waiter = this.waiters.shift();
-    waiter?.resolve();
   }
 
   /**
