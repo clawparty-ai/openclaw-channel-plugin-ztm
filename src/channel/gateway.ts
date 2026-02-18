@@ -30,7 +30,7 @@ import { startMessageWatcher } from "../messaging/watcher.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
 import { requestPermit, savePermitData, loadPermitFromFile } from "../connectivity/permit.js";
 import type { PermitData } from "../types/connectivity.js";
-import { getZTMRuntime } from "../runtime/index.js";
+import { container, DEPENDENCIES } from "../di/index.js";
 import {
   resolveZTMChatAccount,
 } from "./config.js";
@@ -208,7 +208,7 @@ export async function startAccountGateway(
   const state = accountStates.get(account.accountId)!;
   state.lastStartAt = new Date();
 
-  const rt = getZTMRuntime();
+  const rt = container.get(DEPENDENCIES.RUNTIME).get();
   const cfg = ctx.cfg;
 
   ctx.log?.info(
@@ -273,7 +273,7 @@ export function buildMessageCallback(
   accountId: string,
   config: ZTMChatConfig,
 ): (msg: ZTMChatMessage) => void {
-  const rt = getZTMRuntime();
+  const rt = container.get(DEPENDENCIES.RUNTIME).get();
 
   return (msg: ZTMChatMessage) => {
     const handleInbound = async (): Promise<void> => {
