@@ -22,29 +22,77 @@ import {
   PAIRING_MAX_AGE_MS,
   ALLOW_FROM_CACHE_TTL_MS,
   MAX_GROUP_PERMISSION_CACHE_SIZE,
+  GROUP_PERMISSION_CACHE_TTL_MS,
 } from "../constants.js";
 
 // Re-export types for backward compatibility
 export type { AccountRuntimeState };
 
 /**
- * LRU Cache for group permissions with bounded size.
- * Prevents unbounded memory growth by evicting least recently used entries.
+ * LRU Cache for group permissions with bounded size and TTL.
+ * Prevents unbounded memory growth by evicting least recently used entries
+ * and expired entries.
  */
 class GroupPermissionLRUCache {
-  private cache = new Map<string, { permissions: GroupPermissions; lastAccess: number }>();
+  private cache = new Map<string, { permissions: GroupPermissions; lastAccess: number; expiresAt: number }>();
   private maxSize: number;
+  private ttlMs: number;
 
-  constructor(maxSize: number) {
+  constructor(maxSize: number, ttlMs: number) {
     if (maxSize <= 0) {
       throw new Error(`maxSize must be positive, got: ${maxSize}`);
     }
+    if (ttlMs <= 0) {
+      throw new Error(`ttlMs must be positive, got: ${ttlMs}`);
+    }
     this.maxSize = maxSize;
+    this.ttlMs = ttlMs;
+  }
+
+  /**
+   * Evict expired entries and return current cache size
+   */
+  private evictExpired(): number {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt < now) {
+        this.cache.delete(key);
+      }
+    }
+    return this.cache.size;
+  }
+
+  /**
+   * Evict least recently used entry to make room for new entry
+   */
+  private evictLRU(): void {
+    let lruKey: string | null = null;
+    let lruTime = Date.now();
+
+    for (const [cacheKey, entry] of this.cache.entries()) {
+      if (entry.lastAccess < lruTime) {
+        lruKey = cacheKey;
+        lruTime = entry.lastAccess;
+      }
+    }
+
+    if (lruKey) {
+      this.cache.delete(lruKey);
+      logger.debug(`Evicted LRU group permission cache entry: ${lruKey}`);
+    }
   }
 
   get(key: string): GroupPermissions | undefined {
+    // First evict any expired entries
+    this.evictExpired();
+
     const entry = this.cache.get(key);
     if (entry) {
+      // Check if entry has expired
+      if (entry.expiresAt < Date.now()) {
+        this.cache.delete(key);
+        return undefined;
+      }
       // Update last access time for LRU
       entry.lastAccess = Date.now();
       return entry.permissions;
@@ -53,32 +101,32 @@ class GroupPermissionLRUCache {
   }
 
   has(key: string): boolean {
-    return this.cache.has(key);
+    this.evictExpired();
+    const entry = this.cache.get(key);
+    if (entry && entry.expiresAt >= Date.now()) {
+      return true;
+    }
+    // Clean up expired entry if present
+    if (entry) {
+      this.cache.delete(key);
+    }
+    return false;
   }
 
   set(key: string, permissions: GroupPermissions): void {
-    // Check if we need to evict
+    // First evict expired entries
+    this.evictExpired();
+
+    // Check if we need to evict LRU entry
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
-      // Find and remove the least recently used entry
-      let lruKey: string | null = null;
-      let lruTime = Date.now();
-
-      for (const [cacheKey, entry] of this.cache.entries()) {
-        if (entry.lastAccess < lruTime) {
-          lruKey = cacheKey;
-          lruTime = entry.lastAccess;
-        }
-      }
-
-      if (lruKey) {
-        this.cache.delete(lruKey);
-        logger.debug(`Evicted LRU group permission cache entry: ${lruKey}`);
-      }
+      this.evictLRU();
     }
 
+    const now = Date.now();
     this.cache.set(key, {
       permissions,
-      lastAccess: Date.now(),
+      lastAccess: now,
+      expiresAt: now + this.ttlMs,
     });
   }
 
@@ -87,6 +135,7 @@ class GroupPermissionLRUCache {
   }
 
   size(): number {
+    this.evictExpired();
     return this.cache.size;
   }
 }
@@ -127,7 +176,7 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
       watchErrorCount: 0,
       pendingPairings: new Map(),
       allowFromCache: null,
-      groupPermissionCache: new GroupPermissionLRUCache(MAX_GROUP_PERMISSION_CACHE_SIZE),
+      groupPermissionCache: new GroupPermissionLRUCache(MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS),
     };
     accountStates.set(accountId, state);
   }

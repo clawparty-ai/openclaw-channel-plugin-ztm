@@ -30,6 +30,7 @@ export const PAIRING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour - max age for pendin
 
 // Cache TTL
 export const ALLOW_FROM_CACHE_TTL_MS = 30000; // 30 seconds - cache TTL for allowFrom store
+export const GROUP_PERMISSION_CACHE_TTL_MS = 60000; // 60 seconds - cache TTL for group permissions
 
 // State persistence
 export const STATE_FLUSH_DEBOUNCE_MS = 1000; // 1 second - debounce delay for watermark writes
