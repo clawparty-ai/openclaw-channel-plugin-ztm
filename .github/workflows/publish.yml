@@ -15,6 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install git-cliff
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+          install: git-cliff
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -32,12 +40,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Generate changelog
+      - name: Generate release notes (unreleased changes)
         id: changelog
         run: |
-          # Generate full changelog from all conventional commits
-          npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0 || echo "No changes" > CHANGELOG.md
-          cat CHANGELOG.md
+          npm run changelog:unreleased > RELEASE_NOTES.md || echo "No changes" > RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
 
       - name: Publish to npm
         run: npm publish
@@ -47,7 +54,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: CHANGELOG.md
+          body_path: RELEASE_NOTES.md
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
         env:

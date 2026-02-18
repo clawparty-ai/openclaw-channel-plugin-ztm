@@ -25,9 +25,9 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepublishOnly": "npm run build",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "changelog:full": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "changelog:preview": "conventional-changelog -p angular --dry-run"
+    "changelog": "git-cliff --output CHANGELOG.md",
+    "changelog:unreleased": "git-cliff --unreleased",
+    "changelog:preview": "git-cliff --unreleased"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.48",
@@ -38,7 +38,9 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^4.0.18",
+    "conventional-changelog-angular": "^8.1.0",
     "conventional-changelog-cli": "^2.2.2",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "eslint": "^10.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.9.3",
