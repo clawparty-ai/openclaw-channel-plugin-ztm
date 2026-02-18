@@ -17,15 +17,40 @@ export class Semaphore {
   }
 
   /**
-   * Acquire a permit, waiting if necessary until one is available
+   * Acquire a permit, waiting if necessary until one is available or timeout expires
+   * @param timeoutMs - Maximum time to wait in milliseconds (default: infinite)
+   * @returns True if permit was acquired, false if timed out
    */
-  async acquire(): Promise<void> {
+  async acquire(timeoutMs?: number): Promise<boolean> {
     if (this.permits > 0) {
       this.permits--;
-      return;
+      return true;
     }
+
+    // If no timeout specified, wait indefinitely
+    if (timeoutMs === undefined) {
+      return new Promise((resolve) => {
+        this.waiters.push({ resolve: () => resolve(true) });
+      });
+    }
+
+    // With timeout, race between permit availability and timeout
     return new Promise((resolve) => {
-      this.waiters.push({ resolve });
+      const timeoutId = setTimeout(() => {
+        // Check if this waiter is still in the queue
+        const index = this.waiters.findIndex(w => w.resolve === timedResolve);
+        if (index !== -1) {
+          this.waiters.splice(index, 1);
+        }
+        resolve(false);
+      }, timeoutMs);
+
+      const timedResolve = () => {
+        clearTimeout(timeoutId);
+        resolve(true);
+      };
+
+      this.waiters.push({ resolve: timedResolve });
     });
   }
 
@@ -44,9 +69,15 @@ export class Semaphore {
 
   /**
    * Execute a function with a permit held, automatically releasing after completion
+   * @param fn - Function to execute
+   * @param timeoutMs - Optional timeout for acquiring permit (default: infinite)
+   * @returns Result of fn, or throws if permit could not be acquired within timeout
    */
-  async execute<T>(fn: () => Promise<T> | T): Promise<T> {
-    await this.acquire();
+  async execute<T>(fn: () => Promise<T> | T, timeoutMs?: number): Promise<T> {
+    const acquired = await this.acquire(timeoutMs);
+    if (!acquired) {
+      throw new Error(`Semaphore: failed to acquire permit within ${timeoutMs}ms`);
+    }
     try {
       return await fn();
     } finally {
