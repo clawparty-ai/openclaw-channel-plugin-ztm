@@ -139,3 +139,55 @@ export function createLogger(context: Record<string, string>): {
     error: (msg) => logger.error(msg, context),
   };
 }
+
+// ============================================================================
+// Runtime Logger Access - Consistent logging across the codebase
+// ============================================================================
+
+/**
+ * Type for runtime logger (from OpenClaw PluginRuntime)
+ */
+type RuntimeLogger = {
+  debug?: (message: string) => void;
+  info?: (message: string) => void;
+  warn?: (message: string) => void;
+  error?: (message: string) => void;
+};
+
+/**
+ * Get a logger that uses runtime logger if available, otherwise falls back to default logger.
+ * This provides consistent logging access across all modules.
+ *
+ * Usage:
+ *   const log = getLogger();
+ *   log.info("message"); // Uses runtime logger if available, otherwise default
+ *
+ * Note: This function attempts to use the runtime logger synchronously. If runtime
+ * is not initialized, it falls back to the default logger.
+ */
+export function getLogger(): Logger {
+  // Try to get runtime logger synchronously
+  // Note: We use a try-catch because runtime might not be initialized
+  try {
+    // We can't do dynamic import synchronously, so we check a module-level flag
+    // The runtime will set this flag when initialized
+    return runtimeLogger ?? logger;
+  } catch {
+    // Runtime not available, use default logger
+    return logger;
+  }
+}
+
+/**
+ * Module-level variable to store runtime logger when set
+ * This is set by the runtime when it initializes
+ */
+let runtimeLogger: Logger | null = null;
+
+/**
+ * Set the runtime logger - called by runtime initialization
+ * This enables consistent logging via getLogger()
+ */
+export function setRuntimeLogger(logger: Logger): void {
+  runtimeLogger = logger;
+}

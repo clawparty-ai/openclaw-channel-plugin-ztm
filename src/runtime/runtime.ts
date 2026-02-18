@@ -105,6 +105,19 @@ function getRuntimeProvider(): RuntimeProvider {
  */
 export function setZTMRuntime(next: PluginRuntime): void {
   getRuntimeProvider().setRuntime(next);
+
+  // Set runtime logger if available for consistent logging
+  // Cast to any to access runtime.log which may not be in type definition
+  const rt = next as unknown as { log?: { debug?: (msg: string) => void; info?: (msg: string) => void; warn?: (msg: string) => void; error?: (msg: string) => void } };
+  if (rt.log) {
+    const { setRuntimeLogger } = require("../utils/logger.js");
+    setRuntimeLogger({
+      debug: (msg: string) => rt.log?.debug?.(msg),
+      info: (msg: string) => rt.log?.info?.(msg),
+      warn: (msg: string) => rt.log?.warn?.(msg),
+      error: (msg: string) => rt.log?.error?.(msg),
+    });
+  }
 }
 
 /**
