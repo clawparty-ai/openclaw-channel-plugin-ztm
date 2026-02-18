@@ -75,13 +75,13 @@ jobs:
           echo "Current tag: ${CURRENT_TAG}, Previous tag: ${PREV_TAG}"
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4
-        id: git-cliff
-        with:
-          config: cliff.toml
-          args: --verbose --base ${{ steps.determine-tag.outputs.previous_tag }} --strip header
-        env:
-          OUTPUT: RELEASE_NOTES.md
+        run: |
+          # Download and install git-cliff binary
+          GIT_CLIFF_VERSION=$(curl -s https://api.github.com/repos/orhun/git-cliff/releases/latest | grep -oP '"tag_name": "\K[^"]+')
+          curl -sL "https://github.com/orhun/git-cliff/releases/download/${GIT_CLIFF_VERSION}/git-cliff-x86_64-unknown-linux-gnu.tar.gz" | tar -xz -C /usr/local/bin/ git-cliff
+
+          # Generate changelog with the determined base tag
+          git-cliff --config cliff.toml --verbose --base ${{ steps.determine-tag.outputs.previous_tag }} --strip header > RELEASE_NOTES.md
 
       - name: Create GitHub Release
         run: |
