@@ -20,6 +20,12 @@ vi.mock("../utils/logger.js", () => ({
     error: vi.fn(),
     debug: vi.fn(),
   },
+  defaultLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 vi.mock("../runtime/index.js", () => ({

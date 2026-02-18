@@ -8,13 +8,15 @@
 // - State retrieval utilities
 
 import { logger } from "../utils/logger.js";
+import { getZTMRuntime } from "./index.js";
 import { getAccountMessageStateStore } from "./store.js";
+import type { PluginRuntime } from "openclaw/plugin-sdk";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
-import { PAIRING_MAX_AGE_MS } from "../constants.js";
+import { PAIRING_MAX_AGE_MS, ALLOW_FROM_CACHE_TTL_MS } from "../constants.js";
 
 // Re-export types for backward compatibility
 export type { AccountRuntimeState };
@@ -54,6 +56,7 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
+      allowFromCache: null,
     };
     accountStates.set(accountId, state);
   }
@@ -81,6 +84,7 @@ export function removeAccountState(accountId: string): void {
     }
     state.messageCallbacks.clear();
     state.pendingPairings.clear();
+    state.allowFromCache = null;
     accountStates.delete(accountId);
   }
 }
@@ -113,6 +117,70 @@ export function cleanupExpiredPairings(): number {
   }
 
   return totalRemoved;
+}
+
+/**
+ * Get cached allowFrom store or refresh if expired.
+ * Uses TTL to avoid redundant async calls every poll/watch cycle.
+ *
+ * @param accountId - The account identifier
+ * @param rt - ZTM runtime to fetch fresh data if cache expired (or function that returns it)
+ * @returns Promise resolving to allowFrom string array, or null if fetch failed and no cache available
+ */
+export async function getAllowFromCache(
+  accountId: string,
+  rt: PluginRuntime | (() => PluginRuntime)
+): Promise<string[] | null> {
+  // Handle case where a function is passed instead of runtime
+  const runtime = typeof rt === 'function' ? rt() : rt;
+  const state = accountStates.get(accountId);
+
+  // If state not found in registry, fetch fresh data without caching
+  if (!state) {
+    try {
+      return await runtime.channel.pairing.readAllowFromStore("ztm-chat");
+    } catch (err) {
+      logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
+  }
+
+  const now = Date.now();
+
+  // Check if cache is valid
+  if (state.allowFromCache && now - state.allowFromCache.timestamp < ALLOW_FROM_CACHE_TTL_MS) {
+    return state.allowFromCache.value;
+  }
+
+  // Cache expired or missing, fetch fresh data
+  try {
+    const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore("ztm-chat");
+    state.allowFromCache = {
+      value: freshAllowFrom,
+      timestamp: now,
+    };
+    return freshAllowFrom;
+  } catch (err) {
+    // On error, return cached value if available, otherwise null to skip cycle
+    logger.error(`[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`);
+    if (state.allowFromCache) {
+      return state.allowFromCache.value;
+    }
+    return null;
+  }
+}
+
+/**
+ * Clear the allowFrom cache for an account.
+ * Useful when the pairing state changes and needs immediate refresh.
+ *
+ * @param accountId - The account identifier
+ */
+export function clearAllowFromCache(accountId: string): void {
+  const state = accountStates.get(accountId);
+  if (state) {
+    state.allowFromCache = null;
+  }
 }
 
 /**
@@ -232,6 +300,7 @@ export async function stopRuntime(accountId: string): Promise<void> {
 
   state.messageCallbacks.clear();
   state.pendingPairings.clear();
+  state.allowFromCache = null;
   state.apiClient = null;
   state.connected = false;
   state.meshConnected = false;

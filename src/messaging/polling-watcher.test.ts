@@ -2,6 +2,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
+import { clearAllowFromCache } from "../runtime/state.js";
 import {
   testConfig,
   testAccountId,
@@ -25,6 +26,12 @@ const originalSetInterval = global.setInterval;
 
 vi.mock("../utils/logger.js", () => ({
   logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+  defaultLogger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -69,6 +76,8 @@ describe("Polling Watcher", () => {
     createdIntervals = [];
     mockReadAllowFromFn = vi.fn(() => Promise.resolve([]));
     setIntervalCallback = null;
+    // Clear allowFrom cache between tests to ensure fresh reads
+    clearAllowFromCache(testAccountId);
 
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
       setIntervalCallback = callback;

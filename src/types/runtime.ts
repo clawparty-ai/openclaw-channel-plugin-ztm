@@ -15,6 +15,12 @@ import type {
   ZTMError,
 } from './errors.js';
 
+// Cache entry with timestamp for TTL tracking
+export interface CacheEntry<T> {
+  value: T;
+  timestamp: number;
+}
+
 // Runtime state per account
 export interface AccountRuntimeState {
   accountId: string;
@@ -33,4 +39,7 @@ export interface AccountRuntimeState {
   watchErrorCount: number;
   // Kept for test compatibility - not actively used in simplified flow
   pendingPairings: Map<string, Date>;
+  // Cached allowFrom store to avoid redundant async calls every poll/watch cycle
+  // Not required in test fixtures - initialized in getOrCreateAccountState
+  allowFromCache?: CacheEntry<string[]> | null;
 }

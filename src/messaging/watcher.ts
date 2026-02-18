@@ -5,6 +5,7 @@ import { logger } from "../utils/logger.js";
 import { sanitizeForLog } from "../utils/log-sanitize.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
+import { getAllowFromCache } from "../runtime/state.js";
 import { startPollingWatcher } from "./polling.js";
 import { processAndNotifyChat } from "./chat-processor.js";
 import { processIncomingMessage } from "./processor.js";
@@ -39,19 +40,18 @@ export async function startMessageWatcher(
   // Step 1: Seed the API client's lastSeenTimes from persisted state
   await seedFileMetadata(state);
 
-  // Step 2: Get initial allowFrom store
+  // Step 2: Get initial allowFrom store (uses cache)
   const rt = getZTMRuntime();
-  const storeAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
-    logger.error(`[${state.accountId}] readAllowFromStore failed during init: ${err instanceof Error ? err.message : String(err)}`);
-    return [] as string[];
-  });
+  const storeAllowFrom = await getAllowFromCache(state.accountId, rt);
+  // If store read fails during init, use empty array to allow basic functionality
+  const initAllowFrom = storeAllowFrom ?? [];
 
   // Step 4: Initial sync - read all existing messages
   // Get chats once and reuse for pairing requests (avoid duplicate API call)
-  const chats = await performInitialSync(state, storeAllowFrom);
+  const chats = await performInitialSync(state, initAllowFrom);
 
   // Step 5: Handle pairing requests from initial sync (reuses chats from initialSync)
-  await handleInitialPairingRequests(state, storeAllowFrom, chats);
+  await handleInitialPairingRequests(state, initAllowFrom, chats);
 
   // Step 6: Start watch loop
   startWatchLoop(state, rt, messagePath);
@@ -293,10 +293,10 @@ async function processChangedPaths(
 
   logger.debug(`[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`);
 
-  const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
-    logger.error(`[${state.accountId}] readAllowFromStore failed during watch loop: ${err instanceof Error ? err.message : String(err)}`);
-    return [] as string[];
-  });
+  // Use cached allowFrom to avoid redundant async calls every watch cycle
+  const loopStoreAllowFrom = await getAllowFromCache(state.accountId, rt);
+  // If store read fails, use cached value or empty array
+  const effectiveAllowFrom = loopStoreAllowFrom ?? [];
 
   const tasks: Promise<void>[] = [];
 
@@ -307,7 +307,7 @@ async function processChangedPaths(
     if (item.peer) {
       tasks.push(
         messageSemaphore.execute(
-          () => processChangedPeer(state, rt, item.peer!, loopStoreAllowFrom),
+          () => processChangedPeer(state, rt, item.peer!, effectiveAllowFrom),
           MESSAGE_PROCESS_TIMEOUT_MS
         ).catch((err) => {
           logger.error(`[${state.accountId}] Timeout processing peer message: ${err}`);
@@ -320,7 +320,7 @@ async function processChangedPaths(
     if (item.creator && item.group) {
       tasks.push(
         messageSemaphore.execute(
-          () => processChangedGroup(state, rt, item.creator!, item.group!, item.name, loopStoreAllowFrom),
+          () => processChangedGroup(state, rt, item.creator!, item.group!, item.name, effectiveAllowFrom),
           MESSAGE_PROCESS_TIMEOUT_MS
         ).catch((err) => {
           logger.error(`[${state.accountId}] Timeout processing group message: ${err}`);
@@ -331,7 +331,7 @@ async function processChangedPaths(
 
   await Promise.all(tasks);
 
-  scheduleFullSync(loopStoreAllowFrom);
+  scheduleFullSync(effectiveAllowFrom);
   if (state.apiClient) {
     getAccountMessageStateStore(state.accountId).setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
   }
