@@ -97,13 +97,24 @@ The agent will start listening on `http://localhost:7777` by default.
 
 ### 3. Install Plugin
 
+#### Option A: Install from npm (recommended for users)
+
 ```bash
+openclaw plugins install @flomesh/ztm-chat
+```
+
+#### Option B: Local development installation
+
+```bash
+# Install from local path
 openclaw plugins install -l .
 
-# Or install from npm (when published)
-# npm install -g @ztm/openclaw-ztm-chat
-# openclaw plugins install @ztm/openclaw-ztm-chat
+# Or link for development
+npm link
+openclaw plugins install -l .
 ```
+
+After installation, the plugin will be available as `ztm-chat` (or `ztm` as alias).
 
 ### 4. Run Configuration Wizard
 
