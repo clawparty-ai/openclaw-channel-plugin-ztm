@@ -46,6 +46,7 @@ export const MAX_PEERS_PER_ACCOUNT = 1000; // Maximum number of peers per accoun
 export const MAX_FILES_PER_ACCOUNT = 1000; // Maximum number of tracked files per account
 export const MAX_PAIRINGS_PER_ACCOUNT = 1000; // Maximum number of pending pairings
 export const MAX_GROUP_PERMISSION_CACHE_SIZE = 500; // Maximum cached group permissions per account
+export const MAX_MESSAGE_LENGTH = 10000; // Maximum message content length in bytes (10KB) - prevents memory exhaustion
 
 // ============================================================================
 // String Constants

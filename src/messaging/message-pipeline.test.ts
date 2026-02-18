@@ -6,6 +6,7 @@ import { notifyMessageCallbacks } from "./dispatcher.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import { normalizeUsername } from "../utils/validation.js";
 import { startMessageWatcher } from "./watcher.js";
+import { MAX_MESSAGE_LENGTH } from "../constants.js";
 import type { ProcessMessageContext } from "./processor.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 import type { MessageCheckResult } from "../types/messaging.js";
@@ -211,6 +212,25 @@ describe("Inbound message processing", () => {
       const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
 
       expect(result).toBeNull();
+    });
+
+    it("should reject oversized messages", () => {
+      const oversizedMessage = "a".repeat(MAX_MESSAGE_LENGTH + 1);
+      const message = createMessage({ message: oversizedMessage });
+      const config = { ...baseConfig, dmPolicy: "allow" as const };
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
+
+      expect(result).toBeNull();
+    });
+
+    it("should accept messages at exactly MAX_MESSAGE_LENGTH", () => {
+      const maxSizeMessage = "a".repeat(MAX_MESSAGE_LENGTH);
+      const message = createMessage({ message: maxSizeMessage });
+      const config = { ...baseConfig, dmPolicy: "allow" as const };
+      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId: testAccountId });
+
+      expect(result).not.toBeNull();
+      expect(result?.content).toBe(maxSizeMessage);
     });
 
     it("should skip already-processed messages based on watermark", async () => {
