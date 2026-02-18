@@ -11,51 +11,52 @@ body = """{% if version %}## {{ version | trim_start_matches(pat="v") }} - {{ ti
 {% else %}## Unreleased{% endif %}{% if previous %}{% if previous.commit_id and commit_id %}
 [{{ previous.commit_id | truncate(length=7, end="") }}]({{ previous.commit_id }})...[{{ commit_id | truncate(length=7, end="") }}]({{ commit_id }}){% endif %}{% endif %}
 
-### 🚨 BREAKING CHANGES
+{% for c in commits %}{% if c.breaking %}### 🚨 BREAKING CHANGES
 
 {% for c in commits %}{% if c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% else %}- N/A{% endfor %}
+{% endif %}{% endfor %}
+{% break %}{% endif %}{% endfor %}
 
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "A Features" %}### 🚀 Features
-
-{% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "B Bug Fixes" %}### 🐛 Bug Fixes
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "A Features" %}{% if clist | length > 0 %}### 🚀 Features
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "C Security" %}### 🔒 Security
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "B Bug Fixes" %}{% if clist | length > 0 %}### 🐛 Bug Fixes
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "D Performance" %}### ⚡ Performance
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "C Security" %}{% if clist | length > 0 %}### 🔒 Security
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "E Refactor" %}### ♻️ Refactor
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "D Performance" %}{% if clist | length > 0 %}### ⚡ Performance
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "F Testing" %}### ✅ Testing
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "E Refactor" %}{% if clist | length > 0 %}### ♻️ Refactor
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "G Styling" %}### 💄 Styling
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "F Testing" %}{% if clist | length > 0 %}### ✅ Testing
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "H Build" %}### 🔨 Build
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "G Styling" %}{% if clist | length > 0 %}### 💄 Styling
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "I Documentation" %}### 📖 Documentation
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "H Build" %}{% if clist | length > 0 %}### 🔨 Build
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
-{% for group, clist in commits | group_by(attribute="group") %}{% if group == "Z Miscellaneous Tasks" %}### 🔧 Miscellaneous Tasks
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "I Documentation" %}{% if clist | length > 0 %}### 📖 Documentation
 
 {% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
-{% endif %}{% endfor %}{% endif %}{% endfor %}
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
+{% for group, clist in commits | group_by(attribute="group") %}{% if group == "Z Miscellaneous Tasks" %}{% if clist | length > 0 %}### 🔧 Miscellaneous Tasks
+
+{% for c in clist %}{% if not c.breaking %}{% set msg = c.message | split(pat="\n") | first | trim | upper_first %}- {{ msg }} ([{{ c.id | truncate(length=7, end="") }}]({{ c.id }})) - ({{ c.author.name }})
+{% endif %}{% endfor %}{% endif %}{% endif %}{% endfor %}
 
 """
 footer = """<!-- generated by git-cliff -->"""

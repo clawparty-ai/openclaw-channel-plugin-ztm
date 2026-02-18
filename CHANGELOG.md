@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## 2026.2.18-beta.1 - 2026-02-18
-
-[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[2a5efcf](2a5efcff2e96435c40d335cfff990f90a3b07352)
+## Unreleased
+[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[58a9f61](58a9f6114f15c94f03ac9e1853fff10f9143b993)
 
 ### 🚨 BREAKING CHANGES
 
 - Simplify processIncomingMessage signature with Options Object ([56e86df](56e86df024dabfd527b6458283491b5dfe0a347f)) - (Lin Yang)
+
 
 
 ### 🚀 Features
@@ -173,11 +173,10 @@ All notable changes to this project will be documented in this file.
 - Add tag flag for npm publish and support prerelease versions ([5570a62](5570a629ea8278b6275e161350bedd01a0b903df)) - (Lin Yang)
 - Update changelog ([3b6531f](3b6531fc8051687f6b098276fd05e3eb8019f14a)) - (Lin Yang)
 - Release v2026.2.18-beta.1 ([2a5efcf](2a5efcff2e96435c40d335cfff990f90a3b07352)) - (Lin Yang)
+- Update changelog configuration and regenerate ([58a9f61](58a9f6114f15c94f03ac9e1853fff10f9143b993)) - (Lin Yang)
 
 ## 2026.2.15 - 2026-02-15
 
-
-### 🚨 BREAKING CHANGES
 
 
 
