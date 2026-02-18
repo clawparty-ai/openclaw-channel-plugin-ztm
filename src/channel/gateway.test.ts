@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";
 import type { ZTMChatConfig, ZTMMeshInfo, ZTMMessage } from "../types/index.js";
-import type { ZTMChatMessage } from "../messaging/inbound.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import { createMockLoggerFns, createMockApiClient, mockSuccess } from "../test-utils/mocks.js";
