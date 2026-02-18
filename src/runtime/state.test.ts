@@ -7,6 +7,10 @@ import {
   getAllAccountStates,
   initializeRuntime,
   stopRuntime,
+  cleanupExpiredPairings,
+  clearAllowFromCache,
+  getGroupPermissionCached,
+  clearGroupPermissionCache,
   type AccountRuntimeState,
 } from "./state.js";
 import { success } from "../types/common.js";
@@ -718,5 +722,136 @@ describe("Account Runtime State Management", () => {
       expect(() => removeAccountState("non-existent-account")).not.toThrow();
       expect(getAllAccountStates().has("non-existent-account")).toBe(false);
     });
+  });
+});
+
+describe("cleanupExpiredPairings", () => {
+  beforeEach(() => {
+    removeAccountState("cleanup-test");
+  });
+
+  afterEach(() => {
+    removeAccountState("cleanup-test");
+  });
+
+  it("should return 0 when no accounts exist", () => {
+    const result = cleanupExpiredPairings();
+    expect(result).toBe(0);
+  });
+
+  it("should not remove fresh pairings", () => {
+    const state = getOrCreateAccountState("cleanup-test");
+    state.pendingPairings.set("alice", new Date());
+
+    const result = cleanupExpiredPairings();
+    expect(result).toBe(0);
+    expect(state.pendingPairings.size).toBe(1);
+  });
+
+  it("should remove expired pairings", () => {
+    const state = getOrCreateAccountState("cleanup-test");
+    // Add expired pairing (older than 1 hour)
+    const expiredTime = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    state.pendingPairings.set("alice", expiredTime);
+
+    const result = cleanupExpiredPairings();
+    expect(result).toBe(1);
+    expect(state.pendingPairings.size).toBe(0);
+  });
+
+  it("should only remove expired pairings from each account", () => {
+    const state = getOrCreateAccountState("cleanup-test");
+    // Add both fresh and expired
+    state.pendingPairings.set("alice", new Date());
+    state.pendingPairings.set("bob", new Date(Date.now() - 2 * 60 * 60 * 1000));
+
+    const result = cleanupExpiredPairings();
+    expect(result).toBe(1);
+    expect(state.pendingPairings.size).toBe(1);
+    expect(state.pendingPairings.has("alice")).toBe(true);
+    expect(state.pendingPairings.has("bob")).toBe(false);
+  });
+});
+
+describe("clearAllowFromCache", () => {
+  beforeEach(() => {
+    removeAccountState("cache-test");
+  });
+
+  afterEach(() => {
+    removeAccountState("cache-test");
+  });
+
+  it("should clear allowFromCache for existing account", () => {
+    const state = getOrCreateAccountState("cache-test");
+    state.allowFromCache = { value: ["alice", "bob"], timestamp: Date.now() };
+
+    clearAllowFromCache("cache-test");
+
+    expect(state.allowFromCache).toBeNull();
+  });
+
+  it("should handle non-existent account gracefully", () => {
+    expect(() => clearAllowFromCache("non-existent")).not.toThrow();
+  });
+});
+
+describe("getGroupPermissionCached", () => {
+  beforeEach(() => {
+    removeAccountState("group-perm-test");
+  });
+
+  afterEach(() => {
+    removeAccountState("group-perm-test");
+  });
+
+  it("should return permissions without cache when no state exists", () => {
+    const result = getGroupPermissionCached("non-existent", "creator", "group", testConfig);
+    expect(result).toBeDefined();
+  });
+
+  it("should cache permissions after first call", () => {
+    const state = getOrCreateAccountState("group-perm-test");
+
+    const result1 = getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
+    const result2 = getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
+
+    // Second call should use cache
+    expect(state.groupPermissionCache?.has("creator/group1")).toBe(true);
+    expect(result1).toEqual(result2);
+  });
+
+  it("should handle different groups separately", () => {
+    const state = getOrCreateAccountState("group-perm-test");
+
+    getGroupPermissionCached("group-perm-test", "creator", "group1", testConfig);
+    getGroupPermissionCached("group-perm-test", "creator", "group2", testConfig);
+
+    expect(state.groupPermissionCache?.size).toBe(2);
+  });
+});
+
+describe("clearGroupPermissionCache", () => {
+  beforeEach(() => {
+    removeAccountState("clear-group-test");
+  });
+
+  afterEach(() => {
+    removeAccountState("clear-group-test");
+  });
+
+  it("should clear group permission cache for existing account", () => {
+    const state = getOrCreateAccountState("clear-group-test");
+
+    // Populate cache
+    getGroupPermissionCached("clear-group-test", "creator", "group1", testConfig);
+    expect(state.groupPermissionCache?.size).toBe(1);
+
+    clearGroupPermissionCache("clear-group-test");
+    expect(state.groupPermissionCache?.size).toBe(0);
+  });
+
+  it("should handle non-existent account gracefully", () => {
+    expect(() => clearGroupPermissionCache("non-existent")).not.toThrow();
   });
 });
