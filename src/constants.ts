@@ -32,6 +32,9 @@ export const PAIRING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour - max age for pendin
 export const STATE_FLUSH_DEBOUNCE_MS = 1000; // 1 second - debounce delay for watermark writes
 export const STATE_FLUSH_MAX_DELAY_MS = 5000; // 5 seconds - max delay before forced flush
 
+// Chat processing limits
+export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling cycle
+
 // ============================================================================
 // Size Limits
 // ============================================================================

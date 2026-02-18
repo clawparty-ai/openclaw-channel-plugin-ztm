@@ -90,6 +90,8 @@ async function processChats(
   }
 }
 
+import { MAX_CHATS_PER_POLL } from "../constants.js";
+
 // Fallback polling watcher (when watch is unavailable)
 export async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
   const { config, apiClient } = state;
@@ -123,6 +125,12 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
     });
     if (!chats) return;
 
-    await processChats(chats, config, pollStoreAllowFrom, state.accountId, state);
+    // Limit chats processed per cycle to prevent memory spikes from large histories
+    const chatsToProcess = chats.slice(0, MAX_CHATS_PER_POLL);
+    if (chats.length > MAX_CHATS_PER_POLL) {
+      logger.debug(`[${state.accountId}] Limiting poll to ${MAX_CHATS_PER_POLL} of ${chats.length} chats`);
+    }
+
+    await processChats(chatsToProcess, config, pollStoreAllowFrom, state.accountId, state);
   }, pollingInterval);
 }
