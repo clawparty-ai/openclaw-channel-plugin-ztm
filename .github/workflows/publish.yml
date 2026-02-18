@@ -35,10 +35,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Generate release notes (unreleased changes)
+      - name: Generate release notes
         id: changelog
+        env:
+          CURRENT_TAG: ${{ github.ref_name }}
         run: |
-          npm run changelog:unreleased > RELEASE_NOTES.md || echo "No changes" > RELEASE_NOTES.md
+          # Get the previous tag for changelog generation
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            # Generate changelog from previous tag to current tag
+            git-cliff --from "$PREV_TAG" --to HEAD > RELEASE_NOTES.md
+          else
+            # Fallback: generate full changelog
+            git-cliff > RELEASE_NOTES.md
+          fi
+          # Use a fallback if changelog is empty
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "Release v${CURRENT_TAG}" > RELEASE_NOTES.md
+          fi
           cat RELEASE_NOTES.md
 
       - name: Publish to npm
