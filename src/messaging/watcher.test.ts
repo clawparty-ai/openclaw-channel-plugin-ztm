@@ -40,6 +40,14 @@ vi.mock("../runtime/index.js", () => ({
       },
     },
   }),
+  getMessageStateRepository: vi.fn(() => ({
+    getFileMetadata: vi.fn(() => ({})),
+    setFileMetadataBulk: vi.fn(),
+  })),
+  getAllowFromRepository: vi.fn(() => ({
+    getAllowFrom: vi.fn(() => Promise.resolve([])),
+    clearCache: vi.fn(),
+  })),
 }));
 
 vi.mock("../runtime/store.js", () => ({
