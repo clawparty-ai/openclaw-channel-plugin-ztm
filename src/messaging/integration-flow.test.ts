@@ -127,14 +127,10 @@ function createMessage(overrides?: Partial<{ time: number; message: string; send
 
 describe('Integration: Complete Message Flow', () => {
   // Get the mocked pairing store functions - typed as Mock to have .mockReturnValue
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockLoadPendingPairings: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockSavePendingPairing: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockDeletePendingPairing: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockCleanupExpiredPairings: any;
+  let mockLoadPendingPairings: unknown;
+  let mockSavePendingPairing: unknown;
+  let mockDeletePendingPairing: unknown;
+  let mockCleanupExpiredPairings: unknown;
 
   beforeEach(async () => {
     // Get mock functions from the mocked module

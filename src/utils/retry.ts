@@ -183,7 +183,7 @@ export async function fetchWithRetry(
 /**
  * Wrap any function with retry logic
  */
-export function withRetry<T extends (...args: any[]) => any>(fn: T, options: RetryOptions = {}): T {
+export function withRetry<T extends (...args: unknown[]) => unknown>(fn: T, options: RetryOptions = {}): T {
   return (async (...args: Parameters<T>) => {
     return retryAsync(() => fn(...args), options);
   }) as T;
