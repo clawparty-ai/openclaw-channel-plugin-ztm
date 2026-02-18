@@ -35,8 +35,8 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Generate changelog from conventional commits
-          npx conventional-changelog -p angular -i CHANGELOG.md -s || echo "No changes" > CHANGELOG.md
+          # Generate full changelog from all conventional commits
+          npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0 || echo "No changes" > CHANGELOG.md
           cat CHANGELOG.md
 
       - name: Publish to npm
