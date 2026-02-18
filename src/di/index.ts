@@ -1,13 +1,7 @@
 // Dependency Injection Module
 // Barrel exports for DI container and service factories
 
-import type {
-  ILogger,
-  IConfig,
-  IApiClient,
-  IApiClientFactory,
-  IRuntime,
-} from './container';
+import type { ILogger, IConfig, IApiClient, IApiClientFactory, IRuntime } from './container';
 
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 
@@ -123,7 +117,8 @@ export function createMessageStateRepositoryService(): () => IMessageStateReposi
  * Returns a factory function for DI container registration
  */
 export function createApiClientFactory(): () => IApiClientFactory {
-  return () => (config: ZTMChatConfig, deps?: unknown) => createZTMApiClient(config, deps as Parameters<typeof createZTMApiClient>[1]);
+  return () => (config: ZTMChatConfig, deps?: unknown) =>
+    createZTMApiClient(config, deps as Parameters<typeof createZTMApiClient>[1]);
 }
 
 /**

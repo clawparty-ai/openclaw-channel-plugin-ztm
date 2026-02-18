@@ -32,10 +32,7 @@ import {
   probeAccount as probeAccountConnectivity,
   resolveAccountPermitPath,
 } from './connectivity-manager.js';
-import {
-  createInboundContext,
-  createMessageCallback,
-} from './message-dispatcher.js';
+import { createInboundContext, createMessageCallback } from './message-dispatcher.js';
 
 // ============================================================================
 // Local Types

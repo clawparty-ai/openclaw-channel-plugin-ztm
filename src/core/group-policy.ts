@@ -7,10 +7,7 @@
 // - "allowlist": Only allow whitelisted senders
 
 import type { ZTMChatConfig } from '../types/config.js';
-import type {
-  GroupPermissions,
-  GroupMessageCheckResult,
-} from '../types/group-policy.js';
+import type { GroupPermissions, GroupMessageCheckResult } from '../types/group-policy.js';
 import { normalizeUsername } from '../utils/validation.js';
 import { getOrDefault } from '../utils/guards.js';
 
