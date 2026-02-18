@@ -15,9 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install git-cliff
-        uses: taiki-e/install-action@git-cliff
-
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -40,17 +37,17 @@ jobs:
         env:
           CURRENT_TAG: ${{ github.ref_name }}
         run: |
-          # Get the previous tag for changelog generation
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -n "$PREV_TAG" ]; then
-            # Generate changelog from previous tag to current tag
-            git-cliff --from "$PREV_TAG" --to HEAD > RELEASE_NOTES.md
+          # Use the already-generated CHANGELOG.md from the repository
+          # This was generated locally with `npm run changelog` before tagging
+          if [ -f CHANGELOG.md ]; then
+            # Extract content after "[unreleased]" section header
+            # This gets all the changes for the current release
+            awk '/^## \[unreleased\]/,0' CHANGELOG.md > RELEASE_NOTES.md
+            # If awk produced empty file, use a fallback
+            if [ ! -s RELEASE_NOTES.md ]; then
+              echo "Release v${CURRENT_TAG}" > RELEASE_NOTES.md
+            fi
           else
-            # Fallback: generate full changelog
-            git-cliff > RELEASE_NOTES.md
-          fi
-          # Use a fallback if changelog is empty
-          if [ ! -s RELEASE_NOTES.md ]; then
             echo "Release v${CURRENT_TAG}" > RELEASE_NOTES.md
           fi
           cat RELEASE_NOTES.md
