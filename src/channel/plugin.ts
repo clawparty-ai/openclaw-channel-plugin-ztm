@@ -24,6 +24,7 @@ import {
 } from "../di/index.js";
 import type { ResolvedZTMChatAccount } from "./config.js";
 import { PROBE_TIMEOUT_MS } from "../constants.js";
+import { getOrDefault, isNonEmptyArray } from "../utils/guards.js";
 
 // Type guard to safely extract ZTMChatConfig from unknown
 function isZTMChatConfig(config: unknown): config is ZTMChatConfig {
@@ -128,7 +129,7 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: any) => {
 
   return {
     policy: config?.dmPolicy ?? "pairing",
-    allowFrom: config?.allowFrom ?? [],
+    allowFrom: getOrDefault(config?.allowFrom, []),
     policyPath: `${basePath}dmPolicy`,
     allowFromPath: `${basePath}allowFrom`,
     approveHint: "",
@@ -144,8 +145,8 @@ const collectWarningsImpl = async ({ cfg, accountId }: any): Promise<string[]> =
   const config = getZTMChatConfig(account);
   if (!config) return warnings;
 
-  const allowFrom = config?.allowFrom ?? [];
-  if (!allowFrom.length) {
+  const allowFrom = getOrDefault(config?.allowFrom, []);
+  if (!isNonEmptyArray(allowFrom)) {
     warnings.push(
       "No allowFrom configured - accepting messages from any ZTM user",
     );
@@ -234,7 +235,7 @@ const directoryListPeersImpl = async ({ cfg, accountId }: any) => {
     return [];
   }
 
-  return (usersResult.value ?? []).map((user) => ({
+  return getOrDefault(usersResult.value, []).map((user) => ({
     kind: "user" as const,
     id: user.username,
     name: user.username,
@@ -337,12 +338,12 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     resolveAllowFrom: ({ cfg, accountId }) => {
       const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
       const config = getZTMChatConfig(account);
-      return ((config?.allowFrom) ?? []).map((entry) =>
+      return getOrDefault(config?.allowFrom, []).map((entry) =>
         String(entry ?? ""),
       );
     },
     formatAllowFrom: ({ allowFrom }) =>
-      (allowFrom ?? [])
+      getOrDefault(allowFrom, [])
         .map((entry) => String(entry).trim())
         .filter(Boolean)
         .map((entry) => entry.toLowerCase()),

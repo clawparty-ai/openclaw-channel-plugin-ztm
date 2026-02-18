@@ -9,6 +9,7 @@ import {
   ZTMTimeoutError,
 } from "../types/errors.js";
 import type { ZTMLogger, RequestHandler } from "./request.js";
+import { getOrDefault } from "../utils/guards.js";
 
 /**
  * Create mesh operations API
@@ -38,7 +39,7 @@ export function createMeshApi(
       }));
     }
 
-    const users = (result.value ?? []).map(username => ({ username }));
+    const users = getOrDefault(result.value, []).map(username => ({ username }));
     logger.debug?.(`[ZTM API] Discovered ${users.length} users`);
     return success(users);
   }

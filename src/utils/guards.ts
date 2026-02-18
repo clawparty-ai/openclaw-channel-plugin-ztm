@@ -73,12 +73,15 @@ export function requireValue<T, E extends Error>(
  *
  * @example
  * const timeout = getOrDefault(config.timeout, 30000); // 0 is valid timeout
+ *
+ * @example
+ * const arr = getOrDefault(config.items, []); // Returns string[] correctly
  */
 export function getOrDefault<T, D>(
   value: T | null | undefined,
   defaultValue: D
-): T | D {
-  return isDefined(value) ? value : defaultValue;
+): T {
+  return (isDefined(value) ? value : defaultValue) as T;
 }
 
 /**

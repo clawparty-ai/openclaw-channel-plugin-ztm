@@ -3,6 +3,7 @@
 
 import { logger } from "../utils/logger.js";
 import { sanitizeForLog } from "../utils/log-sanitize.js";
+import { getOrDefault, isNonEmptyArray } from "../utils/guards.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import { getAccountMessageStateStore } from "../runtime/store.js";
 import { getAllowFromCache } from "../runtime/state.js";
@@ -45,7 +46,7 @@ export async function startMessageWatcher(
   const rt = getZTMRuntime();
   const storeAllowFrom = await getAllowFromCache(state.accountId, rt);
   // If store read fails during init, use empty array to allow basic functionality
-  const initAllowFrom = storeAllowFrom ?? [];
+  const initAllowFrom = getOrDefault(storeAllowFrom, []);
 
   // Step 4: Initial sync - read all existing messages
   // Get chats once and reuse for pairing requests (avoid duplicate API call)
@@ -228,7 +229,7 @@ class WatchLoopController {
       return { success: false, errorMessage: changedResult.error?.message ?? "Watch failed" };
     }
 
-    return { success: true, items: changedResult.value ?? [] };
+    return { success: true, items: getOrDefault(changedResult.value, []) };
   }
 
   /**
@@ -355,7 +356,7 @@ async function processChangedPaths(
   // Use cached allowFrom to avoid redundant async calls every watch cycle
   const loopStoreAllowFrom = await getAllowFromCache(state.accountId, rt);
   // If store read fails, use cached value or empty array
-  const effectiveAllowFrom = loopStoreAllowFrom ?? [];
+  const effectiveAllowFrom = getOrDefault(loopStoreAllowFrom, []);
 
   const tasks: Promise<void>[] = [];
 
@@ -414,7 +415,7 @@ async function processChangedPeer(
     return;
   }
 
-  const messages = messagesResult.value ?? [];
+  const messages = getOrDefault(messagesResult.value, []);
   const safePeer = sanitizeForLog(peer);
   logger.debug(`[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}"`);
 
@@ -449,7 +450,7 @@ async function processChangedGroup(
     return;
   }
 
-  const messages = messagesResult.value ?? [];
+  const messages = getOrDefault(messagesResult.value, []);
 
   // Use shared message processing logic
   processAndNotifyGroupMessages(messages, state, storeAllowFrom, { creator, group }, name);

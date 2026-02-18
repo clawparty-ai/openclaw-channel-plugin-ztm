@@ -3,6 +3,7 @@
 
 import type { PluginRuntime } from "openclaw/plugin-sdk";
 import { setRuntimeLogger } from "../utils/logger.js";
+import { requireDefined, isDefined } from "../utils/guards.js";
 
 // ============================================================================
 // RUNTIME PROVIDER INTERFACE
@@ -74,17 +75,14 @@ export class RuntimeManager implements RuntimeProvider {
    * @throws Error if runtime not initialized
    */
   getRuntime(): PluginRuntime {
-    if (!this.runtime) {
-      throw new Error("ZTM runtime not initialized - call setZTMRuntime first");
-    }
-    return this.runtime;
+    return requireDefined(this.runtime, "ZTM runtime not initialized - call setZTMRuntime first");
   }
 
   /**
    * Check if runtime is initialized
    */
   isInitialized(): boolean {
-    return this.runtime !== null;
+    return isDefined(this.runtime);
   }
 }
 
