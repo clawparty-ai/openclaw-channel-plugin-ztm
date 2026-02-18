@@ -9,12 +9,6 @@ on:
       - 'v[0-9]*.[0-9]*.[0-9]*-alpha.[0-9]*'
       - 'v[0-9]*.[0-9]*.[0-9]*-beta.[0-9]*'
       - 'v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*'
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Git tag or branch to publish (e.g., v2026.2.18-alpha.1)'
-        required: true
-        type: string
 
 jobs:
   publish:
@@ -27,7 +21,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -48,10 +41,8 @@ jobs:
 
       - name: Publish to npm
         run: |
-          # Determine the ref to use (workflow_dispatch input or github.ref)
-          REF="${{ github.event.inputs.ref || github.ref }}"
-          # Extract tag name (remove 'refs/tags/' prefix if present)
-          TAG_NAME="${REF#refs/tags/}"
+          # Extract tag name from git ref
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
           # Determine the appropriate tag based on version type
           if [[ "$TAG_NAME" =~ -alpha\.|-beta\.|-rc\. ]]; then
             # Pre-release versions publish to 'next' tag
@@ -63,21 +54,39 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Determine previous tag for changelog
+        id: determine-tag
+        run: |
+          # Extract tag from git ref
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+          # Check if current tag is a prerelease version (alpha, beta, rc)
+          if [[ "$CURRENT_TAG" =~ -alpha\.|-beta\.|-rc\. ]]; then
+            # For prerelease: find the previous tag (any type)
+            PREV_TAG=$(git describe --tags --abbrev=0 "${CURRENT_TAG}^" 2>/dev/null || echo "")
+            echo "current_type=prerelease" >> $GITHUB_OUTPUT
+          else
+            # For stable: find the previous stable tag
+            PREV_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | grep -v "$CURRENT_TAG" | head -n 1 || echo "")
+            echo "current_type=stable" >> $GITHUB_OUTPUT
+          fi
+
+          echo "previous_tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+          echo "Current tag: ${CURRENT_TAG}, Previous tag: ${PREV_TAG}"
+
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v4
         id: git-cliff
         with:
           config: cliff.toml
-          args: --verbose --latest --strip header
+          args: --verbose --base ${{ steps.determine-tag.outputs.previous_tag }} --strip header
         env:
           OUTPUT: RELEASE_NOTES.md
 
       - name: Create GitHub Release
         run: |
-          # Determine the ref to use (workflow_dispatch input or github.ref)
-          REF="${{ github.event.inputs.ref || github.ref }}"
-          # Extract tag name (remove 'refs/tags/' prefix if present)
-          TAG_NAME="${REF#refs/tags/}"
+          # Extract tag name from git ref
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
           # Check if it's a prerelease version
           PRERELEASE=false
           if [[ "$TAG_NAME" =~ -alpha\.|-beta\.|-rc\. ]]; then
