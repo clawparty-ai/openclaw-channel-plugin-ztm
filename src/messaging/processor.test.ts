@@ -5,7 +5,10 @@ import {
   isValidMessage,
   createMessageId,
   parseMessageContent,
+  processIncomingMessage,
 } from "./processor.js";
+import { MAX_MESSAGE_LENGTH } from "../constants.js";
+import { testConfig, testConfigOpenDM } from "../test-utils/fixtures.js";
 
 describe("Message Processor", () => {
   describe("isValidMessage", () => {
@@ -100,6 +103,63 @@ describe("Message Processor", () => {
 
     it("should handle array", () => {
       expect(parseMessageContent([1, 2, 3])).toBe("[1,2,3]");
+    });
+  });
+
+  describe("processIncomingMessage - message length boundary", () => {
+    const baseMessage = { time: Date.now(), sender: "alice" };
+    const context = { config: testConfigOpenDM, storeAllowFrom: [] as string[], accountId: "test" };
+
+    it("should accept message at exactly MAX_MESSAGE_LENGTH", () => {
+      const message = "a".repeat(MAX_MESSAGE_LENGTH);
+      const result = processIncomingMessage(
+        { ...baseMessage, message },
+        context
+      );
+
+      expect(result).not.toBeNull();
+      expect(result?.content.length).toBe(MAX_MESSAGE_LENGTH);
+    });
+
+    it("should reject message exceeding MAX_MESSAGE_LENGTH", () => {
+      const message = "a".repeat(MAX_MESSAGE_LENGTH + 1);
+      const result = processIncomingMessage(
+        { ...baseMessage, message },
+        context
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject message at MAX_MESSAGE_LENGTH + 1", () => {
+      const message = "a".repeat(10001);
+      const result = processIncomingMessage(
+        { ...baseMessage, message },
+        context
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject significantly oversized message", () => {
+      const message = "a".repeat(20000);
+      const result = processIncomingMessage(
+        { ...baseMessage, message },
+        context
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should accept short message", () => {
+      const message = "Hello world";
+      const result = processIncomingMessage(
+        { ...baseMessage, message },
+        context
+      );
+
+      expect(result).not.toBeNull();
+      expect(result?.content).toBe("Hello world");
     });
   });
 });
