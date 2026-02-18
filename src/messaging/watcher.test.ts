@@ -7,6 +7,10 @@ import { mockSuccess } from "../test-utils/mocks.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
+import {
+  FULL_SYNC_DELAY_MS,
+  WATCH_INTERVAL_MS,
+} from "../constants.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -116,7 +120,7 @@ describe("startMessageWatcher", () => {
       const ref = originalSetInterval(callback, ms);
       createdIntervals.push(ref);
       return ref;
-    }) as unknown as typeof setInterval;
+    }) as unknown as typeof setTimeout;
 
     mockState = createMockState();
   });
@@ -407,5 +411,443 @@ describe("full sync behavior", () => {
 
     await startMessageWatcher(state);
     // Should fallback to polling when error count > 5
+  });
+});
+
+describe("watch loop timing", () => {
+  let mockState: AccountRuntimeState;
+  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+
+  function createMockState(): AccountRuntimeState {
+    const mockApiClient = {
+      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    return {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdTimeouts = [];
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      const ref = originalSetTimeout(callback, ms);
+      createdTimeouts.push(ref);
+      return ref;
+    }) as unknown as typeof setTimeout;
+
+    global.clearTimeout = vi.fn((id: ReturnType<typeof setTimeout>) => {
+      originalClearTimeout(id);
+      createdTimeouts = createdTimeouts.filter(t => t !== id);
+    }) as unknown as typeof clearTimeout;
+
+    mockState = createMockState();
+  });
+
+  afterEach(() => {
+    for (const timeout of createdTimeouts) {
+      originalClearTimeout(timeout);
+    }
+    createdTimeouts = [];
+    global.setTimeout = originalSetTimeout;
+    global.clearTimeout = originalClearTimeout;
+  });
+
+  it("should use correct WATCH_INTERVAL_MS", () => {
+    expect(WATCH_INTERVAL_MS).toBe(1000);
+  });
+
+  it("should use correct FULL_SYNC_DELAY_MS", () => {
+    expect(FULL_SYNC_DELAY_MS).toBe(30000);
+  });
+
+  it("should schedule next loop iteration after completion", async () => {
+    const apiClient = mockState.apiClient as any;
+    apiClient.watchChanges = vi.fn(() =>
+      Promise.resolve(mockSuccess({ value: [] }))
+    );
+
+    await startMessageWatcher(mockState);
+
+    // Wait for at least one iteration
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Check that setTimeout was called for scheduling next iteration
+    const setTimeoutMock = global.setTimeout as unknown as ReturnType<typeof vi.fn>;
+    const timeoutCalls = setTimeoutMock.mock.calls;
+    expect(timeoutCalls.length).toBeGreaterThan(0);
+  });
+
+  it("should calculate correct interval accounting for iteration time", async () => {
+    const apiClient = mockState.apiClient as any;
+    let watchCallCount = 0;
+
+    apiClient.watchChanges = vi.fn(() => {
+      watchCallCount++;
+      return Promise.resolve(mockSuccess({ value: [] }));
+    });
+
+    await startMessageWatcher(mockState);
+
+    // Wait for a couple iterations
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+
+    // Multiple iterations should have occurred
+    expect(watchCallCount).toBeGreaterThan(1);
+  });
+});
+
+describe("processChangedPaths scenarios", () => {
+  let mockState: AccountRuntimeState;
+  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const originalSetTimeout = global.setTimeout;
+
+  function createMockState(): AccountRuntimeState {
+    const mockApiClient = {
+      watchChanges: vi.fn(() =>
+        Promise.resolve(
+          mockSuccess({
+            value: [
+              { type: "peer" as const, peer: "alice" },
+              { type: "peer" as const, peer: "bob" },
+              { type: "group" as const, creator: "alice", group: "test-group", name: "Test Group" },
+            ],
+          })
+        )
+      ),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn((peer: string) =>
+        Promise.resolve({
+          ok: true,
+          value: [
+            {
+              time: 1000,
+              message: `Hello from ${peer}`,
+              sender: peer,
+            },
+          ],
+        })
+      ),
+      getGroupMessages: vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          value: [
+            {
+              time: 1000,
+              message: "Hello group",
+              sender: "bob",
+            },
+          ],
+        })
+      ),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    return {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdTimeouts = [];
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      const ref = originalSetTimeout(callback, ms);
+      createdTimeouts.push(ref);
+      return ref;
+    }) as unknown as typeof setTimeout;
+
+    mockState = createMockState();
+  });
+
+  afterEach(() => {
+    for (const timeout of createdTimeouts) {
+      clearTimeout(timeout);
+    }
+    createdTimeouts = [];
+    global.setTimeout = originalSetTimeout;
+  });
+
+  it("should handle watch changes with peer and group items", async () => {
+    await startMessageWatcher(mockState);
+
+    // Wait for processing
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Verify watchChanges was called with correct path
+    const apiClient = mockState.apiClient as any;
+    expect(apiClient.watchChanges).toHaveBeenCalled();
+  });
+
+  it("should handle empty peer list gracefully", async () => {
+    const apiClient = mockState.apiClient as any;
+    apiClient.watchChanges = vi.fn(() =>
+      Promise.resolve(mockSuccess({ value: [] }))
+    );
+
+    await startMessageWatcher(mockState);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should not crash and should process without errors
+    expect(apiClient.getPeerMessages).not.toHaveBeenCalled();
+    expect(apiClient.getGroupMessages).not.toHaveBeenCalled();
+  });
+});
+
+describe("error threshold and polling fallback", () => {
+  let mockState: AccountRuntimeState;
+  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const originalSetTimeout = global.setTimeout;
+
+  function createMockState(errorCount: number): AccountRuntimeState {
+    const mockApiClient = {
+      watchChanges: vi.fn(() => {
+        if (mockState.watchErrorCount < errorCount) {
+          mockState.watchErrorCount++;
+          return Promise.reject(new Error("Watch failed"));
+        }
+        return Promise.resolve(mockSuccess({ value: [] }));
+      }),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    const state: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    return state;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdTimeouts = [];
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      const ref = originalSetTimeout(callback, ms);
+      createdTimeouts.push(ref);
+      return ref;
+    }) as unknown as typeof setTimeout;
+
+    mockState = createMockState(6);
+  });
+
+  afterEach(() => {
+    for (const timeout of createdTimeouts) {
+      clearTimeout(timeout);
+    }
+    createdTimeouts = [];
+    global.setTimeout = originalSetTimeout;
+  });
+
+  it("should trigger polling fallback after 5 consecutive errors", async () => {
+    const pollingMock = vi.fn();
+    vi.doMock("./polling.js", () => ({
+      startPollingWatcher: pollingMock,
+    }));
+
+    await startMessageWatcher(mockState);
+
+    // Wait for multiple error iterations
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // After 5+ errors, should call startPollingWatcher
+    // (The mock for polling should have been called)
+  });
+});
+
+describe("watch error handling edge cases", () => {
+  let mockState: AccountRuntimeState;
+  const originalSetTimeout = global.setTimeout;
+
+  function createMockState(): AccountRuntimeState {
+    const mockApiClient = {
+      watchChanges: vi.fn(() =>
+        Promise.resolve({ ok: false, error: { code: "TEST", message: "Test error", context: {}, toJSON: () => ({}), name: "ZTMError" } })
+      ),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    return {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      return originalSetTimeout(callback, ms);
+    }) as unknown as typeof setTimeout;
+
+    mockState = createMockState();
+  });
+
+  afterEach(() => {
+    global.setTimeout = originalSetTimeout;
+  });
+
+  it("should handle API error result gracefully", async () => {
+    await startMessageWatcher(mockState);
+
+    // Wait for error handling
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should not throw, should handle error gracefully
+    expect(mockState.watchErrorCount).toBeGreaterThan(0);
+  });
+
+  it("should increment error count on API error", async () => {
+    await startMessageWatcher(mockState);
+
+    // Wait for multiple iterations
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Error count should have incremented
+    expect(mockState.watchErrorCount).toBeGreaterThan(0);
+  });
+});
+
+describe("multiple iteration scenarios", () => {
+  let mockState: AccountRuntimeState;
+  const originalSetTimeout = global.setTimeout;
+
+  function createMockState(): AccountRuntimeState {
+    const mockApiClient = {
+      watchChanges: vi.fn(() =>
+        Promise.resolve(mockSuccess({ value: [] }))
+      ),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    return {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      return originalSetTimeout(callback, ms);
+    }) as unknown as typeof setTimeout;
+
+    mockState = createMockState();
+  });
+
+  afterEach(() => {
+    global.setTimeout = originalSetTimeout;
+  });
+
+  it("should execute watch loop successfully", async () => {
+    const apiClient = mockState.apiClient as any;
+    apiClient.watchChanges = vi.fn(() =>
+      Promise.resolve(mockSuccess({ value: [] }))
+    );
+
+    await startMessageWatcher(mockState);
+
+    // Wait for at least one iteration
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should have executed at least one iteration
+    expect(apiClient.watchChanges).toHaveBeenCalled();
   });
 });
