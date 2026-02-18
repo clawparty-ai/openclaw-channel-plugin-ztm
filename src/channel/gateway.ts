@@ -107,7 +107,7 @@ export async function probeAccountGateway({
   error: string | null;
   meshInfo?: import('../api/ztm-api.js').ZTMMeshInfo;
 }> {
-  return probeAccountConnectivity({ config: account.config, timeoutMs });
+  return probeAccountConnectivity({ config: account.config, _timeoutMs: timeoutMs });
 }
 
 // ============================================================================
@@ -248,8 +248,10 @@ export async function startAccountGateway(ctx: {
  */
 export async function logoutAccountGateway({
   accountId,
+  cfg: _cfg,
 }: {
   accountId: string;
+  cfg?: unknown;
 }): Promise<{ cleared: boolean }> {
   await stopRuntime(accountId);
   removeAccountState(accountId);
