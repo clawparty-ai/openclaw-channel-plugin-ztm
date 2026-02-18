@@ -2,12 +2,10 @@
 // Tests the full pipeline from receiving a message to sending a reply
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  processIncomingMessage,
-  checkDmPolicy,
-  notifyMessageCallbacks,
-  type ProcessMessageContext,
-} from "./inbound.js";
+import { processIncomingMessage } from "./processor.js";
+import { notifyMessageCallbacks } from "./dispatcher.js";
+import { checkDmPolicy } from "../core/dm-policy.js";
+import type { ProcessMessageContext } from "./processor.js";
 import { sendZTMMessage } from "./outbound.js";
 import {
   getOrCreateAccountState,

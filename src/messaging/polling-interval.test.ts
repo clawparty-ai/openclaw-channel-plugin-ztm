@@ -37,9 +37,13 @@ vi.mock("../runtime/index.js", () => ({
   }),
 }));
 
-vi.mock("./inbound.js", () => ({
+vi.mock("./processor.js", () => ({
   processIncomingMessage: vi.fn(() => null),
+}));
+vi.mock("./dispatcher.js", () => ({
   notifyMessageCallbacks: vi.fn(),
+}));
+vi.mock("../core/dm-policy.js", () => ({
   checkDmPolicy: vi.fn(() => ({ allowed: true, reason: "allowed", action: "process" })),
 }));
 

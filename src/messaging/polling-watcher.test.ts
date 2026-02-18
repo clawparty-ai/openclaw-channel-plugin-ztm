@@ -54,11 +54,20 @@ vi.mock("../runtime/index.js", () => ({
   }),
 }));
 
-vi.mock("./inbound.js", () => ({
+vi.mock("./processor.js", () => ({
   processIncomingMessage: vi.fn(() => null),
+}));
+vi.mock("./dispatcher.js", () => ({
   notifyMessageCallbacks: vi.fn(),
+}));
+vi.mock("../core/dm-policy.js", () => ({
   checkDmPolicy: vi.fn(() => ({ allowed: true, reason: "allowed", action: "process" })),
 }));
+
+// Import after mocks are defined
+import { processIncomingMessage } from "./processor.js";
+import { notifyMessageCallbacks } from "./dispatcher.js";
+import { checkDmPolicy } from "../core/dm-policy.js";
 
 vi.mock("../connectivity/permit.js", () => ({
   handlePairingRequest: vi.fn(() => Promise.resolve()),
@@ -159,7 +168,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const { processIncomingMessage } = await import("./inbound.js");
+      const { processIncomingMessage } = await import("./processor.js");
 
       await startPollingWatcher(mockState);
 
@@ -191,7 +200,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
 
-      const { processIncomingMessage } = await import("./inbound.js");
+      const { processIncomingMessage } = await import("./processor.js");
 
       await startPollingWatcher(mockState);
 
@@ -215,7 +224,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
 
-      const { processIncomingMessage } = await import("./inbound.js");
+      const { processIncomingMessage } = await import("./processor.js");
 
       await startPollingWatcher(mockState);
 
@@ -245,7 +254,6 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const inboundModule = await import("./inbound.js");
       const mockNormalizedMessage = {
         id: "test-id",
         content: "Test message",
@@ -254,7 +262,7 @@ describe("Polling Watcher", () => {
         timestamp: new Date(1234567890),
         peer: "alice",
       };
-      vi.mocked(inboundModule.processIncomingMessage).mockReturnValue(mockNormalizedMessage);
+      vi.mocked(processIncomingMessage).mockReturnValue(mockNormalizedMessage);
 
       await startPollingWatcher(mockState);
 
@@ -262,7 +270,7 @@ describe("Polling Watcher", () => {
         await setIntervalCallback();
       }
 
-      expect(inboundModule.processIncomingMessage).toHaveBeenCalledWith(
+      expect(processIncomingMessage).toHaveBeenCalledWith(
         { time: 1234567890, message: "Test message", sender: "alice" },
         expect.objectContaining({
           config: mockState.config,
@@ -270,7 +278,7 @@ describe("Polling Watcher", () => {
           accountId: "test-account"
         })
       );
-      expect(inboundModule.notifyMessageCallbacks).toHaveBeenCalledWith(mockState, mockNormalizedMessage);
+      expect(notifyMessageCallbacks).toHaveBeenCalledWith(mockState, mockNormalizedMessage);
     });
 
     it("should check DM policy for each peer", async () => {
@@ -281,15 +289,13 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const inboundModule = await import("./inbound.js");
-
       await startPollingWatcher(mockState);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
       }
 
-      expect(inboundModule.checkDmPolicy).toHaveBeenCalledTimes(2);
+      expect(checkDmPolicy).toHaveBeenCalledTimes(2);
     });
 
     it("should trigger pairing request for new users", async () => {
@@ -299,8 +305,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const inboundModule = await import("./inbound.js");
-      vi.mocked(inboundModule.checkDmPolicy).mockReturnValue({
+      vi.mocked(checkDmPolicy).mockReturnValue({
         allowed: false,
         reason: "pending",
         action: "request_pairing",
@@ -364,7 +369,7 @@ describe("Polling Watcher", () => {
     it("should handle empty chat list", async () => {
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success<ZTMChat[], ZTMReadError>([])));
 
-      const { processIncomingMessage } = await import("./inbound.js");
+      const { processIncomingMessage } = await import("./processor.js");
 
       await startPollingWatcher(mockState);
 
@@ -382,7 +387,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const { processIncomingMessage } = await import("./inbound.js");
+      const { processIncomingMessage } = await import("./processor.js");
 
       await startPollingWatcher(mockState);
 

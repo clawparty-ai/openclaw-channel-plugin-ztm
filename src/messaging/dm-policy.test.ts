@@ -2,7 +2,8 @@
 
 import { describe, it, expect } from "vitest";
 import { testConfig } from "../test-utils/fixtures.js";
-import { checkDmPolicy, isUserWhitelisted, normalizeUsername, isPairingMode } from "./inbound.js";
+import { checkDmPolicy, isUserWhitelisted, isPairingMode } from "../core/dm-policy.js";
+import { normalizeUsername } from "../utils/validation.js";
 
 describe("DM Policy Integration", () => {
   const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
