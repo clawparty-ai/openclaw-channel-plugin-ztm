@@ -15,6 +15,8 @@ import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
+import type { GroupPermissions } from "../types/group-policy.js";
+import { getGroupPermission } from "../core/group-policy.js";
 import { isSuccess } from "../types/common.js";
 import { PAIRING_MAX_AGE_MS, ALLOW_FROM_CACHE_TTL_MS } from "../constants.js";
 
@@ -57,6 +59,7 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
       watchErrorCount: 0,
       pendingPairings: new Map(),
       allowFromCache: null,
+      groupPermissionCache: new Map(),
     };
     accountStates.set(accountId, state);
   }
@@ -85,6 +88,7 @@ export function removeAccountState(accountId: string): void {
     state.messageCallbacks.clear();
     state.pendingPairings.clear();
     state.allowFromCache = null;
+    state.groupPermissionCache?.clear();
     accountStates.delete(accountId);
   }
 }
@@ -180,6 +184,55 @@ export function clearAllowFromCache(accountId: string): void {
   const state = accountStates.get(accountId);
   if (state) {
     state.allowFromCache = null;
+  }
+}
+
+/**
+ * Get cached group permission or compute and cache if not present.
+ * Uses memoization to avoid repeated lookups for the same group.
+ *
+ * @param accountId - The account identifier
+ * @param creator - Group creator username
+ * @param group - Group ID
+ * @param config - ZTM Chat configuration
+ * @returns GroupPermissions for the specified group
+ */
+export function getGroupPermissionCached(
+  accountId: string,
+  creator: string,
+  group: string,
+  config: ZTMChatConfig
+): GroupPermissions {
+  const state = accountStates.get(accountId);
+  const cacheKey = `${creator}/${group}`;
+
+  // If no state found, compute without caching
+  if (!state) {
+    return getGroupPermission(creator, group, config);
+  }
+
+  // Check cache first
+  const cached = state.groupPermissionCache?.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Compute and cache
+  const permissions = getGroupPermission(creator, group, config);
+  state.groupPermissionCache?.set(cacheKey, permissions);
+  return permissions;
+}
+
+/**
+ * Clear the group permission cache for an account.
+ * Useful when group permissions configuration changes.
+ *
+ * @param accountId - The account identifier
+ */
+export function clearGroupPermissionCache(accountId: string): void {
+  const state = accountStates.get(accountId);
+  if (state) {
+    state.groupPermissionCache?.clear();
   }
 }
 
@@ -301,6 +354,7 @@ export async function stopRuntime(accountId: string): Promise<void> {
   state.messageCallbacks.clear();
   state.pendingPairings.clear();
   state.allowFromCache = null;
+  state.groupPermissionCache?.clear();
   state.apiClient = null;
   state.connected = false;
   state.meshConnected = false;

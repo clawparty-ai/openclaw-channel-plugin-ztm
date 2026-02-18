@@ -4,6 +4,7 @@
 import type { ZTMChatConfig } from './config.js';
 import type { ZTMChatMessage } from './messaging.js';
 import type { ZTMApiClient } from './api.js';
+import type { GroupPermissions } from './group-policy.js';
 import type {
   ZTMApiError,
   ZTMTimeoutError,
@@ -42,4 +43,7 @@ export interface AccountRuntimeState {
   // Cached allowFrom store to avoid redundant async calls every poll/watch cycle
   // Not required in test fixtures - initialized in getOrCreateAccountState
   allowFromCache?: CacheEntry<string[]> | null;
+  // Cached group permissions to avoid repeated lookups
+  // Not required in test fixtures - initialized in getOrCreateAccountState
+  groupPermissionCache?: Map<string, GroupPermissions>;
 }
