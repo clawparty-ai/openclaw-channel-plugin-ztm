@@ -597,6 +597,44 @@ describe('Permit management functions', () => {
       expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
     });
 
+    it('should add peer to pendingPairings after successful registration', async () => {
+      mockUpsertPairingRequest.mockClear();
+
+      // Verify pendingPairings is initially empty
+      expect(mockState.pendingPairings.has('alice')).toBe(false);
+
+      await handlePairingRequest(mockState, 'alice', 'Test context', []);
+
+      // Verify peer was added to pendingPairings
+      expect(mockState.pendingPairings.has('alice')).toBe(true);
+      expect(mockState.pendingPairings.get('alice')).toBeInstanceOf(Date);
+    });
+
+    it('should skip if peer already in pendingPairings', async () => {
+      // Pre-add peer to pendingPairings (simulating previous request in same session)
+      mockState.pendingPairings.set('alice', new Date());
+      mockUpsertPairingRequest.mockClear();
+
+      await handlePairingRequest(mockState, 'alice', 'Test context', []);
+
+      // Should not register new pairing or send message
+      expect(mockUpsertPairingRequest).not.toHaveBeenCalled();
+      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+    });
+
+    it('should use normalized peer name for pendingPairings check', async () => {
+      // Pre-add with normalized name
+      mockState.pendingPairings.set('alice', new Date());
+      mockUpsertPairingRequest.mockClear();
+
+      // Request with different case
+      await handlePairingRequest(mockState, '  ALICE  ', 'Test context', []);
+
+      // Should skip because normalized name matches
+      expect(mockUpsertPairingRequest).not.toHaveBeenCalled();
+      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+    });
+
     it('should not send message if pairing already exists', async () => {
       mockPairingResult = { code: 'OLD123', created: false };
       mockUpsertPairingRequest.mockClear();
