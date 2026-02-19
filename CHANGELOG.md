@@ -2,9 +2,84 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.2.20-rc.3 - 2026-02-19
+
+[0e727cd](0e727cd79176e0dd2e749b6009d995ebfc375261)...[257e026](257e02644d0322246d602467ba234f80a148fa8f)
+
+
+
+
+### 🐛 Bug Fixes
+
+- Properly handle Promise rejection in inbound message handler ([601e60f](601e60f6fcff295ee83627605a5d0f258e340f07)) - (Lin Yang)
+- Provide valid default config in createEmptyState ([94aa6b8](94aa6b87b535594a3b318a331f9caf8aba75792a)) - (Lin Yang)
+- Add defaultLogger to dispatcher test mock ([a7a54eb](a7a54eb8941b32a0a35dfa8651a0e3ce3b78254e)) - (Lin Yang)
+- Restore missing typecheck and tests in pre-commit hook ([1cf2446](1cf2446e38b4eb9fb92d36fc32b5d91550a0c7e6)) - (Lin Yang)
+- Add retry mechanism for failed inbound messages ([e59c642](e59c64220cd54a6756dde0eb875845bea22e00cf)) - (Lin Yang)
+- Add path traversal validation for permitFilePath ([c4072da](c4072da41386522c689d7dc251667981ca3dae10)) - (Lin Yang)
+- Add HTML escaping for message content to prevent XSS ([a1a0edc](a1a0edcc37842e5f0615f59c4f5c400230cc28ba)) - (Lin Yang)
+- Add peer parameter validation to prevent injection attacks ([c6e7817](c6e7817acf9b562bf2d5924b25cbc85ed451390d)) - (Lin Yang)
+- Eliminate race condition in semaphore timeout handling ([0dc763f](0dc763f1635881a5b5552a607ebcb28b409f4814)) - (Lin Yang)
+- Add schema validation for state file deserialization ([cc8d2b3](cc8d2b358b77e641820a40feca40dae33cc50ec0)) - (Lin Yang)
+- Add path traversal validation for file metadata ([b6693c0](b6693c016d0fbac4fbdf2b6e9e525170f40356ec)) - (Lin Yang)
+- Resolve critical performance and concurrency issues ([af026e5](af026e50bc3edc7a9221fba60080ce748eea6de8)) - (Lin Yang)
+- Track pending pairings to prevent duplicate requests ([158abf2](158abf2bb45c958bae835cb5b7255756c1672ede)) - (Lin Yang)
+
+### 🔒 Security
+
+- Add path traversal validation in path resolution ([2675e90](2675e90d0d2bfd75147f398e5ff171d9ac88cecd)) - (Lin Yang)
+
+
+### ♻️ Refactor
+
+- Break down startAccountGateway into smaller focused functions ([92fe1d4](92fe1d44edaac2999d950a435e082467c7641a4a)) - (Lin Yang)
+- Extract duplicate message validation logic into shared functions ([3bafed8](3bafed82ea7be422858e9fd9eacf30014bbc44c8)) - (Lin Yang)
+- Extract duplicate watermark key generation into shared function ([99aab88](99aab88def58bdf2a6bab520318530cd50525e50)) - (Lin Yang)
+- Add DI helper functions and fix test mocks ([0066d22](0066d229668d1e1ca7a7c1cc40cf7382e06e0c4d)) - (Lin Yang)
+- Flatten nested callbacks in buildMessageCallback ([deea846](deea8464860ee5c70b4e508dac0c67d590750253)) - (Lin Yang)
+- Eliminate GroupPolicy type duplication ([7b877ad](7b877ad2f24d8e96a3b5e8b94b40b0c6bf121e15)) - (Lin Yang)
+- Remove unnecessary type assertions in plugin.ts ([5fa9302](5fa930255c2f3ebeff6198a17bad8144cc80c258)) - (Lin Yang)
+- Extract directory and status modules from plugin.ts ([18b4084](18b40841ff22e4157b1c1d9fccbe769544f8f824)) - (Lin Yang)
+- Introduce MessagingContext to eliminate cross-layer dependencies ([c1209ee](c1209ee40543de36f9ffa55a0e6db37ac052090f)) - (Lin Yang)
+
+### ✅ Testing
+
+- Add empty config validation tests ([e99d640](e99d6403fa6d672489f69d296e517ecad70c2b7c)) - (Lin Yang)
+- Add XSS prevention tests for message content ([b569f11](b569f1141b14350284395ff9638709494f6a220a)) - (Lin Yang)
+- Add concurrent watermark update tests ([a512f27](a512f270083b37e60649be0eef4b800b9ab0fb0b)) - (Lin Yang)
+- Add additional security and performance tests ([b5b728e](b5b728eaf21e6b26b2a9f65196b83936ecccf3f0)) - (Lin Yang)
+- Add callback semaphore blocking tests ([d30f2cb](d30f2cb4f24066e3915314594027a1c62310d851)) - (Lin Yang)
+- Add input sanitization tests for processor ([2247453](2247453b157cbfeba8dbfa3e59a4d95008345224)) - (Lin Yang)
+- Add pairing flow expiration tests ([8b6153a](8b6153ad8ac3029fa440d36d47a4c2b1ccf48a26)) - (Lin Yang)
+- Add filter operation efficiency tests ([d7fd259](d7fd259485a155f7b10c13827f111653b2f085bd)) - (Lin Yang)
+- Add concurrent state modification tests ([570a1fc](570a1fc486591339e740f592b21516b0ad8fd861)) - (Lin Yang)
+- Add API retry storm protection tests ([6b73022](6b73022f74fe9e4d328fd1e455def51c38f0a46a)) - (Lin Yang)
+- Add unit tests for guards and error utilities ([f8dca60](f8dca60461d7f5fe3d7454220eb6e697d2c3620a)) - (Lin Yang)
+- Add unit tests for repository implementations ([7a89aad](7a89aaddb391ad8cb499265704e5a8919548b1f5)) - (Lin Yang)
+- Add unit tests for directory, status, and message-processor-helpers ([a3e68a9](a3e68a95d1f6abcd7ca8d3af348ece03a4b2d266)) - (Lin Yang)
+- Add unit tests for polling watcher fallback ([3addd85](3addd85051ba1f77a7270af3e8be9749c5a3ebdf)) - (Lin Yang)
+- Add integration tests and fix naming conventions ([7558f16](7558f164b500d8cae95dfe31ae4464aac4afc77f)) - (Lin Yang)
+- Add missing integration and unit tests ([0627899](06278997db1b75353c7c1683bb12964d540e5a6a)) - (Lin Yang)
+- Restore logger tests to reach 1871 total ([97420f9](97420f906b933e279a6cfe8c9df6c7f134431fde)) - (Lin Yang)
+- Add test:coverage script and update CI/workflows ([29902fe](29902fecc3b088d98b2a090537986f8ed546ce6b)) - (Lin Yang)
+- Fix flaky watermark race condition test ([257e026](257e02644d0322246d602467ba234f80a148fa8f)) - (Lin Yang)
+
+
+
+### 📖 Documentation
+
+- Clarify AccountStateManager state ownership in state.ts ([9491433](9491433a25631bbbb9210b3faf4be2147b0d1b32)) - (Lin Yang)
+- Fix npm command syntax in workflow and README ([bc66fbb](bc66fbbd92f087e068e8d5c46839256c632f874b)) - (Lin Yang)
+
+### 🔧 Miscellaneous Tasks
+
+- Migrate git hooks to husky with lint-staged ([29f9006](29f90069150e77c6ae817b8e04c234167b04c8aa)) - (Lin Yang)
+- Reduce MAX_PAIRINGS_PER_ACCOUNT from 1000 to 100 ([6003852](6003852fb14a311570532019ad8abb94d8631a32)) - (Lin Yang)
+- Upgrade codecov-action from v4 to v5 ([d3d232e](d3d232e471bd2829fa28a2fd5252767dda44240f)) - (Lin Yang)
+
 ## 2026.2.18-rc.3 - 2026-02-18
 
-[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[032b2bc](032b2bcefd13ec0b81113671d9dd1e9f1fe572e9)
+[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[0e727cd](0e727cd79176e0dd2e749b6009d995ebfc375261)
 
 ### 🚨 BREAKING CHANGES
 
@@ -181,6 +256,8 @@ All notable changes to this project will be documented in this file.
 - Update changelog ([3b6531f](3b6531fc8051687f6b098276fd05e3eb8019f14a)) - (Lin Yang)
 - Release v2026.2.18-beta.1 ([2a5efcf](2a5efcff2e96435c40d335cfff990f90a3b07352)) - (Lin Yang)
 - Update changelog configuration and regenerate ([58a9f61](58a9f6114f15c94f03ac9e1853fff10f9143b993)) - (Lin Yang)
+- Update changelog ([c9cb734](c9cb734f91be932138c3044fab71dfa9deefd1fe)) - (Lin Yang)
+- Release v2026.2.18-rc.3 ([0e727cd](0e727cd79176e0dd2e749b6009d995ebfc375261)) - (Lin Yang)
 
 ## 2026.2.15 - 2026-02-15
 
