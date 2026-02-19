@@ -1,10 +1,20 @@
 // Group Policy Types for ZTM Chat
 // Defines types for group permissions and policy enforcement
+//
+// NOTE ON TYPE RELATIONSHIP TO CONFIG SCHEMA:
+// This module defines runtime types (with required fields and defaults applied).
+// The config schema (src/config/schema.ts) defines storage types (with optional fields).
+// This is intentional - runtime code needs guaranteed values, while storage allows
+// omitted values with schema-level defaults.
+//
+// Types re-exported from config/schema.ts:
+// - GroupPolicy: Simple union type, single source of truth in schema
 
-/**
- * Group policy types
- */
-export type GroupPolicy = 'open' | 'disabled' | 'allowlist';
+// Import GroupPolicy from config schema (single source of truth)
+import type { GroupPolicy } from '../config/schema.js';
+
+// Re-export for external consumers
+export type { GroupPolicy } from '../config/schema.js';
 
 /**
  * Tool policy for a group
