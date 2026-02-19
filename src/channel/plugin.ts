@@ -360,15 +360,14 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     resolveAccount: (cfg, accountId) =>
       resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
     defaultAccountId: cfg => listZTMChatAccountIds(cfg ?? undefined)[0] ?? 'default',
-    isConfigured: account =>
-      isConfigMinimallyValid(getZTMChatConfig(account) ?? ({} as ZTMChatConfig)),
+    isConfigured: account => isConfigMinimallyValid(getZTMChatConfig(account) ?? {}),
     describeAccount: account => {
       const config = getZTMChatConfig(account);
       return {
         accountId: account.accountId,
         name: account.username,
         enabled: account.enabled,
-        configured: isConfigMinimallyValid(config ?? ({} as ZTMChatConfig)),
+        configured: isConfigMinimallyValid(config ?? {}),
         agentUrl: config?.agentUrl,
         meshName: config?.meshName,
       };
