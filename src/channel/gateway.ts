@@ -310,6 +310,67 @@ export async function logoutAccountGateway({
 // ============================================================================
 
 /**
+ * Create dispatcher options for reply delivery
+ * Extracted to reduce nesting in buildMessageCallback
+ */
+function createReplyDispatcherOptions(
+  state: AccountRuntimeState,
+  msg: ZTMChatMessage,
+  accountId: string,
+  agentId: string,
+  rt: ReturnType<typeof import('../runtime/index.js').getZTMRuntime>
+) {
+  return {
+    humanDelay: rt.channel.reply.resolveHumanDelayConfig({}, agentId),
+    deliver: async (payload: { text?: string; mediaUrl?: string }) => {
+      const replyText = payload.text ?? '';
+      if (!replyText) return;
+      const groupInfo =
+        msg.isGroup && msg.groupId && msg.groupCreator
+          ? { creator: msg.groupCreator, group: msg.groupId }
+          : undefined;
+      await sendZTMMessage(state, msg.sender, replyText, groupInfo);
+    },
+    onError: (err: unknown) => {
+      logger.error?.(`[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`);
+    },
+  };
+}
+
+/**
+ * Dispatch inbound message to AI agent
+ * Extracted to reduce nesting in buildMessageCallback
+ */
+async function dispatchInboundMessage(
+  state: AccountRuntimeState,
+  accountId: string,
+  config: ZTMChatConfig,
+  msg: ZTMChatMessage,
+  rt: ReturnType<typeof import('../runtime/index.js').getZTMRuntime>
+): Promise<void> {
+  const { ctxPayload, matchedBy, agentId } = createInboundContext({
+    rt,
+    msg,
+    config,
+    accountId,
+  });
+
+  logger.info?.(`[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`);
+
+  const dispatcherOptions = createReplyDispatcherOptions(state, msg, accountId, agentId, rt);
+
+  const { queuedFinal } = await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+    ctx: ctxPayload,
+    cfg: {},
+    dispatcherOptions,
+  });
+
+  if (!queuedFinal) {
+    logger.info?.(`[${accountId}] No response generated for message from ${msg.sender}`);
+  }
+}
+
+/**
  * Build message callback for account startup
  */
 export function buildMessageCallback(
@@ -320,53 +381,9 @@ export function buildMessageCallback(
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
 
   return (msg: ZTMChatMessage) => {
-    const handleInbound = async (): Promise<void> => {
-      try {
-        const { ctxPayload, matchedBy, agentId } = createInboundContext({
-          rt,
-          msg,
-          config,
-          accountId,
-        });
-
-        logger.info?.(
-          `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`
-        );
-
-        const { queuedFinal } = await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-          ctx: ctxPayload,
-          cfg: {},
-          dispatcherOptions: {
-            humanDelay: rt.channel.reply.resolveHumanDelayConfig({}, agentId),
-            deliver: async (payload: { text?: string; mediaUrl?: string }) => {
-              const replyText = payload.text ?? '';
-              if (!replyText) return;
-              const groupInfo =
-                msg.isGroup && msg.groupId && msg.groupCreator
-                  ? { creator: msg.groupCreator, group: msg.groupId }
-                  : undefined;
-              await sendZTMMessage(state, msg.sender, replyText, groupInfo);
-            },
-            onError: (err: unknown) => {
-              logger.error?.(
-                `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`
-              );
-            },
-          },
-        });
-
-        if (!queuedFinal) {
-          logger.info?.(`[${accountId}] No response generated for message from ${msg.sender}`);
-        }
-      } catch (error) {
-        const errorMsg = extractErrorMessage(error);
-        logger.error?.(`[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`);
-      }
-    };
-
-    handleInbound().catch(error => {
+    dispatchInboundMessage(state, accountId, config, msg, rt).catch(error => {
       const errorMsg = extractErrorMessage(error);
-      logger.error?.(`[${accountId}] Failed to process inbound message: ${errorMsg}`);
+      logger.error?.(`[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`);
     });
   };
 }
