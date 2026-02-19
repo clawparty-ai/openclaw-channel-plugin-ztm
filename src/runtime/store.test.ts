@@ -628,18 +628,22 @@ describe('MessageStateStore', () => {
       const store = createTestStore();
       const accountId = 'concurrent-test-4';
 
+      // Store expected final timestamp upfront to avoid timing issues
+      const baseTimestamp = Date.now();
+      const expectedFinal = baseTimestamp + 49;
+
       // Simulate rapid updates that might cause race conditions
       let previousWatermark = 0;
       for (let i = 0; i < 50; i++) {
-        const timestamp = Date.now() + i;
+        const timestamp = baseTimestamp + i;
         await store.setWatermarkAsync(accountId, 'peer1', timestamp);
         previousWatermark = store.getWatermark(accountId, 'peer1');
-        expect(previousWatermark).toBeGreaterThanOrEqual(timestamp - i);
+        expect(previousWatermark).toBeGreaterThanOrEqual(timestamp);
       }
 
-      // Final value should be monotonically increasing
+      // Final value should be monotonically increasing to the last timestamp set
       const finalWatermark = store.getWatermark(accountId, 'peer1');
-      expect(finalWatermark).toBe(Date.now() + 49);
+      expect(finalWatermark).toBe(expectedFinal);
 
       store.dispose();
     });
