@@ -15,6 +15,7 @@ import {
   AccountStateManager,
 } from './state.js';
 import { success } from '../types/common.js';
+import type { MessageCallback } from '../types/runtime.js';
 import { testConfig } from '../test-utils/fixtures.js';
 
 // Mock state using mutable container
@@ -756,6 +757,119 @@ describe('Account Runtime State Management', () => {
       // Remove non-existent account should not throw
       expect(() => removeAccountState('non-existent-account')).not.toThrow();
       expect(getAllAccountStates().has('non-existent-account')).toBe(false);
+    });
+  });
+
+  describe('concurrent state modification', () => {
+    beforeEach(() => {
+      removeAccountState('concurrent-mod-test');
+    });
+
+    afterEach(() => {
+      removeAccountState('concurrent-mod-test');
+    });
+
+    it('should handle concurrent pendingPairings modifications', async () => {
+      const state = getOrCreateAccountState('concurrent-mod-test');
+
+      // Simulate concurrent adds to pendingPairings
+      const addPromises = Array(20)
+        .fill(null)
+        .map((_, i) => {
+          state.pendingPairings.set(`peer${i}`, new Date());
+          return Promise.resolve();
+        });
+
+      await Promise.all(addPromises);
+
+      // All additions should be reflected
+      expect(state.pendingPairings.size).toBe(20);
+    });
+
+    it('should handle concurrent messageCallbacks modifications', () => {
+      const state = getOrCreateAccountState('concurrent-mod-test');
+
+      // Create mock callbacks
+      const callbacks = Array(10)
+        .fill(null)
+        .map(() => (() => Promise.resolve()) as MessageCallback);
+
+      // Add callbacks concurrently
+      callbacks.forEach(cb => state.messageCallbacks.add(cb));
+
+      expect(state.messageCallbacks.size).toBe(10);
+    });
+
+    it('should handle concurrent groupPermissionCache modifications', () => {
+      const state = getOrCreateAccountState('concurrent-mod-test');
+
+      // Verify groupPermissionCache is initialized
+      expect(state.groupPermissionCache).toBeDefined();
+
+      // The cache should be a GroupPermissionLRUCache with set method
+      // Add permissions - set is synchronous, no race conditions in single-threaded JS
+      for (let i = 0; i < 20; i++) {
+        state.groupPermissionCache?.set(`creator${i}/group${i}`, {
+          creator: `creator${i}`,
+          group: `group${i}`,
+          groupPolicy: 'open',
+          requireMention: false,
+          allowFrom: [],
+        });
+      }
+
+      // Verify entries were added (the LRU cache may evict old entries if over capacity)
+      // Entry may be evicted if cache is at capacity (100), so just verify cache works
+      expect(state.groupPermissionCache?.get('creator0/group0')).toBeDefined();
+    });
+
+    it('should handle interleaved add and delete operations', async () => {
+      const state = getOrCreateAccountState('concurrent-mod-test');
+
+      // Add some pairings first
+      for (let i = 0; i < 10; i++) {
+        state.pendingPairings.set(`peer${i}`, new Date());
+      }
+
+      // Concurrently add and delete
+      const operations = [
+        ...Array(5)
+          .fill(null)
+          .map((_, i) => {
+            state.pendingPairings.set(`newPeer${i}`, new Date());
+            return Promise.resolve();
+          }),
+        ...Array(5)
+          .fill(null)
+          .map((_, i) => {
+            state.pendingPairings.delete(`peer${i}`);
+            return Promise.resolve();
+          }),
+      ];
+
+      await Promise.all(operations);
+
+      // Should have 10 (original 10 - 5 deleted + 5 new = 10)
+      expect(state.pendingPairings.size).toBe(10);
+    });
+
+    it('should handle rapid config updates', async () => {
+      const accountId = 'concurrent-mod-test';
+
+      // Rapidly update config concurrently
+      const updatePromises = Array(20)
+        .fill(null)
+        .map((_, i) => {
+          const state = getOrCreateAccountState(accountId);
+          state.config = { ...testConfig, username: `bot${i}` };
+          return Promise.resolve();
+        });
+
+      await Promise.all(updatePromises);
+
+      // Should have one state with some config
+      const state = getOrCreateAccountState(accountId);
+      expect(state.config.username).toMatch(/^bot\d+$/);
     });
   });
 });
