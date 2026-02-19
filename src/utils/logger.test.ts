@@ -339,6 +339,18 @@ describe('logger module exports - actual functions', () => {
 
       expect(debugSpy).toHaveBeenCalledWith('debug message', context);
     });
+
+    it('should create logger with multiple context properties', async () => {
+      const { createLogger, logger } = await import('./logger.js');
+      const context = { accountId: 'test', module: 'test', action: 'test' };
+
+      const log = createLogger(context);
+
+      const infoSpy = vi.spyOn(logger, 'info');
+      log.info('test');
+
+      expect(infoSpy).toHaveBeenCalledWith('test', context);
+    });
   });
 
   describe('getLogger', () => {
@@ -351,6 +363,17 @@ describe('logger module exports - actual functions', () => {
       expect(log).toHaveProperty('info');
       expect(log).toHaveProperty('warn');
       expect(log).toHaveProperty('error');
+    });
+
+    it('should return logger with callable methods', async () => {
+      const { getLogger } = await import('./logger.js');
+
+      const log = getLogger();
+
+      expect(() => log.info('test')).not.toThrow();
+      expect(() => log.warn('test')).not.toThrow();
+      expect(() => log.error('test')).not.toThrow();
+      expect(() => log.debug('test')).not.toThrow();
     });
   });
 
