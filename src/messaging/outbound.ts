@@ -6,6 +6,7 @@ import { type ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import { failure, type Result } from '../types/common.js';
 import { ZTMSendError } from '../types/errors.js';
+import { validateUsername } from '../utils/validation.js';
 
 export function generateMessageId(): string {
   const randomPart = randomBytes(4).toString('hex');
@@ -28,6 +29,21 @@ export async function sendZTMMessage(
     logger.error(`[${state.accountId}] Failed to send message: ${error.message}`);
     state.lastError = error.message;
     return failure(error);
+  }
+
+  // Validate peer parameter to prevent injection attacks
+  if (!groupInfo) {
+    const peerValidation = validateUsername(peer);
+    if (!peerValidation.valid) {
+      const error = new ZTMSendError({
+        peer,
+        messageTime: Date.now(),
+        cause: new Error(`Invalid peer: ${peerValidation.error}`),
+      });
+      logger.error(`[${state.accountId}] Failed to send message: ${error.message}`);
+      state.lastError = error.message;
+      return failure(error);
+    }
   }
 
   const message: ZTMMessage = {
