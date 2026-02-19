@@ -13,6 +13,7 @@ import { getAccountMessageStateStore } from '../runtime/store.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
 import { escapeHtml } from '../utils/validation.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
+import { getWatermarkKey } from './message-processor-helpers.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
@@ -56,7 +57,7 @@ export function processIncomingMessage(
 ): ZTMChatMessage | null {
   const { config, storeAllowFrom = [], accountId = 'default', groupInfo } = context;
 
-  const watermarkKey = groupInfo ? `group:${groupInfo.creator}/${groupInfo.group}` : msg.sender;
+  const watermarkKey = getWatermarkKey(groupInfo, msg.sender);
 
   // Step 1: Skip empty or whitespace-only messages
   if (typeof msg.message !== 'string' || msg.message.trim() === '') {

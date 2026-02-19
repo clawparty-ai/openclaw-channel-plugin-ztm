@@ -4,15 +4,9 @@
 import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
+import { getWatermarkKey } from './message-processor-helpers.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
-
-function getWatermarkKey(message: ZTMChatMessage): string {
-  if (message.isGroup && message.groupCreator && message.groupId) {
-    return `group:${message.groupCreator}/${message.groupId}`;
-  }
-  return message.peer;
-}
 
 /**
  * Execute a single callback with semaphore control

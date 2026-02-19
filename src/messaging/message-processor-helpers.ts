@@ -21,6 +21,41 @@ export interface ProcessMessageResult {
 }
 
 /**
+ * Generate a watermark key for message deduplication.
+ * For group messages: "group:{creator}/{groupId}"
+ * For peer messages: the peer identifier
+ *
+ * @param messageOrGroupInfo - Either a ZTMChatMessage (from dispatcher) or group info object (from processor)
+ * @param peer - Fallback peer identifier for peer messages (used when messageOrGroupInfo is not a ZTMChatMessage)
+ */
+export function getWatermarkKey(
+  messageOrGroupInfo: ZTMChatMessage | { group?: string; creator?: string } | null | undefined,
+  peer?: string
+): string {
+  // Handle ZTMChatMessage type (from dispatcher) - has 'peer' property
+  if (messageOrGroupInfo && 'peer' in messageOrGroupInfo) {
+    const msg = messageOrGroupInfo as ZTMChatMessage;
+    // Check for group message
+    if (msg.isGroup && msg.groupCreator && msg.groupId) {
+      return `group:${msg.groupCreator}/${msg.groupId}`;
+    }
+    // Peer message - use peer field
+    return msg.peer;
+  }
+
+  // Handle groupInfo object (from processor) - has 'group' and 'creator' properties
+  if (messageOrGroupInfo && 'group' in messageOrGroupInfo && 'creator' in messageOrGroupInfo) {
+    const groupInfo = messageOrGroupInfo as { group?: string; creator?: string };
+    if (groupInfo.group && groupInfo.creator) {
+      return `group:${groupInfo.creator}/${groupInfo.group}`;
+    }
+  }
+
+  // Handle peer messages - use provided peer or fall back to empty string
+  return peer || '';
+}
+
+/**
  * Determine if a chat is a group chat
  */
 export function isGroupChat(chat: ZTMChat): boolean {
