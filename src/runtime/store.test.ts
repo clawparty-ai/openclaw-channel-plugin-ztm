@@ -552,4 +552,117 @@ describe('MessageStateStore', () => {
       }
     });
   });
+
+  describe('Concurrent watermark updates', () => {
+    it('should handle 100 concurrent setWatermarkAsync calls for same peer', async () => {
+      const store = createTestStore();
+      const accountId = 'concurrent-test-1';
+      const peerId = 'peer1';
+
+      // Launch 100 concurrent updates with different timestamps
+      const timestamps = Array(100)
+        .fill(null)
+        .map((_, i) => Date.now() + i * 1000);
+      const promises = timestamps.map(ts => store.setWatermarkAsync(accountId, peerId, ts));
+
+      await Promise.all(promises);
+
+      // The final watermark should be the maximum value
+      const finalWatermark = store.getWatermark(accountId, peerId);
+      expect(finalWatermark).toBe(Math.max(...timestamps));
+
+      store.dispose();
+    });
+
+    it('should handle concurrent updates for different peers in same account', async () => {
+      const store = createTestStore();
+      const accountId = 'concurrent-test-2';
+
+      // 10 peers, each with 10 concurrent updates
+      const numPeers = 10;
+      const updatesPerPeer = 10;
+
+      const allPromises: Promise<void>[] = [];
+      for (let peer = 0; peer < numPeers; peer++) {
+        const peerId = `peer${peer}`;
+        for (let i = 0; i < updatesPerPeer; i++) {
+          allPromises.push(store.setWatermarkAsync(accountId, peerId, Date.now() + peer * 100 + i));
+        }
+      }
+
+      await Promise.all(allPromises);
+
+      // All peers should have valid watermarks (non-zero)
+      for (let peer = 0; peer < numPeers; peer++) {
+        const watermark = store.getWatermark(accountId, `peer${peer}`);
+        expect(watermark).toBeGreaterThan(0);
+      }
+
+      store.dispose();
+    });
+
+    it('should handle concurrent updates for different accounts', async () => {
+      const store = createTestStore();
+      const numAccounts = 5;
+
+      const allPromises: Promise<void>[] = [];
+      for (let acc = 0; acc < numAccounts; acc++) {
+        const accountId = `account${acc}`;
+        for (let i = 0; i < 20; i++) {
+          allPromises.push(store.setWatermarkAsync(accountId, 'peer1', Date.now() + i));
+        }
+      }
+
+      await Promise.all(allPromises);
+
+      // All accounts should have valid watermarks
+      for (let acc = 0; acc < numAccounts; acc++) {
+        const watermark = store.getWatermark(`account${acc}`, 'peer1');
+        expect(watermark).toBeGreaterThan(0);
+      }
+
+      store.dispose();
+    });
+
+    it('should handle rapid sequential updates without race conditions', async () => {
+      const store = createTestStore();
+      const accountId = 'concurrent-test-4';
+
+      // Simulate rapid updates that might cause race conditions
+      let previousWatermark = 0;
+      for (let i = 0; i < 50; i++) {
+        const timestamp = Date.now() + i;
+        await store.setWatermarkAsync(accountId, 'peer1', timestamp);
+        previousWatermark = store.getWatermark(accountId, 'peer1');
+        expect(previousWatermark).toBeGreaterThanOrEqual(timestamp - i);
+      }
+
+      // Final value should be monotonically increasing
+      const finalWatermark = store.getWatermark(accountId, 'peer1');
+      expect(finalWatermark).toBe(Date.now() + 49);
+
+      store.dispose();
+    });
+
+    it('should correctly interleave async and sync watermark operations', async () => {
+      const store = createTestStore();
+      const accountId = 'concurrent-test-5';
+
+      // Mix of sync and async operations
+      store.setWatermark(accountId, 'peer1', 1000);
+
+      const asyncPromise = store.setWatermarkAsync(accountId, 'peer2', 2000);
+
+      store.setWatermark(accountId, 'peer3', 3000);
+
+      await asyncPromise;
+
+      // All should have correct values
+      expect(store.getWatermark(accountId, 'peer1')).toBe(1000);
+      expect(store.getWatermark(accountId, 'peer2')).toBe(2000);
+      expect(store.getWatermark(accountId, 'peer3')).toBe(3000);
+
+      store.dispose();
+    });
+  });
 });
