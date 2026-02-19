@@ -223,6 +223,7 @@ vi.mock('../di/index.js', () => ({
 
 vi.mock('../utils/logger.js', () => ({
   logger: mockLogger,
+  defaultLogger: mockLogger,
 }));
 
 const { mockResolveZTMChatAccount } = vi.hoisted(() => ({
@@ -260,14 +261,21 @@ vi.mock('./config.js', () => ({
   getEffectiveChannelConfig: mockGetEffectiveChannelConfig,
 }));
 
-const { mockFsExistsSync, mockFsReadFileSync, mockFsWriteFileSync, mockFsUnlinkSync } = vi.hoisted(
-  () => ({
-    mockFsExistsSync: vi.fn(),
-    mockFsReadFileSync: vi.fn(),
-    mockFsWriteFileSync: vi.fn(),
-    mockFsUnlinkSync: vi.fn(),
-  })
-);
+const {
+  mockFsExistsSync,
+  mockFsReadFileSync,
+  mockFsWriteFileSync,
+  mockFsUnlinkSync,
+  mockFsMkdirSync,
+  mockFsAccess,
+} = vi.hoisted(() => ({
+  mockFsExistsSync: vi.fn(),
+  mockFsReadFileSync: vi.fn(),
+  mockFsWriteFileSync: vi.fn(),
+  mockFsUnlinkSync: vi.fn(),
+  mockFsMkdirSync: vi.fn(),
+  mockFsAccess: vi.fn().mockResolvedValue(undefined),
+}));
 
 const { mockPathJoin } = vi.hoisted(() => ({
   mockPathJoin: vi.fn((...args: string[]) => args.join('/')),
@@ -278,15 +286,24 @@ vi.mock('fs', () => ({
   readFileSync: mockFsReadFileSync,
   writeFileSync: mockFsWriteFileSync,
   unlinkSync: mockFsUnlinkSync,
+  mkdirSync: mockFsMkdirSync,
+  promises: {
+    mkdir: async () => {},
+    readFile: async () => '',
+    writeFile: async () => {},
+    access: mockFsAccess,
+  },
 }));
 
 vi.mock('node:path', () => ({
   join: mockPathJoin,
+  dirname: vi.fn((p: string) => p.split('/').slice(0, -1).join('/')),
 }));
 
 // Mock the paths module to return a fixed permit path for testing
 vi.mock('../utils/paths.js', () => ({
   resolvePermitPath: vi.fn(() => '/mock/permit.json'),
+  resolveStatePath: vi.fn(() => '/mock/state.json'),
 }));
 
 describe('Channel Gateway', () => {

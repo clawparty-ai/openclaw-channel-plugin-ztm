@@ -417,11 +417,14 @@ describe('Account Runtime State Management', () => {
     it('should flush message state store', async () => {
       const { getAccountMessageStateStore, disposeMessageStateStore } = await import('./store.js');
       const store = {
+        ensureLoaded: vi.fn().mockResolvedValue(undefined),
+        isLoaded: vi.fn(() => true),
         flush: vi.fn(),
         flushAsync: vi.fn().mockResolvedValue(undefined),
         getWatermark: () => -1,
         getGlobalWatermark: vi.fn(() => 0),
         setWatermark: vi.fn(),
+        setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
         getFileMetadata: vi.fn(() => ({})),
         setFileMetadata: vi.fn(),
         setFileMetadataBulk: vi.fn(),

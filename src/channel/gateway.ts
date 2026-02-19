@@ -263,6 +263,14 @@ export async function startAccountGateway(ctx: {
     throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
   }
 
+  // Step 7.5: Pre-load message state asynchronously to prevent blocking in hot path
+  // This ensures state is loaded before any getWatermark/setWatermark calls
+  const { getAccountMessageStateStore } = await import('../runtime/store.js');
+  const messageStateStore = getAccountMessageStateStore(account.accountId);
+  messageStateStore.ensureLoaded().catch(err => {
+    ctx.log?.error?.(`[${account.accountId}] Failed to pre-load message state: ${err}`);
+  });
+
   const accountStates = getAllAccountStates();
   const state = accountStates.get(account.accountId)!;
   state.lastStartAt = new Date();

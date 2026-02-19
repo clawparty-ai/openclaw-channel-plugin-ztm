@@ -76,7 +76,8 @@ export async function notifyMessageCallbacks(
 
   const watermarkKey = getWatermarkKey(message);
   if (successCount > 0) {
-    getAccountMessageStateStore(state.accountId).setWatermark(
+    // Use async version to ensure atomic watermark update in concurrent scenarios
+    await getAccountMessageStateStore(state.accountId).setWatermarkAsync(
       state.accountId,
       watermarkKey,
       message.timestamp.getTime()

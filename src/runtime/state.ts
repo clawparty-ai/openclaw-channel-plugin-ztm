@@ -37,6 +37,7 @@ import {
   MESH_CONNECT_MAX_RETRIES,
   RETRY_DELAY_MS,
   CALLBACK_SEMAPHORE_PERMITS,
+  MAX_PAIRINGS_PER_ACCOUNT,
 } from '../constants.js';
 
 // Dependencies interface for AccountStateManager
@@ -142,6 +143,7 @@ export class AccountStateManager {
 
   /**
    * Clean up expired pending pairings from all accounts
+   * Enforces both time-based (expiration) and size-based (max count) limits
    */
   cleanupExpiredPairings(): number {
     const now = Date.now();
@@ -151,6 +153,7 @@ export class AccountStateManager {
       if (state.pendingPairings.size === 0) continue;
 
       let removed = 0;
+      // Step 1: Remove expired pairings based on time
       for (const [peer, timestamp] of state.pendingPairings) {
         if (now - timestamp.getTime() > PAIRING_MAX_AGE_MS) {
           state.pendingPairings.delete(peer);
@@ -160,6 +163,24 @@ export class AccountStateManager {
       if (removed > 0) {
         this.deps.logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
         totalRemoved += removed;
+      }
+
+      // Step 2: Enforce size limit - keep most recent pairings
+      if (state.pendingPairings.size > MAX_PAIRINGS_PER_ACCOUNT) {
+        const entries = Array.from(state.pendingPairings.entries());
+        // Sort by timestamp descending (most recent first)
+        entries.sort(([, a], [, b]) => b.getTime() - a.getTime());
+        // Keep only the most recent entries
+        const toKeep = entries.slice(0, MAX_PAIRINGS_PER_ACCOUNT);
+        state.pendingPairings.clear();
+        for (const [peer, timestamp] of toKeep) {
+          state.pendingPairings.set(peer, timestamp);
+        }
+        const excess = entries.length - MAX_PAIRINGS_PER_ACCOUNT;
+        this.deps.logger.warn(
+          `[${accountId}] Pairing limit exceeded (${entries.length}), removed ${excess} oldest entries`
+        );
+        totalRemoved += excess;
       }
     }
 

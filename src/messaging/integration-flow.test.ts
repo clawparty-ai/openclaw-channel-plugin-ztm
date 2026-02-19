@@ -41,6 +41,7 @@ vi.mock('../runtime/store.js', () => ({
       getWatermark: vi.fn(() => -1),
       getGlobalWatermark: vi.fn(() => 0),
       setWatermark: vi.fn(),
+      setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
       getFileMetadata: vi.fn(() => ({})),
       setFileMetadata: vi.fn(),
       setFileMetadataBulk: vi.fn(),

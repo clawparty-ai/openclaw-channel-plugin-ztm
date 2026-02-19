@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { defaultLogger, type Logger } from '../utils/logger.js';
 import { resolveStatePath } from '../utils/paths.js';
+import { Semaphore } from '../utils/concurrency.js';
 import {
   MAX_PEERS_PER_ACCOUNT,
   MAX_FILES_PER_ACCOUNT,
@@ -69,6 +70,17 @@ export interface MessageStateData {
  */
 export interface MessageStateStore {
   /**
+   * Ensure state is loaded (async) - call during startup to prevent blocking in hot path
+   * Returns Promise that resolves once state is loaded
+   */
+  ensureLoaded(): Promise<void>;
+
+  /**
+   * Check if state has been loaded
+   */
+  isLoaded(): boolean;
+
+  /**
    * Get the last-processed message timestamp for a key under an account
    */
   getWatermark(accountId: string, key: string): number;
@@ -82,6 +94,12 @@ export interface MessageStateStore {
    * Update the watermark for a key (only advances forward)
    */
   setWatermark(accountId: string, key: string, time: number): void;
+
+  /**
+   * Async version - Update the watermark with atomic check-and-update
+   * Use this from async contexts to prevent race conditions
+   */
+  setWatermarkAsync(accountId: string, key: string, time: number): Promise<void>;
 
   /**
    * Get all persisted file metadata for an account
@@ -130,6 +148,9 @@ export class MessageStateStoreImpl implements MessageStateStore {
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private maxDelayTimer: ReturnType<typeof setTimeout> | null = null;
   private loaded = false;
+  private loadPromise: Promise<void> | null = null;
+  // Semaphores for atomic watermark updates (one per account to prevent race conditions)
+  private accountSemaphores = new Map<string, Semaphore>();
 
   /**
    * Validate state data structure to prevent deserialization attacks
@@ -272,6 +293,82 @@ export class MessageStateStoreImpl implements MessageStateStore {
     this.loaded = true;
   }
 
+  /**
+   * Async load - does not block the event loop
+   * Uses double-check locking to ensure only one load happens
+   */
+  private async loadAsync(): Promise<void> {
+    // Fast path: already loaded
+    if (this.loaded) return;
+
+    // If loading is in progress, wait for it
+    if (this.loadPromise) {
+      await this.loadPromise;
+      return;
+    }
+
+    // Start loading asynchronously
+    this.loadPromise = this.doLoadAsync();
+    await this.loadPromise;
+  }
+
+  /**
+   * Actual async loading implementation - fully async, no blocking I/O
+   */
+  private async doLoadAsync(): Promise<void> {
+    // Ensure directory exists (async)
+    try {
+      await this.fs.promises.mkdir(this.stateDir, { recursive: true });
+    } catch {
+      // Directory may already exist, ignore error
+    }
+
+    try {
+      // Check if file exists using async access
+      try {
+        await this.fs.promises.access(this.statePath);
+      } catch {
+        // File doesn't exist, that's fine
+        this.loaded = true;
+        return;
+      }
+
+      // Read file asynchronously
+      const content = await this.fs.promises.readFile(this.statePath, 'utf-8');
+      const parsed = JSON.parse(content);
+
+      // Validate parsed data structure
+      const validated = this.validateStateData(parsed);
+      if (!validated) {
+        this.logger.warn('Invalid state file format, starting fresh');
+        this.loaded = true;
+        return;
+      }
+
+      const fileMetadata = this.migrateFileMetadata(parsed);
+      this.data = {
+        accounts: validated.accounts,
+        fileMetadata,
+      };
+    } catch {
+      this.logger.warn('Failed to load message state, starting fresh');
+    }
+    this.loaded = true;
+  }
+
+  /** Check if state has been loaded */
+  isLoaded(): boolean {
+    return this.loaded;
+  }
+
+  /**
+   * Ensure state is loaded (async) - call during startup
+   * This prevents blocking in the hot path (getWatermark/setWatermark)
+   */
+  async ensureLoaded(): Promise<void> {
+    await this.loadAsync();
+  }
+
   private migrateFileMetadata(
     parsed: Record<string, unknown>
   ): Record<string, Record<string, FileMetadata>> {
@@ -398,20 +495,71 @@ export class MessageStateStoreImpl implements MessageStateStore {
     return Math.max(0, ...Object.values(keys));
   }
 
-  /** Update the watermark for a key (only advances forward) */
+  /**
+   * Get or create a semaphore for the given account
+   * Each account gets its own semaphore to allow concurrent updates to different accounts
+   */
+  private getAccountSemaphore(accountId: string): Semaphore {
+    let sem = this.accountSemaphores.get(accountId);
+    if (!sem) {
+      sem = new Semaphore(1); // Binary mutex per account
+      this.accountSemaphores.set(accountId, sem);
+    }
+    return sem;
+  }
+
+  /**
+   * Async version of setWatermark with atomic check-and-update
+   * Use this when calling from async contexts where race conditions may occur
+   */
+  async setWatermarkAsync(accountId: string, key: string, time: number): Promise<void> {
+    // Ensure data is loaded before writing
+    if (!this.loaded) {
+      await this.loadAsync();
+    }
+
+    // Use semaphore to ensure atomic check-and-update
+    // This prevents race conditions where two concurrent updates could cause
+    // the watermark to be set to a lower value, allowing duplicate messages
+    const sem = this.getAccountSemaphore(accountId);
+    await sem.acquire();
+
+    try {
+      // Re-read current value inside lock to ensure consistency
+      const current = this.getWatermark(accountId, key);
+      if (time <= current) return;
+
+      if (!this.data.accounts[accountId]) {
+        this.data.accounts[accountId] = {};
+      }
+      this.data.accounts[accountId][key] = time;
+      this.cleanupIfNeeded(accountId);
+      this.scheduleSave();
+    } finally {
+      sem.release();
+    }
+  }
+
+  /** Update the watermark for a key (only advances forward) - thread-safe */
   setWatermark(accountId: string, key: string, time: number): void {
     // Ensure data is loaded before writing
     if (!this.loaded) {
       this.load();
     }
-    const current = this.getWatermark(accountId, key);
-    if (time <= current) return;
+
+    // Simple atomic update: always use max to prevent watermark going backwards
+    // This is safe because message timestamps are monotonically increasing
     if (!this.data.accounts[accountId]) {
       this.data.accounts[accountId] = {};
     }
-    this.data.accounts[accountId][key] = time;
-    this.cleanupIfNeeded(accountId);
-    this.scheduleSave();
+
+    const current = this.data.accounts[accountId][key] ?? 0;
+    // Only update if new time is greater (watermark should only advance)
+    if (time > current) {
+      this.data.accounts[accountId][key] = time;
+      this.cleanupIfNeeded(accountId);
+      this.scheduleSave();
+    }
   }
 
   /** Clean up old entries if limits are exceeded (called after watermark updates) */

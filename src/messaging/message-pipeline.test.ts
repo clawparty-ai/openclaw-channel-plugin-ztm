@@ -32,9 +32,12 @@ vi.mock('../utils/logger.js', () => ({
 vi.mock('../runtime/store.js', () => ({
   getAccountMessageStateStore: vi.fn(function () {
     return {
+      ensureLoaded: vi.fn().mockResolvedValue(undefined),
+      isLoaded: vi.fn(() => true),
       getWatermark: vi.fn(() => -1),
       getGlobalWatermark: vi.fn(() => 0),
       setWatermark: vi.fn(),
+      setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
       getFileMetadata: vi.fn(() => ({})),
       setFileMetadata: vi.fn(),
       setFileMetadataBulk: vi.fn(),
@@ -261,9 +264,12 @@ describe('Inbound message processing', () => {
 
       // Create a new store mock with high watermark
       const mockStore = {
+        ensureLoaded: vi.fn().mockResolvedValue(undefined),
+        isLoaded: vi.fn(() => true),
         getWatermark: vi.fn(() => message.time + 1000),
         getGlobalWatermark: vi.fn(() => 0),
         setWatermark: vi.fn(),
+        setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
         getFileMetadata: vi.fn(() => ({})),
         setFileMetadata: vi.fn(),
         setFileMetadataBulk: vi.fn(),
@@ -428,15 +434,18 @@ describe('Inbound message processing', () => {
     });
 
     it('should set watermark in message state store', async () => {
-      // Mock getAccountMessageStateStore to return a store with a tracked setWatermark
-      const setWatermarkMock = vi.fn();
+      // Mock getAccountMessageStateStore to return a store with a tracked setWatermarkAsync
+      const setWatermarkAsyncMock = vi.fn();
       const { getAccountMessageStateStore } = await import('../runtime/store.js');
 
-      // Override mock to return store with tracked setWatermark
+      // Override mock to return store with tracked setWatermarkAsync
       vi.mocked(getAccountMessageStateStore).mockReturnValue({
+        ensureLoaded: vi.fn().mockResolvedValue(undefined),
+        isLoaded: vi.fn(() => true),
         getWatermark: vi.fn(() => -1),
         getGlobalWatermark: vi.fn(() => 0),
-        setWatermark: setWatermarkMock,
+        setWatermark: vi.fn(),
+        setWatermarkAsync: setWatermarkAsyncMock,
         getFileMetadata: vi.fn(() => ({})),
         setFileMetadata: vi.fn(),
         setFileMetadataBulk: vi.fn(),
@@ -458,8 +467,8 @@ describe('Inbound message processing', () => {
 
       await notifyMessageCallbacks(mockState, message);
 
-      // Check that watermark was set
-      expect(setWatermarkMock).toHaveBeenCalledWith(testAccountId, 'alice', 1234567890);
+      // Check that watermark was set (async version)
+      expect(setWatermarkAsyncMock).toHaveBeenCalledWith(testAccountId, 'alice', 1234567890);
     });
 
     it('should handle callback errors gracefully', async () => {
