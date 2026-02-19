@@ -11,6 +11,7 @@ import { createZTMApiClient } from '../api/ztm-api.js';
 import { requestPermit, savePermitData, loadPermitFromFile } from '../connectivity/permit.js';
 import type { PermitData } from '../types/connectivity.js';
 import { PROBE_TIMEOUT_MS } from '../constants.js';
+import { containsPathTraversal } from '../utils/validation.js';
 
 /**
  * Validate connectivity to ZTM agent
@@ -48,6 +49,12 @@ export async function loadOrRequestPermit(
     if (!config.permitFilePath) {
       throw new Error("permitFilePath is required when permitSource is 'file'");
     }
+
+    // Security: Validate permitFilePath against path traversal attacks
+    if (containsPathTraversal(config.permitFilePath)) {
+      throw new Error('permitFilePath contains invalid path traversal patterns');
+    }
+
     ctx.log?.info(`Loading permit from file: ${config.permitFilePath}...`);
     const permitData = loadPermitFromFile(config.permitFilePath);
     if (!permitData) {
