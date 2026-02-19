@@ -130,6 +130,81 @@ export class MessageStateStoreImpl implements MessageStateStore {
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private maxDelayTimer: ReturnType<typeof setTimeout> | null = null;
   private loaded = false;
+
+  /**
+   * Validate state data structure to prevent deserialization attacks
+   * Ensures accounts and fileMetadata have expected types
+   */
+  private validateStateData(
+    parsed: unknown
+  ): { accounts: Record<string, Record<string, number>> } | null {
+    // Must be an object
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+
+    const data = parsed as Record<string, unknown>;
+
+    // Validate accounts field if present
+    const accounts: Record<string, Record<string, number>> = {};
+
+    if (data.accounts !== undefined) {
+      if (typeof data.accounts !== 'object' || data.accounts === null) {
+        this.logger.warn('Invalid accounts format in state file');
+        return null;
+      }
+
+      // Validate each account value
+      const accountsData = data.accounts as Record<string, unknown>;
+      for (const [key, value] of Object.entries(accountsData)) {
+        // Sanitize keys to prevent prototype pollution
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+          this.logger.warn(`Rejecting unsafe key in accounts: ${key}`);
+          return null;
+        }
+        // Account values must be objects with number values (timestamps)
+        if (value !== null && typeof value === 'object') {
+          const peerData = value as Record<string, unknown>;
+          const sanitizedPeerData: Record<string, number> = {};
+          let valid = true;
+          for (const [peerKey, peerValue] of Object.entries(peerData)) {
+            // Sanitize peer keys too
+            if (peerKey === '__proto__' || peerKey === 'constructor' || peerKey === 'prototype') {
+              valid = false;
+              break;
+            }
+            if (typeof peerValue !== 'number') {
+              valid = false;
+              break;
+            }
+            sanitizedPeerData[peerKey] = peerValue;
+          }
+          if (valid) {
+            accounts[key] = sanitizedPeerData;
+          }
+        }
+      }
+    }
+
+    // Validate fileMetadata field if present
+    if (data.fileMetadata !== undefined) {
+      if (typeof data.fileMetadata !== 'object' || data.fileMetadata === null) {
+        this.logger.warn('Invalid fileMetadata format in state file');
+        return null;
+      }
+    }
+
+    // Validate fileTimes (legacy format) if present
+    if (data.fileTimes !== undefined) {
+      if (typeof data.fileTimes !== 'object' || data.fileTimes === null) {
+        this.logger.warn('Invalid fileTimes format in state file');
+        return null;
+      }
+    }
+
+    return { accounts };
+  }
+
   private readonly fs: FileSystem;
   private readonly logger: Logger;
   private readonly stateDir: string;
@@ -177,14 +252,17 @@ export class MessageStateStoreImpl implements MessageStateStore {
       const content = this.fs.readFileSync(this.statePath, 'utf-8');
       const parsed = JSON.parse(content);
 
-      if (!parsed || typeof parsed !== 'object') {
+      // Validate parsed data structure to prevent deserialization attacks
+      const validated = this.validateStateData(parsed);
+      if (!validated) {
+        this.logger.warn('Invalid state file format, starting fresh');
         this.loaded = true;
         return;
       }
 
       const fileMetadata = this.migrateFileMetadata(parsed);
       this.data = {
-        accounts: parsed.accounts ?? {},
+        accounts: validated.accounts,
         fileMetadata,
       };
     } catch {
@@ -199,14 +277,22 @@ export class MessageStateStoreImpl implements MessageStateStore {
   ): Record<string, Record<string, FileMetadata>> {
     const fileMetadata: Record<string, Record<string, FileMetadata>> = {};
 
-    if (parsed.fileMetadata) {
-      // New format
-      Object.assign(fileMetadata, parsed.fileMetadata);
-    } else if (parsed.fileTimes) {
+    if (parsed.fileMetadata && typeof parsed.fileMetadata === 'object') {
+      // New format - validate it's the expected structure
+      try {
+        const fm = parsed.fileMetadata as Record<string, Record<string, FileMetadata>>;
+        for (const [accountId, files] of Object.entries(fm)) {
+          if (files && typeof files === 'object') {
+            fileMetadata[accountId] = files;
+          }
+        }
+      } catch {
+        // Invalid format, ignore
+      }
+    } else if (parsed.fileTimes && typeof parsed.fileTimes === 'object') {
       // Old format: migrate time to metadata with size 0
-      for (const [accountId, files] of Object.entries(
-        parsed.fileTimes as Record<string, Record<string, number>>
-      )) {
+      const fileTimes = parsed.fileTimes as Record<string, Record<string, number>>;
+      for (const [accountId, files] of Object.entries(fileTimes)) {
         fileMetadata[accountId] = {};
         for (const [p, time] of Object.entries(files)) {
           fileMetadata[accountId][p] = { time, size: 0 };
