@@ -1,1 +1,20 @@
+#!/bin/sh
+# Pre-commit hook: run lint-staged, typecheck and tests before committing
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Run lint-staged for format and lint on staged files
+echo "Running lint-staged..."
 npx lint-staged
+
+# Run TypeScript type checking
+echo "Running typecheck..."
+npx tsc --noEmit
+
+# Run tests
+echo "Running tests..."
+npm test
+
+echo "All pre-commit checks passed!"
