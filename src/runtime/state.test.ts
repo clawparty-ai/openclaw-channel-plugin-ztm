@@ -806,6 +806,39 @@ describe('cleanupExpiredPairings', () => {
     expect(state.pendingPairings.has('alice')).toBe(true);
     expect(state.pendingPairings.has('bob')).toBe(false);
   });
+
+  it('should enforce MAX_PAIRINGS_PER_ACCOUNT limit', () => {
+    const state = getOrCreateAccountState('cleanup-test');
+
+    // Add more than MAX_PAIRINGS_PER_ACCOUNT pairings (1000)
+    for (let i = 0; i < 1500; i++) {
+      state.pendingPairings.set(`peer${i}`, new Date());
+    }
+
+    // Cleanup should enforce the limit
+    const beforeSize = state.pendingPairings.size;
+    cleanupExpiredPairings();
+
+    // Size should be limited to MAX_PAIRINGS_PER_ACCOUNT (1000)
+    expect(state.pendingPairings.size).toBeLessThanOrEqual(1000);
+    expect(beforeSize).toBe(1500);
+  });
+
+  it('should remove oldest pairings when limit exceeded', () => {
+    const state = getOrCreateAccountState('cleanup-test');
+
+    // Add pairings with decreasing ages - all fresh (within 1 hour)
+    for (let i = 0; i < 1500; i++) {
+      // All timestamps within last 30 minutes - none expired
+      const age = i * 1000; // Each 1 second older, max 25 minutes
+      state.pendingPairings.set(`peer${i}`, new Date(Date.now() - age));
+    }
+
+    cleanupExpiredPairings();
+
+    // Should keep the newest up to MAX_PAIRINGS_PER_ACCOUNT (1000)
+    expect(state.pendingPairings.size).toBeLessThanOrEqual(1000);
+  });
 });
 
 describe('clearAllowFromCache', () => {

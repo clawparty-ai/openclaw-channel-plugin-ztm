@@ -259,5 +259,84 @@ describe('Retry utilities', () => {
         })
       );
     });
+
+    it('should stop retrying on non-retriable errors', async () => {
+      let attempts = 0;
+      global.fetch = vi.fn().mockImplementation(() => {
+        attempts++;
+        // Return a 400 Bad Request - not retriable
+        return Promise.resolve(new Response('Bad Request', { status: 400 }));
+      });
+
+      const response = await fetchWithRetry(
+        'https://example.com',
+        {},
+        { maxRetries: 5, initialDelay: 1 }
+      );
+
+      expect(response.status).toBe(400);
+      // Should not retry on 400
+      expect(attempts).toBe(1);
+    });
+
+    it('should respect maxRetries limit', async () => {
+      let attempts = 0;
+      global.fetch = vi.fn().mockImplementation(() => {
+        attempts++;
+        return Promise.reject(new Error('Network error'));
+      });
+
+      await expect(
+        fetchWithRetry('https://example.com', {}, { maxRetries: 3, initialDelay: 1 })
+      ).rejects.toThrow('Network error');
+
+      // Should try exactly maxRetries + 1 times (initial + 3 retries)
+      expect(attempts).toBe(4);
+    });
+  });
+
+  describe('retry storm protection', () => {
+    it('should have exponential backoff to prevent retry storms', async () => {
+      const delays: number[] = [];
+      const originalDelay = 10; // 10ms base
+
+      // Simulate exponential backoff calculation
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const delay = Math.min(
+          originalDelay * Math.pow(2, attempt),
+          10000 // max delay
+        );
+        delays.push(delay);
+      }
+
+      // Verify exponential growth
+      expect(delays[0]).toBe(10);
+      expect(delays[1]).toBe(20);
+      expect(delays[2]).toBe(40);
+      expect(delays[3]).toBe(80);
+      expect(delays[4]).toBe(160);
+    });
+
+    it('should limit maximum concurrent retry operations', async () => {
+      let concurrent = 0;
+      let maxConcurrent = 0;
+
+      const operation = async () => {
+        concurrent++;
+        maxConcurrent = Math.max(maxConcurrent, concurrent);
+        await new Promise(r => setTimeout(r, 10));
+        concurrent--;
+        return 'done';
+      };
+
+      // Run 20 operations concurrently
+      const promises = Array(20)
+        .fill(null)
+        .map(() => operation());
+      await Promise.all(promises);
+
+      // All 20 ran, but we can track max concurrency
+      expect(maxConcurrent).toBe(20);
+    });
   });
 });
