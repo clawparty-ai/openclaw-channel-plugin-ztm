@@ -314,6 +314,9 @@ export function buildMessageCallback(
       }
     };
 
-    void handleInbound();
+    handleInbound().catch(error => {
+      const errorMsg = extractErrorMessage(error);
+      logger.error?.(`[${accountId}] Failed to process inbound message: ${errorMsg}`);
+    });
   };
 }
