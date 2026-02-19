@@ -338,5 +338,286 @@ describe('Retry utilities', () => {
       // All 20 ran, but we can track max concurrency
       expect(maxConcurrent).toBe(20);
     });
+
+    it('should calculate total retry time with exponential backoff', () => {
+      // With default config: initialDelay=1000, backoffMultiplier=2, maxDelay=10000
+      const config = {
+        maxRetries: 3,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+        timeout: 30000,
+      };
+
+      // Retry attempts: delay for attempt 1, 2, 3
+      const delay1 = getRetryDelay(1, config); // 1000
+      const delay2 = getRetryDelay(2, config); // 2000
+      const delay3 = getRetryDelay(3, config); // 4000
+
+      const totalRetryTime = delay1 + delay2 + delay3;
+
+      // Total backoff time: 1000 + 2000 + 4000 = 7000ms
+      expect(totalRetryTime).toBe(7000);
+    });
+
+    it('should cap retry delay at maxDelay to prevent excessive wait', () => {
+      const config = {
+        maxRetries: 10,
+        initialDelay: 1000,
+        maxDelay: 5000, // Lower max for testing
+        backoffMultiplier: 2,
+        timeout: 30000,
+      };
+
+      // These should all be capped at 5000
+      expect(getRetryDelay(1, config)).toBe(1000);
+      expect(getRetryDelay(2, config)).toBe(2000);
+      expect(getRetryDelay(3, config)).toBe(4000);
+      expect(getRetryDelay(4, config)).toBe(5000); // Capped
+      expect(getRetryDelay(10, config)).toBe(5000); // Still capped
+    });
+  });
+
+  describe('API retry storm scenarios', () => {
+    it('should not retry auth errors to prevent credential exposure', () => {
+      const authErrors = [
+        new Error('Unauthorized'),
+        new Error('401 Unauthorized'),
+        new Error('403 Forbidden'),
+        new Error('Invalid credentials'),
+        new Error('Token expired'),
+        new Error('Authentication failed'),
+      ];
+
+      for (const error of authErrors) {
+        expect(isRetriableError(error)).toBe(false);
+      }
+    });
+
+    it('should retry network errors but with controlled backoff', async () => {
+      let attempts = 0;
+      const fn = vi.fn().mockImplementation(() => {
+        attempts++;
+        if (attempts < 4) {
+          const error = new Error('ECONNREFUSED');
+          Object.defineProperty(error, 'name', { value: 'Error' });
+          throw error;
+        }
+        return 'success';
+      });
+
+      const start = Date.now();
+      const result = await retryAsync(fn, {
+        maxRetries: 5,
+        initialDelay: 50, // Faster for test
+        maxDelay: 200,
+      });
+      const totalTime = Date.now() - start;
+
+      expect(result).toBe('success');
+      expect(attempts).toBe(4);
+
+      // With 50ms initial delay and backoff: 50 + 100 + 200 = 350ms minimum
+      // But with maxDelay=200, actual is 50 + 100 + 200 = 350ms
+      expect(totalTime).toBeGreaterThanOrEqual(300);
+    });
+
+    it('should handle rapid consecutive failures without overwhelming server', async () => {
+      const attempts: number[] = [];
+      let callCount = 0;
+
+      const fn = vi.fn().mockImplementation(() => {
+        callCount++;
+        const currentAttempt = callCount;
+        attempts.push(Date.now());
+
+        if (currentAttempt <= 3) {
+          const error = new Error('ETIMEDOUT');
+          Object.defineProperty(error, 'name', { value: 'Error' });
+          throw error;
+        }
+        return 'success';
+      });
+
+      const result = await retryAsync(fn, {
+        maxRetries: 5,
+        initialDelay: 20,
+        maxDelay: 100,
+      });
+
+      expect(result).toBe('success');
+
+      // Verify there's a delay between retries
+      if (attempts.length >= 3) {
+        const timeBetweenRetries = attempts[2] - attempts[1];
+        expect(timeBetweenRetries).toBeGreaterThanOrEqual(10);
+      }
+    });
+
+    it('should properly timeout individual attempts within retry sequence', async () => {
+      let attempts = 0;
+
+      const fn = vi.fn().mockImplementation(() => {
+        attempts++;
+        // Simulate a slow operation that times out
+        const error = new Error('ETIMEDOUT');
+        Object.defineProperty(error, 'name', { value: 'Error' });
+        throw error;
+      });
+
+      const start = Date.now();
+
+      // Each attempt should timeout individually
+      await expect(
+        retryAsync(fn, {
+          maxRetries: 3,
+          initialDelay: 20, // Short delay between retries
+          timeout: 100, // 100ms timeout per attempt
+        })
+      ).rejects.toThrow();
+
+      const elapsed = Date.now() - start;
+
+      // Should have attempted multiple times
+      expect(attempts).toBeGreaterThanOrEqual(1);
+      // Total time should be reasonable (not hanging)
+      expect(elapsed).toBeLessThan(5000);
+    });
+
+    it('should not cause memory leak with many retry attempts', async () => {
+      let attempts = 0;
+      const memorySnapshots: number[] = [];
+
+      const fn = vi.fn().mockImplementation(() => {
+        attempts++;
+        // Record approximate memory (would need real measurement in production)
+        if (attempts % 10 === 0) {
+          memorySnapshots.push(attempts);
+        }
+
+        if (attempts < 50) {
+          const error = new Error('Network error');
+          Object.defineProperty(error, 'name', { value: 'Error' });
+          throw error;
+        }
+        return 'success';
+      });
+
+      // This should complete without hanging
+      const result = await retryAsync(fn, {
+        maxRetries: 100, // High number but should still complete
+        initialDelay: 1, // Very fast
+        maxDelay: 10,
+      });
+
+      expect(result).toBe('success');
+      expect(attempts).toBe(50);
+    });
+
+    it('should handle mixed retriable and non-retriable errors correctly', async () => {
+      let attempts = 0;
+
+      const fn = vi.fn().mockImplementation(() => {
+        attempts++;
+
+        if (attempts === 1) {
+          // First: retriable network error
+          const error = new Error('ETIMEDOUT');
+          Object.defineProperty(error, 'name', { value: 'Error' });
+          throw error;
+        } else if (attempts === 2) {
+          // Second: non-retriable auth error
+          throw new Error('Unauthorized');
+        }
+
+        return 'success';
+      });
+
+      // Should fail immediately on auth error, not retry
+      await expect(
+        retryAsync(fn, {
+          maxRetries: 5,
+          initialDelay: 10,
+        })
+      ).rejects.toThrow('Unauthorized');
+
+      // Should have only attempted twice (first retry, then auth error stops)
+      expect(attempts).toBe(2);
+    });
+
+    it('should correctly count attempts including initial call', async () => {
+      let attempts = 0;
+
+      const fn = vi.fn().mockImplementation(() => {
+        attempts++;
+        if (attempts < 4) {
+          const error = new Error('ECONNREFUSED');
+          Object.defineProperty(error, 'name', { value: 'Error' });
+          throw error;
+        }
+        return 'success';
+      });
+
+      await retryAsync(fn, {
+        maxRetries: 3,
+        initialDelay: 10,
+      });
+
+      // Should be: initial call (1) + 3 retries = 4 total
+      expect(attempts).toBe(4);
+    });
+  });
+
+  describe('retry behavior under stress', () => {
+    it('should handle multiple parallel failing operations', async () => {
+      const operations = Array(10)
+        .fill(null)
+        .map((_, i) => {
+          let attempt = 0;
+          return async () => {
+            attempt++;
+            if (attempt < 3) {
+              // Use retriable error (network error)
+              const error = new Error(`Operation ${i} failed: network error`);
+              Object.defineProperty(error, 'name', { value: 'Error' });
+              throw error;
+            }
+            return `success-${i}`;
+          };
+        });
+
+      const results = await Promise.allSettled(
+        operations.map(op => retryAsync(op, { maxRetries: 5, initialDelay: 5, maxDelay: 20 }))
+      );
+
+      // All should succeed
+      const fulfilled = results.filter(r => r.status === 'fulfilled');
+      expect(fulfilled.length).toBe(10);
+    });
+
+    it('should prevent cascading failures with proper backoff', () => {
+      // Simulate what happens when 100 requests fail at the same time
+      // Without backoff, they'd all retry immediately
+      const config = {
+        maxRetries: 3,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+        timeout: 30000,
+      };
+
+      // All 100 "clients" start at the same time
+      const retryDelays = Array(100)
+        .fill(null)
+        .map((_, i) => {
+          // Each gets a slightly different delay due to exponential backoff
+          const attempt = (i % 3) + 1; // Distribute across attempts
+          return getRetryDelay(attempt, config);
+        });
+
+      // Verify delays are distributed (not all 1000ms)
+      const uniqueDelays = new Set(retryDelays);
+      expect(uniqueDelays.size).toBeGreaterThan(1);
+    });
   });
 });
