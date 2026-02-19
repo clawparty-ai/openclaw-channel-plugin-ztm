@@ -2,10 +2,16 @@
 // Manages runtime state for multiple ZTM Chat accounts
 //
 // This module provides:
-// - Multi-account state storage using a Map
+// - AccountStateManager class: Explicit state ownership with clear lifecycle
+// - Module-level convenience functions: Backward-compatible API wrapping AccountStateManager
 // - Account initialization and cleanup
 // - Runtime start/stop operations
-// - State retrieval utilities
+//
+// Architecture Note:
+// The AccountStateManager class provides explicit state ownership with a clear lifecycle.
+// Module-level functions (getOrCreateAccountState, removeAccountState, getAllAccountStates)
+// delegate to the AccountStateManager singleton for backward compatibility.
+// For DI-based injection, use getAccountStateManager() to obtain the manager instance.
 
 // External dependencies - these will use DI
 import { createZTMApiClient } from '../api/ztm-api.js';
@@ -339,7 +345,21 @@ const accountStateManager = new AccountStateManager({
 });
 
 /**
- * Get the AccountStateManager singleton instance
+ * Get the AccountStateManager singleton instance.
+ *
+ * This function provides explicit access to the AccountStateManager,
+ * which owns all account runtime states with clear lifecycle management.
+ *
+ * For DI-based injection, prefer getting this instance through the
+ * dependency injection container using getAccountStateManagerService().
+ *
+ * @returns The AccountStateManager singleton instance
+ *
+ * @example
+ * // Using explicit manager for fine-grained control
+ * const manager = getAccountStateManager();
+ * const state = manager.getOrCreate('my-account');
+ * manager.remove('my-account');
  */
 export function getAccountStateManager(): AccountStateManager {
   return accountStateManager;
@@ -350,6 +370,10 @@ export function getAccountStateManager(): AccountStateManager {
  *
  * Each account (identified by accountId) has its own isolated runtime state,
  * including API client, connection status, message callbacks, and more.
+ *
+ * Note: This function delegates to AccountStateManager for explicit state ownership.
+ * The AccountStateManager class manages the lifecycle of all account states,
+ * including cleanup of resources like intervals and callbacks.
  *
  * @param accountId - Unique identifier for the account
  * @returns AccountRuntimeState for the specified account
@@ -367,6 +391,13 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
  *
  * This function removes the account from the state map and cleans up
  * any associated resources like watch intervals and message callbacks.
+ *
+ * Note: This function delegates to AccountStateManager.remove() which
+ * performs proper cleanup including:
+ * - Clearing watch intervals
+ * - Clearing message callbacks
+ * - Clearing pending pairings
+ * - Clearing group permission cache
  *
  * @param accountId - The account identifier to remove
  *
@@ -452,6 +483,23 @@ export function clearGroupPermissionCache(accountId: string): void {
  * const allStates = getAllAccountStates();
  * for (const [accountId, state] of allStates) {
  *   console.log(`${accountId}: ${state.connected ? "connected" : "disconnected"}`);
+ * }
+ */
+/**
+ * Get all account states as a Map.
+ *
+ * Returns a reference to the internal Map managed by AccountStateManager.
+ * Use this for iterating over all active account states.
+ *
+ * Note: The returned Map is a live reference - changes to account states
+ * will be reflected in this Map. For a snapshot, create a new Map from it.
+ *
+ * @returns Map of accountId to AccountRuntimeState
+ *
+ * @example
+ * const allStates = getAllAccountStates();
+ * for (const [accountId, state] of allStates) {
+ *   console.log(`${accountId}: ${state.connected ? 'connected' : 'disconnected'}`);
  * }
  */
 export function getAllAccountStates(): Map<string, AccountRuntimeState> {
