@@ -156,27 +156,94 @@ export async function sendTextGateway({
 // Start Account Gateway
 // ============================================================================
 
-export async function startAccountGateway(ctx: {
-  account: { config: ZTMChatConfig; accountId: string };
-  log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
-  cfg?: Record<string, unknown>;
-}): Promise<() => Promise<void>> {
-  const account = ctx.account;
-  const config = resolveZTMChatConfig(account.config);
+/**
+ * Resolve and validate ZTM chat configuration
+ */
+function resolveAndValidateConfig(accountConfig: ZTMChatConfig): {
+  config: ZTMChatConfig;
+  endpointName: string;
+  permitPath: string;
+} {
+  const config = resolveZTMChatConfig(accountConfig);
   const validation = validateZTMChatConfig(config);
 
   if (!validation.valid) {
     throw new Error(validation.errors.join('; '));
   }
 
-  // Use cross-platform compatible path resolution
   const permitPath = resolveAccountPermitPath();
   const endpointName = `${config.username}-ep`;
 
-  // Step 1: Validate connectivity for agent URL
+  return { config, endpointName, permitPath };
+}
+
+/**
+ * Log pairing mode status
+ */
+function logPairingStatus(
+  accountId: string,
+  config: ZTMChatConfig,
+  log?: { info: (...args: unknown[]) => void }
+): void {
+  if (config.dmPolicy === 'pairing') {
+    const allowFrom = getOrDefault(config.allowFrom, []);
+    if (allowFrom.length === 0) {
+      log?.info(
+        `[${accountId}] Pairing mode active - no approved users. ` +
+          `Users must send a message to initiate pairing. ` +
+          `Approve users with: openclaw pairing approve ztm-chat <username>`
+      );
+    } else {
+      log?.info(`[${accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`);
+    }
+  }
+}
+
+/**
+ * Setup account message callbacks and periodic cleanup
+ */
+async function setupAccountCallbacks(
+  accountId: string,
+  config: ZTMChatConfig,
+  state: AccountRuntimeState,
+  ctx: {
+    log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
+    cfg?: Record<string, unknown>;
+  }
+): Promise<{
+  messageCallback: (msg: ZTMChatMessage) => Promise<void>;
+  cleanupInterval: NodeJS.Timeout;
+}> {
+  const rt = container.get(DEPENDENCIES.RUNTIME).get();
+  const cfg = ctx.cfg;
+
+  // Setup message callback
+  const messageCallback = createMessageCallback(accountId, config, rt, cfg, state, ctx);
+  state.messageCallbacks.add(messageCallback);
+  await startMessageWatcher(state);
+
+  // Setup periodic cleanup to prevent unbounded growth of pending pairings
+  const cleanupInterval = setInterval(() => {
+    cleanupExpiredPairings();
+  }, PAIRING_CLEANUP_INTERVAL_MS);
+
+  return { messageCallback, cleanupInterval };
+}
+
+export async function startAccountGateway(ctx: {
+  account: { config: ZTMChatConfig; accountId: string };
+  log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
+  cfg?: Record<string, unknown>;
+}): Promise<() => Promise<void>> {
+  const { account } = ctx;
+
+  // Step 1: Resolve and validate configuration
+  const { config, endpointName, permitPath } = resolveAndValidateConfig(account.config);
+
+  // Step 2: Validate connectivity for agent URL
   await validateAgentConnectivity(config.agentUrl, ctx);
 
-  // Step 2-5: Load or request permit
+  // Step 3-5: Load or request permit
   const permitData = await loadOrRequestPermit(config, permitPath, ctx);
 
   // Step 6: Join mesh if needed
@@ -195,41 +262,24 @@ export async function startAccountGateway(ctx: {
   const state = accountStates.get(account.accountId)!;
   state.lastStartAt = new Date();
 
-  const rt = container.get(DEPENDENCIES.RUNTIME).get();
-  const cfg = ctx.cfg;
-
+  // Log connection success
   ctx.log?.info(
     `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`
   );
 
-  if (config.dmPolicy === 'pairing') {
-    const allowFrom = getOrDefault(config.allowFrom, []);
-    if (allowFrom.length === 0) {
-      ctx.log?.info(
-        `[${account.accountId}] Pairing mode active - no approved users. ` +
-          `Users must send a message to initiate pairing. ` +
-          `Approve users with: openclaw pairing approve ztm-chat <username>`
-      );
-    } else {
-      ctx.log?.info(
-        `[${account.accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`
-      );
-    }
-  }
+  // Log pairing mode status
+  logPairingStatus(account.accountId, config, ctx.log);
 
-  // Setup message callback
-  const messageCallback = createMessageCallback(account.accountId, config, rt, cfg, state, ctx);
+  // Step 8: Setup message callbacks and cleanup
+  const { messageCallback, cleanupInterval } = await setupAccountCallbacks(
+    account.accountId,
+    config,
+    state,
+    ctx
+  );
 
-  state.messageCallbacks.add(messageCallback);
-  await startMessageWatcher(state);
-
-  // Setup periodic cleanup to prevent unbounded growth of pending pairings
-  const cleanupInterval = setInterval(() => {
-    cleanupExpiredPairings();
-  }, PAIRING_CLEANUP_INTERVAL_MS);
-
+  // Return cleanup function
   return async () => {
-    // Clear cleanup interval
     clearInterval(cleanupInterval);
     state.messageCallbacks.delete(messageCallback);
     await stopRuntime(account.accountId);
