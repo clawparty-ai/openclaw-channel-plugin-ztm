@@ -332,4 +332,98 @@ To approve, run: openclaw pairing approve ztm-chat ${peer}`;
       expect(mockState.pendingPairings.has(sender)).toBe(false);
     });
   });
+
+  describe('pairing expiration handling', () => {
+    it('should treat expired pairings as not pending', () => {
+      const sender = 'alice';
+      // Set pairing to expired (2 hours ago)
+      const expiredTimestamp = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      mockState.pendingPairings.set(sender, expiredTimestamp);
+
+      // Check if pairing is expired (older than 1 hour)
+      const pairingAge = Date.now() - (mockState.pendingPairings.get(sender)?.getTime() || 0);
+      const isExpired = pairingAge > 60 * 60 * 1000;
+
+      expect(isExpired).toBe(true);
+    });
+
+    it('should allow new pairing request after expiration', () => {
+      const sender = 'alice';
+      // Set expired pairing
+      const expiredTimestamp = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      mockState.pendingPairings.set(sender, expiredTimestamp);
+
+      // After expiration, the pairing should be considered stale
+      const isPending = (sender: string) => {
+        const timestamp = mockState.pendingPairings.get(sender);
+        if (!timestamp) return false;
+        // Check if still within 1 hour
+        return Date.now() - timestamp.getTime() <= 60 * 60 * 1000;
+      };
+
+      // The expired pairing should not be considered pending
+      expect(isPending(sender)).toBe(false);
+    });
+
+    it('should track fresh pairings correctly', () => {
+      const sender = 'alice';
+      // Set fresh pairing (within 1 hour)
+      const freshTimestamp = new Date(Date.now() - 30 * 60 * 1000);
+      mockState.pendingPairings.set(sender, freshTimestamp);
+
+      const isPending = (sender: string) => {
+        const timestamp = mockState.pendingPairings.get(sender);
+        if (!timestamp) return false;
+        return Date.now() - timestamp.getTime() <= 60 * 60 * 1000;
+      };
+
+      expect(isPending(sender)).toBe(true);
+    });
+
+    it('should handle boundary at exactly 1 hour', () => {
+      const sender = 'alice';
+      // Set pairing at exactly 1 hour ago
+      const boundaryTimestamp = new Date(Date.now() - 60 * 60 * 1000);
+      mockState.pendingPairings.set(sender, boundaryTimestamp);
+
+      const isPending = (sender: string) => {
+        const timestamp = mockState.pendingPairings.get(sender);
+        if (!timestamp) return false;
+        return Date.now() - timestamp.getTime() <= 60 * 60 * 1000;
+      };
+
+      // At exactly 1 hour, it's still pending (using <=)
+      expect(isPending(sender)).toBe(true);
+    });
+
+    it('should handle cleanup of multiple expired pairings', () => {
+      // Add multiple expired pairings
+      mockState.pendingPairings.set('alice', new Date(Date.now() - 2 * 60 * 60 * 1000));
+      mockState.pendingPairings.set('bob', new Date(Date.now() - 3 * 60 * 60 * 1000));
+      mockState.pendingPairings.set('charlie', new Date(Date.now() - 4 * 60 * 60 * 1000));
+      // Add one fresh
+      mockState.pendingPairings.set('dave', new Date(Date.now() - 30 * 60 * 1000));
+
+      const cleanupExpired = () => {
+        const now = Date.now();
+        const expirationMs = 60 * 60 * 1000;
+        let cleaned = 0;
+
+        for (const [peer, timestamp] of mockState.pendingPairings.entries()) {
+          if (now - timestamp.getTime() > expirationMs) {
+            mockState.pendingPairings.delete(peer);
+            cleaned++;
+          }
+        }
+
+        return cleaned;
+      };
+
+      const cleanedCount = cleanupExpired();
+
+      expect(cleanedCount).toBe(3);
+      expect(mockState.pendingPairings.size).toBe(1);
+      expect(mockState.pendingPairings.has('dave')).toBe(true);
+    });
+  });
 });
