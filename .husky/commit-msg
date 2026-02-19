@@ -1,0 +1,13 @@
+#!/bin/sh
+# Commit-msg hook: reject commits containing Co-Authored-By
+
+COMMIT_MSG_FILE=$1
+
+# Check if commit message contains Co-Authored-By
+if grep -qi "Co-Authored-By:" "$COMMIT_MSG_FILE" 2>/dev/null; then
+    echo "ERROR: Commit message contains 'Co-Authored-By' which is not allowed in this project."
+    echo "Please remove the Co-Authored-By footer from your commit message."
+    exit 1
+fi
+
+exit 0

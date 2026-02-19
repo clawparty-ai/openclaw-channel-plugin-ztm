@@ -355,7 +355,9 @@ async function dispatchInboundMessage(
     accountId,
   });
 
-  logger.info?.(`[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`);
+  logger.info?.(
+    `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`
+  );
 
   const dispatcherOptions = createReplyDispatcherOptions(state, msg, accountId, agentId, rt);
 

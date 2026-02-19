@@ -27,7 +27,8 @@
     "prepublishOnly": "npm run build",
     "changelog": "git-cliff --output CHANGELOG.md",
     "changelog:unreleased": "git-cliff --unreleased",
-    "changelog:preview": "git-cliff --unreleased"
+    "changelog:preview": "git-cliff --unreleased",
+    "prepare": "husky"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.48",
@@ -42,6 +43,8 @@
     "conventional-changelog-cli": "^2.2.2",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "eslint": "^10.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.0.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
@@ -69,5 +72,11 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   }
 }
