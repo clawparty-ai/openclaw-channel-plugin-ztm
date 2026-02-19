@@ -335,4 +335,66 @@ describe('Message Dispatcher', () => {
       expect(CALLBACK_SEMAPHORE_PERMITS).toBe(10);
     });
   });
+
+  describe('filter operation efficiency', () => {
+    it('should count success and error results efficiently', () => {
+      // Simulate the filter operations from notifyMessageCallbacks
+      const results = [true, false, true, true, false, true, false, true];
+
+      // Current implementation uses two filter calls
+      const successCount = results.filter(r => r).length;
+      const errorCount = results.filter(r => !r).length;
+
+      expect(successCount).toBe(5);
+      expect(errorCount).toBe(3);
+      expect(successCount + errorCount).toBe(results.length);
+    });
+
+    it('should handle empty results array', () => {
+      const results: boolean[] = [];
+
+      const successCount = results.filter(r => r).length;
+      const errorCount = results.filter(r => !r).length;
+
+      expect(successCount).toBe(0);
+      expect(errorCount).toBe(0);
+    });
+
+    it('should handle all success results', () => {
+      const results = [true, true, true, true];
+
+      const successCount = results.filter(r => r).length;
+      const errorCount = results.filter(r => !r).length;
+
+      expect(successCount).toBe(4);
+      expect(errorCount).toBe(0);
+    });
+
+    it('should handle all error results', () => {
+      const results = [false, false, false, false];
+
+      const successCount = results.filter(r => r).length;
+      const errorCount = results.filter(r => !r).length;
+
+      expect(successCount).toBe(0);
+      expect(errorCount).toBe(4);
+    });
+
+    it('should process large result arrays efficiently', () => {
+      // Create a large array to test performance
+      const results = Array(1000)
+        .fill(null)
+        .map((_, i) => i % 2 === 0);
+
+      const start = performance.now();
+      const successCount = results.filter(r => r).length;
+      const errorCount = results.filter(r => !r).length;
+      const elapsed = performance.now() - start;
+
+      expect(successCount).toBe(500);
+      expect(errorCount).toBe(500);
+      // Should complete quickly (< 10ms for 1000 items)
+      expect(elapsed).toBeLessThan(10);
+    });
+  });
 });
