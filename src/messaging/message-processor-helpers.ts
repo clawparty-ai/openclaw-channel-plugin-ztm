@@ -7,6 +7,8 @@ import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
 import { handlePairingRequest } from '../connectivity/permit.js';
+import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChat } from '../types/api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
@@ -16,6 +18,82 @@ import type { ZTMChatMessage } from '../types/messaging.js';
 export interface ProcessMessageResult {
   normalized: ZTMChatMessage | null;
   shouldSkip: boolean;
+}
+
+/**
+ * Determine if a chat is a group chat
+ */
+export function isGroupChat(chat: ZTMChat): boolean {
+  return !!(chat.creator && chat.group);
+}
+
+/**
+ * Extract sender from a chat's latest message
+ * Returns the sender from the message, or falls back to peer ID for peer chats only
+ * For group chats, returns empty string if no explicit sender
+ */
+export function extractSender(chat: ZTMChat): string {
+  const isGroup = isGroupChat(chat);
+  const explicitSender = chat.latest?.sender;
+
+  if (explicitSender) {
+    return explicitSender;
+  }
+
+  // For peer chats, fall back to peer ID
+  // For group chats, return empty string (no fallback)
+  if (isGroup) {
+    return '';
+  }
+  return chat.peer || '';
+}
+
+/**
+ * Check if a message is from the bot itself (self-message)
+ * Returns true if the sender matches the bot's username
+ */
+export function isSelfMessage(sender: string, botUsername: string): boolean {
+  return sender === botUsername;
+}
+
+/**
+ * Validate if a chat message should be processed.
+ * Returns the reason for rejection, or null if the message is valid.
+ */
+export function validateChatMessage(
+  chat: ZTMChat,
+  config: ZTMChatConfig
+): { valid: false; reason: string } | { valid: true } {
+  const isGroup = isGroupChat(chat);
+
+  if (isGroup) {
+    // Group message validation
+    if (!chat.latest) {
+      return { valid: false, reason: 'no_latest_message' };
+    }
+    const sender = extractSender(chat);
+    // Skip empty sender in group messages
+    if (!sender) {
+      return { valid: false, reason: 'empty_sender' };
+    }
+    if (isSelfMessage(sender, config.username)) {
+      return { valid: false, reason: 'self_message' };
+    }
+  } else {
+    // Peer message validation
+    if (!chat.peer || chat.peer === config.username) {
+      return { valid: false, reason: 'invalid_peer' };
+    }
+    if (!chat.latest) {
+      return { valid: false, reason: 'no_latest_message' };
+    }
+    const sender = extractSender(chat);
+    if (isSelfMessage(sender, config.username)) {
+      return { valid: false, reason: 'self_message' };
+    }
+  }
+
+  return { valid: true };
 }
 
 /**

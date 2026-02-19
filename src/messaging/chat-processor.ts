@@ -3,6 +3,7 @@
 
 import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
+import { isGroupChat, extractSender, validateChatMessage } from './message-processor-helpers.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChat } from '../types/api.js';
@@ -19,50 +20,37 @@ export async function processChatMessage(
   storeAllowFrom: string[],
   accountId: string
 ): Promise<boolean> {
-  const isGroup = !!(chat.creator && chat.group);
+  const validation = validateChatMessage(chat, config);
+  if (!validation.valid) {
+    return false;
+  }
+
+  const isGroup = isGroupChat(chat);
+  const sender = extractSender(chat);
 
   if (isGroup) {
-    if (!chat.latest) return false;
-
-    const sender = chat.latest.sender || '';
-    if (sender === config.username) return false;
-
     const groupInfo = { creator: chat.creator!, group: chat.group! };
     const normalized = processIncomingMessage(
       {
-        time: chat.latest.time,
-        message: chat.latest.message,
+        time: chat.latest!.time,
+        message: chat.latest!.message,
         sender: sender,
       },
       { config, storeAllowFrom, accountId, groupInfo }
     );
-    if (normalized) {
-      return true;
-    }
-    return false;
+    return normalized !== null;
   }
 
   // Peer chat
-  if (!chat.peer || chat.peer === config.username) return false;
-  if (!chat.latest) return false;
-
-  const sender = chat.latest.sender || chat.peer;
-  if (sender === config.username) {
-    return false;
-  }
-
   const normalized = processIncomingMessage(
     {
-      time: chat.latest.time,
-      message: chat.latest.message,
+      time: chat.latest!.time,
+      message: chat.latest!.message,
       sender: sender,
     },
     { config, storeAllowFrom, accountId }
   );
-  if (normalized) {
-    return true;
-  }
-  return false;
+  return normalized !== null;
 }
 
 /**
@@ -74,18 +62,19 @@ export async function processAndNotifyChat(
   state: AccountRuntimeState,
   storeAllowFrom: string[]
 ): Promise<boolean> {
-  const isGroup = !!(chat.creator && chat.group);
+  const validation = validateChatMessage(chat, state.config);
+  if (!validation.valid) {
+    return false;
+  }
+
+  const isGroup = isGroupChat(chat);
+  const sender = extractSender(chat);
 
   if (isGroup) {
-    if (!chat.latest) return false;
-
-    const sender = chat.latest.sender || '';
-    if (sender === state.config.username) return false;
-
     const normalized = processIncomingMessage(
       {
-        time: chat.latest.time,
-        message: chat.latest.message,
+        time: chat.latest!.time,
+        message: chat.latest!.message,
         sender: sender,
       },
       {
@@ -109,18 +98,10 @@ export async function processAndNotifyChat(
   }
 
   // Peer chat
-  if (!chat.peer || chat.peer === state.config.username) return false;
-  if (!chat.latest) return false;
-
-  const sender = chat.latest.sender || chat.peer;
-  if (sender === state.config.username) {
-    return false;
-  }
-
   const normalized = processIncomingMessage(
     {
-      time: chat.latest.time,
-      message: chat.latest.message,
+      time: chat.latest!.time,
+      message: chat.latest!.message,
       sender: sender,
     },
     { config: state.config, storeAllowFrom, accountId: state.accountId }
@@ -129,9 +110,11 @@ export async function processAndNotifyChat(
     await notifyMessageCallbacks(state, normalized);
   }
 
-  const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);
+  // peer is guaranteed to be valid here due to validateChatMessage check
+  const peer = chat.peer!;
+  const check = checkDmPolicy(peer, state.config, storeAllowFrom);
   if (check.action === 'request_pairing') {
-    await handlePairingRequest(state, chat.peer, 'New message', storeAllowFrom);
+    await handlePairingRequest(state, peer, 'New message', storeAllowFrom);
   }
 
   return normalized !== null;
