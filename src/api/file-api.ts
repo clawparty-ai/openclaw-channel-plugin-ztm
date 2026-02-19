@@ -2,6 +2,7 @@
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMLogger, RequestHandler } from './request.js';
+import { containsPathTraversal } from '../utils/validation.js';
 
 // Maximum number of tracked files to prevent memory leaks
 const MAX_TRACKED_FILES = 500;
@@ -36,9 +37,16 @@ export function createFileApi(
   return {
     /**
      * Seed file metadata from external source
+     * Validates file paths to prevent path traversal attacks
      */
     seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void {
       for (const [filePath, meta] of Object.entries(metadata)) {
+        // Validate file path to prevent path traversal attacks
+        if (containsPathTraversal(filePath)) {
+          _logger.warn?.(`Rejected file path with traversal pattern: ${filePath}`);
+          continue;
+        }
+
         const current = lastSeenFiles.get(filePath);
         if (!current || meta.time > current.time || meta.size > current.size) {
           lastSeenFiles.set(filePath, meta);
