@@ -100,11 +100,12 @@ export function processIncomingMessage(
   }
 
   // Return normalized message with sanitized fields
-  // Escape HTML in sender to prevent XSS when rendered in logs/UI
+  // Escape HTML in sender and content to prevent XSS when rendered in logs/UI
   const safeSender = escapeHtml(msg.sender);
+  const safeContent = escapeHtml(msg.message);
   return {
     id: `${msg.time}-${safeSender}`,
-    content: msg.message,
+    content: safeContent,
     sender: safeSender,
     senderId: safeSender,
     timestamp: new Date(msg.time),
