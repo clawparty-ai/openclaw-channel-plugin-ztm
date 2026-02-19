@@ -8,6 +8,8 @@ import {
   clearCallbacks,
 } from './dispatcher.js';
 import { testAccountId } from '../test-utils/fixtures.js';
+import { Semaphore } from '../utils/concurrency.js';
+import { CALLBACK_SEMAPHORE_PERMITS } from '../constants.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 
@@ -214,6 +216,123 @@ describe('Message Dispatcher', () => {
       expect(actualMockLoggerDebug).toHaveBeenCalledWith(
         expect.stringContaining('Cleared 2 callback(s)')
       );
+    });
+  });
+
+  describe('callback semaphore blocking', () => {
+    it('should use semaphore when callbackSemaphore is present', async () => {
+      const semaphore = new Semaphore(CALLBACK_SEMAPHORE_PERMITS);
+      mockState.callbackSemaphore = semaphore;
+
+      const callback = vi.fn().mockResolvedValue(undefined);
+      mockState.messageCallbacks = new Set([callback]);
+
+      const message: ZTMChatMessage = {
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
+        timestamp: new Date(),
+        peer: 'alice',
+      };
+
+      await notifyMessageCallbacks(mockState, message);
+
+      expect(callback).toHaveBeenCalledWith(message);
+      // Semaphore should have released the permit back
+      expect(semaphore.availablePermits()).toBe(CALLBACK_SEMAPHORE_PERMITS);
+    });
+
+    it('should limit concurrent callback execution when semaphore permits exhausted', async () => {
+      // Create a semaphore with only 2 permits to make blocking observable
+      const semaphore = new Semaphore(2);
+      mockState.callbackSemaphore = semaphore;
+
+      let activeCallbacks = 0;
+      let maxConcurrent = 0;
+      const executionOrder: number[] = [];
+
+      // Create 5 callbacks that each take 50ms
+      const callbacks: MessageCallback[] = Array.from({ length: 5 }, (_, i) =>
+        vi.fn(async () => {
+          activeCallbacks++;
+          maxConcurrent = Math.max(maxConcurrent, activeCallbacks);
+          executionOrder.push(i);
+          await new Promise(resolve => setTimeout(resolve, 50));
+          activeCallbacks--;
+        })
+      );
+
+      mockState.messageCallbacks = new Set(callbacks);
+
+      const message: ZTMChatMessage = {
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
+        timestamp: new Date(),
+        peer: 'alice',
+      };
+
+      await notifyMessageCallbacks(mockState, message);
+
+      // Verify all callbacks completed
+      callbacks.forEach(cb => expect(cb).toHaveBeenCalledTimes(1));
+
+      // Verify concurrency was limited by semaphore (max 2 concurrent)
+      expect(maxConcurrent).toBeLessThanOrEqual(2);
+    });
+
+    it('should handle callback error when semaphore is present', async () => {
+      const semaphore = new Semaphore(CALLBACK_SEMAPHORE_PERMITS);
+      mockState.callbackSemaphore = semaphore;
+
+      const errorCallback = vi.fn(() => {
+        throw new Error('Callback error');
+      });
+      const successCallback = vi.fn().mockResolvedValue(undefined);
+      mockState.messageCallbacks = new Set([errorCallback, successCallback]);
+
+      const message: ZTMChatMessage = {
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
+        timestamp: new Date(),
+        peer: 'alice',
+      };
+
+      // Should not throw
+      await expect(notifyMessageCallbacks(mockState, message)).resolves.not.toThrow();
+
+      // Success callback should still be called
+      expect(successCallback).toHaveBeenCalled();
+
+      // Semaphore permits should be released even after error
+      expect(semaphore.availablePermits()).toBe(CALLBACK_SEMAPHORE_PERMITS);
+    });
+
+    it('should not block when no callbacks registered even with semaphore', async () => {
+      const semaphore = new Semaphore(CALLBACK_SEMAPHORE_PERMITS);
+      mockState.callbackSemaphore = semaphore;
+
+      const message: ZTMChatMessage = {
+        id: '123',
+        content: 'Test',
+        sender: 'alice',
+        senderId: 'alice',
+        timestamp: new Date(),
+        peer: 'alice',
+      };
+
+      await notifyMessageCallbacks(mockState, message);
+
+      // No permits should be consumed
+      expect(semaphore.availablePermits()).toBe(CALLBACK_SEMAPHORE_PERMITS);
+    });
+
+    it('should use default constant for semaphore permits', () => {
+      expect(CALLBACK_SEMAPHORE_PERMITS).toBe(10);
     });
   });
 });
