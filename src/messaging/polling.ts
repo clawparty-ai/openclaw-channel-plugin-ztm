@@ -12,6 +12,7 @@ import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import { handleResult } from '../utils/result.js';
 import { POLLING_INTERVAL_DEFAULT_MS, POLLING_INTERVAL_MIN_MS } from '../constants.js';
+import type { MessagingContext } from './context.js';
 
 // Process a group chat message (async - uses async callback notification)
 async function processGroupChat(
@@ -102,7 +103,10 @@ async function processChats(
 import { MAX_CHATS_PER_POLL } from '../constants.js';
 
 // Fallback polling watcher (when watch is unavailable)
-export async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
+export async function startPollingWatcher(
+  state: AccountRuntimeState,
+  context: MessagingContext
+): Promise<void> {
   const { config, apiClient } = state;
   if (!apiClient) return;
 
@@ -119,9 +123,7 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
 
     // Use cached allowFrom to avoid redundant async calls every poll cycle
     const rt = container.get(DEPENDENCIES.RUNTIME).get();
-    const pollStoreAllowFrom = await container
-      .get(DEPENDENCIES.ALLOW_FROM_REPO)
-      .getAllowFrom(state.accountId, rt);
+    const pollStoreAllowFrom = await context.allowFromRepo.getAllowFrom(state.accountId, rt);
     // Skip processing if we couldn't read the store (security: don't bypass allowFrom checks)
     if (pollStoreAllowFrom === null) {
       return;

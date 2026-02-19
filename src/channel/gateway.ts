@@ -23,6 +23,7 @@ import {
 import { PAIRING_CLEANUP_INTERVAL_MS } from '../constants.js';
 import { startMessageWatcher } from '../messaging/watcher.js';
 import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
+import { createMessagingContext } from '../messaging/context.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
 import {
@@ -220,7 +221,10 @@ async function setupAccountCallbacks(
   // Setup message callback
   const messageCallback = createMessageCallback(accountId, config, rt, cfg, state, ctx);
   state.messageCallbacks.add(messageCallback);
-  await startMessageWatcher(state);
+
+  // Create messaging context and start watching for messages
+  const messagingContext = createMessagingContext(rt);
+  await startMessageWatcher(state, messagingContext);
 
   // Setup periodic cleanup to prevent unbounded growth of pending pairings
   const cleanupInterval = setInterval(() => {

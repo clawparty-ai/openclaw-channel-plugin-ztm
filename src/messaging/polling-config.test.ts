@@ -6,6 +6,24 @@ import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
+import type { MessagingContext } from './context.js';
+
+// Helper to create a mock MessagingContext
+function createMockMessagingContext(): MessagingContext {
+  return {
+    messageStateRepo: {
+      getFileMetadata: vi.fn(() => ({})),
+      setFileMetadataBulk: vi.fn(),
+      getWatermark: vi.fn(() => 0),
+      setWatermark: vi.fn(),
+      flush: vi.fn(),
+    },
+    allowFromRepo: {
+      getAllowFrom: vi.fn(() => Promise.resolve([])),
+      clearCache: vi.fn(),
+    },
+  };
+}
 
 type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: string]: unknown };
 
@@ -104,7 +122,8 @@ describe('Configuration Edge Cases', () => {
   it('should handle undefined pollingInterval', async () => {
     mockState.config = { ...baseConfig };
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 2000);
   });
@@ -112,7 +131,8 @@ describe('Configuration Edge Cases', () => {
   it('should handle zero pollingInterval', async () => {
     mockState.config = { ...baseConfig, pollingInterval: 0 } as ExtendedConfig;
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
   });
@@ -120,7 +140,8 @@ describe('Configuration Edge Cases', () => {
   it('should handle negative pollingInterval', async () => {
     mockState.config = { ...baseConfig, pollingInterval: -1000 } as ExtendedConfig;
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
   });
@@ -128,7 +149,8 @@ describe('Configuration Edge Cases', () => {
   it('should handle very large pollingInterval', async () => {
     mockState.config = { ...baseConfig, pollingInterval: 60000 } as ExtendedConfig;
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 60000);
   });

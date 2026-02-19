@@ -7,6 +7,24 @@ import { clearAllowFromCache } from '../runtime/state.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
+import type { MessagingContext } from './context.js';
+
+// Helper to create a mock MessagingContext
+function createMockMessagingContext(): MessagingContext {
+  return {
+    messageStateRepo: {
+      getFileMetadata: vi.fn(() => ({})),
+      setFileMetadataBulk: vi.fn(),
+      getWatermark: vi.fn(() => 0),
+      setWatermark: vi.fn(),
+      flush: vi.fn(),
+    },
+    allowFromRepo: {
+      getAllowFrom: vi.fn(() => Promise.resolve([])),
+      clearCache: vi.fn(),
+    },
+  };
+}
 
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
@@ -108,13 +126,15 @@ describe('Interval Management', () => {
   });
 
   it('should store interval reference in state', async () => {
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(mockState.watchInterval).not.toBeNull();
   });
 
   it('should allow clearing interval via state reference', async () => {
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     const intervalRef = mockState.watchInterval;
     expect(intervalRef).not.toBeNull();
@@ -128,9 +148,10 @@ describe('Interval Management', () => {
   });
 
   it('should replace existing interval if already set', async () => {
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
-    await startPollingWatcher(mockState);
+    await startPollingWatcher(mockState, mockContext);
     const secondInterval = mockState.watchInterval;
 
     expect(secondInterval).not.toBeNull();
@@ -196,7 +217,8 @@ describe('Watch → Polling Transition', () => {
     mockState.pendingPairings.set('alice', new Date());
     mockState.pendingPairings.set('bob', new Date());
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(mockState.pendingPairings.size).toBe(2);
     expect(mockState.pendingPairings.has('alice')).toBe(true);
@@ -207,7 +229,8 @@ describe('Watch → Polling Transition', () => {
     const mockCallback = vi.fn();
     mockState.messageCallbacks.add(mockCallback);
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(mockState.messageCallbacks.size).toBe(1);
     expect(mockState.messageCallbacks.has(mockCallback)).toBe(true);
@@ -218,7 +241,8 @@ describe('Watch → Polling Transition', () => {
     mockState.meshConnected = true;
     mockState.peerCount = 10;
 
-    await startPollingWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startPollingWatcher(mockState, mockContext);
 
     expect(mockState.connected).toBe(true);
     expect(mockState.meshConnected).toBe(true);

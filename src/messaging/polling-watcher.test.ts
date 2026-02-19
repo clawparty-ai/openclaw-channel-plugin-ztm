@@ -16,6 +16,24 @@ import { ZTMReadError } from '../types/errors.js';
 import type { ZTMChat } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
+import type { MessagingContext } from './context.js';
+
+// Helper to create a mock MessagingContext
+function createMockMessagingContext(): MessagingContext {
+  return {
+    messageStateRepo: {
+      getFileMetadata: vi.fn(() => ({})),
+      setFileMetadataBulk: vi.fn(),
+      getWatermark: vi.fn(() => 0),
+      setWatermark: vi.fn(),
+      flush: vi.fn(),
+    },
+    allowFromRepo: {
+      getAllowFrom: vi.fn(() => Promise.resolve([])),
+      clearCache: vi.fn(),
+    },
+  };
+}
 
 type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: string]: unknown };
 
@@ -166,7 +184,8 @@ describe('Polling Watcher', () => {
 
   describe('startPollingWatcher', () => {
     it('should start polling watcher with default interval', async () => {
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 2000);
       expect(mockState.watchInterval).not.toBeNull();
@@ -175,7 +194,8 @@ describe('Polling Watcher', () => {
     it('should use custom polling interval from config', async () => {
       mockState.config = { ...baseConfig, pollingInterval: 5000 } as ExtendedConfig;
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 5000);
     });
@@ -183,7 +203,8 @@ describe('Polling Watcher', () => {
     it('should enforce minimum interval of 1000ms', async () => {
       mockState.config = { ...baseConfig, pollingInterval: 100 } as ExtendedConfig;
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
     });
@@ -191,7 +212,8 @@ describe('Polling Watcher', () => {
     it('should return early if apiClient is null', async () => {
       mockState.apiClient = null;
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       expect(global.setInterval).not.toHaveBeenCalled();
       expect(mockState.watchInterval).toBeNull();
@@ -202,7 +224,8 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', 'Hello', now), createMockChat('bob', 'Hi', now)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -221,7 +244,8 @@ describe('Polling Watcher', () => {
 
       const { processIncomingMessage } = await import('./processor.js');
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -253,7 +277,8 @@ describe('Polling Watcher', () => {
 
       const { processIncomingMessage } = await import('./processor.js');
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -277,7 +302,8 @@ describe('Polling Watcher', () => {
 
       const { processIncomingMessage } = await import('./processor.js');
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -289,7 +315,8 @@ describe('Polling Watcher', () => {
     it('should handle polling errors gracefully', async () => {
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(createChatsFailure()));
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -312,7 +339,8 @@ describe('Polling Watcher', () => {
       };
       vi.mocked(processIncomingMessage).mockReturnValue(mockNormalizedMessage);
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -334,7 +362,8 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', 'Hello', now), createMockChat('bob', 'Hi', now)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -356,7 +385,8 @@ describe('Polling Watcher', () => {
 
       const { handlePairingRequest } = await import('../connectivity/permit.js');
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -375,17 +405,30 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', 'Hello', now)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      mockReadAllowFromFn = vi.fn(() => Promise.resolve(['alice', 'bob']));
+      // Create mock context with getAllowFrom that returns ['alice', 'bob']
+      const mockGetAllowFrom = vi.fn(() => Promise.resolve(['alice', 'bob']));
+      const mockContext: MessagingContext = {
+        messageStateRepo: {
+          getFileMetadata: vi.fn(() => ({})),
+          setFileMetadataBulk: vi.fn(),
+          getWatermark: vi.fn(() => 0),
+          setWatermark: vi.fn(),
+          flush: vi.fn(),
+        },
+        allowFromRepo: {
+          getAllowFrom: mockGetAllowFrom,
+          clearCache: vi.fn(),
+        },
+      };
 
-      await startPollingWatcher(mockState);
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
       }
 
-      // getAllowFrom is called with accountId and runtime
-      // The repository delegates to state.ts getAllowFromCache, which calls readAllowFromStore("ztm-chat")
-      expect(mockReadAllowFromFn).toHaveBeenCalled();
+      // getAllowFrom is called through the messaging context
+      expect(mockGetAllowFrom).toHaveBeenCalled();
     });
 
     it('should handle store read failures gracefully', async () => {
@@ -393,19 +436,31 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', 'Hello', now)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      // Simulate store read failure - the repository should return null to skip the cycle
-      // This is handled by getAllowFromCache in state.ts which catches errors
-      mockReadAllowFromFn = vi.fn(() => Promise.reject(new Error('Store read failed')));
+      // Create mock context that returns null to simulate store read failure
+      const mockContext: MessagingContext = {
+        messageStateRepo: {
+          getFileMetadata: vi.fn(() => ({})),
+          setFileMetadataBulk: vi.fn(),
+          getWatermark: vi.fn(() => 0),
+          setWatermark: vi.fn(),
+          flush: vi.fn(),
+        },
+        allowFromRepo: {
+          // Return null to simulate store read failure - this should cause the cycle to skip
+          getAllowFrom: vi.fn(() => Promise.resolve(null)),
+          clearCache: vi.fn(),
+        },
+      };
 
-      await startPollingWatcher(mockState);
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
-        // The error is caught by getAllowFromCache and returns null, which causes the cycle to return early
+        // When getAllowFrom returns null, the cycle returns early
         // So we don't expect getChats to be called when store read fails
         await setIntervalCallback();
       }
 
-      // When store read fails, getChats should NOT be called to avoid bypassing DM policy
+      // When store read fails (returns null), getChats should NOT be called to avoid bypassing DM policy
       // This is a security measure: skip the entire cycle rather than process with empty allowFrom
       expect(mockState.apiClient!.getChats).not.toHaveBeenCalled();
     });
@@ -417,7 +472,8 @@ describe('Polling Watcher', () => {
 
       const { processIncomingMessage } = await import('./processor.js');
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -435,7 +491,8 @@ describe('Polling Watcher', () => {
 
       const { processIncomingMessage } = await import('./processor.js');
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await setIntervalCallback();
@@ -450,7 +507,8 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', specialMessage, now)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await expect(setIntervalCallback()).resolves.toBeUndefined();
@@ -465,7 +523,8 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', longMessage, now)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await expect(setIntervalCallback()).resolves.toBeUndefined();
@@ -478,7 +537,8 @@ describe('Polling Watcher', () => {
       const mockChats = [createMockChat('alice', 'Zero time', 0)];
       mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      await startPollingWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
         await expect(setIntervalCallback()).resolves.toBeUndefined();

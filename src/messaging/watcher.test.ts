@@ -7,6 +7,24 @@ import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
 import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS } from '../constants.js';
+import type { MessagingContext } from './context.js';
+
+// Helper to create a mock MessagingContext
+function createMockMessagingContext(): MessagingContext {
+  return {
+    messageStateRepo: {
+      getFileMetadata: vi.fn(() => ({})),
+      setFileMetadataBulk: vi.fn(),
+      getWatermark: vi.fn(() => 0),
+      setWatermark: vi.fn(),
+      flush: vi.fn(),
+    },
+    allowFromRepo: {
+      getAllowFrom: vi.fn(() => Promise.resolve([])),
+      clearCache: vi.fn(),
+    },
+  };
+}
 
 // Mock dependencies
 vi.mock('../utils/logger.js', () => ({
@@ -176,12 +194,14 @@ describe('startMessageWatcher', () => {
   describe('initialization', () => {
     it('should return early if no apiClient', async () => {
       const stateWithoutApi = { ...mockState, apiClient: null };
-      await startMessageWatcher(stateWithoutApi as AccountRuntimeState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(stateWithoutApi as AccountRuntimeState, mockContext);
       // Should not throw and should return quickly
     });
 
     it('should call seedFileMetadata', async () => {
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
       // seedFileMetadata should have been called internally
     });
 
@@ -190,7 +210,8 @@ describe('startMessageWatcher', () => {
       const apiClient = mockState.apiClient as any;
       apiClient.getChats = vi.fn(() => mockSuccess({ value: chats }));
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       expect(apiClient.getChats).toHaveBeenCalled();
     });
@@ -198,7 +219,8 @@ describe('startMessageWatcher', () => {
 
   describe('watch loop behavior', () => {
     it('should start the watch loop', async () => {
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
       // Watch loop is started via recursive setTimeout
       // Just verify function completes without error
     });
@@ -207,7 +229,8 @@ describe('startMessageWatcher', () => {
       const apiClient = mockState.apiClient as any;
       apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       // Wait a bit for the watch loop to run
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -236,7 +259,8 @@ describe('startMessageWatcher', () => {
         })
       );
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       await new Promise(resolve => setTimeout(resolve, 100));
     });
@@ -266,7 +290,8 @@ describe('startMessageWatcher', () => {
         })
       );
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       await new Promise(resolve => setTimeout(resolve, 100));
     });
@@ -277,7 +302,8 @@ describe('startMessageWatcher', () => {
       const apiClient = mockState.apiClient as any;
       apiClient.watchChanges = vi.fn(() => Promise.reject(new Error('Network error')));
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       await new Promise(resolve => setTimeout(resolve, 100));
     });
@@ -297,7 +323,8 @@ describe('startMessageWatcher', () => {
         })
       );
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
       // Should not throw
     });
 
@@ -313,7 +340,8 @@ describe('startMessageWatcher', () => {
       apiClient.watchChanges = mockWatchChanges;
       apiClient.getPeerMessages = vi.fn(() => Promise.reject(new Error('Failed to get messages')));
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       await new Promise(resolve => setTimeout(resolve, 100));
     });
@@ -331,7 +359,8 @@ describe('startMessageWatcher', () => {
         return Promise.resolve(mockSuccess({ value: [] }));
       });
 
-      await startMessageWatcher(mockState);
+      const mockContext = createMockMessagingContext();
+      await startMessageWatcher(mockState, mockContext);
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -368,7 +397,8 @@ describe('seedFileMetadata', () => {
     };
 
     // Call startMessageWatcher which will call seedFileMetadata internally
-    await startMessageWatcher(state);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(state, mockContext);
   });
 });
 
@@ -452,7 +482,8 @@ describe('full sync behavior', () => {
       groupPermissionCache: new Map(),
     };
 
-    await startMessageWatcher(state);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(state, mockContext);
     // Should fallback to polling when error count > 5
   });
 });
@@ -532,7 +563,8 @@ describe('watch loop timing', () => {
     const apiClient = mockState.apiClient as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for at least one iteration
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -552,7 +584,8 @@ describe('watch loop timing', () => {
       return Promise.resolve(mockSuccess({ value: [] }));
     });
 
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for a couple iterations
     await new Promise(resolve => setTimeout(resolve, 2500));
@@ -651,7 +684,8 @@ describe('processChangedPaths scenarios', () => {
   });
 
   it('should handle watch changes with peer and group items', async () => {
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for processing (WATCH_INTERVAL_MS + buffer)
     await new Promise(resolve => setTimeout(resolve, 1100));
@@ -665,7 +699,8 @@ describe('processChangedPaths scenarios', () => {
     const apiClient = mockState.apiClient as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
     await new Promise(resolve => setTimeout(resolve, 1100));
 
     // Should not crash and should process without errors
@@ -744,7 +779,8 @@ describe('error threshold and polling fallback', () => {
       startPollingWatcher: pollingMock,
     }));
 
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for multiple error iterations
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -814,7 +850,8 @@ describe('watch error handling edge cases', () => {
   });
 
   it('should handle API error result gracefully', async () => {
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for error handling (WATCH_INTERVAL_MS + buffer)
     await new Promise(resolve => setTimeout(resolve, 1100));
@@ -824,7 +861,8 @@ describe('watch error handling edge cases', () => {
   });
 
   it('should increment error count on API error', async () => {
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for multiple iterations (2 * WATCH_INTERVAL_MS + buffer)
     await new Promise(resolve => setTimeout(resolve, 2100));
@@ -886,7 +924,8 @@ describe('multiple iteration scenarios', () => {
     const apiClient = mockState.apiClient as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
-    await startMessageWatcher(mockState);
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(mockState, mockContext);
 
     // Wait for at least one iteration (WATCH_INTERVAL_MS + buffer)
     await new Promise(resolve => setTimeout(resolve, 1100));

@@ -1,6 +1,9 @@
 // ZTM Chat Messaging Module
 // Barrel export for all messaging-related functionality
 
+// Context (dependency injection for messaging layer)
+export * from './context.js';
+
 // Message processing
 export * from './processor.js';
 

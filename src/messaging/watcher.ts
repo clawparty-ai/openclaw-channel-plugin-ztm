@@ -8,6 +8,7 @@ import { container, DEPENDENCIES } from '../di/index.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { startPollingWatcher } from './polling.js';
 import { processAndNotifyChat } from './chat-processor.js';
+import type { MessagingContext } from './context.js';
 import {
   processAndNotifyPeerMessages,
   processAndNotifyGroupMessages,
@@ -35,21 +36,23 @@ import {
  * 4. Falls back to polling if watch errors accumulate
  *
  * @param state - Account runtime state with config and API client
+ * @param context - Messaging context with repository dependencies
  */
-export async function startMessageWatcher(state: AccountRuntimeState): Promise<void> {
+export async function startMessageWatcher(
+  state: AccountRuntimeState,
+  context: MessagingContext
+): Promise<void> {
   const { apiClient } = state;
   if (!apiClient) return;
 
   const messagePath = '/apps/ztm/chat/shared/';
 
   // Step 1: Seed the API client's lastSeenTimes from persisted state
-  await seedFileMetadata(state);
+  await seedFileMetadata(state, context);
 
   // Step 2: Get initial allowFrom store (uses cache)
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
-  const storeAllowFrom = await container
-    .get(DEPENDENCIES.ALLOW_FROM_REPO)
-    .getAllowFrom(state.accountId, rt);
+  const storeAllowFrom = await context.allowFromRepo.getAllowFrom(state.accountId, rt);
   // If store read fails during init, use empty array to allow basic functionality
   const initAllowFrom = getOrDefault(storeAllowFrom, []);
 
@@ -61,18 +64,19 @@ export async function startMessageWatcher(state: AccountRuntimeState): Promise<v
   await handleInitialPairingRequests(state, initAllowFrom, chats);
 
   // Step 6: Start watch loop
-  startWatchLoop(state, rt, messagePath);
+  startWatchLoop(state, rt, messagePath, context);
 }
 
 /**
  * Seed API client with persisted file metadata
  */
-async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
+async function seedFileMetadata(
+  state: AccountRuntimeState,
+  context: MessagingContext
+): Promise<void> {
   if (!state.apiClient) return;
 
-  const persistedMetadata = container
-    .get(DEPENDENCIES.MESSAGE_STATE_REPO)
-    .getFileMetadata(state.accountId);
+  const persistedMetadata = context.messageStateRepo.getFileMetadata(state.accountId);
   if (Object.keys(persistedMetadata).length > 0) {
     state.apiClient.seedFileMetadata(persistedMetadata);
     logger.info(
@@ -151,7 +155,8 @@ class WatchLoopController {
   constructor(
     private readonly state: AccountRuntimeState,
     private readonly rt: PluginRuntime,
-    private readonly messagePath: string
+    private readonly messagePath: string,
+    private readonly context: MessagingContext
   ) {
     this.messageSemaphore = new Semaphore(MESSAGE_SEMAPHORE_PERMITS);
   }
@@ -261,7 +266,7 @@ class WatchLoopController {
     if (this.state.watchErrorCount > WATCH_ERROR_THRESHOLD) {
       logger.warn(`[${this.state.accountId}] Too many watch errors, falling back to polling`);
       this.state.watchErrorCount = 0;
-      startPollingWatcher(this.state);
+      startPollingWatcher(this.state, this.context);
     }
   }
 
@@ -292,7 +297,8 @@ class WatchLoopController {
       },
       items,
       previousMessagesReceived,
-      storeAllowFrom => this.scheduleFullSync(storeAllowFrom)
+      storeAllowFrom => this.scheduleFullSync(storeAllowFrom),
+      this.context
     );
   }
 
@@ -307,9 +313,10 @@ class WatchLoopController {
       logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
       await performFullSync(this.state, storeAllowFrom);
       if (this.state.apiClient) {
-        container
-          .get(DEPENDENCIES.MESSAGE_STATE_REPO)
-          .setFileMetadataBulk(this.state.accountId, this.state.apiClient.exportFileMetadata());
+        this.context.messageStateRepo.setFileMetadataBulk(
+          this.state.accountId,
+          this.state.apiClient.exportFileMetadata()
+        );
       }
     }, FULL_SYNC_DELAY_MS);
   }
@@ -326,8 +333,13 @@ interface WatchContext {
 /**
  * Start the watch loop that monitors for changes
  */
-function startWatchLoop(state: AccountRuntimeState, rt: PluginRuntime, messagePath: string): void {
-  const controller = new WatchLoopController(state, rt, messagePath);
+function startWatchLoop(
+  state: AccountRuntimeState,
+  rt: PluginRuntime,
+  messagePath: string,
+  context: MessagingContext
+): void {
+  const controller = new WatchLoopController(state, rt, messagePath, context);
   controller.start();
 }
 
@@ -338,7 +350,8 @@ async function processChangedPaths(
   ctx: WatchContext,
   changedItems: WatchChangeItem[],
   messagesReceivedInCycle: boolean,
-  scheduleFullSync: (storeAllowFrom: string[]) => void
+  scheduleFullSync: (storeAllowFrom: string[]) => void,
+  messagingContext: MessagingContext
 ): Promise<boolean> {
   const { state, rt, messageSemaphore } = ctx;
 
@@ -362,9 +375,7 @@ async function processChangedPaths(
   );
 
   // Use cached allowFrom to avoid redundant async calls every watch cycle
-  const loopStoreAllowFrom = await container
-    .get(DEPENDENCIES.ALLOW_FROM_REPO)
-    .getAllowFrom(state.accountId, rt);
+  const loopStoreAllowFrom = await messagingContext.allowFromRepo.getAllowFrom(state.accountId, rt);
   // If store read fails, use cached value or empty array
   const effectiveAllowFrom = getOrDefault(loopStoreAllowFrom, []);
 
@@ -412,9 +423,10 @@ async function processChangedPaths(
 
   scheduleFullSync(effectiveAllowFrom);
   if (state.apiClient) {
-    container
-      .get(DEPENDENCIES.MESSAGE_STATE_REPO)
-      .setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+    messagingContext.messageStateRepo.setFileMetadataBulk(
+      state.accountId,
+      state.apiClient.exportFileMetadata()
+    );
   }
 
   return true;
