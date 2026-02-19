@@ -55,9 +55,23 @@ export class AccountStateManager {
   }
 
   private createEmptyState(accountId: string): AccountRuntimeState {
+    // Create a minimal config with required defaults to prevent runtime errors
+    // when properties are accessed before full initialization
+    const emptyConfig: ZTMChatConfig = {
+      agentUrl: '',
+      permitUrl: '',
+      permitSource: 'server',
+      meshName: '',
+      username: '',
+      dmPolicy: 'allow',
+      enableGroups: false,
+      autoReply: false,
+      messagePath: '/',
+    };
+
     return {
       accountId,
-      config: {} as ZTMChatConfig,
+      config: emptyConfig,
       apiClient: null,
       connected: false,
       meshConnected: false,
