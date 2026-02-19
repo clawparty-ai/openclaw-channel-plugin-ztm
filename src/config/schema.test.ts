@@ -166,4 +166,26 @@ describe('ZTMChatConfigSchema', () => {
       expect(result.valid).toBe(true);
     });
   });
+
+  describe('Empty config rejection', () => {
+    it('should reject completely empty config object', () => {
+      const result = validateZTMChatConfig({});
+      expect(result.valid).toBe(false);
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.length).toBeGreaterThan(0);
+    });
+
+    it('should reject config with only partial fields', () => {
+      const result = validateZTMChatConfig({
+        agentUrl: 'http://localhost:7777',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toBeDefined();
+      // Should have errors for missing required fields
+      const missingFields = result.errors?.map(e => e.field);
+      expect(missingFields).toContain('permitSource');
+      expect(missingFields).toContain('meshName');
+      expect(missingFields).toContain('username');
+    });
+  });
 });
