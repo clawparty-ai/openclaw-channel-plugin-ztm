@@ -382,14 +382,16 @@ To approve, run: openclaw pairing approve ztm-chat ${peer}`;
 
     it('should handle boundary at exactly 1 hour', () => {
       const sender = 'alice';
+      // Capture time once to avoid boundary issues
+      const now = Date.now();
       // Set pairing at exactly 1 hour ago
-      const boundaryTimestamp = new Date(Date.now() - 60 * 60 * 1000);
+      const boundaryTimestamp = new Date(now - 60 * 60 * 1000);
       mockState.pendingPairings.set(sender, boundaryTimestamp);
 
       const isPending = (sender: string) => {
         const timestamp = mockState.pendingPairings.get(sender);
         if (!timestamp) return false;
-        return Date.now() - timestamp.getTime() <= 60 * 60 * 1000;
+        return now - timestamp.getTime() <= 60 * 60 * 1000;
       };
 
       // At exactly 1 hour, it's still pending (using <=)
