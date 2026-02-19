@@ -67,6 +67,7 @@ conventional_commits = true
 filter_unconventional = false
 protect_breaking_commits = true
 commit_parsers = [
+    { message = "^chore", skip = true },
     { message = "^feat", group = "A Features" },
     { message = "^fix", group = "B Bug Fixes" },
     { message = "^security", group = "C Security" },
@@ -76,7 +77,7 @@ commit_parsers = [
     { message = "^style", group = "G Styling" },
     { message = "^build", group = "H Build" },
     { message = "^doc", group = "I Documentation" },
-    { message = "^chore|^ci", group = "Z Miscellaneous Tasks" },
+    { message = "^ci", group = "Z Miscellaneous Tasks" },
     { body = ".*security", group = "C Security" },
     { message = "^chore\\(deps.*\\)", skip = true },
     { message = "^chore\\(pr\\)", skip = true },
