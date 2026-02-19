@@ -742,7 +742,7 @@ curl -X POST http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/gr
 npm install
 npm test            # Run all tests
 npm test:watch     # Watch mode
-npm test:coverage  # Run tests with coverage
+npm run test:coverage  # Run tests with coverage
 ```
 
 ### Test Coverage
