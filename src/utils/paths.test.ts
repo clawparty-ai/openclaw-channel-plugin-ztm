@@ -238,6 +238,48 @@ describe('Path Resolution Utilities', () => {
     });
   });
 
+  describe('resolvePermitPathWithOverrides - security', () => {
+    it('should reject path traversal with ../ sequences', () => {
+      expect(() =>
+        resolvePermitPathWithOverrides({
+          ZTM_STATE_PATH: '/allowed/../../../etc/passwd',
+        })
+      ).toThrow('path traversal detected');
+    });
+
+    it('should reject path traversal with ..\\ sequences', () => {
+      expect(() =>
+        resolvePermitPathWithOverrides({
+          ZTM_STATE_PATH: 'C:\\allowed\\..\\..\\windows\\system32',
+        })
+      ).toThrow('path traversal detected');
+    });
+
+    it('should reject URL-encoded path traversal %2e%2e', () => {
+      expect(() =>
+        resolvePermitPathWithOverrides({
+          ZTM_STATE_PATH: '/allowed/%2e%2e/%2e%2e/etc/passwd',
+        })
+      ).toThrow('path traversal detected');
+    });
+
+    it('should reject mixed encoding path traversal', () => {
+      expect(() =>
+        resolvePermitPathWithOverrides({
+          ZTM_STATE_PATH: '/allowed/..%2f..%2fetc/passwd',
+        })
+      ).toThrow('path traversal detected');
+    });
+
+    it('should reject null bytes in path', () => {
+      expect(() =>
+        resolvePermitPathWithOverrides({
+          ZTM_STATE_PATH: '/allowed/../../../etc/passwd\x00',
+        })
+      ).toThrow('path traversal detected');
+    });
+  });
+
   describe('Constants', () => {
     it('should have correct ZTM_SUBDIR', () => {
       expect(ZTM_SUBDIR).toBe('ztm');

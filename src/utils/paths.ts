@@ -5,6 +5,7 @@
 
 import os from 'os';
 import path from 'path';
+import { containsPathTraversal } from './validation.js';
 
 /**
  * Environment variables that can override the default state directory
@@ -176,6 +177,10 @@ export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptio
 
   // Check explicit ZTM_STATE_PATH override
   if (env.ZTM_STATE_PATH) {
+    // Security: Validate against path traversal attacks BEFORE processing
+    if (containsPathTraversal(env.ZTM_STATE_PATH)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     const resolved = resolvePath(env.ZTM_STATE_PATH);
     if (path.extname(resolved)) {
       return path.dirname(resolved);
@@ -185,16 +190,32 @@ export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptio
 
   // Check explicit OPENCLAW_STATE_DIR override
   if (env.OPENCLAW_STATE_DIR) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(env.OPENCLAW_STATE_DIR)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     return path.join(resolvePath(env.OPENCLAW_STATE_DIR), ZTM_SUBDIR);
   }
 
   // Resolve home directory
   let homeDir: string;
   if (env.OPENCLAW_HOME) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(env.OPENCLAW_HOME)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     homeDir = resolvePath(env.OPENCLAW_HOME);
   } else if (env.HOME) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(env.HOME)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     homeDir = resolvePath(env.HOME);
   } else if (env.USERPROFILE) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(env.USERPROFILE)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     homeDir = resolvePath(env.USERPROFILE);
   } else if (env.homedir) {
     homeDir = resolvePath(env.homedir());
@@ -230,5 +251,12 @@ export function resolveStatePathWithOverrides(overrides?: ResolveStateDirOptions
  * @internal - exported for testing only
  */
 export function resolvePermitPathWithOverrides(overrides?: ResolveStateDirOptions): string {
-  return path.join(resolveZTMStateDirWithOverrides(overrides), 'permit.json');
+  const baseDir = resolveZTMStateDirWithOverrides(overrides);
+
+  // Security: Validate against path traversal attacks
+  if (containsPathTraversal(baseDir)) {
+    throw new Error('Invalid path: path traversal detected');
+  }
+
+  return path.join(baseDir, 'permit.json');
 }
