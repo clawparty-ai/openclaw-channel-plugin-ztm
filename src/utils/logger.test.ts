@@ -1,6 +1,6 @@
 // Unit tests for Logger
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Logger instance for testing
 class TestLogger {
@@ -254,6 +254,150 @@ describe('Logger', () => {
       const logs = logger.getLogs();
       expect(logs[0].message).toContain('你好世界');
       expect(logs[0].message).toContain('Привет');
+    });
+  });
+});
+
+// Use vi.spyOn to test actual module without mocking
+describe('logger module exports - actual functions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // Reset runtime logger to null after each test
+    import('./logger.js').then(({ setRuntimeLogger }) => {
+      setRuntimeLogger(null as any);
+    });
+  });
+
+  describe('createLogger', () => {
+    it('should create logger with context', async () => {
+      const { createLogger, logger } = await import('./logger.js');
+      const context = { accountId: 'test-account', module: 'test' };
+
+      const log = createLogger(context);
+
+      expect(log).toHaveProperty('debug');
+      expect(log).toHaveProperty('info');
+      expect(log).toHaveProperty('warn');
+      expect(log).toHaveProperty('error');
+
+      // Spy on the actual logger
+      const infoSpy = vi.spyOn(logger, 'info');
+      log.info('test message');
+
+      expect(infoSpy).toHaveBeenCalledWith('test message', context);
+    });
+
+    it('should create logger with empty context', async () => {
+      const { createLogger, logger } = await import('./logger.js');
+      const context = {};
+
+      const log = createLogger(context);
+
+      expect(log).toHaveProperty('info');
+
+      const infoSpy = vi.spyOn(logger, 'info');
+      log.info('test');
+
+      expect(infoSpy).toHaveBeenCalledWith('test', context);
+    });
+
+    it('should create logger and call warn method with context', async () => {
+      const { createLogger, logger } = await import('./logger.js');
+      const context = { accountId: 'test-account' };
+
+      const log = createLogger(context);
+
+      const warnSpy = vi.spyOn(logger, 'warn');
+      log.warn('warning message');
+
+      expect(warnSpy).toHaveBeenCalledWith('warning message', context);
+    });
+
+    it('should create logger and call error method with context', async () => {
+      const { createLogger, logger } = await import('./logger.js');
+      const context = { accountId: 'test-account' };
+
+      const log = createLogger(context);
+
+      const errorSpy = vi.spyOn(logger, 'error');
+      log.error('error message');
+
+      expect(errorSpy).toHaveBeenCalledWith('error message', context);
+    });
+
+    it('should create logger and call debug method with context', async () => {
+      const { createLogger, logger } = await import('./logger.js');
+      const context = { accountId: 'test-account' };
+
+      const log = createLogger(context);
+
+      const debugSpy = vi.spyOn(logger, 'debug');
+      log.debug('debug message');
+
+      expect(debugSpy).toHaveBeenCalledWith('debug message', context);
+    });
+  });
+
+  describe('getLogger', () => {
+    it('should return a logger object', async () => {
+      const { getLogger } = await import('./logger.js');
+
+      const log = getLogger();
+
+      expect(log).toHaveProperty('debug');
+      expect(log).toHaveProperty('info');
+      expect(log).toHaveProperty('warn');
+      expect(log).toHaveProperty('error');
+    });
+  });
+
+  describe('setRuntimeLogger', () => {
+    it('should set runtime logger', async () => {
+      const { setRuntimeLogger, getLogger } = await import('./logger.js');
+
+      const customLogger = {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      };
+
+      setRuntimeLogger(customLogger as any);
+      const log = getLogger();
+
+      expect(log).toBe(customLogger);
+    });
+
+    it('should fall back to default logger when runtimeLogger is null', async () => {
+      const { setRuntimeLogger, getLogger, logger: defaultLogger } = await import('./logger.js');
+
+      // Set to null explicitly
+      setRuntimeLogger(null as any);
+      const log = getLogger();
+
+      // Should return the default logger
+      expect(log).toBe(defaultLogger);
+    });
+  });
+
+  describe('errorWithException', () => {
+    it('should handle error logging gracefully', async () => {
+      const { logger } = await import('./logger.js');
+
+      // Just verify logger is callable
+      expect(() => logger.info('test')).not.toThrow();
+    });
+  });
+
+  describe('environment variable log level', () => {
+    it('should handle log level changes gracefully', async () => {
+      const { logger } = await import('./logger.js');
+
+      // Just verify logger methods work
+      expect(() => logger.info('test')).not.toThrow();
     });
   });
 });

@@ -12,7 +12,11 @@ import {
   ZTMTimeoutError,
   ZTMRuntimeError,
   ZTMConfigError,
+  toFailure,
+  tryCatch,
+  tryCatchAsync,
 } from './errors.js';
+import { isSuccess } from './common.js';
 
 describe('ZTMError', () => {
   describe('base functionality', () => {
@@ -215,5 +219,133 @@ describe('ZTMConfigError', () => {
     expect(error.context.field).toBe('username');
     expect(error.context.value).toBe('');
     expect(error.context.reason).toBe('Username is required');
+  });
+});
+
+describe('toFailure', () => {
+  it('should convert Error to failed Result', () => {
+    const error = new Error('Test error');
+    const result = toFailure(error);
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect((result as any).error.message).toBe('Test error');
+    }
+  });
+});
+
+describe('tryCatch', () => {
+  it('should return success when function succeeds', () => {
+    const result = tryCatch(() => {
+      return 'success value';
+    });
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value).toBe('success value');
+    }
+  });
+
+  it('should return failure when function throws Error', () => {
+    const result = tryCatch(() => {
+      throw new Error('Function failed');
+    });
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect((result as any).error.message).toBe('Function failed');
+    }
+  });
+
+  it('should return failure when function throws non-Error', () => {
+    const result = tryCatch(() => {
+      throw 'string error';
+    });
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect((result as any).error.message).toBe('string error');
+    }
+  });
+
+  it('should use custom error constructor when provided', () => {
+    class CustomError extends Error {
+      constructor(
+        message: string,
+        public readonly extra: string,
+        cause?: Error
+      ) {
+        super(message, { cause });
+        this.name = 'CustomError';
+      }
+    }
+
+    const result = tryCatch(() => {
+      throw new Error('Original error');
+    }, CustomError as any);
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect(result.error).toBeInstanceOf(CustomError);
+      expect((result as any).error.message).toBe('Original error');
+    }
+  });
+});
+
+describe('tryCatchAsync', () => {
+  it('should return success when async function succeeds', async () => {
+    const result = await tryCatchAsync(async () => {
+      return 'async success';
+    });
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value).toBe('async success');
+    }
+  });
+
+  it('should return failure when async function throws Error', async () => {
+    const result = await tryCatchAsync(async () => {
+      throw new Error('Async function failed');
+    });
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect((result as any).error.message).toBe('Async function failed');
+    }
+  });
+
+  it('should return failure when async function throws non-Error', async () => {
+    const result = await tryCatchAsync(async () => {
+      throw { code: 'ERR_CODE' };
+    });
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect((result as any).error.message).toContain('[object Object]');
+    }
+  });
+
+  it('should use custom error constructor when provided', async () => {
+    class ApiError extends Error {
+      constructor(
+        message: string,
+        public readonly status: number,
+        cause?: Error
+      ) {
+        super(message, { cause });
+        this.name = 'ApiError';
+      }
+    }
+
+    const result = await tryCatchAsync(async () => {
+      throw new Error('API failed');
+    }, ApiError as any);
+
+    expect(isSuccess(result)).toBe(false);
+    if (!isSuccess(result)) {
+      expect(result.error).toBeInstanceOf(ApiError);
+      expect((result as any).error.message).toBe('API failed');
+    }
   });
 });
