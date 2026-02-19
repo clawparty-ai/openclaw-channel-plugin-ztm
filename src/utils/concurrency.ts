@@ -3,11 +3,11 @@
 
 /**
  * Waiter entry in the semaphore queue
- * Uses a resolved flag to prevent race conditions in timeout scenarios
+ * Uses Promise internal state to prevent race conditions in timeout scenarios
  */
 interface Waiter {
+  promise: Promise<boolean>;
   resolve: (value: boolean) => void;
-  resolved: boolean; // Flag to prevent double-resolution
 }
 
 /**
@@ -44,64 +44,57 @@ export class Semaphore {
     if (timeoutMs === undefined) {
       return new Promise<boolean>(resolve => {
         this.waiters.push({
+          promise: Promise.resolve(true),
           resolve: value => resolve(value),
-          resolved: false,
         });
       });
     }
 
-    // With timeout, race between permit availability and timeout
-    return new Promise<boolean>(resolve => {
-      const waiter: Waiter = {
-        resolve: (value: boolean) => {
-          // Mark as resolved before calling the actual resolve
-          // This prevents double-resolution in race conditions
-          waiter.resolved = true;
-          clearTimeout(timeoutId);
-          resolve(value);
-        },
-        resolved: false,
-      };
-
-      // Set up timeout handler
-      const timeoutId = setTimeout(() => {
-        // Check if this waiter is still in the queue and not yet resolved
-        const index = this.waiters.indexOf(waiter);
-        if (index !== -1 && !waiter.resolved) {
-          // Remove from queue before resolving to prevent re-resolution
-          this.waiters.splice(index, 1);
-          // Now safe to resolve(false) - removed from queue so release() won't find it
-          waiter.resolve(false);
-        }
-        // If already removed and resolved by release(), do nothing
-      }, timeoutMs);
-
-      // Add to queue after timeout is set up
-      this.waiters.push(waiter);
+    // With timeout: use Promise settled state to prevent race condition
+    // The key fix: we resolve with a unique symbol to detect race condition
+    let settleResolve: (value: boolean) => void;
+    const promise = new Promise<boolean>(resolve => {
+      settleResolve = resolve;
     });
+
+    const waiter: Waiter = {
+      promise,
+      resolve: (value: boolean) => {
+        // Clear timeout first to prevent timeout callback from also resolving
+        clearTimeout(timeoutId);
+        settleResolve(value);
+      },
+    };
+
+    // Set up timeout handler - checks queue membership to detect race with release()
+    const timeoutId = setTimeout(() => {
+      // Only resolve if waiter is still in the queue (not handled by release())
+      const index = this.waiters.indexOf(waiter);
+      if (index !== -1) {
+        this.waiters.splice(index, 1);
+        waiter.resolve(false);
+      }
+      // If not in queue, release() already handled it - do nothing
+    }, timeoutMs);
+
+    // Add to queue after timeout is set up
+    this.waiters.push(waiter);
+
+    return promise;
   }
 
   /**
    * Release a permit, making it available to waiting acquire calls
    *
-   * Thread-safety: Uses resolved flag to prevent race conditions with timeout
+   * Thread-safety: Removes from queue atomically before resolving
+   * The timeout callback checks queue membership, so this prevents race condition
    */
   release(): void {
-    // Find the first unresolved waiter
-    const waiter = this.waiters.find(w => !w.resolved);
+    // Remove first waiter from queue FIRST (atomic with respect to timeout check)
+    const waiter = this.waiters.shift();
 
     if (waiter) {
-      // Mark as resolved BEFORE removing from queue to prevent race with timeout
-      // This ensures timeout callback will see resolved=true and not double-resolve
-      waiter.resolved = true;
-
-      // Remove from queue before resolving
-      const index = this.waiters.indexOf(waiter);
-      if (index !== -1) {
-        this.waiters.splice(index, 1);
-      }
-
-      // Now safe to resolve
+      // Now safe to resolve - timeout will see waiter is not in queue
       waiter.resolve(true);
     } else {
       // No waiters, increment permits
