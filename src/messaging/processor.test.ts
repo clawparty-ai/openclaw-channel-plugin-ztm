@@ -147,4 +147,75 @@ describe('Message Processor', () => {
       expect(result?.content).toBe('Hello world');
     });
   });
+
+  describe('Message content sanitization (XSS prevention)', () => {
+    const baseMessage = { time: Date.now(), sender: 'alice' };
+    const context = { config: testConfigOpenDM, storeAllowFrom: [] as string[], accountId: 'test' };
+
+    it('should escape <script> tags to prevent XSS', () => {
+      const message = '<script>alert("xss")</script>';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      // After escaping, <script> becomes &lt;script&gt; which is not executable
+      expect(result?.content).not.toContain('<script>');
+      expect(result?.content).toContain('&lt;script&gt;');
+    });
+
+    it('should escape img onerror tags to prevent XSS', () => {
+      const message = '<img src=x onerror=alert(1)>';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      // After escaping, the HTML tag becomes harmless text
+      expect(result?.content).toContain('&lt;img');
+      expect(result?.content).not.toContain('<img');
+    });
+
+    it('should escape HTML special characters', () => {
+      const message = 'Test & <script>alert(1)</script> & "quotes"';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.content).toContain('&amp;');
+      expect(result?.content).toContain('&lt;');
+      expect(result?.content).toContain('&quot;');
+    });
+
+    it('should escape HTML in sender field', () => {
+      const message = { ...baseMessage, sender: '<script>evil()</script>', message: 'hello' };
+      const result = processIncomingMessage(message, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.sender).not.toContain('<script>');
+      expect(result?.sender).toContain('&lt;script&gt;');
+    });
+
+    it('should escape nested HTML tags', () => {
+      const message = '<div onclick="alert(1)"><script>evil()</script></div>';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      // All HTML becomes escaped text, not executable
+      expect(result?.content).toContain('&lt;div');
+      expect(result?.content).toContain('&lt;script&gt;');
+    });
+
+    it('should preserve plain text content unchanged', () => {
+      const message = 'Hello world! This is a plain message.';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.content).toBe('Hello world! This is a plain message.');
+    });
+
+    it('should escape mixed content with text and HTML', () => {
+      const message = 'Hello <b>world</b>!';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      // HTML tags are escaped, making them safe text
+      expect(result?.content).toContain('&lt;b&gt;');
+    });
+  });
 });
