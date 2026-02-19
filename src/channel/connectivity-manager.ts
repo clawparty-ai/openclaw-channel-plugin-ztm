@@ -4,10 +4,10 @@
 import * as fs from 'fs';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMeshInfo } from '../api/ztm-api.js';
-import { createZTMApiClient } from '../api/ztm-api.js';
 import { isSuccess } from '../types/common.js';
 import { resolvePermitPath } from '../utils/paths.js';
 import { checkPortOpen, getIdentity, joinMesh } from '../connectivity/mesh.js';
+import { createZTMApiClient } from '../api/ztm-api.js';
 import { requestPermit, savePermitData, loadPermitFromFile } from '../connectivity/permit.js';
 import type { PermitData } from '../types/connectivity.js';
 import { PROBE_TIMEOUT_MS } from '../constants.js';
@@ -100,6 +100,7 @@ export async function joinMeshIfNeeded(
   permitData: PermitData,
   ctx: { log?: { info: (...args: unknown[]) => void } }
 ): Promise<void> {
+  // Create API client directly
   const preCheckClient = createZTMApiClient(config);
   let alreadyConnected = false;
   const preCheckResult = await preCheckClient.getMeshInfo();
@@ -140,6 +141,7 @@ export async function probeAccount({
     };
   }
 
+  // Create API client directly
   const apiClient = createZTMApiClient(config);
   const meshResult = await apiClient.getMeshInfo();
 

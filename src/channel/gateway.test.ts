@@ -151,13 +151,24 @@ vi.mock('../runtime/index.js', () => ({
 
 vi.mock('../di/index.js', () => ({
   DEPENDENCIES: {
-    RUNTIME: Symbol('runtime'),
-    MESSAGE_STATE_REPO: Symbol('message-state-repo'),
-    ALLOW_FROM_REPO: Symbol('allow-from-repo'),
+    RUNTIME: Symbol('ztm:runtime'),
+    MESSAGE_STATE_REPO: Symbol('ztm:message-state-repo'),
+    ALLOW_FROM_REPO: Symbol('ztm:allow-from-repo'),
+    API_CLIENT_FACTORY: Symbol('ztm:api-client-factory'),
+    ACCOUNT_STATE_MANAGER: Symbol('ztm:account-state-manager'),
   },
   container: {
     get: vi.fn(key => {
-      if (String(key) === 'Symbol(runtime)') {
+      const keyStr = String(key);
+      console.log('MOCK get() called with key:', keyStr);
+      if (keyStr.includes('ztm:api-client-factory')) {
+        const factory = vi.fn(() => ({
+          getMeshInfo: vi.fn(() => ({ ok: true, value: { connected: true, endpoints: 1 } })),
+        }));
+        console.log('API_CLIENT_FACTORY mock returning:', typeof factory, factory());
+        return factory;
+      }
+      if (keyStr.includes('ztm:runtime')) {
         return {
           get: () => ({
             channel: {
@@ -182,17 +193,27 @@ vi.mock('../di/index.js', () => ({
           }),
         };
       }
-      if (String(key) === 'Symbol(message-state-repo)') {
+      if (keyStr.includes('ztm:message-state-repo')) {
         return {
           getFileMetadata: vi.fn(() => ({})),
           setFileMetadataBulk: vi.fn(),
         };
       }
-      if (String(key) === 'Symbol(allow-from-repo)') {
+      if (keyStr.includes('ztm:allow-from-repo')) {
         return {
           getAllowFrom: vi.fn(() => Promise.resolve([])),
           addAllowFrom: vi.fn(),
           removeAllowFrom: vi.fn(),
+        };
+      }
+      if (keyStr.includes('ztm:api-client-factory')) {
+        return vi.fn(() => ({
+          getMeshInfo: vi.fn(() => ({ ok: true, value: { connected: true, endpoints: 1 } })),
+        }));
+      }
+      if (keyStr.includes('ztm:account-state-manager')) {
+        return {
+          getOrCreate: vi.fn(() => ({})),
         };
       }
       return null;

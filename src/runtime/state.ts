@@ -7,16 +7,20 @@
 // - Runtime start/stop operations
 // - State retrieval utilities
 
-import { logger } from '../utils/logger.js';
+// External dependencies - these will use DI
+import { createZTMApiClient } from '../api/ztm-api.js';
+import { logger, type Logger } from '../utils/logger.js';
+
+// Pure functions - keep as direct imports (deterministic, no side effects)
+import { getGroupPermission } from '../core/group-policy.js';
+
 import { getAccountMessageStateStore } from './store.js';
 import { GroupPermissionLRUCache } from './cache.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
-import { createZTMApiClient } from '../api/ztm-api.js';
 import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMMeshInfo } from '../types/api.js';
+import type { ZTMMeshInfo, ZTMApiClient } from '../types/api.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { GroupPermissions } from '../types/group-policy.js';
-import { getGroupPermission } from '../core/group-policy.js';
 import { isSuccess } from '../types/common.js';
 import { Semaphore } from '../utils/concurrency.js';
 import {
@@ -28,6 +32,12 @@ import {
   RETRY_DELAY_MS,
   CALLBACK_SEMAPHORE_PERMITS,
 } from '../constants.js';
+
+// Dependencies interface for AccountStateManager
+interface AccountStateManagerDeps {
+  apiClientFactory: (config: ZTMChatConfig) => ZTMApiClient;
+  logger: Logger;
+}
 
 // Re-export types and cache for backward compatibility
 export type { AccountRuntimeState };
@@ -41,6 +51,11 @@ export { GroupPermissionLRUCache } from './cache.js';
  */
 export class AccountStateManager {
   private states = new Map<string, AccountRuntimeState>();
+  private deps: AccountStateManagerDeps;
+
+  constructor(deps: AccountStateManagerDeps) {
+    this.deps = deps;
+  }
 
   /**
    * Get or create account state
@@ -137,7 +152,7 @@ export class AccountStateManager {
         }
       }
       if (removed > 0) {
-        logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
+        this.deps.logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
         totalRemoved += removed;
       }
     }
@@ -159,7 +174,7 @@ export class AccountStateManager {
       try {
         return await runtime.channel.pairing.readAllowFromStore('ztm-chat');
       } catch (err) {
-        logger.error(
+        this.deps.logger.error(
           `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
         );
         return null;
@@ -180,7 +195,7 @@ export class AccountStateManager {
       };
       return freshAllowFrom;
     } catch (err) {
-      logger.error(
+      this.deps.logger.error(
         `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
       );
       if (state.allowFromCache) {
@@ -243,7 +258,8 @@ export class AccountStateManager {
     const state = this.getOrCreate(accountId);
     state.config = config;
 
-    const apiClient = createZTMApiClient(config);
+    // Create API client via DI factory
+    const apiClient = this.deps.apiClientFactory(config);
 
     let meshInfo: ZTMMeshInfo | null = null;
 
@@ -251,7 +267,7 @@ export class AccountStateManager {
       const meshResult = await apiClient.getMeshInfo();
       if (!isSuccess(meshResult)) {
         if (attempt < MESH_CONNECT_MAX_RETRIES) {
-          logger.info(
+          this.deps.logger.info(
             `[${accountId}] Mesh info request failed (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
           );
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
@@ -261,7 +277,7 @@ export class AccountStateManager {
       meshInfo = meshResult.value;
       if (meshInfo.connected) break;
       if (attempt < MESH_CONNECT_MAX_RETRIES) {
-        logger.info(
+        this.deps.logger.info(
           `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MESH_CONNECT_MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
         );
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
@@ -272,7 +288,7 @@ export class AccountStateManager {
       state.lastError = 'Failed to get mesh info after retries';
       state.connected = false;
       state.meshConnected = false;
-      logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
+      this.deps.logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
       return false;
     }
 
@@ -282,7 +298,9 @@ export class AccountStateManager {
     state.peerCount = meshInfo.endpoints;
     state.lastError = meshInfo.connected ? null : 'Not connected to ZTM mesh';
 
-    logger.info(`[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`);
+    this.deps.logger.info(
+      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
+    );
 
     return meshInfo.connected;
   }
@@ -310,12 +328,15 @@ export class AccountStateManager {
 
     getAccountMessageStateStore(accountId).flush();
 
-    logger.info(`[${accountId}] Stopped`);
+    this.deps.logger.info(`[${accountId}] Stopped`);
   }
 }
 
-// Singleton instance
-const accountStateManager = new AccountStateManager();
+// Singleton instance with default dependencies
+const accountStateManager = new AccountStateManager({
+  apiClientFactory: createZTMApiClient,
+  logger: logger,
+});
 
 /**
  * Get the AccountStateManager singleton instance

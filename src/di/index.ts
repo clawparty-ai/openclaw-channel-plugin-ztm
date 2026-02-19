@@ -2,6 +2,7 @@
 // Barrel exports for DI container and service factories
 
 import type { ILogger, IConfig, IApiClient, IApiClientFactory, IRuntime } from './container';
+import { DEPENDENCIES, container } from './container';
 
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 
@@ -122,11 +123,48 @@ export function createApiClientFactory(): () => IApiClientFactory {
 }
 
 /**
- * AccountStateManager factory
+ * AccountStateManager factory with DI
  * Returns a factory function for DI container registration
  */
 export function createAccountStateManagerService(): () => unknown {
   // Import here to avoid circular dependencies
-  const { getAccountStateManager } = require('../runtime/state.js');
-  return () => getAccountStateManager();
+  const { AccountStateManager } = require('../runtime/state.js');
+  const { createZTMApiClient } = require('../api/ztm-api.js');
+  const { logger } = require('../utils/logger.js');
+
+  return () =>
+    new AccountStateManager({
+      apiClientFactory: createZTMApiClient,
+      logger: logger,
+    });
+}
+
+// ============================================================================
+// HELPER FUNCTIONS FOR STATE MANAGEMENT
+// ============================================================================
+
+/**
+ * Get AccountStateManager instance via DI container
+ * Provides centralized access to account state management
+ */
+export function getAccountStateManagerService(): import('../runtime/state.js').AccountStateManager {
+  return container.get(
+    DEPENDENCIES.ACCOUNT_STATE_MANAGER
+  ) as import('../runtime/state.js').AccountStateManager;
+}
+
+/**
+ * Get MessageStateRepository instance via DI container
+ * Provides centralized access to message state persistence
+ */
+export function getMessageStateRepositoryService(): IMessageStateRepository {
+  return container.get(DEPENDENCIES.MESSAGE_STATE_REPO);
+}
+
+/**
+ * Get AllowFromRepository instance via DI container
+ * Provides centralized access to pairing allow list persistence
+ */
+export function getAllowFromRepositoryService(): IAllowFromRepository {
+  return container.get(DEPENDENCIES.ALLOW_FROM_REPO);
 }

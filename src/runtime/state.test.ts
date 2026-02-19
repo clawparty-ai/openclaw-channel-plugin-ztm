@@ -12,6 +12,7 @@ import {
   getGroupPermissionCached,
   clearGroupPermissionCache,
   type AccountRuntimeState,
+  AccountStateManager,
 } from './state.js';
 import { success } from '../types/common.js';
 import { testConfig } from '../test-utils/fixtures.js';
@@ -31,6 +32,25 @@ vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => mockApiState.getMeshInfo(),
   })),
+}));
+
+// Mock DI container
+vi.mock('../di/index.js', () => ({
+  container: {
+    get: vi.fn(key => {
+      if (String(key).includes('api-client-factory')) {
+        return vi.fn(() => ({
+          getMeshInfo: () => mockApiState.getMeshInfo(),
+        }));
+      }
+      return null;
+    }),
+  },
+  DEPENDENCIES: {
+    API_CLIENT_FACTORY: Symbol('ztm:api-client-factory'),
+    MESSAGE_STATE_REPO: Symbol('ztm:message-state-repo'),
+    ACCOUNT_STATE_MANAGER: Symbol('ztm:account-state-manager'),
+  },
 }));
 
 vi.mock('../utils/logger.js', () => ({
@@ -865,5 +885,50 @@ describe('clearGroupPermissionCache', () => {
 
   it('should handle non-existent account gracefully', () => {
     expect(() => clearGroupPermissionCache('non-existent')).not.toThrow();
+  });
+});
+
+describe('AccountStateManager with DI', () => {
+  it('should accept injected dependencies', async () => {
+    const mockLogger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    };
+    const mockApiClient = {
+      getMeshInfo: vi.fn().mockResolvedValue({
+        success: true,
+        value: { connected: true, endpoints: 5 },
+      }),
+    } as unknown as import('../types/api.js').ZTMApiClient;
+    const mockApiClientFactory = vi.fn(() => mockApiClient);
+
+    const manager = new AccountStateManager({
+      apiClientFactory: mockApiClientFactory,
+      logger: mockLogger,
+    });
+
+    expect(manager).toBeDefined();
+
+    // Test that injected logger is used
+    const testConfig = {
+      agentUrl: 'http://test',
+      permitUrl: '',
+      permitSource: 'server' as const,
+      meshName: 'test-mesh',
+      username: 'test-user',
+      dmPolicy: 'allow' as const,
+      enableGroups: false,
+      autoReply: false,
+      messagePath: '/tmp',
+    };
+
+    await manager.initializeRuntime(testConfig, 'test-account');
+
+    // Verify the factory was called with the config
+    expect(mockApiClientFactory).toHaveBeenCalledWith(testConfig);
+    // Verify logger was used during initialization
+    expect(mockLogger.info).toHaveBeenCalled();
   });
 });
