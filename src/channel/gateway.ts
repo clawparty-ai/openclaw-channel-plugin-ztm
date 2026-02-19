@@ -13,6 +13,7 @@ import { isConfigMinimallyValid } from '../config/validation.js';
 import { logger } from '../utils/logger.js';
 import { getOrDefault } from '../utils/guards.js';
 import { extractErrorMessage } from '../utils/error.js';
+import { ZTMTimeoutError, ZTMApiError } from '../types/errors.js';
 import {
   getAllAccountStates,
   initializeRuntime,
@@ -313,6 +314,94 @@ export async function logoutAccountGateway({
 // Message Callback Builder (legacy - delegates to message-dispatcher)
 // ============================================================================
 
+// Retry configuration
+const MESSAGE_RETRY_MAX_ATTEMPTS = 3;
+const MESSAGE_RETRY_DELAY_MS = 2000;
+
+/**
+ * Check if an error is retryable
+ *
+ * Errors that can be retried include:
+ * - Network timeouts
+ * - API errors with 5xx status codes
+ * - Temporary service unavailability
+ *
+ * @param error - The error to check
+ * @returns true if the error is retryable
+ */
+function isRetryableError(error: unknown): boolean {
+  // ZTMError types with retryable codes
+  if (error instanceof ZTMTimeoutError) {
+    return true;
+  }
+
+  if (error instanceof ZTMApiError) {
+    // Retry on server errors (5xx) or rate limiting (429)
+    const statusCode = error.context.statusCode as number | undefined;
+    if (statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode < 600)) {
+      return true;
+    }
+  }
+
+  // Check for network-related errors
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (
+      message.includes('timeout') ||
+      message.includes('network') ||
+      message.includes('ECONNREFUSED') ||
+      message.includes('ETIMEDOUT') ||
+      message.includes('ENOTFOUND')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Retry a message later with exponential backoff
+ *
+ * @param state - Account runtime state
+ * @param msg - The message to retry
+ * @param attempt - Current attempt number (1-based)
+ */
+async function retryMessageLater(
+  state: AccountRuntimeState,
+  msg: ZTMChatMessage,
+  attempt: number
+): Promise<void> {
+  if (attempt >= MESSAGE_RETRY_MAX_ATTEMPTS) {
+    logger.error(
+      `[${state.accountId}] Message from ${msg.sender} failed after ${MESSAGE_RETRY_MAX_ATTEMPTS} attempts, giving up`
+    );
+    return;
+  }
+
+  // Exponential backoff: 2s, 4s, 8s...
+  const delay = MESSAGE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+  logger.warn(
+    `[${state.accountId}] Scheduling retry ${attempt + 1}/${MESSAGE_RETRY_MAX_ATTEMPTS} for message from ${msg.sender} in ${delay}ms`
+  );
+
+  setTimeout(async () => {
+    try {
+      const rt = container.get(DEPENDENCIES.RUNTIME).get();
+      await dispatchInboundMessage(state, state.accountId, state.config!, msg, rt);
+      logger.info(`[${state.accountId}] Retry succeeded for message from ${msg.sender}`);
+    } catch (error) {
+      const errorMsg = extractErrorMessage(error);
+      logger.error(
+        `[${state.accountId}] Retry ${attempt + 1} failed for message from ${msg.sender}: ${errorMsg}`
+      );
+      if (isRetryableError(error)) {
+        await retryMessageLater(state, msg, attempt + 1);
+      }
+    }
+  }, delay);
+}
+
 /**
  * Create dispatcher options for reply delivery
  * Extracted to reduce nesting in buildMessageCallback
@@ -389,7 +478,20 @@ export function buildMessageCallback(
   return (msg: ZTMChatMessage) => {
     dispatchInboundMessage(state, accountId, config, msg, rt).catch(error => {
       const errorMsg = extractErrorMessage(error);
-      logger.error?.(`[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`);
+      logger.error(`[${accountId}] Failed to dispatch message from ${msg.sender}: ${errorMsg}`);
+
+      // Attempt retry for retryable errors
+      if (isRetryableError(error)) {
+        logger.warn(
+          `[${accountId}] Error is retryable, scheduling retry for message from ${msg.sender}`
+        );
+        retryMessageLater(state, msg, 1).catch(retryError => {
+          const retryErrorMsg = extractErrorMessage(retryError);
+          logger.error(
+            `[${accountId}] Retry scheduling failed for message from ${msg.sender}: ${retryErrorMsg}`
+          );
+        });
+      }
     });
   };
 }
