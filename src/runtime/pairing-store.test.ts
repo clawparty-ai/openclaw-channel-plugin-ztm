@@ -382,7 +382,7 @@ describe('PairingStateStore', () => {
       );
       const now = Date.now();
 
-      for (let i = 0; i < 1002; i++) {
+      for (let i = 0; i < 150; i++) {
         store.savePendingPairing('account1', `user${i}`, new Date(now - i * 1000));
       }
       store.flush();
@@ -390,7 +390,7 @@ describe('PairingStateStore', () => {
       const writeCalls = (mockFs.writeFileSync as ReturnType<typeof vi.fn>).mock.calls;
       const savedData = JSON.parse(writeCalls[writeCalls.length - 1][1]);
       const accountPairings = savedData.accounts.account1;
-      expect(Object.keys(accountPairings)).toHaveLength(1000);
+      expect(Object.keys(accountPairings)).toHaveLength(100);
     });
   });
 });
