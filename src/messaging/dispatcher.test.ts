@@ -27,6 +27,12 @@ vi.mock('../utils/logger.js', () => ({
       actualMockLoggerDebug(...args);
     }),
   },
+  defaultLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 vi.mock('../runtime/store.js', () => ({
