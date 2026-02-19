@@ -1,11 +1,7 @@
 // ZTM Chat Channel Plugin
 // Main plugin definition implementing ChannelPlugin interface
 
-import type {
-  ChannelPlugin,
-  ChannelAccountSnapshot as BaseChannelAccountSnapshot,
-  OpenClawConfig,
-} from 'openclaw/plugin-sdk';
+import type { ChannelPlugin, OpenClawConfig } from 'openclaw/plugin-sdk';
 import { ZTMChatConfigSchema } from '../config/index.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
@@ -41,12 +37,6 @@ function getZTMChatConfig(account: { config: unknown }): ZTMChatConfig | null {
   return isZTMChatConfig(account.config) ? account.config : null;
 }
 
-// Local type extension for ChannelAccountSnapshot with additional properties
-interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
-  meshConnected?: boolean;
-  peerCount?: number;
-}
-
 // Interface for resolveDmPolicy function parameters
 interface DmPolicyContext {
   cfg?: OpenClawConfig | null;
@@ -58,26 +48,6 @@ interface DmPolicyContext {
 interface CollectWarningsContext {
   cfg?: OpenClawConfig | null;
   accountId?: string | null;
-}
-
-// Interface for buildChannelSummary function parameters
-interface BuildChannelSummaryContext {
-  snapshot: ChannelAccountSnapshot;
-}
-
-// Interface for directory functions parameters
-interface DirectoryContext {
-  cfg?: OpenClawConfig | null;
-  accountId?: string | null;
-}
-
-// Local type for status issues
-interface ChannelStatusIssue {
-  channel: string;
-  accountId: string;
-  kind: 'config' | 'intent' | 'permissions' | 'auth' | 'runtime';
-  level?: 'error' | 'warn' | 'info';
-  message: string;
 }
 
 // ============================================================================
@@ -120,13 +90,20 @@ import {
 } from './config.js';
 import { isConfigMinimallyValid } from '../config/index.js';
 import {
-  collectStatusIssues as collectStatusIssuesImpl,
+  collectStatusIssues,
   probeAccountGateway,
   startAccountGateway,
   logoutAccountGateway,
   sendTextGateway,
 } from './gateway.js';
-import { buildAccountSnapshot as buildAccountSnapshotImpl } from './state.js';
+import { buildAccountSnapshot } from './state.js';
+import { directorySelf, directoryListPeers } from './directory.js';
+import {
+  buildChannelSummary,
+  getDefaultStatus,
+  type ChannelAccountSnapshot,
+  type ChannelStatusIssue,
+} from './status.js';
 
 // ============================================================================
 // Extracted Complex Functions - Reduce Cyclomatic Complexity
@@ -208,77 +185,6 @@ const collectWarningsImpl = async ({
   }
 
   return warnings;
-};
-
-// Builds channel summary from snapshot
-
-const buildChannelSummaryImpl = ({ snapshot }: BuildChannelSummaryContext) => {
-  const extendedSnapshot = snapshot;
-  return {
-    configured: snapshot.configured ?? false,
-    running: snapshot.running ?? false,
-    connected: extendedSnapshot.meshConnected ?? false,
-    lastStartAt: snapshot.lastStartAt ?? null,
-    lastStopAt: snapshot.lastStopAt ?? null,
-    lastError: snapshot.lastError ?? null,
-    lastInboundAt: snapshot.lastInboundAt ?? null,
-    lastOutboundAt: snapshot.lastOutboundAt ?? null,
-    peerCount: extendedSnapshot.peerCount ?? 0,
-  };
-};
-
-// Gets self info from directory
-
-const directorySelfImpl = async ({ cfg, accountId }: DirectoryContext) => {
-  const account = resolveZTMChatAccount({
-    cfg: cfg ?? undefined,
-    accountId: accountId ?? undefined,
-  });
-  const config = getZTMChatConfig(account);
-  if (!config) return null;
-  return {
-    kind: 'user' as const,
-    id: account.username ?? '',
-    name: account.username ?? '',
-    raw: {
-      username: account.username ?? '',
-      meshName: config?.meshName,
-    },
-  };
-};
-
-// Lists peers from directory
-
-const directoryListPeersImpl = async ({ cfg, accountId }: DirectoryContext) => {
-  const account = resolveZTMChatAccount({
-    cfg: cfg ?? undefined,
-    accountId: accountId ?? undefined,
-  });
-  const config = getZTMChatConfig(account);
-  const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
-
-  if (!config) {
-    logger.warn?.(
-      `Failed to list peers: ZTM Chat config not found for account ${accountId ?? 'default'}`
-    );
-    return [];
-  }
-
-  const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
-  const apiClient = apiClientFactory(config, { logger });
-
-  const usersResult = await apiClient.discoverUsers();
-  if (!usersResult.ok) {
-    logger.warn?.(`Failed to list peers: ${usersResult.error?.message ?? 'Unknown error'}`);
-    return [];
-  }
-
-  return getOrDefault(usersResult.value, []).map(user => ({
-    kind: 'user' as const,
-    id: user.username,
-    name: user.username,
-    raw: user,
-  }));
 };
 
 // ============================================================================
@@ -430,27 +336,16 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Status Section - Runtime status and health checks
   // ---------------------------------------------------------------------------
   status: {
-    defaultRuntime: {
-      accountId: 'default',
-      running: false,
-      connected: false,
-      meshConnected: false,
-      lastStartAt: null,
-      lastStopAt: null,
-      lastError: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      peerCount: 0,
-    } as ChannelAccountSnapshot,
+    defaultRuntime: getDefaultStatus(),
     collectStatusIssues: (accounts: ChannelAccountSnapshot[]): ChannelStatusIssue[] => {
-      return collectStatusIssuesImpl(accounts);
+      return collectStatusIssues(accounts);
     },
-    buildChannelSummary: buildChannelSummaryImpl,
+    buildChannelSummary,
     probeAccount: async ({ account, timeoutMs = PROBE_TIMEOUT_MS }) => {
       return probeAccountGateway({ account, timeoutMs });
     },
     buildAccountSnapshot: ({ account }) => {
-      return buildAccountSnapshotImpl({ account });
+      return buildAccountSnapshot({ account });
     },
   },
 
@@ -458,8 +353,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Directory Section - User and peer discovery
   // ---------------------------------------------------------------------------
   directory: {
-    self: directorySelfImpl,
-    listPeers: directoryListPeersImpl,
+    self: directorySelf,
+    listPeers: directoryListPeers,
     listGroups: async () => {
       // Group chat support is future feature
       return [];
