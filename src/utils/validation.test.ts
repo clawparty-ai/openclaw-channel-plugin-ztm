@@ -513,9 +513,48 @@ describe('validation utilities', () => {
       expect(validateUsername('иван').valid).toBe(true);
     });
 
+    // Greek
+    it('should accept Greek characters', () => {
+      expect(validateUsername('Νίκος').valid).toBe(true);
+      expect(validateUsername('Ελένη').valid).toBe(true);
+    });
+
     // Arabic
     it('should accept Arabic', () => {
       expect(validateUsername('محمد').valid).toBe(true);
+    });
+
+    // Thai
+    it('should accept Thai characters', () => {
+      expect(validateUsername('สมชาย').valid).toBe(true);
+      expect(validateUsername('ไทย').valid).toBe(true);
+    });
+
+    // German
+    it('should accept German characters', () => {
+      expect(validateUsername('Müller').valid).toBe(true);
+      expect(validateUsername('Schröder').valid).toBe(true);
+      expect(validateUsername('Jürgen').valid).toBe(true);
+    });
+
+    // French
+    it('should accept French characters', () => {
+      expect(validateUsername('François').valid).toBe(true);
+      expect(validateUsername('André').valid).toBe(true);
+      expect(validateUsername('Çàï').valid).toBe(true);
+    });
+
+    // Spanish
+    it('should accept Spanish characters', () => {
+      expect(validateUsername('José').valid).toBe(true);
+      expect(validateUsername('María').valid).toBe(true);
+      expect(validateUsername('Niño').valid).toBe(true);
+    });
+
+    // Portuguese
+    it('should accept Portuguese characters', () => {
+      expect(validateUsername('João').valid).toBe(true);
+      expect(validateUsername('André').valid).toBe(true);
     });
 
     // Emoji
