@@ -309,16 +309,32 @@ class WatchLoopController {
     if (this.fullSyncTimer) {
       clearTimeout(this.fullSyncTimer);
     }
-    this.fullSyncTimer = setTimeout(async () => {
-      logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
-      await performFullSync(this.state, storeAllowFrom);
-      if (this.state.apiClient) {
-        this.context.messageStateRepo.setFileMetadataBulk(
-          this.state.accountId,
-          this.state.apiClient.exportFileMetadata()
-        );
-      }
-    }, FULL_SYNC_DELAY_MS);
+    this.fullSyncTimer = setTimeout(
+      () => this.executeFullSyncWithMetadata(storeAllowFrom),
+      FULL_SYNC_DELAY_MS
+    );
+  }
+
+  /**
+   * Execute full sync and persist file metadata
+   */
+  private async executeFullSyncWithMetadata(storeAllowFrom: string[]): Promise<void> {
+    logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
+    await performFullSync(this.state, storeAllowFrom);
+    this.persistFileMetadata();
+  }
+
+  /**
+   * Persist file metadata to state store
+   */
+  private persistFileMetadata(): void {
+    if (!this.state.apiClient) {
+      return;
+    }
+    this.context.messageStateRepo.setFileMetadataBulk(
+      this.state.accountId,
+      this.state.apiClient.exportFileMetadata()
+    );
   }
 }
 
