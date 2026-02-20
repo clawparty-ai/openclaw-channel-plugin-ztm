@@ -391,6 +391,7 @@ async function processChangedPaths(
           )
           .catch(err => {
             logger.error(`[${state.accountId}] Timeout processing peer message: ${err}`);
+            throw err; // Re-throw to propagate error to caller
           })
       );
     }
@@ -414,6 +415,7 @@ async function processChangedPaths(
           )
           .catch(err => {
             logger.error(`[${state.accountId}] Timeout processing group message: ${err}`);
+            throw err; // Re-throw to propagate error to caller
           })
       );
     }
