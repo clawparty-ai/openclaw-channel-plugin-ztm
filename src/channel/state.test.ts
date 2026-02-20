@@ -122,16 +122,14 @@ describe('buildAccountSnapshot', () => {
       expect(snapshot.running).toBe(false);
     });
 
-    it('should return connected true when state shows connected', async () => {
+    it('should return running true when state shows started', async () => {
       const { getAllAccountStates } = await import('../runtime/state.js');
       const mockStates = new Map([
         [
           'test-account',
           {
-            connected: true,
-            meshConnected: false,
-            peerCount: 0,
-          },
+            started: true,
+                                  },
         ],
       ]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
@@ -149,10 +147,8 @@ describe('buildAccountSnapshot', () => {
         [
           'test-account',
           {
-            connected: true,
-            meshConnected: true,
-            peerCount: 5,
-          },
+            started: true,
+                                  },
         ],
       ]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
@@ -161,8 +157,25 @@ describe('buildAccountSnapshot', () => {
 
       const snapshot = buildAccountSnapshot({ account });
 
-      expect(snapshot.meshConnected).toBe(true);
-      expect(snapshot.peerCount).toBe(5);
+    });
+
+    it('should return connected true when mesh is disconnected but API is connected', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      const mockStates = new Map([
+        [
+          'test-account',
+          {
+            started: true,
+                                          },
+        ],
+      ]);
+      (getAllAccountStates as any).mockReturnValue(mockStates);
+
+      const account = createMockAccount();
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot.running).toBe(true);
     });
 
     it('should return default values when state is incomplete', async () => {
@@ -171,8 +184,7 @@ describe('buildAccountSnapshot', () => {
         [
           'test-account',
           {
-            connected: true,
-            // meshConnected not defined
+                    // meshConnected not defined
           },
         ],
       ]);
@@ -182,7 +194,6 @@ describe('buildAccountSnapshot', () => {
 
       const snapshot = buildAccountSnapshot({ account });
 
-      expect(snapshot.peerCount).toBe(0);
     });
   });
 
@@ -286,8 +297,6 @@ describe('buildAccountSnapshot', () => {
       const snapshot = buildAccountSnapshot({ account });
 
       expect(snapshot.running).toBe(false);
-      expect(snapshot.connected).toBe(false);
-      expect(snapshot.peerCount).toBe(0);
     });
   });
 });

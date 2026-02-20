@@ -143,16 +143,17 @@ export async function probeAccount({
 }): Promise<{
   ok: boolean;
   error: string | null;
+  meshConnected: boolean;
   meshInfo?: ZTMMeshInfo;
 }> {
   if (!config?.agentUrl) {
     return {
       ok: false,
       error: 'No agent URL configured',
+      meshConnected: false,
     };
   }
 
-  // Create API client directly
   const apiClient = createZTMApiClient(config);
   const meshResult = await apiClient.getMeshInfo();
 
@@ -160,13 +161,15 @@ export async function probeAccount({
     return {
       ok: false,
       error: meshResult.error?.message ?? 'Unknown error',
+      meshConnected: false,
     };
   }
 
   const meshInfo = meshResult.value;
   return {
-    ok: meshInfo.connected,
-    error: meshInfo.connected ? null : 'ZTM Agent is not connected to mesh',
+    ok: true,
+    error: null,
+    meshConnected: meshInfo.connected,
     meshInfo,
   };
 }

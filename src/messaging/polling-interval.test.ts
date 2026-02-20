@@ -85,15 +85,12 @@ describe('Interval Management', () => {
       apiClient: {
         getChats: mockSuccess([]),
       } as unknown as ZTMApiClient,
-      connected: true,
-      meshConnected: true,
-      lastError: null,
+          lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-      peerCount: 5,
-      messageCallbacks: new Set<MessageCallback>(),
+        messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -173,15 +170,12 @@ describe('Watch → Polling Transition', () => {
       apiClient: {
         getChats: mockSuccess([]),
       } as unknown as ZTMApiClient,
-      connected: true,
-      meshConnected: true,
-      lastError: null,
+          lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-      peerCount: 5,
-      messageCallbacks: new Set<MessageCallback>(),
+        messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -237,15 +231,8 @@ describe('Watch → Polling Transition', () => {
   });
 
   it('should preserve connection state during transition', async () => {
-    mockState.connected = true;
-    mockState.meshConnected = true;
-    mockState.peerCount = 10;
-
     const mockContext = createMockMessagingContext();
     await startPollingWatcher(mockState, mockContext);
 
-    expect(mockState.connected).toBe(true);
-    expect(mockState.meshConnected).toBe(true);
-    expect(mockState.peerCount).toBe(10);
   });
 });

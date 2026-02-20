@@ -297,12 +297,21 @@ class WatchLoopController {
     items: WatchChangeItem[],
     previousMessagesReceived: boolean
   ): Promise<boolean> {
+    // Monitor semaphore queue health
+    const queuedWaiters = this.messageSemaphore.queuedWaiters();
+    if (queuedWaiters > 3) {
+      logger.warn(
+        `[${this.state.accountId}] High semaphore queue: ${queuedWaiters} waiters pending`
+      );
+    }
+
     return processChangedPaths(
       {
         state: this.state,
         rt: this.rt,
         messagePath: this.messagePath,
         messageSemaphore: this.messageSemaphore,
+        abortSignal: this.abortSignal,
       },
       items,
       previousMessagesReceived,
@@ -353,6 +362,7 @@ interface WatchContext {
   rt: PluginRuntime;
   messagePath: string;
   messageSemaphore: Semaphore;
+  abortSignal?: AbortSignal;
 }
 
 /**

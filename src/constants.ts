@@ -47,7 +47,7 @@ export const INITIAL_SYNC_MAX_HISTORY_MS = 5 * 60 * 1000; // 5 minutes - limit h
 // Chat processing limits
 export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling cycle
 export const MESSAGE_SEMAPHORE_PERMITS = 5; // Maximum concurrent message processing operations
-export const MESSAGE_PROCESS_TIMEOUT_MS = 30000; // 30 seconds - timeout for individual message processing
+export const MESSAGE_PROCESS_TIMEOUT_MS = 10000; // 10 seconds - timeout for individual message processing
 export const CALLBACK_SEMAPHORE_PERMITS = 10; // Maximum concurrent callback executions
 
 // ============================================================================

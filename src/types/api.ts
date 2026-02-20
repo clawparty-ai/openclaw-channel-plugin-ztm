@@ -33,8 +33,19 @@ export interface ZTMUserInfo {
 export interface ZTMMeshInfo {
   name: string;
   connected: boolean;
-  endpoints: number;
+  endpoints?: number;
   errors?: Array<{ time: string; message: string }>;
+}
+
+// ZTM Endpoint interface - matches /api/meshes/{name}/endpoints response
+export interface ZTMEndpoint {
+  isLocal: boolean;
+  id: string;
+  name: string;
+  username: string;
+  ip?: string;
+  port?: number;
+  online?: boolean;
 }
 
 // ZTM Chat interface - matches /apps/ztm/chat/api/chats response
@@ -80,6 +91,12 @@ export interface ZTMApiClient {
 
   /** Get current mesh information */
   getMeshInfo(): Promise<Result<ZTMMeshInfo, ZTMApiError>>;
+
+  /** Get all endpoints in the mesh */
+  getEndpoints(): Promise<Result<ZTMEndpoint[], ZTMApiError>>;
+
+  /** Get count of endpoints in the mesh */
+  getEndpointCount(): Promise<Result<number, ZTMApiError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // User/Peer Discovery - Return Result types with ZTMDiscoveryError

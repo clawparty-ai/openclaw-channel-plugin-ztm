@@ -543,8 +543,8 @@ describe('Gateway Real HTTP Integration', () => {
 
       const result = await probeAccount({ config });
 
-      expect(result.ok).toBe(false);
-      expect(result.error).toBe('ZTM Agent is not connected to mesh');
+      expect(result.ok).toBe(true);
+      expect(result.meshConnected).toBe(false);
       expect(result.meshInfo).toBeDefined();
       expect(result.meshInfo?.connected).toBe(false);
     });

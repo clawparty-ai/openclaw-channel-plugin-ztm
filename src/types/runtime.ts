@@ -56,14 +56,12 @@ export interface AccountRuntimeState {
   accountId: string;
   config: ZTMChatConfig;
   apiClient: ZTMApiClient | null;
-  connected: boolean;
-  meshConnected: boolean;
+  started?: boolean; // Process running state: watcher is active
   lastError: string | null;
   lastStartAt: Date | null;
   lastStopAt: Date | null;
   lastInboundAt: Date | null;
   lastOutboundAt: Date | null;
-  peerCount: number;
   messageCallbacks: Set<MessageCallback>;
   // Semaphore for controlling concurrent callback execution
   // Prevents slow callbacks from blocking the watch loop

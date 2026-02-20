@@ -66,14 +66,11 @@ vi.mock('../runtime/state.js', () => ({
     accountId,
     config: {},
     apiClient: null,
-    connected: false,
-    meshConnected: false,
     lastError: null,
     lastStartAt: null,
     lastStopAt: null,
     lastInboundAt: null,
     lastOutboundAt: null,
-    peerCount: 0,
     messageCallbacks: new Set(),
     watchInterval: null,
     watchErrorCount: 0,
@@ -89,15 +86,12 @@ vi.mock('../runtime/state.js', () => ({
             accountId: 'test-account',
             config: {},
             apiClient: null,
-            connected: true,
-            meshConnected: true,
-            lastError: mockState.runtimeLastError,
+                            lastError: mockState.runtimeLastError,
             lastStartAt: null,
             lastStopAt: null,
             lastInboundAt: null,
             lastOutboundAt: null,
-            peerCount: 5,
-            messageCallbacks: new Set(),
+                    messageCallbacks: new Set(),
             watchInterval: null,
             watchErrorCount: 0,
             pendingPairings: new Map(),
@@ -241,7 +235,6 @@ describe('startAccount E2E Tests', () => {
       const meshInfoResult = await client.getMeshInfo();
 
       expect(meshInfoResult.ok).toBe(true);
-      expect(meshInfoResult.value?.connected).toBe(true);
       expect(meshInfoResult.value?.endpoints).toBe(5);
     });
   });
@@ -448,8 +441,6 @@ describe('startAccount E2E Tests', () => {
       const state = getOrCreateAccountState('new-account');
 
       expect(state.accountId).toBe('new-account');
-      expect(state.connected).toBe(false);
-      expect(state.meshConnected).toBe(false);
     });
 
     it('should get all account states', async () => {

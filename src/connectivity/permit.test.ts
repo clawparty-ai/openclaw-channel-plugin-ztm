@@ -105,14 +105,11 @@ describe('Permit management functions', () => {
     apiClient: {
       sendPeerMessage: vi.fn().mockResolvedValue(true),
     } as any, // Partial mock for testing
-    connected: true,
-    meshConnected: true,
     lastError: null,
     lastStartAt: null,
     lastStopAt: null,
     lastInboundAt: null,
     lastOutboundAt: null,
-    peerCount: 5,
     messageCallbacks: new Set(),
     watchInterval: null,
     watchErrorCount: 0,

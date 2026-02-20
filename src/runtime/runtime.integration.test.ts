@@ -3,18 +3,31 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { testConfig, testAccountId } from '../test-utils/fixtures.js';
+import { success } from '../types/common.js';
 
 // Mock dependencies
 vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: vi.fn(() => ({
-    getMeshInfo: vi.fn().mockResolvedValue({
-      ok: true,
-      value: { connected: true, peers: 5 },
-    }),
-    getIdentity: vi.fn().mockResolvedValue({
-      ok: true,
-      value: 'public-key-123',
-    }),
+    getMeshInfo: vi.fn().mockResolvedValue(
+      success({ connected: true, peers: 5 })
+    ),
+    getEndpointCount: vi.fn().mockResolvedValue(
+      success(5)
+    ),
+    getIdentity: vi.fn().mockResolvedValue(
+      success('public-key-123')
+    ),
+    getChats: vi.fn().mockResolvedValue(success([])),
+    discoverUsers: vi.fn().mockResolvedValue(success([])),
+    discoverPeers: vi.fn().mockResolvedValue(success([])),
+    watchChanges: vi.fn().mockResolvedValue(success([])),
+    listUsers: vi.fn().mockResolvedValue(success([])),
+    getPeerMessages: vi.fn().mockResolvedValue(success([])),
+    sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
+    getGroupMessages: vi.fn().mockResolvedValue(success([])),
+    sendGroupMessage: vi.fn().mockResolvedValue(success(true)),
+    seedFileMetadata: vi.fn(),
+    exportFileMetadata: vi.fn().mockReturnValue({}),
   })),
 }));
 
@@ -71,14 +84,11 @@ describe('Runtime State Management Integration', () => {
 
       expect(state).toBeDefined();
       expect(state.accountId).toBe(testAccountId);
-      expect(state.connected).toBe(false);
-      expect(state.meshConnected).toBe(false);
 
       // Step 2: Initialize runtime
       const initialized = await initializeRuntime(state.config, testAccountId);
 
       expect(initialized).toBe(true);
-      expect(state.connected).toBe(true);
 
       // Verify state in map
       const allStates = getAllAccountStates();
@@ -88,7 +98,6 @@ describe('Runtime State Management Integration', () => {
       // Step 3: Stop runtime
       await stopRuntime(testAccountId);
 
-      expect(state.connected).toBe(false);
 
       // Step 4: Remove state
       removeAccountState(testAccountId);
@@ -121,8 +130,6 @@ describe('Runtime State Management Integration', () => {
       await initializeRuntime(state1.config, accountId1);
       await initializeRuntime(state2.config, accountId2);
 
-      expect(state1.connected).toBe(true);
-      expect(state2.connected).toBe(true);
 
       // Verify both in map
       const allStates = getAllAccountStates();
@@ -131,8 +138,6 @@ describe('Runtime State Management Integration', () => {
       // Stop only account 1
       await stopRuntime(accountId1);
 
-      expect(state1.connected).toBe(false);
-      expect(state2.connected).toBe(true); // Still running
 
       // Remove account 1
       removeAccountState(accountId1);
@@ -298,8 +303,6 @@ describe('Runtime State Management Integration', () => {
       await initializeRuntime(state.config, testAccountId);
 
       // Set some state properties
-      state.connected = true;
-      state.meshConnected = true;
       state.lastStartAt = new Date();
 
       // Get all states to verify persistence
@@ -307,8 +310,6 @@ describe('Runtime State Management Integration', () => {
       const retrievedState = allStates.get(testAccountId);
 
       expect(retrievedState).toBe(state);
-      expect(retrievedState?.connected).toBe(true);
-      expect(retrievedState?.meshConnected).toBe(true);
       expect(retrievedState?.lastStartAt).toEqual(state.lastStartAt);
     });
 
@@ -363,12 +364,10 @@ describe('Runtime State Management Integration', () => {
       // First initialization
       const init1 = await initializeRuntime(state.config, 'retry-account');
       expect(init1).toBe(true);
-      expect(state.connected).toBe(true);
 
       // Second initialization (should handle gracefully)
       const init2 = await initializeRuntime(state.config, 'retry-account');
       expect(init2).toBe(true);
-      expect(state.connected).toBe(true);
     });
   });
 });

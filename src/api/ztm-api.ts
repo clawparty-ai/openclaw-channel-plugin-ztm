@@ -71,6 +71,8 @@ export function createZTMApiClient(
 
   const client: ZTMApiClient = {
     getMeshInfo: meshApi.getMeshInfo,
+    getEndpoints: meshApi.getEndpoints,
+    getEndpointCount: meshApi.getEndpointCount,
 
     discoverUsers: meshApi.discoverUsers,
 

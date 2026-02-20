@@ -103,6 +103,8 @@ export function createMockApiClient(overrides: Partial<ZTMApiClient> = {}): ZTMA
     getMeshInfo: vi
       .fn()
       .mockResolvedValue(success({ name: 'test-mesh', connected: true, endpoints: 1 })),
+    getEndpoints: vi.fn().mockResolvedValue(success([])),
+    getEndpointCount: vi.fn().mockResolvedValue(success(0)),
     discoverUsers: vi.fn().mockResolvedValue(success([])),
     discoverPeers: vi.fn().mockResolvedValue(success([])),
     listUsers: vi.fn().mockResolvedValue(success([])),

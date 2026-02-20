@@ -100,14 +100,12 @@ export class AccountStateManager {
       accountId,
       config: emptyConfig,
       apiClient: null,
-      connected: false,
-      meshConnected: false,
+      started: false,
       lastError: null,
       lastStartAt: null,
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-      peerCount: 0,
       messageCallbacks: new Set(),
       callbackSemaphore: new Semaphore(CALLBACK_SEMAPHORE_PERMITS),
       watchInterval: null,
@@ -378,21 +376,15 @@ export class AccountStateManager {
 
     if (!meshInfo) {
       state.lastError = 'Failed to get mesh info after retries';
-      state.connected = false;
-      state.meshConnected = false;
       this.deps.logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
       return false;
     }
 
     state.apiClient = apiClient;
-    state.connected = true;
-    state.meshConnected = meshInfo.connected;
-    state.peerCount = meshInfo.endpoints;
+    state.started = true;
     state.lastError = meshInfo.connected ? null : 'Not connected to ZTM mesh';
 
-    this.deps.logger.info(
-      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
-    );
+    this.deps.logger.info(`[${accountId}] Connected: mesh=${config.meshName}`);
 
     return meshInfo.connected;
   }
@@ -419,8 +411,7 @@ export class AccountStateManager {
     state.allowFromCache = null;
     state.groupPermissionCache?.clear();
     state.apiClient = null;
-    state.connected = false;
-    state.meshConnected = false;
+    state.started = false;
     state.lastStopAt = new Date();
 
     getAccountMessageStateStore(accountId).flush();

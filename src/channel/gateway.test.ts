@@ -477,8 +477,9 @@ describe('Channel Gateway', () => {
 
       const result = await probeAccountGateway({ account });
 
-      expect(result.ok).toBe(false);
-      expect(result.error).toBe('ZTM Agent is not connected to mesh');
+      expect(result.ok).toBe(true);
+      expect(result.meshConnected).toBe(false);
+      expect(result.error).toBeNull();
     });
 
     it('should use default timeout', async () => {

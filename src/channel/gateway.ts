@@ -41,8 +41,7 @@ import { createInboundContext, createMessageCallback } from './message-dispatche
 // ============================================================================
 
 interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
-  meshConnected?: boolean;
-  peerCount?: number;
+  // No additional fields - using base type
 }
 
 interface ChannelStatusIssue {
@@ -104,6 +103,7 @@ export async function probeAccountGateway({
 }): Promise<{
   ok: boolean;
   error: string | null;
+  meshConnected: boolean;
   meshInfo?: import('../api/ztm-api.js').ZTMMeshInfo;
 }> {
   return probeAccountConnectivity({ config: account.config, _timeoutMs: timeoutMs });
@@ -245,7 +245,11 @@ async function setupAccountCallbacks(
   config: ZTMChatConfig,
   state: AccountRuntimeState,
   ctx: {
-    log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
+    log?: {
+      info: (...args: unknown[]) => void;
+      warn?: (...args: unknown[]) => void;
+      error?: (...args: unknown[]) => void;
+    };
     cfg?: Record<string, unknown>;
   }
 ): Promise<{
@@ -283,8 +287,18 @@ async function setupAccountCallbacks(
 
 export async function startAccountGateway(ctx: {
   account: { config: ZTMChatConfig; accountId: string };
-  log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
+  log?: {
+    info: (...args: unknown[]) => void;
+    warn?: (...args: unknown[]) => void;
+    error?: (...args: unknown[]) => void;
+  };
   cfg?: Record<string, unknown>;
+  setStatus?: (status: {
+    accountId: string;
+    running: boolean;
+    lastStartAt?: number;
+    lastStopAt?: number;
+  }) => void;
 }): Promise<() => Promise<void>> {
   const { account } = ctx;
 
@@ -313,6 +327,9 @@ export async function startAccountGateway(ctx: {
   const state = getAccountState(account.accountId);
   state.lastStartAt = new Date();
 
+  // Report running status to OpenClaw core
+  ctx.setStatus?.({ accountId: account.accountId, running: true, lastStartAt: Date.now() });
+
   // Log connection success
   ctx.log?.info(
     `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`
@@ -335,6 +352,9 @@ export async function startAccountGateway(ctx: {
     state.messageCallbacks.delete(messageCallback);
     state.watchAbortController?.abort();
     await stopRuntime(account.accountId);
+
+    // Report stopped status to OpenClaw core
+    ctx.setStatus?.({ accountId: account.accountId, running: false, lastStopAt: Date.now() });
   };
 }
 

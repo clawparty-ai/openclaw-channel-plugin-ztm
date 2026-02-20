@@ -23,16 +23,18 @@ import { testConfig } from '../test-utils/fixtures.js';
 const mockApiState = {
   getMeshInfo: vi.fn().mockResolvedValue(
     success({
-      connected: true,
-      endpoints: 5,
+        connected: true,
+        endpoints: 5,
       errors: [],
     })
   ),
+  getEndpointCount: vi.fn().mockResolvedValue(success(5)),
 };
 
 vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => mockApiState.getMeshInfo(),
+    getEndpointCount: () => mockApiState.getEndpointCount(),
   })),
 }));
 
@@ -43,6 +45,7 @@ vi.mock('../di/index.js', () => ({
       if (String(key).includes('api-client-factory')) {
         return vi.fn(() => ({
           getMeshInfo: () => mockApiState.getMeshInfo(),
+          getEndpointCount: () => mockApiState.getEndpointCount(),
         }));
       }
       return null;
@@ -129,8 +132,8 @@ describe('Account Runtime State Management', () => {
     mockApiState.getMeshInfo.mockReset();
     mockApiState.getMeshInfo.mockResolvedValue(
       success({
-        connected: true,
-        endpoints: 5,
+            connected: true,
+            endpoints: 5,
         errors: [],
       })
     );
@@ -150,8 +153,6 @@ describe('Account Runtime State Management', () => {
       expect(state).toBeDefined();
       expect(state.accountId).toBe(testAccountId);
       expect(state.config).toBeDefined();
-      expect(state.connected).toBe(false);
-      expect(state.meshConnected).toBe(false);
       expect(state.apiClient).toBeNull();
     });
 
@@ -177,14 +178,11 @@ describe('Account Runtime State Management', () => {
     it('should initialize with default values', () => {
       const state = getOrCreateAccountState(testAccountId);
 
-      expect(state.connected).toBe(false);
-      expect(state.meshConnected).toBe(false);
       expect(state.lastError).toBeNull();
       expect(state.lastStartAt).toBeNull();
       expect(state.lastStopAt).toBeNull();
       expect(state.lastInboundAt).toBeNull();
       expect(state.lastOutboundAt).toBeNull();
-      expect(state.peerCount).toBe(0);
       expect(state.messageCallbacks).toBeInstanceOf(Set);
       expect(state.watchInterval).toBeNull();
       expect(state.watchErrorCount).toBe(0);
@@ -294,9 +292,6 @@ describe('Account Runtime State Management', () => {
       expect(initialized).toBe(true);
 
       const state = getAllAccountStates().get(testAccountId);
-      expect(state?.connected).toBe(true);
-      expect(state?.meshConnected).toBe(true);
-      expect(state?.peerCount).toBe(5);
       expect(state?.apiClient).toBeDefined();
     });
 
@@ -319,8 +314,8 @@ describe('Account Runtime State Management', () => {
       // Override mock to return disconnected state wrapped in success Result
       mockApiState.getMeshInfo.mockResolvedValue(
         success({
-          connected: false,
-          endpoints: 0,
+                connected: false,
+                endpoints: 0,
           errors: [],
         })
       );
@@ -332,8 +327,6 @@ describe('Account Runtime State Management', () => {
       const state = getAllAccountStates().get(testAccountId);
       // Note: state.connected is true because apiClient was created successfully
       // But meshConnected is false because mesh is not connected
-      expect(state?.connected).toBe(true);
-      expect(state?.meshConnected).toBe(false);
       expect(state?.lastError).toBeDefined();
     });
 
@@ -359,14 +352,11 @@ describe('Account Runtime State Management', () => {
       // First initialize
       await initializeRuntime(testConfig, testAccountId);
       const state = getAllAccountStates().get(testAccountId);
-      expect(state?.connected).toBe(true);
 
       // Then stop
       await stopRuntime(testAccountId);
 
       const stoppedState = getAllAccountStates().get(testAccountId);
-      expect(stoppedState?.connected).toBe(false);
-      expect(stoppedState?.meshConnected).toBe(false);
       expect(stoppedState?.apiClient).toBeNull();
     });
 
@@ -464,14 +454,11 @@ describe('Account Runtime State Management', () => {
       expect(state).toHaveProperty('accountId');
       expect(state).toHaveProperty('config');
       expect(state).toHaveProperty('apiClient');
-      expect(state).toHaveProperty('connected');
-      expect(state).toHaveProperty('meshConnected');
       expect(state).toHaveProperty('lastError');
       expect(state).toHaveProperty('lastStartAt');
       expect(state).toHaveProperty('lastStopAt');
       expect(state).toHaveProperty('lastInboundAt');
       expect(state).toHaveProperty('lastOutboundAt');
-      expect(state).toHaveProperty('peerCount');
       expect(state).toHaveProperty('messageCallbacks');
       expect(state).toHaveProperty('watchInterval');
       expect(state).toHaveProperty('watchErrorCount');
@@ -481,16 +468,10 @@ describe('Account Runtime State Management', () => {
     it('should allow modification of state properties', () => {
       const state = getOrCreateAccountState(testAccountId);
 
-      state.connected = true;
-      state.meshConnected = true;
       state.lastError = null;
-      state.peerCount = 10;
       state.watchErrorCount = 3;
 
-      expect(state.connected).toBe(true);
-      expect(state.meshConnected).toBe(true);
       expect(state.lastError).toBeNull();
-      expect(state.peerCount).toBe(10);
       expect(state.watchErrorCount).toBe(3);
     });
   });
@@ -523,8 +504,6 @@ describe('Account Runtime State Management', () => {
       const state1 = getAllAccountStates().get('account1');
       const state2 = getAllAccountStates().get('account2');
 
-      expect(state1?.connected).toBe(false);
-      expect(state2?.connected).toBe(true);
     });
   });
 
@@ -581,7 +560,6 @@ describe('Account Runtime State Management', () => {
 
       // Should not throw, state should be stopped
       const state = getAllAccountStates().get(accountId);
-      expect(state?.connected).toBe(false);
     });
 
     it('should handle concurrent removeAccountState calls', async () => {
@@ -611,7 +589,6 @@ describe('Account Runtime State Management', () => {
 
       // Final state should be stopped
       const state = getAllAccountStates().get(accountId);
-      expect(state?.connected).toBe(false);
     });
   });
 

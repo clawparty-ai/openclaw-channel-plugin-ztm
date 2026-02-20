@@ -1,7 +1,7 @@
 // Mesh operations API for ZTM Chat
 
 import type { ZTMChatConfig } from '../types/config.js';
-import type { ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from '../types/api.js';
+import type { ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMEndpoint } from '../types/api.js';
 import { success, failure, isSuccess, type Result } from '../types/common.js';
 import { ZTMDiscoveryError, ZTMApiError, ZTMTimeoutError } from '../types/errors.js';
 import type { ZTMLogger, RequestHandler } from './request.js';
@@ -15,6 +15,18 @@ export function createMeshApi(config: ZTMChatConfig, request: RequestHandler, lo
 
   async function getMeshInfo(): Promise<Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>> {
     return request<ZTMMeshInfo>('GET', `/api/meshes/${config.meshName}`);
+  }
+
+  async function getEndpoints(): Promise<Result<ZTMEndpoint[], ZTMApiError | ZTMTimeoutError>> {
+    return request<ZTMEndpoint[]>('GET', `/api/meshes/${config.meshName}/endpoints`);
+  }
+
+  async function getEndpointCount(): Promise<Result<number, ZTMApiError | ZTMTimeoutError>> {
+    const result = await getEndpoints();
+    if (!result.ok) {
+      return success(0);
+    }
+    return success(result.value?.length ?? 0);
   }
 
   async function listUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>> {
@@ -60,6 +72,8 @@ export function createMeshApi(config: ZTMChatConfig, request: RequestHandler, lo
 
   return {
     getMeshInfo,
+    getEndpoints,
+    getEndpointCount,
     listUsers,
     discoverUsers,
     discoverPeers,

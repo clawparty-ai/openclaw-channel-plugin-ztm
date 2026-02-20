@@ -4,12 +4,9 @@
 import type { ChannelAccountSnapshot as BaseChannelAccountSnapshot } from 'openclaw/plugin-sdk';
 
 /**
- * Extended snapshot type with additional ZTM-specific properties
+ * Extended snapshot type - using base type directly
  */
-export interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
-  meshConnected?: boolean;
-  peerCount?: number;
-}
+export type ChannelAccountSnapshot = BaseChannelAccountSnapshot;
 
 /**
  * Interface for buildChannelSummary function parameters
@@ -38,17 +35,14 @@ export interface ChannelStatusIssue {
  * @returns Channel summary object
  */
 export function buildChannelSummary({ snapshot }: BuildChannelSummaryContext) {
-  const extendedSnapshot = snapshot;
   return {
     configured: snapshot.configured ?? false,
     running: snapshot.running ?? false,
-    connected: extendedSnapshot.meshConnected ?? false,
     lastStartAt: snapshot.lastStartAt ?? null,
     lastStopAt: snapshot.lastStopAt ?? null,
     lastError: snapshot.lastError ?? null,
     lastInboundAt: snapshot.lastInboundAt ?? null,
     lastOutboundAt: snapshot.lastOutboundAt ?? null,
-    peerCount: extendedSnapshot.peerCount ?? 0,
   };
 }
 
@@ -61,13 +55,10 @@ export function getDefaultStatus(): ChannelAccountSnapshot {
   return {
     accountId: 'default',
     running: false,
-    connected: false,
-    meshConnected: false,
     lastStartAt: null,
     lastStopAt: null,
     lastError: null,
     lastInboundAt: null,
     lastOutboundAt: null,
-    peerCount: 0,
   };
 }
