@@ -376,7 +376,32 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
             }
           : undefined,
       };
-      return startAccountGateway(adaptedCtx);
+      const cleanup = await startAccountGateway(adaptedCtx);
+
+      // OpenClaw expects startAccount to return a long-lived Promise that stays
+      // pending for the entire channel lifetime. When the Promise resolves, OpenClaw
+      // treats it as "channel exited" and triggers auto-restart. We keep it pending
+      // until abortSignal fires, then call cleanup and resolve.
+      return new Promise<void>((resolve, reject) => {
+        const abortSignal = ctx.abortSignal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+        // If no abortSignal provided, the Promise stays pending indefinitely
+        // (channel runs until process exit)
+      });
     },
     logoutAccount: async ({ accountId, cfg }) => {
       return logoutAccountGateway({ accountId: accountId ?? 'default', cfg: cfg ?? undefined });

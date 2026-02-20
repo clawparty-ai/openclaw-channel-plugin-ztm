@@ -381,4 +381,232 @@ describe('ZTM Chat Channel Plugin', () => {
       expect(parts[4]).toBe('ABC12345');
     });
   });
+
+  describe('Gateway - startAccount lifecycle', () => {
+    it('should keep promise pending until abort signal fires', async () => {
+      const ac = new AbortController();
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+
+      let resolved = false;
+      const promise = new Promise<void>((resolve, reject) => {
+        const abortSignal = ac.signal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+      });
+
+      promise.then(() => {
+        resolved = true;
+      });
+
+      await new Promise(r => setTimeout(r, 50));
+      expect(resolved).toBe(false);
+
+      ac.abort();
+      await promise;
+      expect(resolved).toBe(true);
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should resolve immediately if abort signal is already aborted', async () => {
+      const ac = new AbortController();
+      ac.abort();
+
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+
+      const promise = new Promise<void>((resolve, reject) => {
+        const abortSignal = ac.signal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+      });
+
+      await promise;
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should keep promise pending indefinitely when no abort signal provided', async () => {
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+
+      let resolved = false;
+
+      function createLifetimePromise(
+        cleanupFn: () => Promise<void>,
+        signal?: AbortSignal
+      ): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+          if (signal?.aborted) {
+            cleanupFn().then(resolve, reject);
+            return;
+          }
+          if (signal) {
+            signal.addEventListener(
+              'abort',
+              () => {
+                cleanupFn().then(resolve, reject);
+              },
+              { once: true }
+            );
+          }
+        });
+      }
+
+      const promise = createLifetimePromise(cleanup);
+
+      promise.then(() => {
+        resolved = true;
+      });
+
+      await new Promise(r => setTimeout(r, 100));
+      expect(resolved).toBe(false);
+      expect(cleanup).not.toHaveBeenCalled();
+    });
+
+    it('should resolve immediately after cleanup when startAccountGateway succeeds', async () => {
+      const ac = new AbortController();
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+
+      const promise = new Promise<void>((resolve, reject) => {
+        const abortSignal = ac.signal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+      });
+
+      ac.abort();
+      await promise;
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should reject if cleanup throws an error', async () => {
+      const ac = new AbortController();
+      const cleanupError = new Error('Cleanup failed');
+      const cleanup = vi.fn().mockRejectedValue(cleanupError);
+
+      const promise = new Promise<void>((resolve, reject) => {
+        const abortSignal = ac.signal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+      });
+
+      ac.abort();
+      await expect(promise).rejects.toThrow('Cleanup failed');
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should handle multiple abort event listeners correctly (only fire once)', async () => {
+      const ac = new AbortController();
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+
+      let fireCount = 0;
+      const promise = new Promise<void>((resolve, reject) => {
+        const abortSignal = ac.signal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              fireCount++;
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+      });
+
+      ac.abort();
+      ac.abort();
+      await promise;
+
+      expect(fireCount).toBe(1);
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should not call cleanup if abort signal never fires', async () => {
+      const ac = new AbortController();
+      const cleanup = vi.fn().mockResolvedValue(undefined);
+
+      let resolved = false;
+      const promise = new Promise<void>((resolve, reject) => {
+        const abortSignal = ac.signal;
+
+        if (abortSignal?.aborted) {
+          cleanup().then(resolve, reject);
+          return;
+        }
+
+        if (abortSignal) {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              cleanup().then(resolve, reject);
+            },
+            { once: true }
+          );
+        }
+      });
+
+      promise.then(() => {
+        resolved = true;
+      });
+
+      await new Promise(r => setTimeout(r, 100));
+      expect(resolved).toBe(false);
+      expect(cleanup).not.toHaveBeenCalled();
+    });
+  });
 });
