@@ -202,6 +202,42 @@ function logPairingStatus(
 }
 
 /**
+ * Throw an error with account state error details when runtime initialization fails
+ */
+function throwInitializationError(accountId: string): never {
+  const accountStates = getAllAccountStates();
+  const state = accountStates.get(accountId);
+  throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
+}
+
+/**
+ * Get account runtime state by account ID
+ */
+function getAccountState(accountId: string): AccountRuntimeState {
+  const accountStates = getAllAccountStates();
+  const state = accountStates.get(accountId);
+  if (!state) {
+    throw new Error(`Account state not found for: ${accountId}`);
+  }
+  return state;
+}
+
+/**
+ * Pre-load message state asynchronously to prevent blocking in hot path
+ * This ensures state is loaded before any getWatermark/setWatermark calls
+ */
+async function preloadMessageState(
+  accountId: string,
+  log?: { error?: (...args: unknown[]) => void }
+): Promise<void> {
+  const { getAccountMessageStateStore } = await import('../runtime/store.js');
+  const messageStateStore = getAccountMessageStateStore(accountId);
+  messageStateStore.ensureLoaded().catch(err => {
+    log?.error?.(`[${accountId}] Failed to pre-load message state: ${err}`);
+  });
+}
+
+/**
  * Setup account message callbacks and periodic cleanup
  */
 async function setupAccountCallbacks(
@@ -256,23 +292,15 @@ export async function startAccountGateway(ctx: {
 
   // Step 7: Initialize runtime
   const initialized = await initializeRuntime(config, account.accountId);
-
   if (!initialized) {
-    const accountStates = getAllAccountStates();
-    const state = accountStates.get(account.accountId);
-    throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
+    throwInitializationError(account.accountId);
   }
 
   // Step 7.5: Pre-load message state asynchronously to prevent blocking in hot path
-  // This ensures state is loaded before any getWatermark/setWatermark calls
-  const { getAccountMessageStateStore } = await import('../runtime/store.js');
-  const messageStateStore = getAccountMessageStateStore(account.accountId);
-  messageStateStore.ensureLoaded().catch(err => {
-    ctx.log?.error?.(`[${account.accountId}] Failed to pre-load message state: ${err}`);
-  });
+  await preloadMessageState(account.accountId, ctx.log);
 
-  const accountStates = getAllAccountStates();
-  const state = accountStates.get(account.accountId)!;
+  // Get account state and update start time
+  const state = getAccountState(account.accountId);
   state.lastStartAt = new Date();
 
   // Log connection success
