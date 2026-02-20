@@ -5,11 +5,10 @@
  * when the Watch API becomes unavailable.
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
   createTestServer,
   type TestServer,
-  type ExtendedTestServer,
 } from '../../test-utils/http-server.js';
 
 describe('E2E: Watch/Polling Mode Switch', () => {
@@ -56,7 +55,7 @@ describe('E2E: Watch/Polling Mode Switch', () => {
     const response = await fetch(server.url);
     expect(response.status).toBe(503);
 
-    const data = await response.json();
+    const data = await response.json() as { error: string };
     expect(data.error).toContain('Watch API unavailable');
 
     // Reset and verify恢复正常

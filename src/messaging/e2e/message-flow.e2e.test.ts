@@ -5,27 +5,16 @@
  * process through the system, dispatch to callbacks, and send response.
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
   createTestServer,
   createZTMAgentMock,
   type TestServer,
   type TestRequest,
-  type ExtendedTestServer,
 } from '../../test-utils/http-server.js';
-import { testConfig, testAccountId } from '../../test-utils/fixtures.js';
-import type { AccountRuntimeState } from '../../runtime/state.js';
 
 describe('E2E: Message Flow', () => {
   let servers: TestServer[] = [];
-
-  // Mock logger
-  const mockLogger = {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  };
 
   afterEach(async () => {
     await Promise.all(servers.map(s => s.close()));
@@ -43,7 +32,7 @@ describe('E2E: Message Flow', () => {
     });
 
     expect(response.status).toBe(200);
-    const data = await response.json();
+    const data = await response.json() as { connected: boolean };
     expect(data.connected).toBe(true);
   });
 
@@ -59,7 +48,7 @@ describe('E2E: Message Flow', () => {
     });
 
     expect(response.status).toBe(500);
-    const data = await response.json();
+    const data = await response.json() as { error: string };
     expect(data.error).toBe('Injected error');
   });
 
@@ -75,7 +64,7 @@ describe('E2E: Message Flow', () => {
 
     const response1 = await fetch(server.url);
     expect(response1.status).toBe(200);
-    const data1 = await response1.json();
+    const data1 = await response1.json() as { result: string };
     expect(data1.result).toBe('first');
 
     const response2 = await fetch(server.url);

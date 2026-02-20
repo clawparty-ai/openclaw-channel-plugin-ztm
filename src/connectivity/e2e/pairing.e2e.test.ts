@@ -49,13 +49,12 @@ describe('E2E: Pairing Flow', () => {
     });
 
     expect(response.status).toBe(200);
-    const data = await response.json();
+    const data = await response.json() as { code: string; expiresAt: number };
     expect(data.code).toBeDefined();
     expect(data.expiresAt).toBeGreaterThan(Date.now());
   });
 
   it('should block unpaired users in pairing mode', async () => {
-    const dmPolicy = 'pairing';
     const allowFrom: string[] = [];
     const sender = 'unknown-user';
 

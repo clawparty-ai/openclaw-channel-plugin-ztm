@@ -118,9 +118,7 @@ export interface TestServerOptions {
  * await server.close();
  * ```
  */
-export async function createTestServer(
-  options: TestServerOptions = {}
-): Promise<ExtendedTestServer> {
+export async function createTestServer(options: TestServerOptions = {}): Promise<ExtendedTestServer> {
   const { handler = defaultHandler, port = 0, host = 'localhost' } = options;
   const receivedRequests: TestRequest[] = [];
 
@@ -142,66 +140,64 @@ export async function createTestServer(
     // Collect body if present
     const bodyChunks: Buffer[] = [];
     req.on('data', chunk => bodyChunks.push(chunk));
+
+    // This callback is async but we don't await it - we let it run in parallel with handler
     req.on('end', () => {
       if (bodyChunks.length > 0) {
         requestData.body = Buffer.concat(bodyChunks).toString('utf-8');
       }
       receivedRequests.push(requestData);
+    });
 
-      // Apply delay before response
-      const applyResponse = async () => {
-        // Inject error response
-        if (errorToInject) {
-          res.writeHead(errorToInject.statusCode, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: errorToInject.error?.message || 'Injected error' }));
+    // Check for injected error
+    if (errorToInject) {
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      res.writeHead(errorToInject.statusCode, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: errorToInject.error?.message || 'Injected error' }));
+      return;
+    }
+
+    // Check for sequential responses
+    if (responseSequence.length > 0) {
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      for (let i = 0; i < responseSequence.length; i++) {
+        const config = responseSequence[i];
+        const used = sequenceUsed[i] || 0;
+
+        const matchResult = !config.match || config.match(requestData);
+        const hasRemainingUses = config.uses === -1 || used < (config.uses || 1);
+
+        if (matchResult && hasRemainingUses) {
+          sequenceUsed[i] = used + 1;
+
+          if (config.delay) {
+            await new Promise(r => setTimeout(r, config.delay));
+          }
+
+          res.writeHead(config.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(config.body || {}));
           return;
         }
-
-        // Sequential responses
-        if (responseSequence.length > 0) {
-          for (let i = 0; i < responseSequence.length; i++) {
-            const config = responseSequence[i];
-            const used = sequenceUsed[i] || 0;
-
-            // Check if this response matches and has remaining uses
-            const matchResult = !config.match || config.match(requestData);
-            const hasRemainingUses = config.uses === -1 || used < (config.uses || 1);
-
-            if (matchResult && hasRemainingUses) {
-              // Update usage count
-              sequenceUsed[i] = used + 1;
-
-              // Apply delay if specified
-              if (config.delay) {
-                await new Promise(r => setTimeout(r, config.delay));
-              }
-
-              res.writeHead(config.status, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify(config.body || {}));
-              return;
-            }
-          }
-        }
-
-        // Call the original handler
-        try {
-          await handler(req, res, { receivedRequests });
-        } catch {
-          // Ensure response is sent even if handler throws
-          if (!res.headersSent) {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Internal server error' }));
-          }
-        }
-      };
-
-      // Apply delay if set
-      if (delay > 0) {
-        setTimeout(() => applyResponse(), delay);
-      } else {
-        applyResponse();
       }
-    });
+    }
+
+    // Call the handler (original behavior)
+    try {
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      await handler(req, res, { receivedRequests });
+    } catch {
+      // Ensure response is sent even if handler throws
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Internal server error' }));
+      }
+    }
   });
 
   // Start listening on an available port
