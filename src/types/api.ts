@@ -113,7 +113,7 @@ export interface ZTMApiClient {
   // ═════════════════════════════════════════════════════════════════════════════
 
   /** Get messages from a group. Returns Result with messages or read error. */
-  getGroupMessages(creator: string, group: string): Promise<Result<ZTMMessage[], ZTMReadError>>;
+  getGroupMessages(creator: string, group: string, since?: number): Promise<Result<ZTMMessage[], ZTMReadError>>;
 
   /** Send a message to a group. Returns Result with success or error. */
   sendGroupMessage(

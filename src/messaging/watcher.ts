@@ -18,6 +18,7 @@ import { Semaphore } from '../utils/concurrency.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import { isSuccess } from '../types/common.js';
 import type { ZTMChat, WatchChangeItem } from '../types/api.js';
+import { getAccountMessageStateStore } from '../runtime/store.js';
 import {
   FULL_SYNC_DELAY_MS,
   WATCH_INTERVAL_MS,
@@ -474,7 +475,9 @@ async function processChangedPeer(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  const messagesResult = await state.apiClient.getPeerMessages(peer);
+  // Get watermark to filter messages server-side (avoid fetching all messages)
+  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(state.accountId, peer);
+  const messagesResult = await state.apiClient.getPeerMessages(peer, watermark);
 
   if (!messagesResult.ok) {
     const safePeer = sanitizeForLog(peer);
@@ -487,7 +490,7 @@ async function processChangedPeer(
   const messages = getOrDefault(messagesResult.value, []);
   const safePeer = sanitizeForLog(peer);
   logger.debug(
-    `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}"`
+    `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}" since=${watermark}`
   );
 
   // Use shared message processing logic
@@ -510,11 +513,12 @@ async function processChangedGroup(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  const groupKey = `${creator}/${group}`;
-  const safeGroupKey = sanitizeForLog(groupKey);
-  logger.debug(`[${state.accountId}] Processing group messages from "${safeGroupKey}"`);
+  const groupKey = `group:${creator}/${group}`;
+  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(state.accountId, groupKey);
+  const safeGroupKey = sanitizeForLog(`${creator}/${group}`);
+  logger.debug(`[${state.accountId}] Processing group messages from "${safeGroupKey}" since=${watermark}`);
 
-  const messagesResult = await state.apiClient.getGroupMessages(creator, group);
+  const messagesResult = await state.apiClient.getGroupMessages(creator, group, watermark);
 
   if (!messagesResult.ok) {
     logger.warn(

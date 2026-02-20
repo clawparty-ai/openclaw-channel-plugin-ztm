@@ -161,7 +161,8 @@ export function createMessageApi(
      */
     async getGroupMessages(
       creator: string,
-      group: string
+      group: string,
+      since?: number
     ): Promise<Result<ZTMMessage[], ZTMReadError>> {
       // Validate creator username format
       const creatorValidation = validateUsername(creator);
@@ -192,11 +193,16 @@ export function createMessageApi(
       }
 
       const safeGroup = sanitizeForLog(`${creator}/${group}`);
-      logger.debug?.(`[ZTM API] Fetching group messages from "${safeGroup}"`);
+      logger.debug?.(`[ZTM API] Fetching group messages from "${safeGroup}" since=${since}`);
+
+      const queryParams = new URLSearchParams();
+      if (since !== undefined) {
+        queryParams.set('since', since.toString());
+      }
 
       const result = await request<ZTMMessage[]>(
         'GET',
-        `${CHAT_API_BASE}/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages`
+        `${CHAT_API_BASE}/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages?${queryParams.toString()}`
       );
 
       if (!result.ok) {
