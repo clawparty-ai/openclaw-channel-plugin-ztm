@@ -131,6 +131,10 @@ export class AccountStateManager {
         clearInterval(state.watchInterval);
         state.watchInterval = null;
       }
+      if (state.watchAbortController) {
+        state.watchAbortController.abort();
+        state.watchAbortController = undefined;
+      }
       state.messageCallbacks.clear();
       state.pendingPairings.clear();
       state.allowFromCache = null;
@@ -403,6 +407,11 @@ export class AccountStateManager {
     if (state.watchInterval) {
       clearInterval(state.watchInterval);
       state.watchInterval = null;
+    }
+
+    if (state.watchAbortController) {
+      state.watchAbortController.abort();
+      state.watchAbortController = undefined;
     }
 
     state.messageCallbacks.clear();

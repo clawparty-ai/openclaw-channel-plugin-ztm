@@ -42,7 +42,8 @@ import {
  */
 export async function startMessageWatcher(
   state: AccountRuntimeState,
-  context: MessagingContext
+  context: MessagingContext,
+  abortSignal?: AbortSignal
 ): Promise<void> {
   const { apiClient } = state;
   if (!apiClient) return;
@@ -66,7 +67,7 @@ export async function startMessageWatcher(
   await handleInitialPairingRequests(state, initAllowFrom, chats);
 
   // Step 6: Start watch loop
-  startWatchLoop(state, rt, messagePath, context);
+  startWatchLoop(state, rt, messagePath, context, abortSignal);
 }
 
 /**
@@ -158,7 +159,8 @@ class WatchLoopController {
     private readonly state: AccountRuntimeState,
     private readonly rt: PluginRuntime,
     private readonly messagePath: string,
-    private readonly context: MessagingContext
+    private readonly context: MessagingContext,
+    private readonly abortSignal?: AbortSignal
   ) {
     this.messageSemaphore = new Semaphore(MESSAGE_SEMAPHORE_PERMITS);
   }
@@ -167,6 +169,7 @@ class WatchLoopController {
    * Start the watch loop
    */
   start(): void {
+    if (this.abortSignal?.aborted) return;
     logger.debug(`[${this.state.accountId}] Starting watch loop`);
     this.scheduleNextIteration();
   }
@@ -175,6 +178,7 @@ class WatchLoopController {
    * Schedule the next watch iteration with proper timing
    */
   private scheduleNextIteration(delayMs?: number): void {
+    if (this.abortSignal?.aborted) return;
     setTimeout(() => this.runIteration(), delayMs ?? WATCH_INTERVAL_MS);
   }
 
@@ -182,6 +186,9 @@ class WatchLoopController {
    * Run a single watch iteration with proper error handling and scheduling
    */
   private async runIteration(): Promise<void> {
+    // Stop gracefully if aborted
+    if (this.abortSignal?.aborted) return;
+
     // Skip if an iteration is already in progress
     if (this.pendingIteration) {
       return;
@@ -268,7 +275,7 @@ class WatchLoopController {
     if (this.state.watchErrorCount > WATCH_ERROR_THRESHOLD) {
       logger.warn(`[${this.state.accountId}] Too many watch errors, falling back to polling`);
       this.state.watchErrorCount = 0;
-      startPollingWatcher(this.state, this.context);
+      startPollingWatcher(this.state, this.context, this.abortSignal);
     }
   }
 
@@ -355,9 +362,10 @@ function startWatchLoop(
   state: AccountRuntimeState,
   rt: PluginRuntime,
   messagePath: string,
-  context: MessagingContext
+  context: MessagingContext,
+  abortSignal?: AbortSignal
 ): void {
-  const controller = new WatchLoopController(state, rt, messagePath, context);
+  const controller = new WatchLoopController(state, rt, messagePath, context, abortSignal);
   controller.start();
 }
 

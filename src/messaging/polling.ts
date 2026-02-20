@@ -105,7 +105,8 @@ import { MAX_CHATS_PER_POLL } from '../constants.js';
 // Fallback polling watcher (when watch is unavailable)
 export async function startPollingWatcher(
   state: AccountRuntimeState,
-  context: MessagingContext
+  context: MessagingContext,
+  abortSignal?: AbortSignal
 ): Promise<void> {
   const { config, apiClient } = state;
   if (!apiClient) return;
@@ -119,6 +120,12 @@ export async function startPollingWatcher(
   logger.info(`[${state.accountId}] Starting polling watcher (${pollingInterval}ms)`);
 
   state.watchInterval = setInterval(async () => {
+    if (abortSignal?.aborted) {
+      clearInterval(state.watchInterval!);
+      state.watchInterval = null;
+      return;
+    }
+
     if (!state.apiClient || !state.config) return;
 
     // Use cached allowFrom to avoid redundant async calls every poll cycle
@@ -147,4 +154,13 @@ export async function startPollingWatcher(
 
     await processChats(chatsToProcess, config, pollStoreAllowFrom, state.accountId, state);
   }, pollingInterval);
+
+  if (abortSignal) {
+    abortSignal.addEventListener('abort', () => {
+      if (state.watchInterval) {
+        clearInterval(state.watchInterval);
+        state.watchInterval = null;
+      }
+    }, { once: true });
+  }
 }

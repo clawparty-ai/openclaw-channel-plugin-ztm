@@ -259,9 +259,19 @@ async function setupAccountCallbacks(
   const messageCallback = createMessageCallback(accountId, config, rt, cfg, state, ctx);
   state.messageCallbacks.add(messageCallback);
 
+  // Abort any existing watcher before starting a new one
+  if (state.watchAbortController) {
+    state.watchAbortController.abort();
+    state.watchAbortController = undefined;
+  }
+
+  // Create abort controller for the new watcher
+  const watchAbortController = new AbortController();
+  state.watchAbortController = watchAbortController;
+
   // Create messaging context and start watching for messages
   const messagingContext = createMessagingContext(rt);
-  await startMessageWatcher(state, messagingContext);
+  await startMessageWatcher(state, messagingContext, watchAbortController.signal);
 
   // Setup periodic cleanup to prevent unbounded growth of pending pairings
   const cleanupInterval = setInterval(() => {
@@ -323,6 +333,7 @@ export async function startAccountGateway(ctx: {
   return async () => {
     clearInterval(cleanupInterval);
     state.messageCallbacks.delete(messageCallback);
+    state.watchAbortController?.abort();
     await stopRuntime(account.accountId);
   };
 }

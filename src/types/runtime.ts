@@ -70,6 +70,7 @@ export interface AccountRuntimeState {
   // Not required in test fixtures - initialized in getOrCreateAccountState
   callbackSemaphore?: Semaphore;
   watchInterval: ReturnType<typeof setInterval> | null;
+  watchAbortController?: AbortController;
   watchErrorCount: number;
   // Kept for test compatibility - not actively used in simplified flow
   pendingPairings: Map<string, Date>;

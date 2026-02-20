@@ -2220,3 +2220,128 @@ describe('WatchLoopController behavior', () => {
     });
   });
 });
+
+describe('abortSignal support', () => {
+  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const originalSetTimeout = global.setTimeout;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdTimeouts = [];
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      const ref = originalSetTimeout(callback, ms);
+      createdTimeouts.push(ref);
+      return ref;
+    }) as unknown as typeof setTimeout;
+  });
+
+  afterEach(() => {
+    for (const timeout of createdTimeouts) {
+      clearTimeout(timeout);
+    }
+    createdTimeouts = [];
+    global.setTimeout = originalSetTimeout;
+  });
+
+  it('should stop watch loop when abortSignal is aborted', async () => {
+    const abortController = new AbortController();
+    let watchCallCount = 0;
+
+    const mockApiClient = {
+      watchChanges: vi.fn(() => {
+        watchCallCount++;
+        return Promise.resolve(mockSuccess({ value: [] }));
+      }),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    const state: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<MessageCallback>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(state, mockContext, abortController.signal);
+
+    // Wait for at least one iteration
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    const countBeforeAbort = watchCallCount;
+    expect(countBeforeAbort).toBeGreaterThan(0);
+
+    // Abort the signal
+    abortController.abort();
+
+    // Wait for more time - watch should stop
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    const countAfterAbort = watchCallCount;
+
+    // After abort, no more iterations should have occurred (allow at most 1 in-flight)
+    expect(countAfterAbort - countBeforeAbort).toBeLessThanOrEqual(1);
+  });
+
+  it('should not start watch loop if signal already aborted', async () => {
+    const abortController = new AbortController();
+    abortController.abort();
+
+    let watchCallCount = 0;
+
+    const mockApiClient = {
+      watchChanges: vi.fn(() => {
+        watchCallCount++;
+        return Promise.resolve(mockSuccess({ value: [] }));
+      }),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    const state: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<MessageCallback>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    const mockContext = createMockMessagingContext();
+    await startMessageWatcher(state, mockContext, abortController.signal);
+
+    // Wait to see if any iterations occur
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    // No watchChanges calls should have been made
+    expect(watchCallCount).toBe(0);
+  });
+});

@@ -270,5 +270,28 @@ describe('polling', () => {
 
       expect(mockProcessGroupMessage).not.toHaveBeenCalled();
     }, 10000);
+
+    describe('abortSignal support', () => {
+      it('should stop polling when abortSignal fires', async () => {
+        const abortController = new AbortController();
+
+        await startPollingWatcher(mockState, mockContext, abortController.signal);
+        expect(mockState.watchInterval).not.toBeNull();
+
+        abortController.abort();
+        expect(mockState.watchInterval).toBeNull();
+      });
+
+      it('should clear interval on pre-aborted signal', async () => {
+        const abortController = new AbortController();
+        abortController.abort();
+
+        await startPollingWatcher(mockState, mockContext, abortController.signal);
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
+
+        expect(mockState.watchInterval).toBeNull();
+      }, 10000);
+    });
   });
 });
