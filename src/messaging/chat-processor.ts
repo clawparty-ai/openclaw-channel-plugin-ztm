@@ -56,13 +56,21 @@ export async function processChatMessage(
 /**
  * Process a chat and notify callbacks with full message details
  * Used when you need to pass the full state to notify callbacks
+ *
+ * @param chat - The ZTM chat to process
+ * @param state - Account runtime state containing config and accountId
+ * @param storeAllowFrom - Allowed senders list for pairing mode
+ * @returns True if message was processed, false otherwise
  */
 export async function processAndNotifyChat(
   chat: ZTMChat,
   state: AccountRuntimeState,
   storeAllowFrom: string[]
 ): Promise<boolean> {
-  const validation = validateChatMessage(chat, state.config);
+  // Extract state properties upfront to reduce feature envy
+  const { config, accountId } = state;
+
+  const validation = validateChatMessage(chat, config);
   if (!validation.valid) {
     return false;
   }
@@ -78,9 +86,9 @@ export async function processAndNotifyChat(
         sender: sender,
       },
       {
-        config: state.config,
+        config,
         storeAllowFrom,
-        accountId: state.accountId,
+        accountId,
         groupInfo: { creator: chat.creator!, group: chat.group! },
       }
     );
@@ -104,7 +112,7 @@ export async function processAndNotifyChat(
       message: chat.latest!.message,
       sender: sender,
     },
-    { config: state.config, storeAllowFrom, accountId: state.accountId }
+    { config, storeAllowFrom, accountId }
   );
   if (normalized) {
     await notifyMessageCallbacks(state, normalized);
@@ -112,7 +120,7 @@ export async function processAndNotifyChat(
 
   // peer is guaranteed to be valid here due to validateChatMessage check
   const peer = chat.peer!;
-  const check = checkDmPolicy(peer, state.config, storeAllowFrom);
+  const check = checkDmPolicy(peer, config, storeAllowFrom);
   if (check.action === 'request_pairing') {
     await handlePairingRequest(state, peer, 'New message', storeAllowFrom);
   }
