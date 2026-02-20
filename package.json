@@ -28,7 +28,7 @@
     "test:coverage:integration": "vitest run --coverage --config vitest.config.integration.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src index.ts index.test.ts --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"index.ts\" \"index.test.ts\"",
     "prepublishOnly": "npm run build",
     "changelog": "git-cliff --output CHANGELOG.md",
     "changelog:unreleased": "git-cliff --unreleased",
