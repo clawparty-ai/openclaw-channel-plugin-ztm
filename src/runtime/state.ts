@@ -60,6 +60,11 @@ export class AccountStateManager {
   private states = new Map<string, AccountRuntimeState>();
   private deps: AccountStateManagerDeps;
 
+  // Request coalescing maps to prevent cache stampede
+  // When cache expires, only one request rebuilds while others wait for the result
+  private allowFromFetchPromises = new Map<string, Promise<string[] | null>>();
+  private groupPermissionFetchPromises = new Map<string, Promise<GroupPermissions>>();
+
   constructor(deps: AccountStateManagerDeps) {
     this.deps = deps;
   }
@@ -196,6 +201,9 @@ export class AccountStateManager {
    *
    * Note: This uses graceful degradation - errors are logged but don't throw.
    * Callers should use getOrDefault(result, []) to provide fallback values.
+   *
+   * Uses request coalescing to prevent cache stampede - multiple concurrent
+   * requests will share a single fetch operation.
    */
   async getAllowFromCache(
     accountId: string,
@@ -204,6 +212,7 @@ export class AccountStateManager {
     const runtime = typeof rt === 'function' ? rt() : rt;
     const state = this.states.get(accountId);
 
+    // If no state, fetch directly without caching
     if (!state) {
       try {
         return await runtime.channel.pairing.readAllowFromStore('ztm-chat');
@@ -217,26 +226,48 @@ export class AccountStateManager {
 
     const now = Date.now();
 
+    // Return cached value if still valid
     if (state.allowFromCache && now - state.allowFromCache.timestamp < ALLOW_FROM_CACHE_TTL_MS) {
       return state.allowFromCache.value;
     }
 
-    try {
-      const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore('ztm-chat');
-      state.allowFromCache = {
-        value: freshAllowFrom,
-        timestamp: now,
-      };
-      return freshAllowFrom;
-    } catch (err) {
-      this.deps.logger.error(
-        `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
-      );
-      if (state.allowFromCache) {
-        return state.allowFromCache.value;
+    // Check if there's already an in-flight request - coalesce requests
+    const existingPromise = this.allowFromFetchPromises.get(accountId);
+    if (existingPromise) {
+      // Wait for the existing request to complete
+      const result = await existingPromise;
+      // Update cache with the result (timestamp may be different but value is still valid)
+      if (result !== null) {
+        state.allowFromCache = { value: result, timestamp: now };
       }
-      return null;
+      return result;
     }
+
+    // Create new fetch promise and store it to coalesce concurrent requests
+    const fetchPromise = (async (): Promise<string[] | null> => {
+      try {
+        const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore('ztm-chat');
+        state.allowFromCache = {
+          value: freshAllowFrom,
+          timestamp: Date.now(),
+        };
+        return freshAllowFrom;
+      } catch (err) {
+        this.deps.logger.error(
+          `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+        if (state.allowFromCache) {
+          return state.allowFromCache.value;
+        }
+        return null;
+      } finally {
+        // Remove the promise after completion to allow future fetches
+        this.allowFromFetchPromises.delete(accountId);
+      }
+    })();
+
+    this.allowFromFetchPromises.set(accountId, fetchPromise);
+    return fetchPromise;
   }
 
   /**
@@ -251,6 +282,12 @@ export class AccountStateManager {
 
   /**
    * Get cached group permission or compute and cache if not present
+   *
+   * Uses request coalescing to prevent cache stampede - multiple concurrent
+   * requests for the same group will share the computation result.
+   *
+   * Note: getGroupPermission is synchronous, but we still use coalescing
+   * for consistency and to handle the case where it might become async in future.
    */
   getGroupPermissionCached(
     accountId: string,
@@ -265,13 +302,30 @@ export class AccountStateManager {
       return getGroupPermission(creator, group, config);
     }
 
+    // Return cached value if present
     const cached = state.groupPermissionCache?.get(cacheKey);
     if (cached) {
       return cached;
     }
 
+    // Check if there's already an in-flight computation
+    const existingPromise = this.groupPermissionFetchPromises.get(cacheKey);
+    if (existingPromise) {
+      // Wait for the existing computation and cache the result
+      const result = getGroupPermission(creator, group, config);
+      state.groupPermissionCache?.set(cacheKey, result);
+      return result;
+    }
+
+    // Create new computation and track it
     const permissions = getGroupPermission(creator, group, config);
+    this.groupPermissionFetchPromises.set(cacheKey, Promise.resolve(permissions));
+
     state.groupPermissionCache?.set(cacheKey, permissions);
+
+    // Clean up after a tick
+    Promise.resolve().then(() => this.groupPermissionFetchPromises.delete(cacheKey));
+
     return permissions;
   }
 
