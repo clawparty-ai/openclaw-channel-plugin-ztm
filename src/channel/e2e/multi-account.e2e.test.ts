@@ -8,10 +8,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
-import {
-  createTestServer,
-  type TestServer,
-} from '../../test-utils/http-server.js';
+import { createTestServer, type TestServer } from '../../test-utils/http-server.js';
 
 describe('E2E: Multi-Account Concurrency', () => {
   let servers: TestServer[] = [];
@@ -39,11 +36,11 @@ describe('E2E: Multi-Account Concurrency', () => {
 
     // Both servers should work independently
     const response1 = await fetch(server1.url);
-    const data1 = await response1.json() as { account: string };
+    const data1 = (await response1.json()) as { account: string };
     expect(data1.account).toBe('account-1');
 
     const response2 = await fetch(server2.url);
-    const data2 = await response2.json() as { account: string };
+    const data2 = (await response2.json()) as { account: string };
     expect(data2.account).toBe('account-2');
   });
 

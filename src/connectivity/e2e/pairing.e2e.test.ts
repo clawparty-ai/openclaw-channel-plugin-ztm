@@ -8,10 +8,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
-import {
-  createTestServer,
-  type TestServer,
-} from '../../test-utils/http-server.js';
+import { createTestServer, type TestServer } from '../../test-utils/http-server.js';
 
 describe('E2E: Pairing Flow', () => {
   let servers: TestServer[] = [];
@@ -49,7 +46,7 @@ describe('E2E: Pairing Flow', () => {
     });
 
     expect(response.status).toBe(200);
-    const data = await response.json() as { code: string; expiresAt: number };
+    const data = (await response.json()) as { code: string; expiresAt: number };
     expect(data.code).toBeDefined();
     expect(data.expiresAt).toBeGreaterThan(Date.now());
   });

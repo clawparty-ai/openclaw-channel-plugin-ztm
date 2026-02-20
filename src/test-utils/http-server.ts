@@ -118,7 +118,9 @@ export interface TestServerOptions {
  * await server.close();
  * ```
  */
-export async function createTestServer(options: TestServerOptions = {}): Promise<ExtendedTestServer> {
+export async function createTestServer(
+  options: TestServerOptions = {}
+): Promise<ExtendedTestServer> {
   const { handler = defaultHandler, port = 0, host = 'localhost' } = options;
   const receivedRequests: TestRequest[] = [];
 

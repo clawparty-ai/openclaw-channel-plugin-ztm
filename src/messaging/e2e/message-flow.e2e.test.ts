@@ -32,7 +32,7 @@ describe('E2E: Message Flow', () => {
     });
 
     expect(response.status).toBe(200);
-    const data = await response.json() as { connected: boolean };
+    const data = (await response.json()) as { connected: boolean };
     expect(data.connected).toBe(true);
   });
 
@@ -48,7 +48,7 @@ describe('E2E: Message Flow', () => {
     });
 
     expect(response.status).toBe(500);
-    const data = await response.json() as { error: string };
+    const data = (await response.json()) as { error: string };
     expect(data.error).toBe('Injected error');
   });
 
@@ -64,7 +64,7 @@ describe('E2E: Message Flow', () => {
 
     const response1 = await fetch(server.url);
     expect(response1.status).toBe(200);
-    const data1 = await response1.json() as { result: string };
+    const data1 = (await response1.json()) as { result: string };
     expect(data1.result).toBe('first');
 
     const response2 = await fetch(server.url);

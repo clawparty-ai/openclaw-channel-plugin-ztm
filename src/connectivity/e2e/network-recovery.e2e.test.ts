@@ -9,10 +9,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
-import {
-  createTestServer,
-  type TestServer,
-} from '../../test-utils/http-server.js';
+import { createTestServer, type TestServer } from '../../test-utils/http-server.js';
 
 describe('E2E: Network Error Recovery', () => {
   let servers: TestServer[] = [];

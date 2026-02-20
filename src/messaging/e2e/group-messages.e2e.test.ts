@@ -8,10 +8,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
-import {
-  createTestServer,
-  type TestServer,
-} from '../../test-utils/http-server.js';
+import { createTestServer, type TestServer } from '../../test-utils/http-server.js';
 
 describe('E2E: Group Messages', () => {
   let servers: TestServer[] = [];
@@ -53,9 +50,7 @@ describe('E2E: Group Messages', () => {
     const mentionedUsers = ['admin', 'moderator'];
     const messageText = 'Hello @admin!';
 
-    const containsMention = mentionedUsers.some(user =>
-      messageText.includes(`@${user}`)
-    );
+    const containsMention = mentionedUsers.some(user => messageText.includes(`@${user}`));
 
     expect(containsMention).toBe(true);
   });
