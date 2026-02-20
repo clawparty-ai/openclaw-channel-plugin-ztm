@@ -36,7 +36,6 @@ export type { IAllowFromRepository, IMessageStateRepository };
 import { logger as loggerInstance } from '../utils/logger.js';
 import { getEffectiveChannelConfig } from '../channel/config.js';
 import { createZTMApiClient } from '../api/ztm-api.js';
-import { getZTMRuntime, isRuntimeInitialized } from '../runtime/runtime.js';
 import { getAllowFromRepository, getMessageStateRepository } from '../runtime/repository-impl.js';
 
 /**
@@ -97,12 +96,20 @@ export function createApiClientService(): () => IApiClient {
  * Runtime service factory
  * Returns a factory function for DI container registration
  *
+ * This factory uses RuntimeManager directly to avoid hidden dependencies
+ * on module-level singletons. The RuntimeManager is still a singleton,
+ * but accessing it through DI makes the dependency explicit.
+ *
  * @returns Factory function that returns an IRuntime instance
  */
 export function createRuntimeService(): () => IRuntime {
+  // Import RuntimeManager directly to ensure DI container is the entry point
+  const { RuntimeManager } = require('../runtime/runtime.js');
+  const manager = RuntimeManager.getInstance();
+
   return () => ({
-    get: () => getZTMRuntime(),
-    isInitialized: () => isRuntimeInitialized(),
+    get: () => manager.getRuntime(),
+    isInitialized: () => manager.isInitialized(),
   });
 }
 
@@ -141,19 +148,17 @@ export function createApiClientFactory(): () => IApiClientFactory {
  * AccountStateManager factory with DI
  * Returns a factory function for DI container registration
  *
- * @returns Factory function that returns an AccountStateManager instance
+ * This factory uses the module-level singleton to ensure consistent state
+ * across the application. Using the singleton through DI makes the
+ * dependency explicit and improves testability.
+ *
+ * @returns Factory function that returns the AccountStateManager singleton
  */
 export function createAccountStateManagerService(): () => unknown {
-  // Import here to avoid circular dependencies
-  const { AccountStateManager } = require('../runtime/state.js');
-  const { createZTMApiClient } = require('../api/ztm-api.js');
-  const { logger } = require('../utils/logger.js');
+  // Import getAccountStateManager to use the singleton
+  const { getAccountStateManager } = require('../runtime/state.js');
 
-  return () =>
-    new AccountStateManager({
-      apiClientFactory: createZTMApiClient,
-      logger: logger,
-    });
+  return () => getAccountStateManager();
 }
 
 // ============================================================================
