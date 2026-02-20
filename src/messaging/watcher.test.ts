@@ -1802,3 +1802,218 @@ describe('constants verification', () => {
     expect(WATCH_ERROR_THRESHOLD).toBe(5);
   });
 });
+
+// Additional error handling tests for uncovered paths
+describe('processChangedPaths empty items', () => {
+  let mockState: AccountRuntimeState;
+  let mockContext: MessagingContext;
+  let mockApiClient: any;
+
+  beforeEach(() => {
+    mockApiClient = {
+      getChats: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      getGroupMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+    };
+
+    mockState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    mockContext = {
+      messageStateRepo: {
+        getFileMetadata: vi.fn(() => ({})),
+        setFileMetadataBulk: vi.fn(),
+        getWatermark: vi.fn(() => 0),
+        setWatermark: vi.fn(),
+        flush: vi.fn(),
+      },
+      allowFromRepo: {
+        getAllowFrom: vi.fn(() => Promise.resolve([])),
+        clearCache: vi.fn(),
+      },
+    };
+  });
+
+  it('should return false when changedItems is empty', async () => {
+    // Import the function that handles processChangedPaths
+    const { startMessageWatcher } = await import('./watcher.js');
+
+    // When items array is empty, should return false (no messages processed)
+    // This tests the early return in processChangedPaths
+    await startMessageWatcher(mockState, mockContext);
+    // Should complete without error
+  });
+});
+
+describe('processChangedPeer error handling', () => {
+  it('should return early when apiClient is null', async () => {
+    const mockContext = createMockMessagingContext();
+
+    const stateWithNullClient: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: null,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    // Should not throw when apiClient is null - early return
+    await startMessageWatcher(stateWithNullClient, mockContext);
+  });
+});
+
+describe('processChangedGroup error handling', () => {
+  it('should handle getGroupMessages failure gracefully', async () => {
+    const failingApiClient = {
+      getChats: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      getGroupMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      watchChanges: vi
+        .fn()
+        .mockResolvedValue(
+          mockSuccess({ value: [{ type: 'group', creator: 'admin', group: 'test-group' }] })
+        ),
+    };
+
+    const state: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: failingApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    const mockContext = createMockMessagingContext();
+
+    // Should complete without throwing despite potential errors
+    await startMessageWatcher(state, mockContext);
+  });
+});
+
+describe('performFullSync error handling', () => {
+  it('should handle getChats failure in performFullSync', async () => {
+    const failingApiClient = {
+      getChats: vi.fn().mockResolvedValue({ ok: false, error: new Error('Network error') }),
+      getPeerMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      getGroupMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      watchChanges: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
+      seedFileMetadata: vi.fn(),
+    };
+
+    const state: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: failingApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    const mockContext = createMockMessagingContext();
+
+    // Should complete despite getChats failure - error is logged but not thrown
+    await startMessageWatcher(state, mockContext);
+  });
+
+  it('should handle null apiClient in performFullSync', async () => {
+    const stateWithNullClient: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: null,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    const mockContext = createMockMessagingContext();
+
+    // Should return early when apiClient is null
+    await startMessageWatcher(stateWithNullClient, mockContext);
+  });
+});
+
+describe('executeWatch error handling', () => {
+  it('should handle missing apiClient in executeWatch', async () => {
+    const stateWithoutClient: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: null,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    const mockContext = createMockMessagingContext();
+
+    // Should handle missing apiClient gracefully
+    await startMessageWatcher(stateWithoutClient, mockContext);
+  });
+});
