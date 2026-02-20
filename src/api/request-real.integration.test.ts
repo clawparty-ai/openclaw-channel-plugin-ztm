@@ -569,7 +569,11 @@ describe('API Request Real HTTP Integration', () => {
         expect(true).toBe(false);
       } catch (error) {
         // DNS resolution failure or connection error expected
-        expect(error).toBeInstanceOf(DOMException);
+        // Bun throws TypeError, Node.js throws DOMException
+        expect(error).toMatchObject({
+          name: expect.any(String),
+          message: expect.any(String),
+        });
       }
     });
   });
