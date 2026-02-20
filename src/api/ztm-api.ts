@@ -26,6 +26,7 @@ export type {
 
 import { createRequestHandler, defaultDeps, type ZTMApiClientDeps } from './request.js';
 
+import { API_TIMEOUT_MS } from '../constants.js';
 import { createMeshApi } from './mesh-api.js';
 import { createChatApi } from './chat-api.js';
 import { createMessageApi } from './message-api.js';
@@ -51,7 +52,7 @@ export function createZTMApiClient(
   };
 
   const baseUrl = config.agentUrl.replace(/\/$/, '');
-  const apiTimeout = config.apiTimeout || 30000;
+  const apiTimeout = config.apiTimeout || API_TIMEOUT_MS;
 
   // Create the request handler
   const request = createRequestHandler(baseUrl, apiTimeout, {
