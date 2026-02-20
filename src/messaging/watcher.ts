@@ -361,6 +361,8 @@ function startWatchLoop(
 
 /**
  * Process all changed items and handle state updates
+ *
+ * @returns true if any messages were actually processed
  */
 async function processChangedPaths(
   ctx: WatchContext,
@@ -372,6 +374,17 @@ async function processChangedPaths(
   const { state, rt, messageSemaphore } = ctx;
 
   if (changedItems.length === 0) {
+    // No items to process - this could be the transition to idle state
+    // If we were receiving messages before, schedule a final full sync
+    if (messagesReceivedInCycle) {
+      // Use cached allowFrom for the final sync
+      const loopStoreAllowFrom = await messagingContext.allowFromRepo.getAllowFrom(
+        state.accountId,
+        rt
+      );
+      const effectiveAllowFrom = getOrDefault(loopStoreAllowFrom, []);
+      scheduleFullSync(effectiveAllowFrom);
+    }
     return false;
   }
 
@@ -439,7 +452,7 @@ async function processChangedPaths(
 
   await Promise.all(tasks);
 
-  scheduleFullSync(effectiveAllowFrom);
+  // Persist file metadata after processing
   if (state.apiClient) {
     messagingContext.messageStateRepo.setFileMetadataBulk(
       state.accountId,
