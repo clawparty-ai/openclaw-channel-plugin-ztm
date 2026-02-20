@@ -45,3 +45,6 @@ npm-debug.log*
 CLAUDE.md
 .claude/
 .mcp.json
+
+# Worktrees
+.worktrees/
