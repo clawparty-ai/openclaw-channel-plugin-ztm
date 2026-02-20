@@ -9,15 +9,20 @@ import { MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS } from '
  * LRU Cache for group permissions with bounded size and TTL.
  * Prevents unbounded memory growth by evicting least recently used entries
  * and expired entries.
+ *
+ * Uses JavaScript Map's insertion order for O(1) LRU operations:
+ * - Most recent entry is at the end of the Map
+ * - Least recent entry is at the beginning of the Map
+ * - Accessing an entry moves it to the end (most recently used)
+ *
+ * TTL eviction is amortized O(1) using lazy expiration checking.
  */
 export class GroupPermissionLRUCache {
-  private cache = new Map<
-    string,
-    { permissions: GroupPermissions; accessOrder: number; expiresAt: number }
-  >();
+  // Map maintains insertion order: [oldest, ..., newest]
+  // This enables O(1) LRU eviction by deleting the first entry
+  private cache = new Map<string, { permissions: GroupPermissions; expiresAt: number }>();
   private maxSize: number;
   private ttlMs: number;
-  private accessCounter = 0;
 
   constructor(
     maxSize: number = MAX_GROUP_PERMISSION_CACHE_SIZE,
@@ -34,82 +39,70 @@ export class GroupPermissionLRUCache {
   }
 
   /**
-   * Evict expired entries and return current cache size
+   * Check if a single entry is expired (O(1))
    */
-  private evictExpired(): number {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.expiresAt < now) {
-        this.cache.delete(key);
-      }
-    }
-    return this.cache.size;
+  private isExpired(entry: { expiresAt: number }): boolean {
+    return entry.expiresAt < Date.now();
   }
 
   /**
-   * Evict least recently used entry to make room for new entry
+   * Evict oldest (least recently used) entry - O(1)
+   * Map.entries().next().value gives the first entry (oldest due to insertion order)
    */
   private evictLRU(): void {
-    let lruKey: string | null = null;
-    let oldestOrder = Infinity;
-
-    for (const [cacheKey, entry] of this.cache.entries()) {
-      if (entry.accessOrder < oldestOrder) {
-        lruKey = cacheKey;
-        oldestOrder = entry.accessOrder;
-      }
-    }
-
-    if (lruKey) {
-      this.cache.delete(lruKey);
-      logger.debug(`Evicted LRU group permission cache entry: ${lruKey}`);
+    const firstKey = this.cache.keys().next().value;
+    if (firstKey !== undefined) {
+      this.cache.delete(firstKey);
+      logger.debug(`Evicted LRU group permission cache entry: ${firstKey}`);
     }
   }
 
   get(key: string): GroupPermissions | undefined {
-    // First evict any expired entries
-    this.evictExpired();
-
     const entry = this.cache.get(key);
-    if (entry) {
-      // Check if entry has expired
-      if (entry.expiresAt < Date.now()) {
-        this.cache.delete(key);
-        return undefined;
-      }
-      // Update access order for LRU (using counter for deterministic ordering)
-      entry.accessOrder = ++this.accessCounter;
-      return entry.permissions;
+    if (!entry) {
+      return undefined;
     }
-    return undefined;
+
+    // Check if entry has expired
+    if (this.isExpired(entry)) {
+      this.cache.delete(key);
+      return undefined;
+    }
+
+    // O(1) LRU update: delete and re-insert moves entry to end (most recently used)
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+    return entry.permissions;
   }
 
   has(key: string): boolean {
-    this.evictExpired();
     const entry = this.cache.get(key);
-    if (entry && entry.expiresAt >= Date.now()) {
-      return true;
+    if (!entry) {
+      return false;
     }
-    // Clean up expired entry if present
-    if (entry) {
+
+    if (this.isExpired(entry)) {
       this.cache.delete(key);
+      return false;
     }
-    return false;
+
+    return true;
   }
 
   set(key: string, permissions: GroupPermissions): void {
-    // First evict expired entries
-    this.evictExpired();
+    // If key exists, delete it first (will be re-added at end)
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
 
-    // Evict LRU entries until we have room
-    while (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+    // Evict LRU entries until we have room - O(1) per eviction
+    while (this.cache.size >= this.maxSize) {
       this.evictLRU();
     }
 
     const now = Date.now();
     this.cache.set(key, {
       permissions,
-      accessOrder: ++this.accessCounter,
       expiresAt: now + this.ttlMs,
     });
   }
@@ -119,7 +112,17 @@ export class GroupPermissionLRUCache {
   }
 
   size(): number {
-    this.evictExpired();
+    // Lazy expiration: only check first entry (oldest)
+    // This keeps size() O(1) amortized instead of O(n)
+    const firstEntry = this.cache.entries().next().value;
+    if (firstEntry) {
+      const [key, entry] = firstEntry;
+      if (this.isExpired(entry)) {
+        this.cache.delete(key);
+        // Check if more expired entries at the start
+        return this.size(); // Recursive but O(1) amortized
+      }
+    }
     return this.cache.size;
   }
 }
