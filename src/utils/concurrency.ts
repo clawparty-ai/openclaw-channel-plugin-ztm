@@ -8,11 +8,17 @@
 interface Waiter {
   promise: Promise<boolean>;
   resolve: (value: boolean) => void;
+  timeoutId?: ReturnType<typeof setTimeout>; // Track timeout for cleanup
 }
 
 /**
  * Semaphore implementation for concurrency control
  * Limits the number of concurrent operations accessing a resource
+ *
+ * Features:
+ * - Configurable max queue size to prevent unbounded growth
+ * - Timeout support for acquire operations
+ * - Automatic cleanup of stale waiters
  *
  * Thread-safety: This implementation is safe for single-threaded JavaScript
  * but uses proper synchronization to prevent race conditions in async scenarios.
@@ -20,18 +26,28 @@ interface Waiter {
 export class Semaphore {
   private permits: number;
   private waiters: Waiter[] = [];
+  private readonly maxQueueSize: number;
 
-  constructor(permits: number) {
+  /**
+   * Create a semaphore with the specified number of permits
+   * @param permits - Number of concurrent permits (must be > 0)
+   * @param maxQueueSize - Maximum number of waiters in queue (default: 1000)
+   */
+  constructor(permits: number, maxQueueSize: number = 1000) {
     if (permits <= 0) {
       throw new Error('Semaphore permits must be greater than 0');
     }
+    if (maxQueueSize <= 0) {
+      throw new Error('Semaphore maxQueueSize must be greater than 0');
+    }
     this.permits = permits;
+    this.maxQueueSize = maxQueueSize;
   }
 
   /**
    * Acquire a permit, waiting if necessary until one is available or timeout expires
-   * @param timeoutMs - Maximum time to wait in milliseconds (default: infinite)
-   * @returns True if permit was acquired, false if timed out
+   * @param timeoutMs - Maximum time to wait in milliseconds (default: infinite, but limited by queue size)
+   * @returns True if permit was acquired, false if timed out or queue is full
    */
   async acquire(timeoutMs?: number): Promise<boolean> {
     // Fast path: permit available immediately
@@ -40,15 +56,15 @@ export class Semaphore {
       return true;
     }
 
-    // If no timeout specified, wait indefinitely
-    if (timeoutMs === undefined) {
-      return new Promise<boolean>(resolve => {
-        this.waiters.push({
-          promise: Promise.resolve(true),
-          resolve: value => resolve(value),
-        });
-      });
+    // Check queue capacity before adding waiter
+    if (this.waiters.length >= this.maxQueueSize) {
+      // Queue is full - reject new waiters to prevent unbounded growth
+      return false;
     }
+
+    // If no timeout specified, use default timeout to prevent indefinite waiting
+    // This prevents stale waiters from accumulating in the queue
+    const effectiveTimeoutMs = timeoutMs ?? this.maxQueueSize * 1000; // Default: 1000ms per waiter
 
     // With timeout: use Promise settled state to prevent race condition
     // The key fix: we resolve with a unique symbol to detect race condition
@@ -61,7 +77,9 @@ export class Semaphore {
       promise,
       resolve: (value: boolean) => {
         // Clear timeout first to prevent timeout callback from also resolving
-        clearTimeout(timeoutId);
+        if (waiter.timeoutId) {
+          clearTimeout(waiter.timeoutId);
+        }
         settleResolve(value);
       },
     };
@@ -75,7 +93,9 @@ export class Semaphore {
         waiter.resolve(false);
       }
       // If not in queue, release() already handled it - do nothing
-    }, timeoutMs);
+    }, effectiveTimeoutMs);
+
+    waiter.timeoutId = timeoutId;
 
     // Add to queue after timeout is set up
     this.waiters.push(waiter);
@@ -105,13 +125,13 @@ export class Semaphore {
   /**
    * Execute a function with a permit held, automatically releasing after completion
    * @param fn - Function to execute
-   * @param timeoutMs - Optional timeout for acquiring permit (default: infinite)
+   * @param timeoutMs - Optional timeout for acquiring permit
    * @returns Result of fn, or throws if permit could not be acquired within timeout
    */
   async execute<T>(fn: () => Promise<T> | T, timeoutMs?: number): Promise<T> {
     const acquired = await this.acquire(timeoutMs);
     if (!acquired) {
-      throw new Error(`Semaphore: failed to acquire permit within ${timeoutMs}ms`);
+      throw new Error(`Semaphore: failed to acquire permit within ${timeoutMs ?? 'default'}ms`);
     }
     try {
       return await fn();
@@ -133,6 +153,22 @@ export class Semaphore {
   queuedWaiters(): number {
     return this.waiters.length;
   }
+
+  /**
+   * Drain all waiters from the queue (useful for shutdown)
+   * @returns Number of waiters that were drained
+   */
+  drain(): number {
+    const count = this.waiters.length;
+    for (const waiter of this.waiters) {
+      if (waiter.timeoutId) {
+        clearTimeout(waiter.timeoutId);
+      }
+      waiter.resolve(false);
+    }
+    this.waiters = [];
+    return count;
+  }
 }
 
 /**
@@ -143,6 +179,7 @@ export class Semaphore {
  * a shared resource.
  *
  * @param permits - Number of concurrent permits available (must be > 0)
+ * @param maxQueueSize - Maximum queue size (default: 1000)
  * @returns A new Semaphore instance
  * @throws Error if permits is <= 0
  *
@@ -158,6 +195,6 @@ export class Semaphore {
  *   semaphore.release();
  * }
  */
-export function createSemaphore(permits: number): Semaphore {
-  return new Semaphore(permits);
+export function createSemaphore(permits: number, maxQueueSize?: number): Semaphore {
+  return new Semaphore(permits, maxQueueSize);
 }

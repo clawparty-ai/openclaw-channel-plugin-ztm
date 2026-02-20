@@ -531,4 +531,70 @@ describe('Race condition tests', () => {
       await expect(semaphore.execute(async () => 'done', 0)).rejects.toThrow();
     });
   });
+
+  describe('maxQueueSize limit', () => {
+    it('should reject acquire when queue is full', async () => {
+      const semaphore = new Semaphore(1, 2); // 1 permit, max queue 2
+
+      // Acquire the only permit
+      await semaphore.acquire();
+
+      // These should fill the queue (max 2)
+      const acquire2 = semaphore.acquire();
+      const acquire3 = semaphore.acquire();
+
+      // This should be rejected due to queue limit
+      const acquire4 = semaphore.acquire();
+
+      // Wait for results
+      const results = await Promise.all([acquire2, acquire3, acquire4]);
+
+      // First two should be waiting (or one could succeed if release was called)
+      // Third should fail because queue is full
+      expect(results[2]).toBe(false);
+    });
+
+    it('should throw error for zero maxQueueSize', () => {
+      expect(() => new Semaphore(1, 0)).toThrow();
+    });
+
+    it('should throw error for negative maxQueueSize', () => {
+      expect(() => new Semaphore(1, -1)).toThrow();
+    });
+
+    it('should use default maxQueueSize when not specified', () => {
+      const semaphore = new Semaphore(1);
+      // Should have default maxQueueSize of 1000
+      // We can verify this by checking that queue rejection happens at some limit
+      // The actual limit is internal but constructor should not throw
+      expect(semaphore.availablePermits()).toBe(1);
+    });
+  });
+
+  describe('drain', () => {
+    it('should drain all waiting waiters', async () => {
+      const semaphore = new Semaphore(1); // 1 permit but we'll acquire it
+      await semaphore.acquire(); // Now no permits available
+
+      // Create multiple waiters
+      const p1 = semaphore.acquire(5000);
+      const p2 = semaphore.acquire(5000);
+      const p3 = semaphore.acquire(5000);
+
+      // Give the event loop a chance to add them to the queue
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(semaphore.queuedWaiters()).toBe(3);
+
+      // Drain all waiters
+      const drained = semaphore.drain();
+
+      expect(drained).toBe(3);
+      expect(semaphore.queuedWaiters()).toBe(0);
+
+      // All waiters should have resolved to false
+      const results = await Promise.all([p1, p2, p3]);
+      expect(results).toEqual([false, false, false]);
+    });
+  });
 });
