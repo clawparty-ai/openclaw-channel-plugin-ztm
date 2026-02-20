@@ -546,6 +546,183 @@ describe('createMessageApi', () => {
         expect(result.value?.length).toBe(0);
       }
     });
+
+    it('should skip peers with invalid usernames (e.g., Chinese characters)', async () => {
+      const now = Date.now();
+      const mockGetChats = async () => ({
+        ok: true,
+        value: [
+          {
+            peer: '张三', // Invalid: Chinese characters
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hello', sender: '张三' },
+          },
+          {
+            peer: 'alice', // Valid
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hi', sender: 'alice' },
+          },
+        ],
+        error: null,
+      });
+
+      const messageApi = createMessageApi(
+        testConfig,
+        (async () => ({ ok: true, value: [], error: null })) as any,
+        mockLogger,
+        mockGetChats as any
+      );
+
+      messageApi.setLastPollTime(now - 10000);
+
+      const result = await messageApi.watchChanges('prefix');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        // Should only include the valid peer, skip the Chinese username
+        expect(result.value?.length).toBe(1);
+        expect(result.value?.[0]?.type).toBe('peer');
+        expect(result.value?.[0]?.peer).toBe('alice');
+      }
+      // Verify debug logging was called for skipped item
+      expect(mockLogger.debug).toHaveBeenCalled();
+    });
+
+    it('should skip groups with invalid creator usernames', async () => {
+      const now = Date.now();
+      const mockGetChats = async () => ({
+        ok: true,
+        value: [
+          {
+            creator: '用户A', // Invalid: Chinese characters
+            group: 'test-group',
+            name: 'Test Group',
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hello', sender: '用户A' },
+          },
+          {
+            creator: 'alice', // Valid
+            group: 'another-group',
+            name: 'Another Group',
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hi', sender: 'alice' },
+          },
+        ],
+        error: null,
+      });
+
+      const messageApi = createMessageApi(
+        testConfig,
+        (async () => ({ ok: true, value: [], error: null })) as any,
+        mockLogger,
+        mockGetChats as any
+      );
+
+      messageApi.setLastPollTime(now - 10000);
+
+      const result = await messageApi.watchChanges('prefix');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        // Should only include the valid group
+        expect(result.value?.length).toBe(1);
+        expect(result.value?.[0]?.type).toBe('group');
+        expect(result.value?.[0]?.group).toBe('another-group');
+      }
+      // Verify debug logging was called for skipped item
+      expect(mockLogger.debug).toHaveBeenCalled();
+    });
+
+    it('should skip groups with invalid group IDs', async () => {
+      const now = Date.now();
+      const mockGetChats = async () => ({
+        ok: true,
+        value: [
+          {
+            creator: 'alice',
+            group: '测试组', // Invalid: Chinese characters in group ID
+            name: 'Test Group',
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hello', sender: 'alice' },
+          },
+          {
+            creator: 'bob',
+            group: 'valid-group', // Valid
+            name: 'Valid Group',
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hi', sender: 'bob' },
+          },
+        ],
+        error: null,
+      });
+
+      const messageApi = createMessageApi(
+        testConfig,
+        (async () => ({ ok: true, value: [], error: null })) as any,
+        mockLogger,
+        mockGetChats as any
+      );
+
+      messageApi.setLastPollTime(now - 10000);
+
+      const result = await messageApi.watchChanges('prefix');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        // Should only include the valid group
+        expect(result.value?.length).toBe(1);
+        expect(result.value?.[0]?.type).toBe('group');
+        expect(result.value?.[0]?.group).toBe('valid-group');
+      }
+      // Verify debug logging was called for skipped item
+      expect(mockLogger.debug).toHaveBeenCalled();
+    });
+
+    it('should skip peers with special characters in username', async () => {
+      const now = Date.now();
+      const mockGetChats = async () => ({
+        ok: true,
+        value: [
+          {
+            peer: 'user@example.com', // Invalid: contains @
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hello', sender: 'user@example.com' },
+          },
+          {
+            peer: 'valid_user', // Valid
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hi', sender: 'valid_user' },
+          },
+        ],
+        error: null,
+      });
+
+      const messageApi = createMessageApi(
+        testConfig,
+        (async () => ({ ok: true, value: [], error: null })) as any,
+        mockLogger,
+        mockGetChats as any
+      );
+
+      messageApi.setLastPollTime(now - 10000);
+
+      const result = await messageApi.watchChanges('prefix');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        // Should only include the valid peer
+        expect(result.value?.length).toBe(1);
+        expect(result.value?.[0]?.peer).toBe('valid_user');
+      }
+    });
   });
 
   describe('getLastPollTime and setLastPollTime', () => {
