@@ -7,7 +7,12 @@ import { ZTMReadError, ZTMSendError } from '../types/errors.js';
 import type { ZTMLogger, RequestHandler } from './request.js';
 import { normalizeMessageContent } from './chat-api.js';
 import { sanitizeForLog } from '../utils/log-sanitize.js';
-import { validateUsername, validateGroupId, validateMessageContent } from '../utils/validation.js';
+import {
+  validateUsername,
+  validateGroupId,
+  validateGroupName,
+  validateMessageContent,
+} from '../utils/validation.js';
 import { getOrDefault } from '../utils/guards.js';
 
 /**
@@ -356,6 +361,18 @@ export function createMessageApi(
             );
             continue;
           }
+
+          // Validate group name if present
+          if (chat.name) {
+            const nameValidation = validateGroupName(chat.name);
+            if (!nameValidation.valid) {
+              logger.debug?.(
+                `[ZTM API] Watch: invalid group name "${sanitizeForLog(chat.name)}": ${nameValidation.error}`
+              );
+              // Don't skip the group, just log the warning - group name is optional
+            }
+          }
+
           changedItems.push({
             type: 'group',
             creator: chat.creator,
