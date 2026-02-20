@@ -260,6 +260,59 @@ export function validateGroupId(groupId: string): ValidationResult<string> {
 }
 
 /**
+ * Pattern for valid group names: Unicode letters, numbers, spaces, and common punctuation
+ * Includes Thai script explicitly as some engines may not recognize Thai as \p{L}
+ */
+const GROUP_NAME_PATTERN = /^[\p{L}\p{N}\s\-_.,!?()[\]\p{Script_Extensions=Thai}]+$/u;
+
+/**
+ * Validate a group name format
+ * Similar to username but allows spaces and more punctuation
+ *
+ * @param name - Group name to validate
+ * @returns Validation result with sanitized group name or error message
+ */
+export function validateGroupName(name: string): ValidationResult<string> {
+  // Check for empty name
+  if (!name || typeof name !== 'string') {
+    return { valid: false, error: 'Group name must be a non-empty string' };
+  }
+
+  const trimmed = name.trim();
+
+  // Check for empty after trimming
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Group name cannot be empty or whitespace only' };
+  }
+
+  // Check length (group names can be longer)
+  if (trimmed.length > MAX_GROUP_ID_LENGTH) {
+    return {
+      valid: false,
+      error: `Group name exceeds maximum length of ${MAX_GROUP_ID_LENGTH} characters`,
+    };
+  }
+
+  // Check for path traversal
+  if (containsPathTraversal(trimmed)) {
+    logger.warn(
+      `[Security] Rejected group name with path traversal pattern: "${trimmed.substring(0, 50)}"`
+    );
+    return { valid: false, error: 'Group name contains invalid path traversal patterns' };
+  }
+
+  // Check identifier pattern - allow Unicode letters, numbers, spaces, and common punctuation
+  if (!GROUP_NAME_PATTERN.test(trimmed)) {
+    return {
+      valid: false,
+      error: 'Group name contains invalid characters',
+    };
+  }
+
+  return { valid: true, value: trimmed };
+}
+
+/**
  * Validate message content before sending or processing
  * Checks for:
  * - Non-empty string

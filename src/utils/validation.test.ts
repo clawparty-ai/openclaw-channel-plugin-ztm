@@ -11,6 +11,7 @@ import {
   containsPathTraversal,
   validateUsername,
   validateGroupId,
+  validateGroupName,
   validateMessageContent,
   IDENTIFIER_PATTERN,
   MAX_USERNAME_LENGTH,
@@ -577,6 +578,124 @@ describe('validation utilities', () => {
     it('should reject usernames with special chars', () => {
       expect(validateUsername('user@domain').valid).toBe(false);
       expect(validateUsername('user/name').valid).toBe(false);
+    });
+  });
+
+  describe('validateGroupName', () => {
+    // Unicode support - same languages as username tests
+    // Chinese
+    it('should accept Chinese group names', () => {
+      const result = validateGroupName('中文群组');
+      expect(result.valid).toBe(true);
+      if (result.valid) {
+        expect(result.value).toBe('中文群组');
+      }
+    });
+
+    it('should accept Chinese with numbers', () => {
+      expect(validateGroupName('用户123群').valid).toBe(true);
+    });
+
+    // Japanese
+    it('should accept Japanese group names', () => {
+      expect(validateGroupName('日本語グループ').valid).toBe(true);
+      expect(validateGroupName('山田テスト').valid).toBe(true);
+    });
+
+    // Korean
+    it('should accept Korean group names', () => {
+      expect(validateGroupName('한국어 그룹').valid).toBe(true);
+      expect(validateGroupName('최고이 그룹').valid).toBe(true);
+    });
+
+    // Cyrillic
+    it('should accept Russian Cyrillic group names', () => {
+      expect(validateGroupName('Группа тест').valid).toBe(true);
+      expect(validateGroupName('Иван группа').valid).toBe(true);
+    });
+
+    // Greek
+    it('should accept Greek group names', () => {
+      expect(validateGroupName('Ελληνική ομάδα').valid).toBe(true);
+      expect(validateGroupName('Νίκος Team').valid).toBe(true);
+    });
+
+    // Arabic
+    it('should accept Arabic group names', () => {
+      expect(validateGroupName('مجموعة عربية').valid).toBe(true);
+    });
+
+    // Thai
+    it('should accept Thai group names', () => {
+      expect(validateGroupName('กลุ่มไทย').valid).toBe(true);
+    });
+
+    // German
+    it('should accept German group names', () => {
+      expect(validateGroupName('Deutsche Gruppe').valid).toBe(true);
+      expect(validateGroupName('Müller Team').valid).toBe(true);
+    });
+
+    // French
+    it('should accept French group names', () => {
+      expect(validateGroupName('Groupe français').valid).toBe(true);
+      expect(validateGroupName('Équipe France').valid).toBe(true);
+    });
+
+    // Spanish
+    it('should accept Spanish group names', () => {
+      expect(validateGroupName('Grupo español').valid).toBe(true);
+      expect(validateGroupName('Equipo España').valid).toBe(true);
+    });
+
+    // Portuguese
+    it('should accept Portuguese group names', () => {
+      expect(validateGroupName('Grupo português').valid).toBe(true);
+      expect(validateGroupName('Equipe Brasil').valid).toBe(true);
+    });
+
+    // Spaces and punctuation (unique to group names)
+    it('should accept group names with spaces', () => {
+      expect(validateGroupName('My Group').valid).toBe(true);
+      expect(validateGroupName('Test Group 2024').valid).toBe(true);
+    });
+
+    it('should accept group names with common punctuation', () => {
+      expect(validateGroupName('My Group (2024)').valid).toBe(true);
+      expect(validateGroupName('Group, Inc.').valid).toBe(true);
+      expect(validateGroupName('Test-Group_v2').valid).toBe(true);
+      expect(validateGroupName('Group [Official]').valid).toBe(true);
+    });
+
+    // Edge cases - should reject
+    it('should reject empty group names', () => {
+      expect(validateGroupName('').valid).toBe(false);
+      expect(validateGroupName('   ').valid).toBe(false);
+    });
+
+    it('should reject group names with path traversal', () => {
+      expect(validateGroupName('../admin').valid).toBe(false);
+      expect(validateGroupName('group/../admin').valid).toBe(false);
+      expect(validateGroupName('group..\\admin').valid).toBe(false);
+    });
+
+    it('should reject group names exceeding max length', () => {
+      const longName = 'a'.repeat(257);
+      expect(validateGroupName(longName).valid).toBe(false);
+    });
+
+    it('should reject group names with invalid special chars', () => {
+      expect(validateGroupName('group<script>').valid).toBe(false);
+      expect(validateGroupName('group$var').valid).toBe(false);
+    });
+
+    // Normalization
+    it('should trim whitespace', () => {
+      const result = validateGroupName('  Test Group  ');
+      expect(result.valid).toBe(true);
+      if (result.valid) {
+        expect(result.value).toBe('Test Group');
+      }
     });
   });
 });
