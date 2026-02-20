@@ -47,6 +47,17 @@ describe('GroupPermissionLRUCache', () => {
       expect(result).toEqual(createTestPermissions({ groupPolicy: 'open' as GroupPolicy }));
     });
 
+    it('should return undefined and delete expired entry on get', async () => {
+      const cache = new GroupPermissionLRUCache(10, 50); // 50ms TTL
+      cache.set('group1', createTestPermissions());
+
+      // Wait for entry to expire
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      const result = cache.get('group1');
+      expect(result).toBeUndefined();
+    });
+
     it('should return undefined for missing key', () => {
       const cache = new GroupPermissionLRUCache(10, 60000);
       expect(cache.get('nonexistent')).toBeUndefined();
@@ -83,6 +94,21 @@ describe('GroupPermissionLRUCache', () => {
       await new Promise(resolve => setTimeout(resolve, 60));
 
       expect(cache.has('group1')).toBe(false);
+    });
+
+    it('should clean up expired entry and return false', async () => {
+      const cache = new GroupPermissionLRUCache(10, 50); // 50ms TTL
+      cache.set('group1', createTestPermissions());
+
+      // Wait for entry to expire
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      // has() should clean up expired entry and return false
+      const result = cache.has('group1');
+      expect(result).toBe(false);
+
+      // Verify entry was actually deleted (size should be 0)
+      expect(cache.size()).toBe(0);
     });
   });
 
