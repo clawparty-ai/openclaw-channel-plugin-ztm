@@ -246,4 +246,56 @@ describe('permitSource validation', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(expect.objectContaining({ field: 'permitFilePath' }));
   });
+
+  it('should fail when permitFilePath contains path traversal (../)', () => {
+    const config = {
+      agentUrl: 'http://localhost:7777',
+      meshName: 'test-mesh',
+      username: 'test-bot',
+      permitSource: 'file',
+      permitFilePath: '../../../etc/passwd',
+    };
+    const result = validateZTMChatConfig(config);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        field: 'permitFilePath',
+        message: expect.stringContaining('path traversal'),
+      })
+    );
+  });
+
+  it('should fail when permitFilePath contains Windows path traversal (..\\)', () => {
+    const config = {
+      agentUrl: 'http://localhost:7777',
+      meshName: 'test-mesh',
+      username: 'test-bot',
+      permitSource: 'file',
+      permitFilePath: '..\\..\\windows\\system32\\config',
+    };
+    const result = validateZTMChatConfig(config);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        field: 'permitFilePath',
+        message: expect.stringContaining('path traversal'),
+      })
+    );
+  });
+
+  it('should accept valid permitFilePath without path traversal', () => {
+    const config = {
+      agentUrl: 'http://localhost:7777',
+      meshName: 'test-mesh',
+      username: 'test-bot',
+      permitSource: 'file',
+      permitFilePath: '/home/user/ztm/permit.json',
+    };
+    const result = validateZTMChatConfig(config);
+    // Should not have path traversal error
+    const pathTraversalErrors = result.errors.filter(
+      e => e.field === 'permitFilePath' && e.message.includes('path traversal')
+    );
+    expect(pathTraversalErrors).toHaveLength(0);
+  });
 });

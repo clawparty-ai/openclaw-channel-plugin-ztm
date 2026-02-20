@@ -7,7 +7,12 @@ import type {
   DMPolicy,
   ConfigValidationError,
 } from '../types/config.js';
-import { validationError, isValidUrl, IDENTIFIER_PATTERN } from '../utils/validation.js';
+import {
+  validationError,
+  isValidUrl,
+  IDENTIFIER_PATTERN,
+  containsPathTraversal,
+} from '../utils/validation.js';
 
 /**
  * Validate agent URL field
@@ -145,6 +150,7 @@ function validatePermitFilePath(
   const permitSource = config.permitSource;
   const value = config.permitFilePath;
 
+  // Check if required
   if (permitSource === 'file' && (!value || typeof value !== 'string' || !value.trim())) {
     errors.push(
       validationError(
@@ -152,6 +158,18 @@ function validatePermitFilePath(
         'required',
         value,
         "permitFilePath is required when permitSource is 'file'"
+      )
+    );
+  }
+
+  // Check for path traversal attacks if value is provided
+  if (value && typeof value === 'string' && containsPathTraversal(value)) {
+    errors.push(
+      validationError(
+        'permitFilePath',
+        'invalid_format',
+        value,
+        'permitFilePath contains invalid path traversal patterns (../ or ..\\)'
       )
     );
   }
