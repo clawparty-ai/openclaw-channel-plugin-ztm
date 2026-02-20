@@ -9,3 +9,9 @@ export * from './mocks.js';
 
 // Re-export helpers
 export * from './helpers.js';
+
+// Re-export HTTP server test utilities
+export * from './http-server.js';
+
+// Re-export file system test utilities
+export * from './fs-helpers.js';
