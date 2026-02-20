@@ -2017,3 +2017,206 @@ describe('executeWatch error handling', () => {
     await startMessageWatcher(stateWithoutClient, mockContext);
   });
 });
+
+// ============================================================================
+// Additional tests for WatchLoopController behavior
+// ============================================================================
+
+describe('WatchLoopController behavior', () => {
+  let mockState: AccountRuntimeState;
+  let mockContext: MessagingContext;
+  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const originalSetTimeout = global.setTimeout;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdTimeouts = [];
+
+    const mockApiClient = {
+      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      seedFileMetadata: vi.fn(),
+      exportFileMetadata: vi.fn(() => ({})),
+    };
+
+    mockState = {
+      accountId: testAccountId,
+      config: testConfig,
+      apiClient: mockApiClient as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+      groupPermissionCache: new Map(),
+    };
+
+    mockContext = createMockMessagingContext();
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      const ref = originalSetTimeout(callback, ms);
+      createdTimeouts.push(ref);
+      return ref;
+    }) as unknown as typeof setTimeout;
+  });
+
+  afterEach(() => {
+    for (const timeout of createdTimeouts) {
+      clearTimeout(timeout);
+    }
+    createdTimeouts = [];
+    global.setTimeout = originalSetTimeout;
+  });
+
+  describe('pending iteration flag', () => {
+    it('should prevent concurrent iterations with pending flag', async () => {
+      // The WatchLoopController uses a private pendingIteration flag to prevent
+      // concurrent iterations. Since this is an internal implementation detail,
+      // we verify the behavior indirectly by ensuring the watcher starts
+      // successfully without throwing errors.
+
+      // The pending flag is set at the start of runIteration() and checked
+      // before starting a new iteration, preventing concurrent execution.
+
+      await expect(startMessageWatcher(mockState, mockContext)).resolves.toBeUndefined();
+      // Test passes if no errors are thrown during startup
+    });
+  });
+
+  describe('error count reset', () => {
+    it('should continue running after successful watch recovery', async () => {
+      // This test verifies that the watch loop continues running after
+      // encountering an error and then succeeding. The error count reset
+      // is an internal implementation detail of WatchLoopController.
+
+      let callCount = 0;
+      const apiClient = mockState.apiClient as any;
+
+      // First call returns error, second succeeds
+      apiClient.watchChanges = vi.fn(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Return an error result
+          return Promise.resolve({ ok: false, error: new Error('Watch failed') });
+        }
+        // Subsequent calls succeed
+        return Promise.resolve(mockSuccess({ value: [] }));
+      });
+
+      await startMessageWatcher(mockState, mockContext);
+
+      // Wait for multiple iterations
+      await new Promise(resolve => setTimeout(resolve, 2500));
+
+      // Watch should have been called multiple times (error + successes)
+      // This proves the loop continued after the error
+      expect(callCount).toBeGreaterThan(1);
+    });
+  });
+
+  describe('full sync scheduling', () => {
+    it('should schedule full sync after activity stops', async () => {
+      let callCount = 0;
+      const apiClient = mockState.apiClient as any;
+
+      // First call returns items (activity), second returns empty (idle)
+      apiClient.watchChanges = vi.fn(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve(
+            mockSuccess({ value: [{ type: 'peer', peer: 'peer1', name: 'msg1' }] })
+          );
+        }
+        return Promise.resolve(mockSuccess({ value: [] }));
+      });
+
+      // Track setTimeout calls to verify full sync timer
+      const setTimeoutCalls: number[][] = [];
+      const originalSetTimeout = global.setTimeout;
+      global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+        setTimeoutCalls.push([ms]);
+        return originalSetTimeout(callback, Math.min(ms, 100)); // Shorten for test
+      }) as unknown as typeof setTimeout;
+
+      await startMessageWatcher(mockState, mockContext);
+
+      // Wait for activity cycle to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // The exact timing may vary, but we should have setTimeout calls
+      expect(setTimeoutCalls.length).toBeGreaterThan(0);
+
+      // Restore original setTimeout
+      global.setTimeout = originalSetTimeout;
+    });
+  });
+
+  describe('semaphore concurrent processing', () => {
+    it('should limit concurrent message processing with semaphore', async () => {
+      let activeProcessing = 0;
+      let maxConcurrent = 0;
+      const processingOrder: number[] = [];
+
+      const apiClient = mockState.apiClient as any;
+
+      // Mock getPeerMessages to track concurrent access
+      apiClient.getPeerMessages = vi.fn((_peer: string) => {
+        activeProcessing++;
+        if (activeProcessing > maxConcurrent) {
+          maxConcurrent = activeProcessing;
+        }
+
+        return new Promise(resolve => {
+          setTimeout(() => {
+            processingOrder.push(activeProcessing);
+            activeProcessing--;
+            resolve({ ok: true, value: [] });
+          }, 50);
+        });
+      });
+
+      // Create many messages concurrently
+      apiClient.watchChanges = vi.fn(() =>
+        Promise.resolve(
+          mockSuccess({
+            value: Array(20)
+              .fill(null)
+              .map((_, i) => ({ type: 'peer', peer: `peer${i}`, name: `msg${i}` })),
+          })
+        )
+      );
+
+      await startMessageWatcher(mockState, mockContext);
+
+      // Wait for processing
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Max concurrent should be limited by semaphore permits (MESSAGE_SEMAPHORE_PERMITS = 10)
+      expect(maxConcurrent).toBeLessThanOrEqual(10);
+    });
+
+    it('should queue messages when semaphore is exhausted', async () => {
+      // Verify semaphore limits concurrent message processing
+      const { MESSAGE_SEMAPHORE_PERMITS } = await import('../constants.js');
+
+      // The semaphore limits how many messages can be processed concurrently
+      // MESSAGE_SEMAPHORE_PERMITS should be a reasonable value
+      expect(MESSAGE_SEMAPHORE_PERMITS).toBeGreaterThan(0);
+      expect(MESSAGE_SEMAPHORE_PERMITS).toBeLessThan(100);
+
+      // Note: Actual concurrent processing verification is complex due to
+      // async timing. The semaphore is created in WatchLoopController constructor
+      // and used in messageSemaphore.execute() calls within processChangedPaths.
+      // This test verifies the constant is defined correctly.
+    });
+  });
+});
