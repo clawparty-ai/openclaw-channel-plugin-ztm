@@ -47,6 +47,36 @@ export interface TestRequest {
 }
 
 /**
+ * Configuration for sequential responses
+ */
+export interface ResponseSequenceConfig {
+  /** Match condition for this response */
+  match?: (req: TestRequest) => boolean;
+  /** HTTP status code to return */
+  status: number;
+  /** Response body */
+  body?: unknown;
+  /** Delay in milliseconds before responding */
+  delay?: number;
+  /** Number of times to use this response (-1 for infinite) */
+  uses?: number;
+}
+
+/**
+ * Extended test server interface with error injection and response control
+ */
+export interface ExtendedTestServer extends TestServer {
+  /** Set response delay in milliseconds */
+  setDelay(ms: number): void;
+  /** Inject error response for all subsequent requests */
+  injectError(statusCode: number, error?: Error): void;
+  /** Configure sequential responses */
+  addResponseSequence(responses: ResponseSequenceConfig[]): void;
+  /** Reset all injected states */
+  reset(): void;
+}
+
+/**
  * Handler function for processing incoming requests
  */
 export type RequestHandler = (
@@ -88,9 +118,17 @@ export interface TestServerOptions {
  * await server.close();
  * ```
  */
-export async function createTestServer(options: TestServerOptions = {}): Promise<TestServer> {
+export async function createTestServer(
+  options: TestServerOptions = {}
+): Promise<ExtendedTestServer> {
   const { handler = defaultHandler, port = 0, host = 'localhost' } = options;
   const receivedRequests: TestRequest[] = [];
+
+  // State for extended features
+  let delay = 0;
+  let errorToInject: { statusCode: number; error?: Error } | null = null;
+  let responseSequence: ResponseSequenceConfig[] = [];
+  let sequenceUsed: number[] = [];
 
   const server = createServer(async (req, res) => {
     // Record the request
@@ -109,18 +147,61 @@ export async function createTestServer(options: TestServerOptions = {}): Promise
         requestData.body = Buffer.concat(bodyChunks).toString('utf-8');
       }
       receivedRequests.push(requestData);
-    });
 
-    // Call the handler
-    try {
-      await handler(req, res, { receivedRequests });
-    } catch {
-      // Ensure response is sent even if handler throws
-      if (!res.headersSent) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal server error' }));
+      // Apply delay before response
+      const applyResponse = async () => {
+        // Inject error response
+        if (errorToInject) {
+          res.writeHead(errorToInject.statusCode, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: errorToInject.error?.message || 'Injected error' }));
+          return;
+        }
+
+        // Sequential responses
+        if (responseSequence.length > 0) {
+          for (let i = 0; i < responseSequence.length; i++) {
+            const config = responseSequence[i];
+            const used = sequenceUsed[i] || 0;
+
+            // Check if this response matches and has remaining uses
+            const matchResult = !config.match || config.match(requestData);
+            const hasRemainingUses = config.uses === -1 || used < (config.uses || 1);
+
+            if (matchResult && hasRemainingUses) {
+              // Update usage count
+              sequenceUsed[i] = used + 1;
+
+              // Apply delay if specified
+              if (config.delay) {
+                await new Promise(r => setTimeout(r, config.delay));
+              }
+
+              res.writeHead(config.status, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(config.body || {}));
+              return;
+            }
+          }
+        }
+
+        // Call the original handler
+        try {
+          await handler(req, res, { receivedRequests });
+        } catch {
+          // Ensure response is sent even if handler throws
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal server error' }));
+          }
+        }
+      };
+
+      // Apply delay if set
+      if (delay > 0) {
+        setTimeout(() => applyResponse(), delay);
+      } else {
+        applyResponse();
       }
-    }
+    });
   });
 
   // Start listening on an available port
@@ -147,6 +228,22 @@ export async function createTestServer(options: TestServerOptions = {}): Promise
       await promisify((cb: (err?: Error) => void) => server.close(cb))();
     },
     receivedRequests,
+    setDelay(ms: number) {
+      delay = ms;
+    },
+    injectError(statusCode: number, error?: Error) {
+      errorToInject = { statusCode, error };
+    },
+    addResponseSequence(responses: ResponseSequenceConfig[]) {
+      responseSequence = responses;
+      sequenceUsed = [];
+    },
+    reset() {
+      delay = 0;
+      errorToInject = null;
+      responseSequence = [];
+      sequenceUsed = [];
+    },
   };
 }
 
