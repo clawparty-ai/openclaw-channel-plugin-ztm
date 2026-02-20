@@ -18,50 +18,34 @@ This document provides a complete listing of all error codes in the ZTM Chat Plu
 
 ## Error Flow Diagram
 
-```
-+----------+
-| API Call |
-+----------+
-     |
-     v
-+---------+
-| Success?|
-+---------+
-     |
-  +--+--+
-  |Yes| |
-  +--+--+
-     |      +-------------------+
-     |      | Return Success    |
-     |      | Result           |
-     |      +-------------------+
-     |
-     +--No-->+-----------+
-              | Error     |
-              | Type?     |
-              +-----------+
-                 |
-    +---------+---------+---------+---------+---------+---------+---------+
-    |         |         |         |         |         |         |         |
-    v         v         v         v         v         v         v         v
-+-------+ +-------+ +-------+ +-------+ +-------+ +-------+ +-------+ +-------+
-|API    | |Timeout| |Send   | |Write  | |Read   | |Parse  | |Disc.  | |Config |
-|Error  | |Error  | |Error  | |Error  | |Error  | |Error  | |Error  | |Error |
-+-------+ +-------+ +-------+ +-------+ +-------+ +-------+ +-------+ +-------+
-    |         |         |         |         |         |         |         |
-    +---------+---------+---------+---------+---------+---------+---------+
-                                      |
-                                      v
-                              +---------------+
-                              | Log Error     |
-                              | Context       |
-                              +---------------+
-                                      |
-                                      v
-                              +---------------+
-                              | Return Failure|
-                              | Result        |
-                              +---------------+
+```mermaid
+flowchart TD
+    A[API Call] --> B{Success?}
+
+    B -->|Yes| C[Return Success<br/>Result]
+    B -->|No| D{Error Type?}
+
+    D --> E[ZTMApiError]
+    D --> F[ZTMTimeoutError]
+    D --> G[ZTMSendError]
+    D --> H[ZTMWriteError]
+    D --> I[ZTMReadError]
+    D --> J[ZTMParseError]
+    D --> K[ZTMDiscoveryError]
+    D --> L[ZTMConfigError]
+    D --> M[ZTMRuntimeError]
+
+    E --> N[Log Error<br/>Context]
+    F --> N
+    G --> N
+    H --> N
+    I --> N
+    J --> N
+    K --> N
+    L --> N
+    M --> N
+
+    N --> O[Return Failure<br/>Result]
 ```
 
 ## Detailed Error Descriptions
