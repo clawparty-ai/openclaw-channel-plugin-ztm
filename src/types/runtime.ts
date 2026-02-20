@@ -14,14 +14,37 @@ export interface CacheEntry<T> {
 }
 
 /**
- * Interface for group permission cache with bounded size.
- * Implementations must provide LRU eviction to prevent unbounded growth.
+ * Interface for group permission cache with bounded size and TTL.
+ * Implementations must provide:
+ * - LRU eviction to prevent unbounded growth
+ * - TTL-based expiration to prevent stale data
+ *
+ * Note: Unlike allowFromCache which uses CacheEntry<T> externally,
+ * groupPermissionCache handles TTL internally in the implementation.
+ * This design difference is for performance - avoiding object allocation
+ * on every cache access.
  */
 export interface IGroupPermissionCache {
+  /**
+   * Get permissions from cache if not expired
+   * @returns GroupPermissions if found and not expired, undefined otherwise
+   */
   get(key: string): GroupPermissions | undefined;
+  /**
+   * Check if key exists in cache and is not expired
+   */
   has(key: string): boolean;
+  /**
+   * Set permissions in cache with TTL
+   */
   set(key: string, permissions: GroupPermissions): void;
+  /**
+   * Clear all cached entries
+   */
   clear(): void;
+  /**
+   * Get current cache size (after expired entry eviction)
+   */
   size(): number;
 }
 
