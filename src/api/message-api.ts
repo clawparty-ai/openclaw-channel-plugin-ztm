@@ -331,8 +331,31 @@ export function createMessageApi(
         if (chatLatestTime <= (lastPollTime ?? 0)) continue;
 
         if (chat.peer && chat.peer !== config.username) {
+          // Validate peer username format to avoid repeated processing of invalid names
+          const peerValidation = validateUsername(chat.peer);
+          if (!peerValidation.valid) {
+            logger.debug?.(
+              `[ZTM API] Watch: skipping invalid peer username "${sanitizeForLog(chat.peer)}": ${peerValidation.error}`
+            );
+            continue;
+          }
           changedItems.push({ type: 'peer', peer: chat.peer });
         } else if (chat.group && chat.creator) {
+          // Validate creator username and group ID format
+          const creatorValidation = validateUsername(chat.creator);
+          if (!creatorValidation.valid) {
+            logger.debug?.(
+              `[ZTM API] Watch: skipping invalid creator username "${sanitizeForLog(chat.creator)}": ${creatorValidation.error}`
+            );
+            continue;
+          }
+          const groupValidation = validateGroupId(chat.group);
+          if (!groupValidation.valid) {
+            logger.debug?.(
+              `[ZTM API] Watch: skipping invalid group ID "${sanitizeForLog(chat.group)}": ${groupValidation.error}`
+            );
+            continue;
+          }
           changedItems.push({
             type: 'group',
             creator: chat.creator,
