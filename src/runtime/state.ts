@@ -189,6 +189,13 @@ export class AccountStateManager {
 
   /**
    * Get cached allowFrom store or refresh if expired
+   *
+   * Returns:
+   * - string[]: Valid result (may be empty if no approved users)
+   * - null: Error occurred (logged), caller should use getOrDefault to provide fallback
+   *
+   * Note: This uses graceful degradation - errors are logged but don't throw.
+   * Callers should use getOrDefault(result, []) to provide fallback values.
    */
   async getAllowFromCache(
     accountId: string,
