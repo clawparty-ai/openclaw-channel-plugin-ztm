@@ -18,7 +18,7 @@ import { containsPathTraversal } from '../utils/validation.js';
  */
 export async function validateAgentConnectivity(
   agentUrl: string,
-  _ctx: { log?: { info: (...args: unknown[]) => void } }
+  _ctx?: { log?: { info: (...args: unknown[]) => void } }
 ): Promise<void> {
   try {
     const agentUrlObj = new URL(agentUrl);
