@@ -547,7 +547,7 @@ describe('createMessageApi', () => {
       }
     });
 
-    it('should skip peers with invalid usernames (e.g., Chinese characters)', async () => {
+    it('should allow Unicode characters in peer usernames', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
@@ -637,26 +637,34 @@ describe('createMessageApi', () => {
       }
     });
 
-    it('should accept groups with Unicode group IDs', async () => {
+    it('should accept groups with Unicode group names', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
             creator: 'alice',
-            group: '测试组', // Valid: Chinese characters in group ID now supported
-            name: 'Test Group',
+            group: 'test-group', // Valid ASCII
+            name: '中文群组', // Valid: Chinese characters in group name
             time: now,
             updated: now,
             latest: { time: now, message: 'Hello', sender: 'alice' },
           },
           {
             creator: 'bob',
-            group: 'valid-group', // Valid
-            name: 'Valid Group',
+            group: 'another-group', // Valid
+            name: '日本語グループ', // Valid: Japanese group name
             time: now,
             updated: now,
             latest: { time: now, message: 'Hi', sender: 'bob' },
+          },
+          {
+            creator: 'carol',
+            group: 'third-group',
+            name: '한국어 그룹', // Valid: Korean group name
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hello', sender: 'carol' },
           },
         ],
         error: null,
@@ -675,12 +683,12 @@ describe('createMessageApi', () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        // Should include both groups - Chinese group ID is now valid
-        expect(result.value?.length).toBe(2);
-        expect(result.value?.[0]?.type).toBe('group');
-        expect(result.value?.[0]?.group).toBe('测试组');
-        expect(result.value?.[1]?.type).toBe('group');
-        expect(result.value?.[1]?.group).toBe('valid-group');
+        // Should include all groups - Unicode group names are valid
+        expect(result.value?.length).toBe(3);
+        const groupNames = result.value?.map(r => r.name).sort();
+        expect(groupNames).toContain('中文群组');
+        expect(groupNames).toContain('日本語グループ');
+        expect(groupNames).toContain('한국어 그룹');
       }
     });
 
