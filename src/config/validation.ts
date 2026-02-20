@@ -270,10 +270,28 @@ export function validateZTMChatConfig(raw: unknown): ZTMChatConfigValidation {
     };
   }
 
+  const resolvedConfig = buildResolvedConfig(config);
+
+  return {
+    valid: true,
+    config: resolvedConfig,
+    errors: [],
+  };
+}
+
+/**
+ * Build resolved configuration from validated raw config
+ */
+function buildResolvedConfig(config: Record<string, unknown>): ZTMChatConfig {
+  const agentUrl = config.agentUrl?.toString().trim() ?? '';
+  const meshName = config.meshName?.toString().trim() ?? '';
+  const username = config.username?.toString().trim() ?? '';
+
   const rawPermitSource = config.permitSource;
   const permitSource: 'server' | 'file' =
     rawPermitSource === 'server' || rawPermitSource === 'file' ? rawPermitSource : 'server';
-  const resolvedConfig: ZTMChatConfig = {
+
+  return {
     agentUrl,
     permitSource,
     permitUrl: permitSource === 'server' ? (config.permitUrl?.toString().trim() ?? '') : '',
@@ -300,12 +318,6 @@ export function validateZTMChatConfig(raw: unknown): ZTMChatConfigValidation {
       typeof config.apiTimeout === 'number' && config.apiTimeout >= 1000
         ? Math.min(config.apiTimeout, 300000)
         : 30000,
-  };
-
-  return {
-    valid: true,
-    config: resolvedConfig,
-    errors: [],
   };
 }
 
