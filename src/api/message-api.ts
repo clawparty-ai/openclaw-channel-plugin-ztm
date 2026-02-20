@@ -367,9 +367,9 @@ export function createMessageApi(
             const nameValidation = validateGroupName(chat.name);
             if (!nameValidation.valid) {
               logger.debug?.(
-                `[ZTM API] Watch: invalid group name "${sanitizeForLog(chat.name)}": ${nameValidation.error}`
+                `[ZTM API] Watch: skipping group with invalid name "${sanitizeForLog(chat.name)}": ${nameValidation.error}`
               );
-              // Don't skip the group, just log the warning - group name is optional
+              continue;
             }
           }
 

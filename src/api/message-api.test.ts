@@ -692,6 +692,50 @@ describe('createMessageApi', () => {
       }
     });
 
+    it('should skip groups with invalid group names', async () => {
+      const now = Date.now();
+      const mockGetChats = async () => ({
+        ok: true,
+        value: [
+          {
+            creator: 'alice',
+            group: 'test-group',
+            name: '../admin', // Invalid: path traversal
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hello', sender: 'alice' },
+          },
+          {
+            creator: 'bob',
+            group: 'valid-group',
+            name: 'Valid Group', // Valid
+            time: now,
+            updated: now,
+            latest: { time: now, message: 'Hi', sender: 'bob' },
+          },
+        ],
+        error: null,
+      });
+
+      const messageApi = createMessageApi(
+        testConfig,
+        (async () => ({ ok: true, value: [], error: null })) as any,
+        mockLogger,
+        mockGetChats as any
+      );
+
+      messageApi.setLastPollTime(now - 10000);
+
+      const result = await messageApi.watchChanges('prefix');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        // Should only include valid group, skip the one with invalid name
+        expect(result.value?.length).toBe(1);
+        expect(result.value?.[0]?.group).toBe('valid-group');
+      }
+    });
+
     it('should skip peers with special characters in username', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
