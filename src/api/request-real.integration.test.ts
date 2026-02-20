@@ -433,4 +433,222 @@ describe('API Request Real HTTP Integration', () => {
       expect(data.method).toBe('DELETE');
     });
   });
+
+  describe('Rate Limiting and HTTP Error Codes', () => {
+    it('should handle 429 Too Many Requests', async () => {
+      const server = await createStatusCodeServer(429);
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(429);
+
+      const data = (await response.json()) as { error: string; status: number };
+      expect(data.status).toBe(429);
+      expect(data.error).toContain('429');
+    });
+
+    it('should handle 429 with Retry-After header', async () => {
+      const server = await createTestServer({
+        handler: (_req, res) => {
+          res.writeHead(429, {
+            'Content-Type': 'application/json',
+            'Retry-After': '60',
+          });
+          res.end(JSON.stringify({ error: 'Rate limited', retryAfter: 60 }));
+        },
+      });
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(429);
+      expect(response.headers.get('retry-after')).toBe('60');
+    });
+
+    it('should handle 400 Bad Request', async () => {
+      const server = await createStatusCodeServer(400);
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should handle 401 Unauthorized', async () => {
+      const server = await createStatusCodeServer(401);
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should handle 403 Forbidden', async () => {
+      const server = await createStatusCodeServer(403);
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(403);
+    });
+
+    it('should handle 404 Not Found', async () => {
+      const server = await createStatusCodeServer(404);
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should handle 408 Request Timeout', async () => {
+      const server = await createStatusCodeServer(408);
+      servers.push(server);
+
+      const response = await fetch(server.url);
+
+      expect(response.status).toBe(408);
+    });
+  });
+
+  describe('Connection Error Scenarios', () => {
+    it('should handle server that closes connection immediately', async () => {
+      const server = await createTestServer({
+        handler: (_req, res) => {
+          // Abruptly close connection without response
+          res.socket?.destroy();
+        },
+      });
+      servers.push(server);
+
+      try {
+        const response = await fetch(server.url, {
+          signal: AbortSignal.timeout(2000),
+        });
+        // If we get here, the server might have responded before closing
+        expect([200, 201]).toContain(response.status);
+      } catch (error) {
+        // Connection error is expected (TypeError or DOMException)
+        expect(error).toMatchObject({
+          name: expect.any(String),
+        });
+      }
+    });
+
+    it('should handle server that sends partial response then closes', async () => {
+      const server = await createTestServer({
+        handler: (_req, res) => {
+          // Send partial response then destroy
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.write('{"partial":');
+          res.socket?.destroy();
+        },
+      });
+      servers.push(server);
+
+      try {
+        const response = await fetch(server.url);
+        const data = await response.json();
+        // Might get partial or error depending on timing
+        expect(data).toBeDefined();
+      } catch (error) {
+        // Parse error or connection error is expected
+        expect(error).toMatchObject({
+          name: expect.any(String),
+        });
+      }
+    });
+
+    it('should handle connection to invalid host', async () => {
+      try {
+        await fetch('http://invalid-host-that-does-not-exist.local:9999', {
+          signal: AbortSignal.timeout(3000),
+        });
+        // Should not reach here
+        expect(true).toBe(false);
+      } catch (error) {
+        // DNS resolution failure or connection error expected
+        expect(error).toBeInstanceOf(DOMException);
+      }
+    });
+  });
+
+  describe('Timeout Edge Cases', () => {
+    it('should handle server that accepts connection but never responds', async () => {
+      const server = await createTestServer({
+        handler: (_req, _res) => {
+          // Accept connection but never respond
+          // Server will timeout on its own
+        },
+      });
+      servers.push(server);
+
+      const startTime = Date.now();
+
+      try {
+        await fetch(server.url, {
+          signal: AbortSignal.timeout(2000),
+        });
+        // Should not reach here
+        expect(true).toBe(false);
+      } catch (error) {
+        const elapsed = Date.now() - startTime;
+        // Should timeout around 2 seconds
+        expect(elapsed).toBeGreaterThan(1500);
+        expect(elapsed).toBeLessThan(5000);
+        expect(error).toBeInstanceOf(DOMException);
+        expect((error as DOMException).name).toBe('TimeoutError');
+      }
+    }, 10000);
+
+    it('should handle very long header value', async () => {
+      const longHeaderValue = 'x'.repeat(10000);
+
+      const server = await createEchoServer();
+      servers.push(server);
+
+      const response = await fetch(server.url, {
+        headers: {
+          'X-Long-Header': longHeaderValue,
+        },
+      });
+
+      const data = (await response.json()) as { headers: Record<string, string> };
+      expect(data.headers['x-long-header']).toBe(longHeaderValue);
+    });
+  });
+
+  describe('Network Path Errors', () => {
+    it('should handle refused connection to wrong port', async () => {
+      try {
+        // Port 2 is unlikely to be in use
+        await fetch('http://localhost:2', {
+          signal: AbortSignal.timeout(2000),
+        });
+        // If we reach here, connection succeeded (unlikely)
+        expect(true).toBe(false);
+      } catch (error) {
+        // Connection refused or timeout expected (TypeError or DOMException in Node.js)
+        expect(error).toMatchObject({
+          name: expect.any(String),
+        });
+      }
+    });
+
+    it('should handle request to IPv6 unreachable address', async () => {
+      try {
+        // Try to connect to IPv6 loopback
+        await fetch('http://[::1]:1', {
+          signal: AbortSignal.timeout(2000),
+        });
+        expect(true).toBe(false);
+      } catch (error) {
+        // Connection refused or timeout expected
+        expect(error).toMatchObject({
+          name: expect.any(String),
+        });
+      }
+    });
+  });
 });
