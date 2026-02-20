@@ -9,6 +9,7 @@
 import type { ZTMChatConfig } from '../types/config.js';
 import type { MessageCheckResult } from '../types/messaging.js';
 import { getOrDefault } from '../utils/guards.js';
+import { normalizeUsername } from '../utils/validation.js';
 
 /**
  * Check if a sender is allowed to send messages based on DM policy.
@@ -44,12 +45,11 @@ export function checkDmPolicy(
     return { allowed: false, reason: 'denied', action: 'ignore' };
   }
 
-  const normalizedSender = sender.trim().toLowerCase();
+  const normalizedSender = normalizeUsername(sender);
 
   const allowFrom = getOrDefault(config.allowFrom, []);
   const isWhitelisted =
-    allowFrom.length > 0 &&
-    allowFrom.some(entry => entry.trim().toLowerCase() === normalizedSender);
+    allowFrom.length > 0 && allowFrom.some(entry => normalizeUsername(entry) === normalizedSender);
 
   if (isWhitelisted) {
     return { allowed: true, reason: 'whitelisted', action: 'process' };
@@ -57,7 +57,7 @@ export function checkDmPolicy(
 
   const isStoreApproved =
     storeAllowFrom.length > 0 &&
-    storeAllowFrom.some(entry => entry.trim().toLowerCase() === normalizedSender);
+    storeAllowFrom.some(entry => normalizeUsername(entry) === normalizedSender);
 
   if (isStoreApproved) {
     return { allowed: true, reason: 'whitelisted', action: 'process' };
@@ -101,11 +101,11 @@ export function isUserWhitelisted(
   config: ZTMChatConfig,
   storeAllowFrom: string[] = []
 ): boolean {
-  const normalized = username.trim().toLowerCase();
+  const normalized = normalizeUsername(username);
   const allowFrom = getOrDefault(config.allowFrom, []);
 
-  const inConfig = allowFrom.some(entry => entry.trim().toLowerCase() === normalized);
-  const inStore = storeAllowFrom.some(entry => entry.trim().toLowerCase() === normalized);
+  const inConfig = allowFrom.some(entry => normalizeUsername(entry) === normalized);
+  const inStore = storeAllowFrom.some(entry => normalizeUsername(entry) === normalized);
 
   return inConfig || inStore;
 }
