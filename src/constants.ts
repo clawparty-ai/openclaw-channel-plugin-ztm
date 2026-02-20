@@ -41,6 +41,9 @@ export const GROUP_PERMISSION_CACHE_TTL_MS = 60000; // 60 seconds - cache TTL fo
 export const STATE_FLUSH_DEBOUNCE_MS = 1000; // 1 second - debounce delay for watermark writes
 export const STATE_FLUSH_MAX_DELAY_MS = 5000; // 5 seconds - max delay before forced flush
 
+// Initial sync limit (first install or missing state)
+export const INITIAL_SYNC_MAX_HISTORY_MS = 5 * 60 * 1000; // 5 minutes - limit historical messages on first sync
+
 // Chat processing limits
 export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling cycle
 export const MESSAGE_SEMAPHORE_PERMITS = 5; // Maximum concurrent message processing operations

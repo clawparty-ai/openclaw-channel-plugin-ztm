@@ -25,6 +25,9 @@ export * from './error.js';
 // Type guards and null handling
 export * from './guards.js';
 
+// Sync time utilities
+export * from './sync-time.js';
+
 // Type exports
 export type {
   Result,

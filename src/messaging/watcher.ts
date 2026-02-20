@@ -15,6 +15,7 @@ import {
   handlePeerPolicyCheck,
 } from './message-processor-helpers.js';
 import { Semaphore } from '../utils/concurrency.js';
+import { getMessageSyncStart } from '../utils/sync-time.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import { isSuccess } from '../types/common.js';
 import type { ZTMChat, WatchChangeItem } from '../types/api.js';
@@ -475,9 +476,13 @@ async function processChangedPeer(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  // Get watermark to filter messages server-side (avoid fetching all messages)
-  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(state.accountId, peer);
-  const messagesResult = await state.apiClient.getPeerMessages(peer, watermark);
+  // Get watermark and calculate sync start (limit to recent messages on first sync)
+  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(
+    state.accountId,
+    peer
+  );
+  const since = getMessageSyncStart(watermark);
+  const messagesResult = await state.apiClient.getPeerMessages(peer, since);
 
   if (!messagesResult.ok) {
     const safePeer = sanitizeForLog(peer);
@@ -489,8 +494,9 @@ async function processChangedPeer(
 
   const messages = getOrDefault(messagesResult.value, []);
   const safePeer = sanitizeForLog(peer);
+  const hasNoHistory = watermark === 0;
   logger.debug(
-    `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}" since=${watermark}`
+    `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}" since=${since}${hasNoHistory ? ' (no history)' : ''}`
   );
 
   // Use shared message processing logic
@@ -514,11 +520,18 @@ async function processChangedGroup(
   if (!state.apiClient) return;
 
   const groupKey = `group:${creator}/${group}`;
-  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(state.accountId, groupKey);
+  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(
+    state.accountId,
+    groupKey
+  );
+  const since = getMessageSyncStart(watermark);
   const safeGroupKey = sanitizeForLog(`${creator}/${group}`);
-  logger.debug(`[${state.accountId}] Processing group messages from "${safeGroupKey}" since=${watermark}`);
+  const hasNoHistory = watermark === 0;
+  logger.debug(
+    `[${state.accountId}] Processing group messages from "${safeGroupKey}" since=${since}${hasNoHistory ? ' (no history)' : ''}`
+  );
 
-  const messagesResult = await state.apiClient.getGroupMessages(creator, group, watermark);
+  const messagesResult = await state.apiClient.getGroupMessages(creator, group, since);
 
   if (!messagesResult.ok) {
     logger.warn(
