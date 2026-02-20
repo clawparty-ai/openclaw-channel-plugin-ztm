@@ -333,6 +333,10 @@ export async function startAccountGateway(ctx: {
 
 /**
  * Logout account gateway implementation
+ *
+ * @param accountId - The account ID to logout
+ * @param cfg - Optional OpenClaw configuration
+ * @returns Promise resolving to cleared status
  */
 export async function logoutAccountGateway({
   accountId,
@@ -402,6 +406,7 @@ function isRetryableError(error: unknown): boolean {
  * @param state - Account runtime state
  * @param msg - The message to retry
  * @param attempt - Current attempt number (1-based)
+ * @returns Promise that resolves when retry is scheduled
  */
 async function retryMessageLater(
   state: AccountRuntimeState,
@@ -441,6 +446,13 @@ async function retryMessageLater(
 /**
  * Create dispatcher options for reply delivery
  * Extracted to reduce nesting in buildMessageCallback
+ *
+ * @param state - Account runtime state
+ * @param msg - The incoming message to reply to
+ * @param accountId - The account identifier
+ * @param agentId - The AI agent identifier
+ * @param rt - ZTM runtime instance
+ * @returns Dispatcher options object with deliver and onError callbacks
  */
 function createReplyDispatcherOptions(
   state: AccountRuntimeState,
@@ -469,6 +481,13 @@ function createReplyDispatcherOptions(
 /**
  * Dispatch inbound message to AI agent
  * Extracted to reduce nesting in buildMessageCallback
+ *
+ * @param state - Account runtime state
+ * @param accountId - The account identifier
+ * @param config - ZTM Chat configuration
+ * @param msg - The incoming message to dispatch
+ * @param rt - ZTM runtime instance
+ * @returns Promise that resolves when dispatch completes
  */
 async function dispatchInboundMessage(
   state: AccountRuntimeState,

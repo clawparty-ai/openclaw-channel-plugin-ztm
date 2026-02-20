@@ -15,6 +15,10 @@ import { containsPathTraversal } from '../utils/validation.js';
 
 /**
  * Validate connectivity to ZTM agent
+ *
+ * @param agentUrl - The URL of the ZTM agent to validate
+ * @param _ctx - Optional context with logger for debugging
+ * @returns Promise that resolves if connectivity is valid, throws if unreachable
  */
 export async function validateAgentConnectivity(
   agentUrl: string,
@@ -169,6 +173,8 @@ export async function probeAccount({
 
 /**
  * Resolve permit path using cross-platform compatible path resolution
+ *
+ * @returns The resolved path to the permit file
  */
 export function resolveAccountPermitPath(): string {
   return resolvePermitPath();

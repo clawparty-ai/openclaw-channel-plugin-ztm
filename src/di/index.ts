@@ -42,6 +42,9 @@ import { getAllowFromRepository, getMessageStateRepository } from '../runtime/re
 /**
  * Logger factory
  * Returns a factory function that creates a logger instance
+ *
+ * @param _serviceName - The name of the service (unused, for DI compatibility)
+ * @returns Factory function that returns an ILogger instance
  */
 export function createLogger(_serviceName: string): () => ILogger {
   // Return logger instance with type cast for DI compatibility
@@ -51,6 +54,8 @@ export function createLogger(_serviceName: string): () => ILogger {
 /**
  * Config service factory
  * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IConfig instance
  */
 export function createConfigService(): () => IConfig {
   return () => ({
@@ -66,6 +71,8 @@ export function createConfigService(): () => IConfig {
  * API client factory
  * Returns a factory function for DI container registration
  * Returns a client implementing all segregated interfaces
+ *
+ * @returns Factory function that returns an IApiClient instance
  */
 export function createApiClientService(): () => IApiClient {
   return (): IApiClient => {
@@ -89,6 +96,8 @@ export function createApiClientService(): () => IApiClient {
 /**
  * Runtime service factory
  * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IRuntime instance
  */
 export function createRuntimeService(): () => IRuntime {
   return () => ({
@@ -100,6 +109,8 @@ export function createRuntimeService(): () => IRuntime {
 /**
  * AllowFrom repository factory
  * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IAllowFromRepository instance
  */
 export function createAllowFromRepositoryService(): () => IAllowFromRepository {
   return () => getAllowFromRepository();
@@ -108,6 +119,8 @@ export function createAllowFromRepositoryService(): () => IAllowFromRepository {
 /**
  * MessageState repository factory
  * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IMessageStateRepository instance
  */
 export function createMessageStateRepositoryService(): () => IMessageStateRepository {
   return () => getMessageStateRepository();
@@ -116,6 +129,8 @@ export function createMessageStateRepositoryService(): () => IMessageStateReposi
 /**
  * API client factory
  * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IApiClientFactory instance
  */
 export function createApiClientFactory(): () => IApiClientFactory {
   return () => (config: ZTMChatConfig, deps?: unknown) =>
@@ -125,6 +140,8 @@ export function createApiClientFactory(): () => IApiClientFactory {
 /**
  * AccountStateManager factory with DI
  * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an AccountStateManager instance
  */
 export function createAccountStateManagerService(): () => unknown {
   // Import here to avoid circular dependencies
@@ -146,6 +163,8 @@ export function createAccountStateManagerService(): () => unknown {
 /**
  * Get AccountStateManager instance via DI container
  * Provides centralized access to account state management
+ *
+ * @returns AccountStateManager instance from the DI container
  */
 export function getAccountStateManagerService(): import('../runtime/state.js').AccountStateManager {
   return container.get(
@@ -156,6 +175,8 @@ export function getAccountStateManagerService(): import('../runtime/state.js').A
 /**
  * Get MessageStateRepository instance via DI container
  * Provides centralized access to message state persistence
+ *
+ * @returns IMessageStateRepository instance from the DI container
  */
 export function getMessageStateRepositoryService(): IMessageStateRepository {
   return container.get(DEPENDENCIES.MESSAGE_STATE_REPO);
@@ -164,6 +185,8 @@ export function getMessageStateRepositoryService(): IMessageStateRepository {
 /**
  * Get AllowFromRepository instance via DI container
  * Provides centralized access to pairing allow list persistence
+ *
+ * @returns IAllowFromRepository instance from the DI container
  */
 export function getAllowFromRepositoryService(): IAllowFromRepository {
   return container.get(DEPENDENCIES.ALLOW_FROM_REPO);
