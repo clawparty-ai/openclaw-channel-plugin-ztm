@@ -481,4 +481,63 @@ describe('validation utilities', () => {
       }
     });
   });
+
+  describe('validateUsername Unicode support', () => {
+    // Chinese
+    it('should accept Chinese characters', () => {
+      const result = validateUsername('张三');
+      expect(result.valid).toBe(true);
+      if (result.valid) {
+        expect(result.value).toBe('张三');
+      }
+    });
+
+    it('should accept Chinese with numbers', () => {
+      expect(validateUsername('用户123').valid).toBe(true);
+    });
+
+    // Japanese
+    it('should accept Japanese Hiragana/Katakana', () => {
+      expect(validateUsername('山田').valid).toBe(true);
+      expect(validateUsername('テスト').valid).toBe(true);
+    });
+
+    // Korean
+    it('should accept Korean Hangul', () => {
+      expect(validateUsername('최고이').valid).toBe(true);
+      expect(validateUsername('한국어').valid).toBe(true);
+    });
+
+    // Cyrillic
+    it('should accept Russian Cyrillic', () => {
+      expect(validateUsername('иван').valid).toBe(true);
+    });
+
+    // Arabic
+    it('should accept Arabic', () => {
+      expect(validateUsername('محمد').valid).toBe(true);
+    });
+
+    // Emoji
+    it('should accept emoji in usernames', () => {
+      expect(validateUsername('用户🎉').valid).toBe(true);
+      expect(validateUsername('test😀').valid).toBe(true);
+    });
+
+    // Mixed
+    it('should accept mixed scripts', () => {
+      expect(validateUsername('Alice_张三_John').valid).toBe(true);
+      expect(validateUsername('山田_john_123').valid).toBe(true);
+    });
+
+    // Edge cases - should still reject
+    it('should reject usernames with spaces', () => {
+      expect(validateUsername('user name').valid).toBe(false);
+    });
+
+    it('should reject usernames with special chars', () => {
+      expect(validateUsername('user@domain').valid).toBe(false);
+      expect(validateUsername('user/name').valid).toBe(false);
+    });
+  });
 });

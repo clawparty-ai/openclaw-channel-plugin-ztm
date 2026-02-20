@@ -553,7 +553,7 @@ describe('createMessageApi', () => {
         ok: true,
         value: [
           {
-            peer: '张三', // Invalid: Chinese characters
+            peer: '张三', // Valid: Chinese characters now supported
             time: now,
             updated: now,
             latest: { time: now, message: 'Hello', sender: '张三' },
@@ -581,22 +581,22 @@ describe('createMessageApi', () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        // Should only include the valid peer, skip the Chinese username
-        expect(result.value?.length).toBe(1);
+        // Should include both peers - Chinese username is now valid
+        expect(result.value?.length).toBe(2);
         expect(result.value?.[0]?.type).toBe('peer');
-        expect(result.value?.[0]?.peer).toBe('alice');
+        expect(result.value?.[0]?.peer).toBe('张三');
+        expect(result.value?.[1]?.type).toBe('peer');
+        expect(result.value?.[1]?.peer).toBe('alice');
       }
-      // Verify debug logging was called for skipped item
-      expect(mockLogger.debug).toHaveBeenCalled();
     });
 
-    it('should skip groups with invalid creator usernames', async () => {
+    it('should accept groups with Unicode creator usernames', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
-            creator: '用户A', // Invalid: Chinese characters
+            creator: '用户A', // Valid: Chinese characters now supported
             group: 'test-group',
             name: 'Test Group',
             time: now,
@@ -628,23 +628,23 @@ describe('createMessageApi', () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        // Should only include the valid group
-        expect(result.value?.length).toBe(1);
+        // Should include both groups - Chinese creator is now valid
+        expect(result.value?.length).toBe(2);
         expect(result.value?.[0]?.type).toBe('group');
-        expect(result.value?.[0]?.group).toBe('another-group');
+        expect(result.value?.[0]?.creator).toBe('用户A');
+        expect(result.value?.[1]?.type).toBe('group');
+        expect(result.value?.[1]?.creator).toBe('alice');
       }
-      // Verify debug logging was called for skipped item
-      expect(mockLogger.debug).toHaveBeenCalled();
     });
 
-    it('should skip groups with invalid group IDs', async () => {
+    it('should accept groups with Unicode group IDs', async () => {
       const now = Date.now();
       const mockGetChats = async () => ({
         ok: true,
         value: [
           {
             creator: 'alice',
-            group: '测试组', // Invalid: Chinese characters in group ID
+            group: '测试组', // Valid: Chinese characters in group ID now supported
             name: 'Test Group',
             time: now,
             updated: now,
@@ -675,13 +675,13 @@ describe('createMessageApi', () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        // Should only include the valid group
-        expect(result.value?.length).toBe(1);
+        // Should include both groups - Chinese group ID is now valid
+        expect(result.value?.length).toBe(2);
         expect(result.value?.[0]?.type).toBe('group');
-        expect(result.value?.[0]?.group).toBe('valid-group');
+        expect(result.value?.[0]?.group).toBe('测试组');
+        expect(result.value?.[1]?.type).toBe('group');
+        expect(result.value?.[1]?.group).toBe('valid-group');
       }
-      // Verify debug logging was called for skipped item
-      expect(mockLogger.debug).toHaveBeenCalled();
     });
 
     it('should skip peers with special characters in username', async () => {

@@ -6,8 +6,8 @@ import { logger } from './logger.js';
 // Pattern Constants (centralized definitions)
 // ============================================
 
-/** Pattern for valid usernames and mesh names: alphanumeric, hyphens, underscores */
-export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
+/** Pattern for valid usernames and mesh names: Unicode letters, numbers, emoji, hyphens, underscores */
+export const IDENTIFIER_PATTERN = /^[\p{L}\p{N}_-][\p{L}\p{N}\p{Extended_Pictographic}_-]*$/u;
 
 /** Maximum length for usernames (prevents DoS from overly long names) */
 export const MAX_USERNAME_LENGTH = 256;
