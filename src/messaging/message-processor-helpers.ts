@@ -63,12 +63,19 @@ export function isGroupChat(chat: ZTMChat): boolean {
 }
 
 /**
+ * Determine if a chat is a peer (direct message) chat
+ * This is the inverse of isGroupChat
+ */
+export function isPeerChat(chat: ZTMChat): boolean {
+  return !isGroupChat(chat);
+}
+
+/**
  * Extract sender from a chat's latest message
  * Returns the sender from the message, or falls back to peer ID for peer chats only
  * For group chats, returns empty string if no explicit sender
  */
 export function extractSender(chat: ZTMChat): string {
-  const isGroup = isGroupChat(chat);
   const explicitSender = chat.latest?.sender;
 
   if (explicitSender) {
@@ -77,10 +84,10 @@ export function extractSender(chat: ZTMChat): string {
 
   // For peer chats, fall back to peer ID
   // For group chats, return empty string (no fallback)
-  if (isGroup) {
-    return '';
+  if (isPeerChat(chat)) {
+    return chat.peer || '';
   }
-  return chat.peer || '';
+  return '';
 }
 
 /**
