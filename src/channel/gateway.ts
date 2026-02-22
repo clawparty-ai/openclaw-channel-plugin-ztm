@@ -31,6 +31,7 @@ import {
   validateAgentConnectivity,
   loadOrRequestPermit,
   joinMeshIfNeeded,
+  configureAgent,
   probeAccount as probeAccountConnectivity,
   resolveAccountPermitPath,
 } from './connectivity-manager.js';
@@ -317,7 +318,10 @@ export async function startAccountGateway(ctx: {
   // Step 3-5: Load or request permit
   const permitData = await loadOrRequestPermit(config, permitPath, ctx);
 
-  // Step 6: Join mesh if needed
+  // Step 6: Configure agent (similar to ztm config --agent)
+  await configureAgent(config, ctx);
+
+  // Step 7: Join mesh if needed
   await joinMeshIfNeeded(config, endpointName, permitData, ctx);
 
   // Step 7: Initialize runtime

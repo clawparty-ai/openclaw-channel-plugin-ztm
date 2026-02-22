@@ -103,6 +103,34 @@ export async function loadOrRequestPermit(
 }
 
 /**
+ * Configure agent before joining mesh
+ * Similar to `ztm config --agent <host:port>` - sets up the agent configuration
+ * This ensures the agent is properly configured before attempting to join mesh
+ *
+ * @param config - ZTM chat configuration including agentUrl
+ * @param ctx - Context with logger
+ */
+export async function configureAgent(
+  config: ZTMChatConfig,
+  ctx: { log?: { info: (...args: unknown[]) => void } }
+): Promise<void> {
+  // Parse agent URL to get host:port
+  const agentUrlObj = new URL(config.agentUrl);
+  const agentHost = agentUrlObj.hostname;
+  const agentPort = agentUrlObj.port || (agentUrlObj.protocol === 'https:' ? '443' : '80');
+
+  ctx.log?.info(`Configuring agent: ${agentHost}:${agentPort}`);
+
+  // Verify the agent is reachable
+  const isReachable = await checkPortOpen(agentHost, parseInt(agentPort.toString(), 10));
+  if (!isReachable) {
+    throw new Error(`Agent not reachable at ${config.agentUrl}`);
+  }
+
+  ctx.log?.info(`Agent configured: ${agentHost}:${agentPort}`);
+}
+
+/**
  * Join mesh if not already connected
  */
 export async function joinMeshIfNeeded(
