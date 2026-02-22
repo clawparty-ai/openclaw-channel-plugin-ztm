@@ -51,8 +51,6 @@ describe('ZTM API Client', () => {
     expect(client).toHaveProperty('discoverPeers');
     expect(client).toHaveProperty('sendPeerMessage');
     expect(client).toHaveProperty('getChats');
-    expect(client).toHaveProperty('seedFileMetadata');
-    expect(client).toHaveProperty('exportFileMetadata');
   });
 
   it('should use config.agentUrl as base URL', () => {
@@ -264,42 +262,6 @@ describe('ZTM API Client Integration', () => {
       expect(result.value?.[0]?.peer).toBe('alice');
       expect(result.value?.[1]?.peer).toBe('bob');
     }
-  });
-});
-
-describe('File Metadata Tracking', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should return empty metadata for unseen files', async () => {
-    const { fetch, mockResponse } = createMockFetch();
-    mockResponse({});
-
-    const client = createTestClient(testConfig, { fetch });
-    const metadata = client.exportFileMetadata();
-
-    expect(Object.keys(metadata).length).toBe(0);
-  });
-
-  it('should track file metadata after reading', async () => {
-    const now = Date.now();
-    const { fetch, mockResponse } = createMockFetch();
-    mockResponse([{ time: now, message: 'Test', sender: 'alice' }]);
-
-    const client = createTestClient(testConfig, { fetch });
-
-    // Seed file metadata directly since readFile is internal
-    client.seedFileMetadata({
-      '/shared/bot/publish/peers/alice/messages/123.json': { time: now, size: 100 },
-    });
-
-    const metadata = client.exportFileMetadata();
-    expect(Object.keys(metadata).length).toBeGreaterThan(0);
   });
 });
 

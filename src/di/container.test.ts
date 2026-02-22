@@ -396,9 +396,6 @@ describe('DI Container', () => {
       const mockGetMeshInfo = vi.fn(() =>
         Promise.resolve({ ok: true, value: { connected: false, peers: 0 } })
       );
-      const mockSeedFileMetadata = vi.fn((_metadata: unknown) => {});
-      const mockExportFileMetadata = vi.fn(() => ({}));
-
       const apiClient = {
         getChats: mockGetChats,
         getPeerMessages: mockGetPeerMessages,
@@ -408,8 +405,6 @@ describe('DI Container', () => {
         sendGroupMessage: mockSendGroupMessage,
         discoverUsers: mockDiscoverUsers,
         getMeshInfo: mockGetMeshInfo,
-        seedFileMetadata: mockSeedFileMetadata,
-        exportFileMetadata: mockExportFileMetadata,
       } as unknown as IApiClient;
 
       expect(() => container.registerInstance(key, apiClient)).not.toThrow();
@@ -420,8 +415,6 @@ describe('DI Container', () => {
       expect(typeof retrieved.sendPeerMessage).toBe('function');
       expect(typeof retrieved.discoverUsers).toBe('function');
       expect(typeof retrieved.getMeshInfo).toBe('function');
-      expect(typeof retrieved.seedFileMetadata).toBe('function');
-      expect(typeof retrieved.exportFileMetadata).toBe('function');
     });
 
     it('should support IApiClientFactory interface', () => {

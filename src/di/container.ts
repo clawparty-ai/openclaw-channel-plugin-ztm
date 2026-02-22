@@ -121,20 +121,11 @@ export interface IDiscovery {
 }
 
 /**
- * API client interface - Metadata operations
- * Focuses on file metadata for state persistence
- */
-export interface IMetadata {
-  seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
-  exportFileMetadata(): Record<string, { time: number; size: number }>;
-}
-
-/**
  * API client service interface
  * Combines all API operations - use specific interfaces when possible
  * for better segregation of concerns
  */
-export interface IApiClient extends IChatReader, IChatSender, IDiscovery, IMetadata {}
+export interface IApiClient extends IChatReader, IChatSender, IDiscovery {}
 
 /**
  * API client factory interface

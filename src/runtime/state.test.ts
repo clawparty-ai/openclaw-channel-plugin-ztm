@@ -23,8 +23,8 @@ import { testConfig } from '../test-utils/fixtures.js';
 const mockApiState = {
   getMeshInfo: vi.fn().mockResolvedValue(
     success({
-        connected: true,
-        endpoints: 5,
+      connected: true,
+      endpoints: 5,
       errors: [],
     })
   ),
@@ -74,9 +74,6 @@ vi.mock('./store.js', () => ({
     getWatermark: () => -1,
     getGlobalWatermark: vi.fn(() => 0),
     setWatermark: vi.fn(),
-    getFileMetadata: vi.fn(() => ({})),
-    setFileMetadata: vi.fn(),
-    setFileMetadataBulk: vi.fn(),
     dispose: vi.fn(),
   })),
   disposeMessageStateStore: vi.fn(),
@@ -132,8 +129,8 @@ describe('Account Runtime State Management', () => {
     mockApiState.getMeshInfo.mockReset();
     mockApiState.getMeshInfo.mockResolvedValue(
       success({
-            connected: true,
-            endpoints: 5,
+        connected: true,
+        endpoints: 5,
         errors: [],
       })
     );
@@ -314,8 +311,8 @@ describe('Account Runtime State Management', () => {
       // Override mock to return disconnected state wrapped in success Result
       mockApiState.getMeshInfo.mockResolvedValue(
         success({
-                connected: false,
-                endpoints: 0,
+          connected: false,
+          endpoints: 0,
           errors: [],
         })
       );
@@ -351,7 +348,6 @@ describe('Account Runtime State Management', () => {
     it('should stop runtime for account', async () => {
       // First initialize
       await initializeRuntime(testConfig, testAccountId);
-      const state = getAllAccountStates().get(testAccountId);
 
       // Then stop
       await stopRuntime(testAccountId);
@@ -417,9 +413,6 @@ describe('Account Runtime State Management', () => {
         getGlobalWatermark: vi.fn(() => 0),
         setWatermark: vi.fn(),
         setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
-        getFileMetadata: vi.fn(() => ({})),
-        setFileMetadata: vi.fn(),
-        setFileMetadataBulk: vi.fn(),
         dispose: vi.fn(),
       };
       vi.mocked(getAccountMessageStateStore).mockReturnValue(store);
@@ -500,10 +493,6 @@ describe('Account Runtime State Management', () => {
       await initializeRuntime(config2, 'account2');
 
       await stopRuntime('account1');
-
-      const state1 = getAllAccountStates().get('account1');
-      const state2 = getAllAccountStates().get('account2');
-
     });
   });
 
@@ -559,7 +548,7 @@ describe('Account Runtime State Management', () => {
       await Promise.all([stopRuntime(accountId), stopRuntime(accountId)]);
 
       // Should not throw, state should be stopped
-      const state = getAllAccountStates().get(accountId);
+      getAllAccountStates().get(accountId);
     });
 
     it('should handle concurrent removeAccountState calls', async () => {
@@ -588,7 +577,7 @@ describe('Account Runtime State Management', () => {
       await stopRuntime(accountId);
 
       // Final state should be stopped
-      const state = getAllAccountStates().get(accountId);
+      getAllAccountStates().get(accountId);
     });
   });
 

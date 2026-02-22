@@ -195,8 +195,8 @@ vi.mock('../di/index.js', () => ({
       }
       if (keyStr.includes('ztm:message-state-repo')) {
         return {
-          getFileMetadata: vi.fn(() => ({})),
-          setFileMetadataBulk: vi.fn(),
+          getWatermark: vi.fn(() => 0),
+          setWatermark: vi.fn(),
         };
       }
       if (keyStr.includes('ztm:allow-from-repo')) {

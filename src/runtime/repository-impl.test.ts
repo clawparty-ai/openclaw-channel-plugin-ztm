@@ -36,8 +36,6 @@ describe('AllowFromRepository', () => {
     (getAccountMessageStateStore as ReturnType<typeof vi.fn>).mockReturnValue({
       getWatermark: vi.fn(() => 0),
       setWatermark: vi.fn(),
-      getFileMetadata: vi.fn(() => ({})),
-      setFileMetadataBulk: vi.fn(),
       flush: vi.fn(),
       dispose: vi.fn(),
     });
@@ -93,8 +91,6 @@ describe('MessageStateRepository', () => {
         return 0;
       }),
       setWatermark: vi.fn(),
-      getFileMetadata: vi.fn(() => ({})),
-      setFileMetadataBulk: vi.fn(),
       flush: vi.fn(),
       dispose: vi.fn(),
     });
@@ -131,37 +127,6 @@ describe('MessageStateRepository', () => {
     });
   });
 
-  describe('getFileMetadata', () => {
-    it('should return file metadata for account', () => {
-      // The mock in beforeEach returns {} by default, let's verify that works
-      const result = repository.getFileMetadata(testAccountId);
-
-      // BeforeEach already sets up getFileMetadata to return {}
-      expect(result).toEqual({});
-    });
-
-    it('should return provided metadata from store', () => {
-      // Use existing mock return value from beforeEach setup
-      const result = repository.getFileMetadata(testAccountId);
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('setFileMetadataBulk', () => {
-    it('should set file metadata in bulk', () => {
-      const metadata = {
-        '/file1': { time: 1000, size: 100 },
-        '/file2': { time: 2000, size: 200 },
-      };
-
-      repository.setFileMetadataBulk(testAccountId, metadata);
-
-      const mockStore = (getAccountMessageStateStore as ReturnType<typeof vi.fn>).mock.results[0]
-        .value;
-      expect(mockStore.setFileMetadataBulk).toHaveBeenCalledWith(testAccountId, metadata);
-    });
-  });
-
   describe('flush', () => {
     it('should be a no-op implementation', () => {
       expect(() => repository.flush()).not.toThrow();
@@ -192,8 +157,6 @@ describe('Repository Singletons', () => {
     expect(allowFromRepo).toHaveProperty('clearCache');
     expect(messageStateRepo).toHaveProperty('getWatermark');
     expect(messageStateRepo).toHaveProperty('setWatermark');
-    expect(messageStateRepo).toHaveProperty('getFileMetadata');
-    expect(messageStateRepo).toHaveProperty('setFileMetadataBulk');
     expect(messageStateRepo).toHaveProperty('flush');
   });
 });
@@ -211,8 +174,6 @@ describe('Repository Integration', () => {
         return 0;
       }),
       setWatermark: vi.fn(),
-      getFileMetadata: vi.fn(() => ({})),
-      setFileMetadataBulk: vi.fn(),
       flush: vi.fn(),
       dispose: vi.fn(),
     });

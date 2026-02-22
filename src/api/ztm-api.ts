@@ -33,7 +33,6 @@ import { API_TIMEOUT_MS } from '../constants.js';
 import { createMeshApi } from './mesh-api.js';
 import { createChatApi } from './chat-api.js';
 import { createMessageApi } from './message-api.js';
-import { createFileApi } from './file-api.js';
 
 // Re-export types for backward compatibility
 export type { ZTMApiClientDeps };
@@ -71,7 +70,6 @@ export function createZTMApiClient(
   // Create the various API modules
   const meshApi = createMeshApi(config, request, logger);
   const chatApi = createChatApi(config, request, logger);
-  const fileApi = createFileApi(config, request, logger);
 
   // Create message API with getChats dependency
   const messageApi = createMessageApi(config, request, logger, () => chatApi.getChats());
@@ -98,10 +96,6 @@ export function createZTMApiClient(
     getGroupMessages: messageApi.getGroupMessages,
 
     sendGroupMessage: messageApi.sendGroupMessage,
-
-    seedFileMetadata: fileApi.seedFileMetadata,
-
-    exportFileMetadata: fileApi.exportFileMetadata,
   };
 
   return client;

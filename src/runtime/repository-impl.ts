@@ -8,7 +8,6 @@
  */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
-import type { FileMetadata } from './store.js';
 import type { IAllowFromRepository, IMessageStateRepository } from './repository.js';
 import { getAllowFromCache, clearAllowFromCache } from './state.js';
 import { getAccountMessageStateStore } from './store.js';
@@ -68,26 +67,6 @@ export class MessageStateRepository implements IMessageStateRepository {
    */
   setWatermark(accountId: string, key: string, time: number): void {
     getAccountMessageStateStore(accountId).setWatermark(accountId, key, time);
-  }
-
-  /**
-   * Get file metadata for an account
-   *
-   * @param accountId - The account identifier
-   * @returns Record of file path to metadata
-   */
-  getFileMetadata(accountId: string): Record<string, FileMetadata> {
-    return getAccountMessageStateStore(accountId).getFileMetadata(accountId);
-  }
-
-  /**
-   * Set file metadata in bulk
-   *
-   * @param accountId - The account identifier
-   * @param metadata - Record of file path to metadata
-   */
-  setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void {
-    getAccountMessageStateStore(accountId).setFileMetadataBulk(accountId, metadata);
   }
 
   /**

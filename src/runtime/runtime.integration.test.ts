@@ -8,15 +8,9 @@ import { success } from '../types/common.js';
 // Mock dependencies
 vi.mock('../api/ztm-api.js', () => ({
   createZTMApiClient: vi.fn(() => ({
-    getMeshInfo: vi.fn().mockResolvedValue(
-      success({ connected: true, peers: 5 })
-    ),
-    getEndpointCount: vi.fn().mockResolvedValue(
-      success(5)
-    ),
-    getIdentity: vi.fn().mockResolvedValue(
-      success('public-key-123')
-    ),
+    getMeshInfo: vi.fn().mockResolvedValue(success({ connected: true, peers: 5 })),
+    getEndpointCount: vi.fn().mockResolvedValue(success(5)),
+    getIdentity: vi.fn().mockResolvedValue(success('public-key-123')),
     getChats: vi.fn().mockResolvedValue(success([])),
     discoverUsers: vi.fn().mockResolvedValue(success([])),
     discoverPeers: vi.fn().mockResolvedValue(success([])),
@@ -26,8 +20,6 @@ vi.mock('../api/ztm-api.js', () => ({
     sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
     getGroupMessages: vi.fn().mockResolvedValue(success([])),
     sendGroupMessage: vi.fn().mockResolvedValue(success(true)),
-    seedFileMetadata: vi.fn(),
-    exportFileMetadata: vi.fn().mockReturnValue({}),
   })),
 }));
 
@@ -35,8 +27,6 @@ vi.mock('./store.js', () => ({
   getAccountMessageStateStore: vi.fn(() => ({
     getWatermark: vi.fn().mockReturnValue(0),
     setWatermark: vi.fn().mockResolvedValue(undefined),
-    getFileMetadata: vi.fn().mockReturnValue(undefined),
-    setFileMetadata: vi.fn().mockResolvedValue(undefined),
     ensureLoaded: vi.fn().mockResolvedValue(undefined),
     flush: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn(),
@@ -98,7 +88,6 @@ describe('Runtime State Management Integration', () => {
       // Step 3: Stop runtime
       await stopRuntime(testAccountId);
 
-
       // Step 4: Remove state
       removeAccountState(testAccountId);
 
@@ -130,14 +119,12 @@ describe('Runtime State Management Integration', () => {
       await initializeRuntime(state1.config, accountId1);
       await initializeRuntime(state2.config, accountId2);
 
-
       // Verify both in map
       const allStates = getAllAccountStates();
       expect(allStates.size).toBe(2);
 
       // Stop only account 1
       await stopRuntime(accountId1);
-
 
       // Remove account 1
       removeAccountState(accountId1);

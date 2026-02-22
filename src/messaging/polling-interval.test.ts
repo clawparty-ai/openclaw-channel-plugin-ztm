@@ -13,8 +13,6 @@ import type { MessagingContext } from './context.js';
 function createMockMessagingContext(): MessagingContext {
   return {
     messageStateRepo: {
-      getFileMetadata: vi.fn(() => ({})),
-      setFileMetadataBulk: vi.fn(),
       getWatermark: vi.fn(() => 0),
       setWatermark: vi.fn(),
       flush: vi.fn(),
@@ -85,12 +83,12 @@ describe('Interval Management', () => {
       apiClient: {
         getChats: mockSuccess([]),
       } as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -170,12 +168,12 @@ describe('Watch → Polling Transition', () => {
       apiClient: {
         getChats: mockSuccess([]),
       } as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -233,6 +231,5 @@ describe('Watch → Polling Transition', () => {
   it('should preserve connection state during transition', async () => {
     const mockContext = createMockMessagingContext();
     await startPollingWatcher(mockState, mockContext);
-
   });
 });

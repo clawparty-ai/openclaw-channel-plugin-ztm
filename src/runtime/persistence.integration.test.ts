@@ -349,8 +349,6 @@ describe('Runtime Persistence Integration (Real File I/O)', () => {
 
         expect(typeof store.getWatermark).toBe('function');
         expect(typeof store.setWatermark).toBe('function');
-        expect(typeof store.getFileMetadata).toBe('function');
-        expect(typeof store.setFileMetadataBulk).toBe('function');
         expect(typeof store.flush).toBe('function');
       });
     });

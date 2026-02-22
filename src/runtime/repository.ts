@@ -9,7 +9,6 @@
  */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
-import type { FileMetadata } from './store.js';
 
 /**
  * Repository for managing allowFrom store access
@@ -38,7 +37,7 @@ export interface IAllowFromRepository {
 /**
  * Repository for managing message state persistence
  *
- * Provides abstraction over how message watermarks and file metadata
+ * Provides abstraction over how message watermarks
  * are persisted, allowing the messaging layer to remain independent
  * of the storage implementation.
  */
@@ -60,22 +59,6 @@ export interface IMessageStateRepository {
    * @param time - The timestamp to set
    */
   setWatermark(accountId: string, key: string, time: number): void;
-
-  /**
-   * Get file metadata for an account
-   *
-   * @param accountId - The account identifier
-   * @returns Record of file path to metadata
-   */
-  getFileMetadata(accountId: string): Record<string, FileMetadata>;
-
-  /**
-   * Set file metadata in bulk
-   *
-   * @param accountId - The account identifier
-   * @param metadata - Record of file path to metadata
-   */
-  setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void;
 
   /**
    * Flush any pending writes to storage

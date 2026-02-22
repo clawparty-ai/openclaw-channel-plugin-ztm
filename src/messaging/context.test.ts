@@ -24,8 +24,6 @@ const mockAllowFromRepo = {
 const mockMessageStateRepo = {
   getWatermark: vi.fn().mockReturnValue(0),
   setWatermark: vi.fn(),
-  getFileMetadata: vi.fn().mockReturnValue(undefined),
-  setFileMetadataBulk: vi.fn(),
 };
 
 describe('MessagingContext', () => {
@@ -100,8 +98,6 @@ describe('MessagingContext', () => {
 
       expect(typeof context.messageStateRepo.getWatermark).toBe('function');
       expect(typeof context.messageStateRepo.setWatermark).toBe('function');
-      expect(typeof context.messageStateRepo.getFileMetadata).toBe('function');
-      expect(typeof context.messageStateRepo.setFileMetadataBulk).toBe('function');
     });
   });
 
@@ -172,37 +168,6 @@ describe('MessagingContext', () => {
       context.messageStateRepo.setWatermark('test-account', 'alice', 100);
 
       expect(mockMessageStateRepo.setWatermark).toHaveBeenCalledWith('test-account', 'alice', 100);
-    });
-
-    it('should get file metadata', async () => {
-      const mockMetadata = { time: 1234567890, size: 1024 };
-      mockMessageStateRepo.getFileMetadata.mockReturnValue(mockMetadata);
-
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      const metadata = context.messageStateRepo.getFileMetadata('test-account');
-
-      expect(metadata).toEqual(mockMetadata);
-      expect(mockMessageStateRepo.getFileMetadata).toHaveBeenCalledWith('test-account');
-    });
-
-    it('should set file metadata in bulk', async () => {
-      const mockMetadata = { file1: { time: 1234567890, size: 1024 } };
-
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      context.messageStateRepo.setFileMetadataBulk('test-account', mockMetadata);
-
-      expect(mockMessageStateRepo.setFileMetadataBulk).toHaveBeenCalledWith(
-        'test-account',
-        mockMetadata
-      );
     });
 
     it('should return 0 for missing watermark', async () => {

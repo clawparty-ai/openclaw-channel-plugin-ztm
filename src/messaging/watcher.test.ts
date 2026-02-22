@@ -13,8 +13,6 @@ import type { MessagingContext } from './context.js';
 function createMockMessagingContext(): MessagingContext {
   return {
     messageStateRepo: {
-      getFileMetadata: vi.fn(() => ({})),
-      setFileMetadataBulk: vi.fn(),
       getWatermark: vi.fn(() => 0),
       setWatermark: vi.fn(),
       flush: vi.fn(),
@@ -67,8 +65,8 @@ vi.mock('../di/index.js', () => ({
       }
       if (String(key) === 'Symbol(message-state-repo)') {
         return {
-          getFileMetadata: vi.fn(() => ({})),
-          setFileMetadataBulk: vi.fn(),
+          getWatermark: vi.fn(() => 0),
+          setWatermark: vi.fn(),
         };
       }
       if (String(key) === 'Symbol(allow-from-repo)') {
@@ -91,8 +89,8 @@ vi.mock('../runtime/index.js', () => ({
     },
   }),
   getMessageStateRepository: vi.fn(() => ({
-    getFileMetadata: vi.fn(() => ({})),
-    setFileMetadataBulk: vi.fn(),
+    getWatermark: vi.fn(() => 0),
+    setWatermark: vi.fn(),
   })),
   getAllowFromRepository: vi.fn(() => ({
     getAllowFrom: vi.fn(() => Promise.resolve([])),
@@ -102,8 +100,8 @@ vi.mock('../runtime/index.js', () => ({
 
 vi.mock('../runtime/store.js', () => ({
   getAccountMessageStateStore: vi.fn(() => ({
-    getFileMetadata: vi.fn(() => ({})),
-    setFileMetadataBulk: vi.fn(),
+    getWatermark: vi.fn(() => 0),
+    setWatermark: vi.fn(),
   })),
 }));
 
@@ -146,20 +144,18 @@ describe('startMessageWatcher', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -194,12 +190,6 @@ describe('startMessageWatcher', () => {
       const mockContext = createMockMessagingContext();
       await startMessageWatcher(stateWithoutApi as AccountRuntimeState, mockContext);
       // Should not throw and should return quickly
-    });
-
-    it('should call seedFileMetadata', async () => {
-      const mockContext = createMockMessagingContext();
-      await startMessageWatcher(mockState, mockContext);
-      // seedFileMetadata should have been called internally
     });
 
     it('should perform initial sync', async () => {
@@ -366,48 +356,18 @@ describe('startMessageWatcher', () => {
   });
 });
 
-describe('seedFileMetadata', () => {
-  it('should seed metadata from persisted state', async () => {
-    const mockApiClient = {
-      seedFileMetadata: vi.fn(),
-      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
-      getChats: vi.fn(() => mockSuccess({ value: [] })),
-    } as unknown as ZTMApiClient;
-
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      apiClient: mockApiClient,
-          lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-        messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      pendingPairings: new Map(),
-      groupPermissionCache: new Map(),
-    };
-
-    // Call startMessageWatcher which will call seedFileMetadata internally
-    const mockContext = createMockMessagingContext();
-    await startMessageWatcher(state, mockContext);
-  });
-});
-
 describe('watch error count behavior', () => {
   it('should increment error count on watch failure', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: null,
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -427,12 +387,12 @@ describe('watch error count behavior', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: null,
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 5,
       pendingPairings: new Map(),
@@ -455,12 +415,12 @@ describe('full sync behavior', () => {
         getChats: vi.fn(() => mockSuccess({ value: [] })),
         exportFileMetadata: vi.fn(() => ({})),
       } as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 6, // Above threshold
       pendingPairings: new Map(),
@@ -485,20 +445,18 @@ describe('watch loop timing', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -577,64 +535,6 @@ describe('watch loop timing', () => {
   });
 });
 
-describe('seedFileMetadata edge cases', () => {
-  it('should return early if no apiClient in seedFileMetadata', async () => {
-    const mockContext = createMockMessagingContext();
-
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      apiClient: null,
-          lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-        messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      pendingPairings: new Map(),
-      groupPermissionCache: new Map(),
-    };
-
-    // Should not throw and should return early
-    await startMessageWatcher(state, mockContext);
-  });
-
-  it('should not call seedFileMetadata when no persisted metadata', async () => {
-    const mockContext = createMockMessagingContext();
-    // getFileMetadata returns empty object
-    mockContext.messageStateRepo.getFileMetadata = vi.fn(() => ({}));
-
-    const mockApiClient = {
-      seedFileMetadata: vi.fn(),
-      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
-      getChats: vi.fn(() => mockSuccess({ value: [] })),
-    } as unknown as ZTMApiClient;
-
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      apiClient: mockApiClient,
-          lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-        messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      pendingPairings: new Map(),
-      groupPermissionCache: new Map(),
-    };
-
-    await startMessageWatcher(state, mockContext);
-
-    // seedFileMetadata should not be called with empty metadata
-    expect(mockApiClient.seedFileMetadata).not.toHaveBeenCalled();
-  });
-});
-
 describe('performInitialSync edge cases', () => {
   it('should return empty array when no apiClient', async () => {
     const mockContext = createMockMessagingContext();
@@ -643,12 +543,12 @@ describe('performInitialSync edge cases', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -703,20 +603,18 @@ describe('processChangedPaths scenarios', () => {
           ],
         })
       ),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -788,20 +686,18 @@ describe('error threshold and polling fallback', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -870,20 +766,18 @@ describe('watch error handling edge cases', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -938,20 +832,18 @@ describe('multiple iteration scenarios', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -999,20 +891,18 @@ describe('initial sync scenarios', () => {
       getChats: vi.fn(() => mockSuccess({ value: chats })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1081,20 +971,18 @@ describe('initial sync scenarios', () => {
           },
         })
       ),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     mockState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1104,57 +992,6 @@ describe('initial sync scenarios', () => {
     const mockContext = createMockMessagingContext();
     // Should not throw
     await startMessageWatcher(mockState, mockContext);
-  });
-
-  it('should seed file metadata from persisted state', async () => {
-    const persistedMetadata: Record<string, { time: number; size: number }> = {
-      'file1.txt': { time: 1000, size: 1024 },
-      'file2.txt': { time: 2000, size: 2048 },
-    };
-
-    const mockMessageStateRepo = {
-      getFileMetadata: vi.fn(() => persistedMetadata),
-      setFileMetadataBulk: vi.fn(),
-      getWatermark: vi.fn(() => 0),
-      setWatermark: vi.fn(),
-      flush: vi.fn(),
-    };
-
-    const mockContext: MessagingContext = {
-      messageStateRepo: mockMessageStateRepo,
-      allowFromRepo: {
-        getAllowFrom: vi.fn(() => Promise.resolve([])),
-        clearCache: vi.fn(),
-      },
-    };
-
-    const mockApiClient = {
-      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
-      getChats: vi.fn(() => mockSuccess({ value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
-    };
-
-    mockState = {
-      accountId: testAccountId,
-      config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      pendingPairings: new Map(),
-      groupPermissionCache: new Map(),
-    };
-
-    await startMessageWatcher(mockState, mockContext);
-
-    // seedFileMetadata should be called with persisted metadata
-    expect(mockApiClient.seedFileMetadata).toHaveBeenCalledWith(persistedMetadata);
   });
 });
 
@@ -1169,20 +1006,18 @@ describe('WatchLoopController scenarios', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     return {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1266,20 +1101,18 @@ describe('WatchLoopController scenarios', () => {
         })
       ),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     mockState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1314,12 +1147,12 @@ describe('handleInitialPairingRequests edge cases', () => {
         watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
         exportFileMetadata: vi.fn(() => ({})),
       } as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1348,12 +1181,12 @@ describe('getOrDefault fallback scenarios', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1373,12 +1206,12 @@ describe('executeWatch edge cases', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1400,12 +1233,12 @@ describe('executeWatch edge cases', () => {
       accountId: testAccountId,
       config: null as any,
       apiClient: mockApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1449,12 +1282,12 @@ describe('processChangedPeer error handling', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1502,12 +1335,12 @@ describe('processChangedGroup error handling', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1532,12 +1365,12 @@ describe('performFullSync edge cases', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1570,12 +1403,12 @@ describe('performFullSync edge cases', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1604,12 +1437,12 @@ describe('processChangedPaths empty items', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1629,12 +1462,12 @@ describe('pending iteration flag behavior', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1652,12 +1485,12 @@ describe('watch error threshold behavior', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1679,12 +1512,12 @@ describe('watch error threshold behavior', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 5, // Already at threshold
       pendingPairings: new Map(),
@@ -1730,12 +1563,12 @@ describe('processChangedPaths empty items', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1744,8 +1577,6 @@ describe('processChangedPaths empty items', () => {
 
     mockContext = {
       messageStateRepo: {
-        getFileMetadata: vi.fn(() => ({})),
-        setFileMetadataBulk: vi.fn(),
         getWatermark: vi.fn(() => 0),
         setWatermark: vi.fn(),
         flush: vi.fn(),
@@ -1776,12 +1607,12 @@ describe('processChangedPeer error handling', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1810,12 +1641,12 @@ describe('processChangedGroup error handling', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: failingApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1836,19 +1667,18 @@ describe('performFullSync error handling', () => {
       getPeerMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
       getGroupMessages: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
       watchChanges: vi.fn().mockResolvedValue(mockSuccess({ value: [] })),
-      seedFileMetadata: vi.fn(),
     };
 
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: failingApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1866,12 +1696,12 @@ describe('performFullSync error handling', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1891,12 +1721,12 @@ describe('executeWatch error handling', () => {
       accountId: testAccountId,
       config: testConfig,
       apiClient: null,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -1929,20 +1759,18 @@ describe('WatchLoopController behavior', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     mockState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set(),
+      messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -2145,20 +1973,18 @@ describe('abortSignal support', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
@@ -2198,20 +2024,18 @@ describe('abortSignal support', () => {
       getChats: vi.fn(() => mockSuccess({ value: [] })),
       getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      seedFileMetadata: vi.fn(),
-      exportFileMetadata: vi.fn(() => ({})),
     };
 
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
       apiClient: mockApiClient as unknown as ZTMApiClient,
-          lastError: null,
+      lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        messageCallbacks: new Set<MessageCallback>(),
+      messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),

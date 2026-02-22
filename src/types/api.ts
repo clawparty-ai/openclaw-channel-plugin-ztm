@@ -168,12 +168,6 @@ export interface ZTMApiClient {
   /** Watch for changes in storage with given prefix. Returns Result with changed items or error. */
   watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>>;
 
-  /** Seed file metadata from persisted state (call before first watchChanges) */
-  seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
-
-  /** Export current file metadata for persistence */
-  exportFileMetadata(): Record<string, { time: number; size: number }>;
-
   /** Discover active peers by scanning shared storage. Returns Result with users or discovery error. */
   listUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>>;
 }

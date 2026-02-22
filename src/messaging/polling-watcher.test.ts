@@ -22,8 +22,6 @@ import type { MessagingContext } from './context.js';
 function createMockMessagingContext(): MessagingContext {
   return {
     messageStateRepo: {
-      getFileMetadata: vi.fn(() => ({})),
-      setFileMetadataBulk: vi.fn(),
       getWatermark: vi.fn(() => 0),
       setWatermark: vi.fn(),
       flush: vi.fn(),
@@ -409,8 +407,6 @@ describe('Polling Watcher', () => {
       const mockGetAllowFrom = vi.fn(() => Promise.resolve(['alice', 'bob']));
       const mockContext: MessagingContext = {
         messageStateRepo: {
-          getFileMetadata: vi.fn(() => ({})),
-          setFileMetadataBulk: vi.fn(),
           getWatermark: vi.fn(() => 0),
           setWatermark: vi.fn(),
           flush: vi.fn(),
@@ -439,8 +435,6 @@ describe('Polling Watcher', () => {
       // Create mock context that returns null to simulate store read failure
       const mockContext: MessagingContext = {
         messageStateRepo: {
-          getFileMetadata: vi.fn(() => ({})),
-          setFileMetadataBulk: vi.fn(),
           getWatermark: vi.fn(() => 0),
           setWatermark: vi.fn(),
           flush: vi.fn(),

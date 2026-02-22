@@ -114,8 +114,6 @@ export function createMockApiClient(overrides: Partial<ZTMApiClient> = {}): ZTMA
     watchChanges: vi.fn().mockResolvedValue(success([])),
     getGroupMessages: vi.fn().mockResolvedValue(success([])),
     sendGroupMessage: vi.fn().mockResolvedValue(success(true)),
-    seedFileMetadata: vi.fn(),
-    exportFileMetadata: vi.fn().mockReturnValue({}),
   };
 
   return { ...defaultClient, ...overrides };
@@ -161,7 +159,6 @@ export function createMockApiClientWithChats(chats: ZTMChat[]): ZTMApiClient {
  */
 export function createMockMessageStateStore() {
   const watermarks = new Map<string, number>();
-  const fileMetadata = new Map<string, { time: number; size: number }>();
 
   return {
     getWatermark: vi.fn(
@@ -176,19 +173,11 @@ export function createMockMessageStateStore() {
     setWatermark: vi.fn((accountId: string, key: string, time: number) => {
       watermarks.set(`${accountId}:${key}`, time);
     }),
-    getFileMetadata: vi.fn(() => Object.fromEntries(fileMetadata)),
-    setFileMetadata: vi.fn(
-      (accountId: string, filePath: string, metadata: { time: number; size: number }) => {
-        fileMetadata.set(filePath, metadata);
-      }
-    ),
-    setFileMetadataBulk: vi.fn(),
     flush: vi.fn(),
     flushAsync: vi.fn().mockResolvedValue(undefined),
     dispose: vi.fn(),
     // Internal for testing
     _watermarks: watermarks,
-    _fileMetadata: fileMetadata,
   };
 }
 

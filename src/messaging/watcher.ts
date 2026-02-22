@@ -55,10 +55,7 @@ export async function startMessageWatcher(
 
   const messagePath = '/apps/ztm/chat/shared/';
 
-  // Step 1: Seed the API client's lastSeenTimes from persisted state
-  await seedFileMetadata(state, context);
-
-  // Step 2: Get initial allowFrom store (uses cache)
+  // Step 1: Get initial allowFrom store (uses cache)
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
   const storeAllowFrom = await context.allowFromRepo.getAllowFrom(state.accountId, rt);
   // If store read fails during init, use empty array to allow basic functionality
@@ -73,24 +70,6 @@ export async function startMessageWatcher(
 
   // Step 6: Start watch loop
   startWatchLoop(state, rt, messagePath, context, abortSignal);
-}
-
-/**
- * Seed API client with persisted file metadata
- */
-async function seedFileMetadata(
-  state: AccountRuntimeState,
-  context: MessagingContext
-): Promise<void> {
-  if (!state.apiClient) return;
-
-  const persistedMetadata = context.messageStateRepo.getFileMetadata(state.accountId);
-  if (Object.keys(persistedMetadata).length > 0) {
-    state.apiClient.seedFileMetadata(persistedMetadata);
-    logger.info(
-      `[${state.accountId}] Seeded ${Object.keys(persistedMetadata).length} file metadata from persisted state`
-    );
-  }
 }
 
 // processAndNotifyChat is now imported from chat-processor.ts
@@ -339,25 +318,11 @@ class WatchLoopController {
   }
 
   /**
-   * Execute full sync and persist file metadata
+   * Execute full sync
    */
   private async executeFullSyncWithMetadata(storeAllowFrom: string[]): Promise<void> {
     logger.debug(`[${this.state.accountId}] Performing delayed full sync after inactivity`);
     await performFullSync(this.state, storeAllowFrom);
-    this.persistFileMetadata();
-  }
-
-  /**
-   * Persist file metadata to state store
-   */
-  private persistFileMetadata(): void {
-    if (!this.state.apiClient) {
-      return;
-    }
-    this.context.messageStateRepo.setFileMetadataBulk(
-      this.state.accountId,
-      this.state.apiClient.exportFileMetadata()
-    );
   }
 }
 
@@ -476,14 +441,6 @@ async function processChangedPaths(
   }
 
   await Promise.all(tasks);
-
-  // Persist file metadata after processing
-  if (state.apiClient) {
-    messagingContext.messageStateRepo.setFileMetadataBulk(
-      state.accountId,
-      state.apiClient.exportFileMetadata()
-    );
-  }
 
   return true;
 }

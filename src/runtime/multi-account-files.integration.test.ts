@@ -76,8 +76,8 @@ describe('Multi-Account File Isolation Integration (Real File I/O)', () => {
         expect(statePath2).toContain('state.json');
 
         // Write to each file
-        const testData1 = { accounts: { [account1]: { peer1: 1000 } }, fileMetadata: {} };
-        const testData2 = { accounts: { [account2]: { peer2: 2000 } }, fileMetadata: {} };
+        const testData1 = { accounts: { [account1]: { peer1: 1000 } } };
+        const testData2 = { accounts: { [account2]: { peer2: 2000 } } };
 
         // Ensure directories exist
         fs.mkdirSync(path.dirname(statePath1), { recursive: true });
@@ -119,7 +119,7 @@ describe('Multi-Account File Isolation Integration (Real File I/O)', () => {
         // Create files for all accounts
         for (const accountId of accountIds) {
           const statePath = resolveStatePath(accountId);
-          const testData = { accounts: { [accountId]: { peer: Date.now() } }, fileMetadata: {} };
+          const testData = { accounts: { [accountId]: { peer: Date.now() } } };
 
           fs.mkdirSync(path.dirname(statePath), { recursive: true });
           fs.writeFileSync(statePath, JSON.stringify(testData));
@@ -257,7 +257,6 @@ describe('Multi-Account File Isolation Integration (Real File I/O)', () => {
           const statePath = resolveStatePath(accountId);
           const testData = {
             accounts: { [accountId]: { peer: Date.now(), timestamp: Date.now() } },
-            fileMetadata: {},
           };
 
           fs.mkdirSync(path.dirname(statePath), { recursive: true });
@@ -308,13 +307,13 @@ describe('Multi-Account File Isolation Integration (Real File I/O)', () => {
         for (let i = 0; i < iterations; i++) {
           promises.push(
             (async () => {
-              const data = { accounts: { [account1]: { peer: i } }, fileMetadata: {} };
+              const data = { accounts: { [account1]: { peer: i } } };
               fs.writeFileSync(statePath1, JSON.stringify(data));
             })()
           );
           promises.push(
             (async () => {
-              const data = { accounts: { [account2]: { peer: i } }, fileMetadata: {} };
+              const data = { accounts: { [account2]: { peer: i } } };
               fs.writeFileSync(statePath2, JSON.stringify(data));
             })()
           );

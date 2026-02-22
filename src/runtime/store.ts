@@ -12,7 +12,6 @@ import { resolveStatePath } from '../utils/paths.js';
 import { Semaphore } from '../utils/concurrency.js';
 import {
   MAX_PEERS_PER_ACCOUNT,
-  MAX_FILES_PER_ACCOUNT,
   STATE_FLUSH_DEBOUNCE_MS,
   STATE_FLUSH_MAX_DELAY_MS,
 } from '../constants.js';
@@ -51,16 +50,9 @@ export const nodeFs: FileSystem = {
   },
 };
 
-export interface FileMetadata {
-  time: number;
-  size: number;
-}
-
 export interface MessageStateData {
   // Per-account → per-peer → last processed message timestamp
   accounts: Record<string, Record<string, number>>;
-  // Per-account → last seen file metadata (time + size for watchChanges seeding)
-  fileMetadata: Record<string, Record<string, FileMetadata>>;
 }
 
 /**
@@ -69,7 +61,6 @@ export interface MessageStateData {
  * This interface defines the contract for persisting message state across
  * gateway restarts. It tracks:
  * - Per-peer watermarks (last processed message timestamp)
- * - File metadata for change detection
  */
 export interface MessageStateStore {
   /**
@@ -118,28 +109,6 @@ export interface MessageStateStore {
   setWatermarkAsync(accountId: string, key: string, time: number): Promise<void>;
 
   /**
-   * Get all persisted file metadata for an account
-   * @param accountId - The account identifier
-   * @returns Record of file path to metadata
-   */
-  getFileMetadata(accountId: string): Record<string, FileMetadata>;
-
-  /**
-   * Update a file's metadata
-   * @param accountId - The account identifier
-   * @param filePath - The file path
-   * @param metadata - The file metadata (time and size)
-   */
-  setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void;
-
-  /**
-   * Bulk-set file metadata (e.g. after initial scan)
-   * @param accountId - The account identifier
-   * @param metadata - Record of file path to metadata
-   */
-  setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void;
-
-  /**
    * Flush any pending writes immediately
    */
   flush(): void;
@@ -178,7 +147,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
   /**
    * Validate state data structure to prevent deserialization attacks
-   * Ensures accounts and fileMetadata have expected types
+   * Ensures accounts have expected types
    */
   private validateStateData(
     parsed: unknown
@@ -231,22 +200,6 @@ export class MessageStateStoreImpl implements MessageStateStore {
       }
     }
 
-    // Validate fileMetadata field if present
-    if (data.fileMetadata !== undefined) {
-      if (typeof data.fileMetadata !== 'object' || data.fileMetadata === null) {
-        this.logger.warn('Invalid fileMetadata format in state file');
-        return null;
-      }
-    }
-
-    // Validate fileTimes (legacy format) if present
-    if (data.fileTimes !== undefined) {
-      if (typeof data.fileTimes !== 'object' || data.fileTimes === null) {
-        this.logger.warn('Invalid fileTimes format in state file');
-        return null;
-      }
-    }
-
     return { accounts };
   }
 
@@ -267,7 +220,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
     // Initialize with empty data - load lazily on first access
     // This avoids blocking the event loop during startup
-    this.data = { accounts: {}, fileMetadata: {} };
+    this.data = { accounts: {} };
   }
 
   /**
@@ -299,10 +252,8 @@ export class MessageStateStoreImpl implements MessageStateStore {
         return;
       }
 
-      const fileMetadata = this.migrateFileMetadata(parsed);
       this.data = {
         accounts: validated.accounts,
-        fileMetadata,
       };
     } catch {
       // Ignore read/parse errors — start fresh
@@ -363,10 +314,8 @@ export class MessageStateStoreImpl implements MessageStateStore {
         return;
       }
 
-      const fileMetadata = this.migrateFileMetadata(parsed);
       this.data = {
         accounts: validated.accounts,
-        fileMetadata,
       };
     } catch {
       this.logger.warn('Failed to load message state, starting fresh');
@@ -385,37 +334,6 @@ export class MessageStateStoreImpl implements MessageStateStore {
    */
   async ensureLoaded(): Promise<void> {
     await this.loadAsync();
-  }
-
-  private migrateFileMetadata(
-    parsed: Record<string, unknown>
-  ): Record<string, Record<string, FileMetadata>> {
-    const fileMetadata: Record<string, Record<string, FileMetadata>> = {};
-
-    if (parsed.fileMetadata && typeof parsed.fileMetadata === 'object') {
-      // New format - validate it's the expected structure
-      try {
-        const fm = parsed.fileMetadata as Record<string, Record<string, FileMetadata>>;
-        for (const [accountId, files] of Object.entries(fm)) {
-          if (files && typeof files === 'object') {
-            fileMetadata[accountId] = files;
-          }
-        }
-      } catch {
-        // Invalid format, ignore
-      }
-    } else if (parsed.fileTimes && typeof parsed.fileTimes === 'object') {
-      // Old format: migrate time to metadata with size 0
-      const fileTimes = parsed.fileTimes as Record<string, Record<string, number>>;
-      for (const [accountId, files] of Object.entries(fileTimes)) {
-        fileMetadata[accountId] = {};
-        for (const [p, time] of Object.entries(files)) {
-          fileMetadata[accountId][p] = { time, size: 0 };
-        }
-      }
-    }
-
-    return fileMetadata;
   }
 
   private scheduleSave(): void {
@@ -591,54 +509,6 @@ export class MessageStateStoreImpl implements MessageStateStore {
       this.data.accounts[accountId] = Object.fromEntries(sorted);
       this.dirty = true;
     }
-
-    // Also cleanup fileMetadata if needed
-    const fileMetadata = this.data.fileMetadata[accountId];
-    if (fileMetadata && Object.keys(fileMetadata).length > MAX_FILES_PER_ACCOUNT) {
-      // Keep the most recently seen files (sorted by timestamp descending)
-      const sorted = Object.entries(fileMetadata)
-        .sort(([, m1], [, m2]) => m2.time - m1.time)
-        .slice(0, MAX_FILES_PER_ACCOUNT);
-      this.data.fileMetadata[accountId] = Object.fromEntries(sorted);
-      this.dirty = true;
-    }
-  }
-
-  /** Get all persisted file metadata for an account (used to seed lastSeenTimes) */
-  getFileMetadata(accountId: string): Record<string, FileMetadata> {
-    // Ensure data is loaded before reading
-    if (!this.loaded) {
-      this.load();
-    }
-    return this.data.fileMetadata[accountId] ?? {};
-  }
-
-  /** Update a file's metadata */
-  setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void {
-    // Ensure data is loaded before writing
-    if (!this.loaded) {
-      this.load();
-    }
-    if (!this.data.fileMetadata[accountId]) {
-      this.data.fileMetadata[accountId] = {};
-    }
-    this.data.fileMetadata[accountId][filePath] = metadata;
-    this.scheduleSave();
-  }
-
-  /** Bulk-set file metadata (e.g. after initial scan) */
-  setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void {
-    // Ensure data is loaded before writing
-    if (!this.loaded) {
-      this.load();
-    }
-    if (!this.data.fileMetadata[accountId]) {
-      this.data.fileMetadata[accountId] = {};
-    }
-    for (const [fp, m] of Object.entries(metadata)) {
-      this.data.fileMetadata[accountId][fp] = m;
-    }
-    this.scheduleSave();
   }
 
   /** Dispose of resources - call on plugin unload to prevent memory leaks */
