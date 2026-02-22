@@ -13,10 +13,8 @@ import { getZTMRuntime, hasZTMRuntime } from '../runtime/index.js';
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
-  messagePath?: string;
   enableGroups?: boolean;
   groupPolicy?: GroupPolicy;
-  autoReply?: boolean;
   allowFrom?: string[];
   dmPolicy?: DMPolicy;
   permitSource?: 'server' | 'file';
@@ -279,9 +277,7 @@ export class ZTMChatWizard {
   constructor(prompts?: WizardPrompts) {
     this.prompts = prompts || new ConsolePrompts();
     this.config = {
-      messagePath: '/shared',
       enableGroups: false,
-      autoReply: true,
       allowFrom: undefined,
       dmPolicy: 'pairing',
       permitSource: 'server',
@@ -546,8 +542,6 @@ export class ZTMChatWizard {
       console.log('  Permit File Path:', this.config.permitFilePath);
     }
     console.log('  Username:', this.config.username);
-    console.log('  Message Path:', this.config.messagePath);
-    console.log('  Auto Reply:', this.config.autoReply);
     console.log('  DM Policy:', this.config.dmPolicy);
     console.log('  Allow From:', this.config.allowFrom?.join(', ') || '* (all users)');
     console.log('  Enable Groups:', this.config.enableGroups ?? false);
@@ -637,8 +631,6 @@ export class ZTMChatWizard {
       meshName: this.config.meshName || 'openclaw-mesh',
       username: this.config.username || 'openclaw-bot',
       enableGroups: this.config.enableGroups ?? false,
-      autoReply: this.config.autoReply ?? true,
-      messagePath: this.config.messagePath || '/shared',
       dmPolicy: this.config.dmPolicy ?? 'pairing',
       allowFrom: this.config.allowFrom,
       groupPolicy: this.config.groupPolicy ?? 'allowlist',

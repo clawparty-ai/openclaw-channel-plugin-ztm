@@ -41,8 +41,6 @@ describe('Config Resolution Integration', () => {
         meshName: 'openclaw-mesh',
         username: 'openclaw-bot',
         enableGroups: true,
-        autoReply: true,
-        messagePath: '/shared',
         dmPolicy: 'pairing',
         allowFrom: undefined,
         apiTimeout: 30000,
@@ -255,21 +253,6 @@ describe('Config Resolution Integration', () => {
         expect(resolved.enableGroups).toBe(expected);
       });
     });
-
-    it('should normalize autoReply correctly (defaults to true)', () => {
-      const testCases = [
-        { input: true, expected: true },
-        { input: false, expected: false },
-        { input: undefined, expected: true }, // Default is true
-        { input: null, expected: true }, // Default is true
-      ];
-
-      testCases.forEach(({ input, expected }) => {
-        const config = { autoReply: input };
-        const resolved = resolveZTMChatConfig(config);
-        expect(resolved.autoReply).toBe(expected);
-      });
-    });
   });
 
   describe('invalid config handling', () => {
@@ -378,8 +361,6 @@ describe('Config Resolution Integration', () => {
         meshName: 'my-mesh',
         username: 'my-bot',
         enableGroups: false,
-        autoReply: false,
-        messagePath: '/custom/path',
         dmPolicy: 'allow',
         allowFrom: ['alice', 'bob'],
         apiTimeout: 60000,
@@ -394,8 +375,6 @@ describe('Config Resolution Integration', () => {
         meshName: 'my-mesh',
         username: 'my-bot',
         enableGroups: false,
-        autoReply: false,
-        messagePath: '/custom/path',
         dmPolicy: 'allow',
         allowFrom: ['alice', 'bob'],
         apiTimeout: 60000,
@@ -413,7 +392,6 @@ describe('Config Resolution Integration', () => {
       expect(resolved.agentUrl).toBe('http://localhost:7777');
       expect(resolved.dmPolicy).toBe('pairing');
       expect(resolved.enableGroups).toBe(false);
-      expect(resolved.autoReply).toBe(true);
     });
 
     it('should handle mixed valid and invalid fields', () => {

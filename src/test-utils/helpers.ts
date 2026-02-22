@@ -252,8 +252,6 @@ export function minimalConfig(overrides: Partial<ZTMChatConfig> = {}): ZTMChatCo
     username: 'test-bot',
     dmPolicy: 'pairing',
     enableGroups: false,
-    autoReply: false,
-    messagePath: '/shared',
     ...overrides,
   };
 }
@@ -270,8 +268,6 @@ export function failingConfig(): ZTMChatConfig {
     username: 'test-bot',
     dmPolicy: 'pairing',
     enableGroups: false,
-    autoReply: false,
-    messagePath: '/shared',
   };
 }
 
@@ -295,8 +291,6 @@ export function createTestClientConfig(
     username,
     dmPolicy: 'pairing',
     enableGroups: false,
-    autoReply: false,
-    messagePath: '/shared',
   };
 }
 

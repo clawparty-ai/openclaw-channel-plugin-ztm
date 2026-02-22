@@ -207,7 +207,7 @@ describe('Outbound Message Sending Integration', () => {
 
     it('should handle missing optional fields', async () => {
       const state = createMockState({
-        config: { ...testConfig, messagePath: undefined },
+        config: testConfig,
       });
 
       const result = await sendZTMMessage(state, 'alice', 'Hello');

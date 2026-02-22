@@ -28,8 +28,6 @@ export const testConfig: ZTMChatConfig = {
   username: 'test-bot',
   dmPolicy: 'pairing',
   enableGroups: false,
-  autoReply: true,
-  messagePath: '/shared',
 };
 
 /** Configuration with groups enabled */

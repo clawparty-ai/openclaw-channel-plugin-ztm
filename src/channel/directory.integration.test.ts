@@ -37,8 +37,6 @@ describe('Directory Integration', () => {
     meshName: 'test-mesh',
     username: 'test-bot',
     enableGroups: true,
-    autoReply: true,
-    messagePath: '/shared',
     dmPolicy: 'pairing',
     allowFrom: [],
     apiTimeout: 30000,
@@ -132,12 +130,10 @@ describe('Directory Integration', () => {
     it('should handle optional fields with defaults', () => {
       const config = createTestConfig({
         enableGroups: undefined,
-        autoReply: undefined,
       });
 
       // Optional fields should remain undefined when not provided
       expect(config.enableGroups).toBeUndefined();
-      expect(config.autoReply).toBeUndefined();
     });
 
     it('should validate agentUrl format', () => {
@@ -248,7 +244,6 @@ describe('Directory Integration', () => {
           username: config.username,
           meshName: config.meshName,
           dmPolicy: config.dmPolicy,
-          autoReply: config.autoReply,
         },
       };
 

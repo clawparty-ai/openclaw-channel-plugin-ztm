@@ -126,14 +126,12 @@ describe('Config Resolution Real File System Integration', () => {
       await withTempDir(async dir => {
         const configPath = await createTestConfigFile(dir, {
           enableGroups: false,
-          autoReply: false,
         });
 
         const loadedConfig = await readJSONFile<Partial<ZTMChatConfig>>(configPath);
         const resolved = resolveZTMChatConfig(loadedConfig);
 
         expect(resolved.enableGroups).toBe(false);
-        expect(resolved.autoReply).toBe(false);
       });
     });
 
@@ -308,7 +306,6 @@ describe('Config Resolution Real File System Integration', () => {
           dmPolicy: 'deny' as const,
           allowFrom: ['user1', 'user2'],
           enableGroups: true,
-          autoReply: false,
           apiTimeout: 90000,
         };
 
@@ -324,7 +321,6 @@ describe('Config Resolution Real File System Integration', () => {
         expect(loadedConfig.dmPolicy).toBe(originalConfig.dmPolicy);
         expect(loadedConfig.allowFrom).toEqual(originalConfig.allowFrom);
         expect(loadedConfig.enableGroups).toBe(originalConfig.enableGroups);
-        expect(loadedConfig.autoReply).toBe(originalConfig.autoReply);
         expect(loadedConfig.apiTimeout).toBe(originalConfig.apiTimeout);
       });
     });
@@ -377,8 +373,6 @@ describe('Config Resolution Real File System Integration', () => {
           meshName: 'production-mesh',
           username: 'production-bot',
           enableGroups: true,
-          autoReply: true,
-          messagePath: '/shared/production',
           dmPolicy: 'pairing' as const,
           allowFrom: ['trusted-user-1', 'trusted-user-2', 'admin-bot'],
           apiTimeout: 45000,

@@ -185,17 +185,6 @@ export function buildChannelConfigSchemaWithHints(_schema: TSchema) {
         help: 'Enable group chat support (future feature)',
         advanced: true,
       },
-      autoReply: {
-        label: 'Auto Reply',
-        help: 'Automatically reply to messages using AI agent',
-        default: true,
-      },
-      messagePath: {
-        label: 'Message Path',
-        help: 'Custom message path prefix (advanced)',
-        placeholder: '/shared',
-        advanced: true,
-      },
     },
   };
 }

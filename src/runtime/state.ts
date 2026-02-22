@@ -95,8 +95,6 @@ export class AccountStateManager {
       username: '',
       dmPolicy: 'allow',
       enableGroups: false,
-      autoReply: false,
-      messagePath: '/',
     };
 
     return {

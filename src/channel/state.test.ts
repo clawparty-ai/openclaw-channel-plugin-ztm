@@ -28,8 +28,6 @@ describe('buildAccountSnapshot', () => {
       username: 'test-bot',
       dmPolicy: 'pairing',
       enableGroups: false,
-      autoReply: true,
-      messagePath: '/shared',
     },
     ...overrides,
   });
@@ -79,8 +77,6 @@ describe('buildAccountSnapshot', () => {
           username: 'test-bot',
           dmPolicy: 'pairing',
           enableGroups: false,
-          autoReply: true,
-          messagePath: '/shared',
         },
       });
 
@@ -99,8 +95,6 @@ describe('buildAccountSnapshot', () => {
           username: 'test-bot',
           dmPolicy: 'pairing',
           enableGroups: false,
-          autoReply: true,
-          messagePath: '/shared',
         },
       });
 
@@ -129,7 +123,7 @@ describe('buildAccountSnapshot', () => {
           'test-account',
           {
             started: true,
-                                  },
+          },
         ],
       ]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
@@ -148,15 +142,15 @@ describe('buildAccountSnapshot', () => {
           'test-account',
           {
             started: true,
-                                  },
+          },
         ],
       ]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
 
       const account = createMockAccount();
 
-      const snapshot = buildAccountSnapshot({ account });
-
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _snapshot = buildAccountSnapshot({ account });
     });
 
     it('should return connected true when mesh is disconnected but API is connected', async () => {
@@ -166,7 +160,7 @@ describe('buildAccountSnapshot', () => {
           'test-account',
           {
             started: true,
-                                          },
+          },
         ],
       ]);
       (getAllAccountStates as any).mockReturnValue(mockStates);
@@ -184,7 +178,7 @@ describe('buildAccountSnapshot', () => {
         [
           'test-account',
           {
-                    // meshConnected not defined
+            // meshConnected not defined
           },
         ],
       ]);
@@ -192,8 +186,8 @@ describe('buildAccountSnapshot', () => {
 
       const account = createMockAccount();
 
-      const snapshot = buildAccountSnapshot({ account });
-
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _snapshot = buildAccountSnapshot({ account });
     });
   });
 

@@ -161,8 +161,6 @@ describe('resolveZTMChatConfig', () => {
     expect(result.meshName).toBe('openclaw-mesh');
     expect(result.username).toBe('openclaw-bot');
     expect(result.enableGroups).toBe(false);
-    expect(result.autoReply).toBe(true);
-    expect(result.messagePath).toBe('/shared');
   });
 
   it('should preserve provided values', () => {
@@ -172,7 +170,6 @@ describe('resolveZTMChatConfig', () => {
       meshName: 'my-mesh',
       username: 'my-bot',
       enableGroups: true,
-      autoReply: false,
     };
 
     const result = resolveZTMChatConfig(input);
@@ -182,7 +179,6 @@ describe('resolveZTMChatConfig', () => {
     expect(result.meshName).toBe('my-mesh');
     expect(result.username).toBe('my-bot');
     expect(result.enableGroups).toBe(true);
-    expect(result.autoReply).toBe(false);
   });
 
   it('should trim whitespace from string values', () => {

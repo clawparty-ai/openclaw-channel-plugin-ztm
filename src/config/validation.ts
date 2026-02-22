@@ -337,11 +337,6 @@ function buildResolvedConfig(config: Record<string, unknown>): ZTMChatConfig {
     meshName,
     username,
     enableGroups: Boolean(config.enableGroups),
-    autoReply: config.autoReply !== false,
-    messagePath:
-      typeof config.messagePath === 'string' && config.messagePath.trim()
-        ? config.messagePath.trim()
-        : '/shared',
     dmPolicy:
       config.dmPolicy === 'allow' || config.dmPolicy === 'deny' || config.dmPolicy === 'pairing'
         ? config.dmPolicy

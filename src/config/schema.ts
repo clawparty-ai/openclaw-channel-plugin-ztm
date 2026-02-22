@@ -91,21 +91,6 @@ export const ZTMChatConfigSchema = Type.Object(
         default: false,
       })
     ),
-    autoReply: Type.Optional(
-      Type.Boolean({
-        title: 'Auto-Reply',
-        description: 'Automatically respond to received messages',
-        default: true,
-      })
-    ),
-    messagePath: Type.Optional(
-      Type.String({
-        title: 'Message Storage Path',
-        description: 'Custom storage path for messages within ZTM shared directory',
-        default: '/shared',
-        examples: ['/shared', '/messages'],
-      })
-    ),
     dmPolicy: Type.Optional(
       Type.Union([Type.Literal('allow'), Type.Literal('deny'), Type.Literal('pairing')], {
         title: 'Direct Message Policy',

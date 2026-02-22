@@ -19,8 +19,6 @@ export function getDefaultConfig(): ZTMChatConfig {
     meshName: 'openclaw-mesh',
     username: 'openclaw-bot',
     enableGroups: true,
-    autoReply: true,
-    messagePath: '/shared',
     dmPolicy: 'pairing',
     allowFrom: undefined,
     apiTimeout: 30000,
@@ -61,11 +59,6 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
         ? config.username.trim()
         : 'openclaw-bot',
     enableGroups: Boolean(config.enableGroups),
-    autoReply: config.autoReply !== false, // default true
-    messagePath:
-      typeof config.messagePath === 'string' && config.messagePath.trim()
-        ? config.messagePath.trim()
-        : '/shared',
     dmPolicy: ['allow', 'deny', 'pairing'].includes(config.dmPolicy as string)
       ? (config.dmPolicy as DMPolicy)
       : 'pairing',
@@ -95,8 +88,6 @@ export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig
     meshName: config.meshName ?? 'openclaw-mesh',
     username: config.username ?? 'probe',
     enableGroups: config.enableGroups ?? true,
-    autoReply: config.autoReply ?? true,
-    messagePath: config.messagePath ?? '/shared',
     dmPolicy: config.dmPolicy ?? 'pairing',
     allowFrom: config.allowFrom,
     apiTimeout: config.apiTimeout ?? 30000,

@@ -18,8 +18,6 @@ describe('getDefaultConfig', () => {
     expect(result.meshName).toBe('openclaw-mesh');
     expect(result.username).toBe('openclaw-bot');
     expect(result.enableGroups).toBe(true);
-    expect(result.autoReply).toBe(true);
-    expect(result.messagePath).toBe('/shared');
     expect(result.dmPolicy).toBe('pairing');
     expect(result.allowFrom).toBeUndefined();
   });
@@ -86,7 +84,6 @@ describe('createProbeConfig', () => {
       meshName: 'custom-mesh',
       username: 'custom-user',
       enableGroups: true,
-      autoReply: false,
       dmPolicy: 'allow',
     });
 
@@ -95,7 +92,6 @@ describe('createProbeConfig', () => {
     expect(result.meshName).toBe('custom-mesh');
     expect(result.username).toBe('custom-user');
     expect(result.enableGroups).toBe(true);
-    expect(result.autoReply).toBe(false);
     expect(result.dmPolicy).toBe('allow');
   });
 

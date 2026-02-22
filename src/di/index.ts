@@ -87,8 +87,6 @@ export function createApiClientService(): () => IApiClient {
       username: '',
       dmPolicy: 'pairing',
       enableGroups: false,
-      autoReply: false,
-      messagePath: '/',
     });
     // Return client implementing all IApiClient interfaces
     return client as unknown as IApiClient;

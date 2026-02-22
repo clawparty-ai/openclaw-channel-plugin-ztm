@@ -124,18 +124,6 @@ describe('ZTMChatConfigSchema', () => {
       expect(result.valid).toBe(true);
       expect(result.config?.enableGroups).toBe(false);
     });
-
-    it('should default autoReply to true', () => {
-      const result = validateZTMChatConfig(testConfig);
-      expect(result.valid).toBe(true);
-      expect(result.config?.autoReply).toBe(true);
-    });
-
-    it('should default messagePath to /shared', () => {
-      const result = validateZTMChatConfig(testConfig);
-      expect(result.valid).toBe(true);
-      expect(result.config?.messagePath).toBe('/shared');
-    });
   });
 
   describe('permitSource configuration', () => {

@@ -18,8 +18,6 @@ vi.mock('../config/index.js', () => ({
     meshName: (input?.meshName as string) || 'openclaw-mesh',
     username: (input?.username as string) || 'openclaw-bot',
     enableGroups: (input?.enableGroups as boolean) ?? false,
-    autoReply: (input?.autoReply as boolean) ?? true,
-    messagePath: (input?.messagePath as string) || '/shared',
     dmPolicy: (input?.dmPolicy as any) || 'pairing',
     allowFrom: input?.allowFrom as string[] | undefined,
   })),
@@ -29,8 +27,6 @@ vi.mock('../config/index.js', () => ({
     meshName: 'openclaw-mesh',
     username: 'openclaw-bot',
     enableGroups: false,
-    autoReply: true,
-    messagePath: '/shared',
     dmPolicy: 'pairing',
   })),
   mergeAccountConfig: vi.fn((base, account) => ({
@@ -493,24 +489,6 @@ describe('Channel Config', () => {
       expect(result.uiHints.enableGroups).toBeDefined();
       expect(result.uiHints.enableGroups.label).toBe('Enable Groups');
       expect(result.uiHints.enableGroups.advanced).toBe(true);
-    });
-
-    it('should include autoReply in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
-
-      expect(result.uiHints.autoReply).toBeDefined();
-      expect(result.uiHints.autoReply.label).toBe('Auto Reply');
-      expect(result.uiHints.autoReply.default).toBe(true);
-    });
-
-    it('should include messagePath in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
-
-      expect(result.uiHints.messagePath).toBeDefined();
-      expect(result.uiHints.messagePath.label).toBe('Message Path');
-      expect(result.uiHints.messagePath.advanced).toBe(true);
     });
 
     it('should include validation patterns in uiHints', () => {

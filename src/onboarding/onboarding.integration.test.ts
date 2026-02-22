@@ -357,20 +357,6 @@ describe('Onboarding Wizard Integration', () => {
       expect(result?.config.dmPolicy).toBe('pairing');
     });
 
-    it('should include messagePath in result', async () => {
-      const wizard = new ZTMChatWizard(mockPrompts);
-      const result = await wizard.run();
-
-      expect(result?.config.messagePath).toBeDefined();
-    });
-
-    it('should include autoReply in result', async () => {
-      const wizard = new ZTMChatWizard(mockPrompts);
-      const result = await wizard.run();
-
-      expect(result?.config.autoReply).toBeDefined();
-    });
-
     it('should include enableGroups in result when groups enabled', async () => {
       const groupPrompts = new MockPrompts({
         agentUrl: 'http://localhost:7777',
