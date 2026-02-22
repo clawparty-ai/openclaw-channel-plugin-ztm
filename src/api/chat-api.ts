@@ -1,4 +1,8 @@
-// Chat operations API for ZTM Chat
+/**
+ * @fileoverview Chat operations API for ZTM Chat
+ * @module api/chat-api
+ * Provides functions for retrieving chat list from ZTM Agent
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChat } from '../types/api.js';
@@ -13,6 +17,9 @@ import { getOrDefault } from '../utils/guards.js';
  * - A plain string
  * - An object with {text: "..."}
  * - An object with {message: {text: "..."}} (nested format)
+ *
+ * @param message - The raw message content from the API (can be string, object, or nested object)
+ * @returns A normalized string representation of the message content
  */
 export function normalizeMessageContent(message: unknown): string {
   if (message === null || message === undefined) {
@@ -43,7 +50,12 @@ export function normalizeMessageContent(message: unknown): string {
 }
 
 /**
- * Create chat operations API
+ * Create chat operations API for interacting with ZTM Chat App
+ *
+ * @param config - ZTM Chat configuration containing mesh name and other settings
+ * @param request - HTTP request handler for making API calls
+ * @param logger - Logger instance for debugging and error reporting
+ * @returns Chat API interface with methods for retrieving chats
  */
 export function createChatApi(config: ZTMChatConfig, request: RequestHandler, logger: ZTMLogger) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
@@ -51,6 +63,8 @@ export function createChatApi(config: ZTMChatConfig, request: RequestHandler, lo
   return {
     /**
      * Get all chats from the Chat App API
+     *
+     * @returns Promise resolving to a Result containing array of ZTMChat objects, or failure with ZTMReadError
      */
     async getChats(): Promise<Result<ZTMChat[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Fetching chats via Chat App API`);

@@ -1,8 +1,11 @@
-// Repository implementations for ZTM Chat
-// Concrete implementations of repository interfaces defined in repository.ts
-//
-// This layer provides implementations that the messaging layer can depend on,
-// enabling better separation of concerns and testability.
+/**
+ * @fileoverview Repository implementations for ZTM Chat
+ * @module runtime/repository-impl
+ * Concrete implementations of repository interfaces defined in repository.ts
+ *
+ * This layer provides implementations that the messaging layer can depend on,
+ * enabling better separation of concerns and testability.
+ */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import type { FileMetadata } from './store.js';
@@ -104,6 +107,7 @@ let messageStateRepositoryInstance: IMessageStateRepository | null = null;
 
 /**
  * Get the singleton AllowFromRepository instance
+ * @returns The AllowFromRepository singleton instance
  */
 export function getAllowFromRepository(): IAllowFromRepository {
   if (!allowFromRepositoryInstance) {
@@ -114,6 +118,7 @@ export function getAllowFromRepository(): IAllowFromRepository {
 
 /**
  * Get the singleton MessageStateRepository instance
+ * @returns The MessageStateRepository singleton instance
  */
 export function getMessageStateRepository(): IMessageStateRepository {
   if (!messageStateRepositoryInstance) {

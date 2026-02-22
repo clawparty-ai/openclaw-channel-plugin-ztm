@@ -1,11 +1,19 @@
-// Mock ZTM Agent Server for Integration Testing
-// Simulates the ZTM Chat API endpoints
+/**
+ * @fileoverview Mock ZTM Agent Server for Integration Testing
+ * @module mocks/ztm-client
+ * Simulates the ZTM Chat API endpoints for testing purposes.
+ * Provides an in-memory HTTP server that responds to ZTM Agent API calls.
+ */
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import type { ZTMChat, ZTMPeer, ZTMUserInfo } from '../api/ztm-api.js';
 
-// Test configuration
+/**
+ * Configuration interface for MockZTMClient.
+ * Defines the initial state of the mock ZTM Agent server including
+ * users, peers, chats, and messages.
+ */
 export interface MockZTMConfig {
   meshName: string;
   username: string;
@@ -17,6 +25,11 @@ export interface MockZTMConfig {
   privateKey?: string;
 }
 
+/**
+ * Mock ZTM Agent Client for Integration Testing.
+ * Simulates a ZTM Agent HTTP server that responds to Chat API endpoints.
+ * Allows tests to control the server state and verify message flows.
+ */
 export class MockZTMClient {
   private server: ReturnType<typeof createServer> | null = null;
   private port: number;
@@ -24,6 +37,11 @@ export class MockZTMClient {
   private lastWatchPrefix: string | null = null;
   private watchPollCount = 0;
 
+  /**
+   * Creates a new MockZTMClient instance.
+   *
+   * @param config - Partial configuration to override default values
+   */
   constructor(config: Partial<MockZTMConfig> = {}) {
     this.port = 0; // Random port
     const defaults = createMockConfig();
@@ -39,10 +57,18 @@ export class MockZTMClient {
     };
   }
 
+  /**
+   * Returns the base URL of the mock server.
+   */
   get url(): string {
     return `http://localhost:${this.port}`;
   }
 
+  /**
+   * Starts the mock ZTM Agent HTTP server on a random available port.
+   *
+   * @returns Promise that resolves when the server is ready
+   */
   start(): Promise<void> {
     return new Promise(resolve => {
       this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -62,6 +88,11 @@ export class MockZTMClient {
     });
   }
 
+  /**
+   * Stops the mock ZTM Agent HTTP server.
+   *
+   * @returns Promise that resolves when the server is closed
+   */
   stop(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.server) {
@@ -239,6 +270,13 @@ export class MockZTMClient {
   }
 
   // Public methods for test manipulation
+
+  /**
+   * Adds a message to the mock server's message store.
+   *
+   * @param fromPeer - The peer identifier sending the message
+   * @param message - The message to add
+   */
   addMessage(fromPeer: string, message: ZTMMessage): void {
     const key = `${fromPeer}→${this.config.username}`;
     const messages = this.config.messages.get(key) || [];
@@ -246,25 +284,48 @@ export class MockZTMClient {
     this.config.messages.set(key, messages);
   }
 
+  /**
+   * Adds a user to the mock server's user list.
+   *
+   * @param user - The user info to add
+   */
   addUser(user: ZTMUserInfo): void {
     this.config.users.push(user);
   }
 
+  /**
+   * Adds a peer to the mock server's peer list.
+   *
+   * @param peer - The peer to add
+   */
   addPeer(peer: ZTMPeer): void {
     this.config.peers.push(peer);
   }
 
+  /**
+   * Returns the number of times the watch endpoint has been polled.
+   *
+   * @returns The poll count
+   */
   getWatchPollCount(): number {
     return this.watchPollCount;
   }
 
+  /**
+   * Resets the watch state counters.
+   */
   resetWatchState(): void {
     this.watchPollCount = 0;
     this.lastWatchPrefix = null;
   }
 }
 
-// Helper to create a complete mock configuration
+/**
+ * Creates a default mock configuration for testing.
+ * Includes sample users, peers, chats, and messages.
+ *
+ * @returns A complete MockZTMConfig with default test data
+ */
 export function createMockConfig(): MockZTMConfig {
   const now = Date.now();
   return {

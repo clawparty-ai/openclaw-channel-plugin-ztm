@@ -1,4 +1,8 @@
-// Mesh operations API for ZTM Chat
+/**
+ * @fileoverview Mesh operations API for ZTM Chat
+ * @module api/mesh-api
+ * Provides functions for mesh network operations and peer discovery
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMEndpoint } from '../types/api.js';
@@ -8,7 +12,12 @@ import type { ZTMLogger, RequestHandler } from './request.js';
 import { getOrDefault } from '../utils/guards.js';
 
 /**
- * Create mesh operations API
+ * Create mesh operations API for mesh network interactions
+ *
+ * @param config - ZTM Chat configuration containing mesh name and other settings
+ * @param request - HTTP request handler for making API calls
+ * @param logger - Logger instance for debugging and error reporting
+ * @returns Mesh API interface with methods for mesh info, endpoints, and peer discovery
  */
 export function createMeshApi(config: ZTMChatConfig, request: RequestHandler, logger: ZTMLogger) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;

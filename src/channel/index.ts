@@ -1,5 +1,8 @@
-// ZTM Chat Channel Module
-// Barrel export for all channel-related functionality
+/**
+ * @fileoverview ZTM Chat Channel Module barrel export
+ * @module channel
+ * Barrel export for all channel-related functionality
+ */
 
 // Re-export types
 export type { ResolvedZTMChatAccount } from './config.js';

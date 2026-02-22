@@ -1,5 +1,27 @@
+/**
+ * @fileoverview Message sync time utilities
+ * @module utils/sync-time
+ *
+ * Handles initial sync logic for first install or missing state scenarios.
+ * Calculates the appropriate watermark for message synchronization.
+ *
+ * Key logic:
+ * - When watermark is 0 (first install/state deleted/new peer): limit to recent messages
+ * - When watermark > 0 (normal operation): use stored watermark for incremental sync
+ *
+ * @example
+ * import { getMessageSyncStart } from './utils/sync-time.js';
+ *
+ * // First install or new peer
+ * const startTime = getMessageSyncStart(0);
+ * // Returns: Math.max(0, Date.now() - INITIAL_SYNC_MAX_HISTORY_MS)
+ *
+ * // Normal incremental sync
+ * const startTime = getMessageSyncStart(1700000000000);
+ * // Returns: 1700000000000 (the stored watermark)
+ */
+
 // Message sync time utilities
-// Handles initial sync logic for first install or missing state scenarios
 
 import { INITIAL_SYNC_MAX_HISTORY_MS } from '../constants.js';
 

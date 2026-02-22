@@ -1,3 +1,36 @@
+/**
+ * @fileoverview Result handling utilities
+ * @module utils/result
+ *
+ * Unified error handling for Result types. Reduces repetitive
+ * `if (!isSuccess(result)) { logger.error(...) }` patterns.
+ *
+ * Key utilities:
+ * - handleResult: Handle Result with logging and callbacks
+ * - mustResult: Handle Result that should succeed or throw
+ * - pipeResult: Chain Result through synchronous transformations
+ *
+ * @example
+ * import { handleResult, mustResult, pipeResult } from './utils/result.js';
+ *
+ * // With logging and default value
+ * const chats = handleResult(await api.getChats(), {
+ *   operation: 'getChats',
+ *   peer: accountId,
+ *   logger,
+ *   defaultValue: []
+ * });
+ *
+ * // Throw on failure
+ * const meshInfo = mustResult(await api.getMeshInfo(), {
+ *   operation: 'getMeshInfo',
+ *   logger
+ * });
+ *
+ * // Chain transformations
+ * const final = pipeResult(result, value => validate(value));
+ */
+
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // Result Handling - Unified error handling for Result types
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════

@@ -1,17 +1,20 @@
-// Account runtime state management
-// Manages runtime state for multiple ZTM Chat accounts
-//
-// This module provides:
-// - AccountStateManager class: Explicit state ownership with clear lifecycle
-// - Module-level convenience functions: Backward-compatible API wrapping AccountStateManager
-// - Account initialization and cleanup
-// - Runtime start/stop operations
-//
-// Architecture Note:
-// The AccountStateManager class provides explicit state ownership with a clear lifecycle.
-// Module-level functions (getOrCreateAccountState, removeAccountState, getAllAccountStates)
-// delegate to the AccountStateManager singleton for backward compatibility.
-// For DI-based injection, use getAccountStateManager() to obtain the manager instance.
+/**
+ * @fileoverview Account runtime state management
+ * @module runtime/state
+ * Manages runtime state for multiple ZTM Chat accounts
+ *
+ * This module provides:
+ * - AccountStateManager class: Explicit state ownership with clear lifecycle
+ * - Module-level convenience functions: Backward-compatible API wrapping AccountStateManager
+ * - Account initialization and cleanup
+ * - Runtime start/stop operations
+ *
+ * Architecture Note:
+ * The AccountStateManager class provides explicit state ownership with a clear lifecycle.
+ * Module-level functions (getOrCreateAccountState, removeAccountState, getAllAccountStates)
+ * delegate to the AccountStateManager singleton for backward compatibility.
+ * For DI-based injection, use getAccountStateManager() to obtain the manager instance.
+ */
 
 // External dependencies - these will use DI
 import { createZTMApiClient } from '../api/ztm-api.js';

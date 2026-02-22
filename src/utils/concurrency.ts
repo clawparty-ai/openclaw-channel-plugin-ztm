@@ -1,5 +1,18 @@
+/**
+ * @fileoverview Concurrency utilities for ZTM Chat
+ * @module utils/concurrency
+ *
+ * Provides Semaphore for limiting concurrent operations.
+ * Used to control access to shared resources and prevent unbounded queue growth.
+ *
+ * Features:
+ * - Configurable max queue size to prevent memory exhaustion
+ * - Timeout support for acquire operations
+ * - Automatic cleanup of stale waiters
+ * - Thread-safe implementation for async scenarios
+ */
+
 // Concurrency utilities for ZTM Chat
-// Provides Semaphore for limiting concurrent operations
 
 /**
  * Waiter entry in the semaphore queue

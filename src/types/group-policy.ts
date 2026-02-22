@@ -1,14 +1,17 @@
-// Group Policy Types for ZTM Chat
-// Defines types for group permissions and policy enforcement
-//
-// NOTE ON TYPE RELATIONSHIP TO CONFIG SCHEMA:
-// This module defines runtime types (with required fields and defaults applied).
-// The config schema (src/config/schema.ts) defines storage types (with optional fields).
-// This is intentional - runtime code needs guaranteed values, while storage allows
-// omitted values with schema-level defaults.
-//
-// Types re-exported from config/schema.ts:
-// - GroupPolicy: Simple union type, single source of truth in schema
+/**
+ * @fileoverview Group Policy Types for ZTM Chat
+ * @module types/group-policy
+ * Defines types for group permissions and policy enforcement
+ *
+ * NOTE ON TYPE RELATIONSHIP TO CONFIG SCHEMA:
+ * This module defines runtime types (with required fields and defaults applied).
+ * The config schema (src/config/schema.ts) defines storage types (with optional fields).
+ * This is intentional - runtime code needs guaranteed values, while storage allows
+ * omitted values with schema-level defaults.
+ *
+ * Types re-exported from config/schema.ts:
+ * - GroupPolicy: Simple union type, single source of truth in schema
+ */
 
 // Import GroupPolicy from config schema (single source of truth)
 import type { GroupPolicy } from '../config/schema.js';
@@ -17,7 +20,7 @@ import type { GroupPolicy } from '../config/schema.js';
 export type { GroupPolicy } from '../config/schema.js';
 
 /**
- * Tool policy for a group
+ * @description Tool policy for a group
  */
 export interface GroupToolPolicy {
   /** Allowed tools (if specified, only these tools are allowed) */
@@ -27,7 +30,7 @@ export interface GroupToolPolicy {
 }
 
 /**
- * Per-sender tool policy overrides
+ * @description Per-sender tool policy overrides
  */
 export interface GroupToolPolicyBySender {
   [sender: string]: {
@@ -39,7 +42,7 @@ export interface GroupToolPolicyBySender {
 }
 
 /**
- * Group permissions configuration
+ * @description Group permissions configuration
  */
 export interface GroupPermissions {
   /** Group creator (always has full access) */
@@ -59,7 +62,7 @@ export interface GroupPermissions {
 }
 
 /**
- * Result of group policy check
+ * @description Result of group policy check
  */
 export interface GroupMessageCheckResult {
   /** Whether the message is allowed to be processed */

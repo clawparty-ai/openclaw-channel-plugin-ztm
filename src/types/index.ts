@@ -1,5 +1,8 @@
-// ZTM Chat Type Definitions
-// Centralized type exports for all ZTM Chat modules
+/**
+ * @fileoverview ZTM Chat Type Definitions
+ * @module types
+ * Barrel export for all ZTM Chat type definitions
+ */
 
 // Configuration types
 export * from './config.js';

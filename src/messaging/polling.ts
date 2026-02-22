@@ -1,4 +1,8 @@
-// Fallback polling watcher for ZTM Chat
+/**
+ * @fileoverview Fallback Polling Watcher
+ * @module messaging/polling
+ * Fallback polling watcher for ZTM Chat
+ */
 
 import { logger } from '../utils/logger.js';
 import { container, DEPENDENCIES } from '../di/index.js';
@@ -102,7 +106,15 @@ async function processChats(
 
 import { MAX_CHATS_PER_POLL } from '../constants.js';
 
-// Fallback polling watcher (when watch is unavailable)
+/**
+ * Start the fallback polling watcher for ZTM Chat.
+ * Used when the watch mechanism is unavailable.
+ *
+ * @param state - Account runtime state
+ * @param context - Messaging context with repository dependencies
+ * @param abortSignal - Optional abort signal for graceful shutdown
+ * @returns Promise that resolves when the watcher starts
+ */
 export async function startPollingWatcher(
   state: AccountRuntimeState,
   context: MessagingContext,
@@ -156,11 +168,15 @@ export async function startPollingWatcher(
   }, pollingInterval);
 
   if (abortSignal) {
-    abortSignal.addEventListener('abort', () => {
-      if (state.watchInterval) {
-        clearInterval(state.watchInterval);
-        state.watchInterval = null;
-      }
-    }, { once: true });
+    abortSignal.addEventListener(
+      'abort',
+      () => {
+        if (state.watchInterval) {
+          clearInterval(state.watchInterval);
+          state.watchInterval = null;
+        }
+      },
+      { once: true }
+    );
   }
 }

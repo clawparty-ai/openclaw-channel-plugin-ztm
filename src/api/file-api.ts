@@ -1,4 +1,8 @@
-// File operations API for ZTM Chat
+/**
+ * @fileoverview File operations API for ZTM Chat
+ * @module api/file-api
+ * Provides file metadata tracking for change detection
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMLogger, RequestHandler } from './request.js';
@@ -8,7 +12,12 @@ import { containsPathTraversal } from '../utils/validation.js';
 const MAX_TRACKED_FILES = 500;
 
 /**
- * Create file operations API
+ * Create file operations API for tracking file metadata changes
+ *
+ * @param _config - ZTM Chat configuration (unused, kept for API consistency)
+ * @param _request - HTTP request handler (unused, kept for API consistency)
+ * @param _logger - Logger instance (unused, kept for API consistency)
+ * @returns File API interface with methods for tracking file metadata
  */
 export function createFileApi(
   _config: ZTMChatConfig,
@@ -38,6 +47,8 @@ export function createFileApi(
     /**
      * Seed file metadata from external source
      * Validates file paths to prevent path traversal attacks
+     *
+     * @param metadata - Record mapping file paths to their metadata (time and size)
      */
     seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void {
       for (const [filePath, meta] of Object.entries(metadata)) {
@@ -57,6 +68,8 @@ export function createFileApi(
 
     /**
      * Export file metadata for external use
+     *
+     * @returns Record mapping file paths to their metadata (time and size)
      */
     exportFileMetadata(): Record<string, { time: number; size: number }> {
       const result: Record<string, { time: number; size: number }> = {};

@@ -1,6 +1,9 @@
-// ZTM Agent API Client
-// Handles HTTP communication with remote ZTM Agent for Chat operations
-// Supports both direct storage API access and Chat App HTTP endpoints
+/**
+ * @fileoverview ZTM Agent API Client
+ * @module api/ztm-api
+ * Handles HTTP communication with remote ZTM Agent for Chat operations
+ * Supports both direct storage API access and Chat App HTTP endpoints
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type {
@@ -37,6 +40,10 @@ export type { ZTMApiClientDeps };
 
 /**
  * Create ZTM API Client with dependency injection
+ *
+ * @param config - ZTM Chat configuration containing agent URL, mesh name, and other settings
+ * @param deps - Optional dependencies to override defaults (logger, fetch, fetchWithRetry)
+ * @returns ZTM API Client instance with all chat, message, and mesh operations
  */
 export function createZTMApiClient(
   config: ZTMChatConfig,

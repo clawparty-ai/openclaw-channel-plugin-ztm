@@ -1,5 +1,20 @@
+/**
+ * @fileoverview ZTM Chat Utility Functions
+ * @module utils
+ *
+ * Barrel export for all utility modules providing:
+ * - Concurrency control (Semaphore)
+ * - Retry logic with exponential backoff
+ * - Structured logging
+ * - Input validation
+ * - Result type handling
+ * - Path resolution
+ * - Error handling
+ * - Type guards
+ * - Time synchronization
+ */
+
 // ZTM Chat Utility Functions
-// Barrel export for all utility modules
 
 // Concurrency utilities
 export * from './concurrency.js';

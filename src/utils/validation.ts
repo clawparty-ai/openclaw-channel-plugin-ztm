@@ -1,3 +1,35 @@
+/**
+ * @fileoverview Input validation utilities
+ * @module utils/validation
+ *
+ * Provides input validation and sanitization for:
+ * - URL validation (http/https)
+ * - Username and group ID format
+ * - Group name validation
+ * - Message content validation
+ * - Path traversal detection
+ * - HTML escaping for XSS prevention
+ *
+ * Security features:
+ * - Path traversal attack detection
+ * - XSS prevention via HTML escaping
+ * - URL protocol validation
+ * - Length limits to prevent DoS
+ *
+ * @example
+ * import { validateUsername, validateGroupId, validateUrl, escapeHtml } from './utils/validation.js';
+ *
+ * // Validate username
+ * const result = validateUsername('user_123');
+ * if (!result.valid) {
+ *   console.error(result.error);
+ * }
+ *
+ * // Escape HTML
+ * const safe = escapeHtml('<script>alert("xss")</script>');
+ * // Returns: '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+ */
+
 import type { ConfigValidationError, ValidationErrorReason } from '../types/config.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
 import { logger } from './logger.js';

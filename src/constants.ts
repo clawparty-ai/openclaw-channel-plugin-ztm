@@ -1,5 +1,8 @@
-// Constants for ZTM Chat Channel Plugin
-// Centralizes all magic numbers and strings for better maintainability
+/**
+ * @fileoverview Constants for ZTM Chat Channel Plugin
+ * @module constants
+ * Centralizes all magic numbers and strings for better maintainability
+ */
 
 // ============================================================================
 // Timing Constants (in milliseconds)

@@ -1,5 +1,8 @@
-// Message watching and polling for ZTM Chat
-// Monitors for new messages via Watch mechanism with fallback to polling
+/**
+ * @fileoverview Message Watching and Polling
+ * @module messaging/watcher
+ * Monitors for new messages via Watch mechanism with fallback to polling
+ */
 
 import { logger } from '../utils/logger.js';
 import { sanitizeForLog } from '../utils/log-sanitize.js';
@@ -29,7 +32,7 @@ import {
 } from '../constants.js';
 
 /**
- * Start message watcher using ZTM's Watch mechanism
+ * Start message watcher using ZTM's Watch mechanism.
  *
  * The watcher:
  * 1. Seeds API client with persisted file timestamps
@@ -39,6 +42,8 @@ import {
  *
  * @param state - Account runtime state with config and API client
  * @param context - Messaging context with repository dependencies
+ * @param abortSignal - Optional abort signal for graceful shutdown
+ * @returns Promise that resolves when the watcher starts
  */
 export async function startMessageWatcher(
   state: AccountRuntimeState,

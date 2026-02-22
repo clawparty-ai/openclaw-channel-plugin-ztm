@@ -1,5 +1,8 @@
-// Directory Operations for ZTM Chat Channel Plugin
-// Handles user and peer discovery functionality
+/**
+ * @fileoverview Directory Operations for ZTM Chat Channel Plugin
+ * @module channel/directory
+ * Handles user and peer discovery functionality
+ */
 
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
 import { container, DEPENDENCIES, type ILogger, type IApiClientFactory } from '../di/index.js';

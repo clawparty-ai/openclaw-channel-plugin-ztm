@@ -1,5 +1,8 @@
-// Cache utilities for runtime state management
-// Provides bounded caches with TTL support
+/**
+ * @fileoverview Cache utilities for runtime state management
+ * @module runtime/cache
+ * Provides bounded caches with TTL support for group permissions
+ */
 
 import { logger } from '../utils/logger.js';
 import type { GroupPermissions } from '../types/group-policy.js';
@@ -57,6 +60,11 @@ export class GroupPermissionLRUCache {
     }
   }
 
+  /**
+   * Get cached group permissions for a key
+   * @param key - Cache key (format: "creator/group")
+   * @returns Cached permissions or undefined if not found/expired
+   */
   get(key: string): GroupPermissions | undefined {
     const entry = this.cache.get(key);
     if (!entry) {
@@ -75,6 +83,11 @@ export class GroupPermissionLRUCache {
     return entry.permissions;
   }
 
+  /**
+   * Check if a key exists in cache and is not expired
+   * @param key - Cache key (format: "creator/group")
+   * @returns true if key exists and is not expired, false otherwise
+   */
   has(key: string): boolean {
     const entry = this.cache.get(key);
     if (!entry) {
@@ -89,6 +102,11 @@ export class GroupPermissionLRUCache {
     return true;
   }
 
+  /**
+   * Set group permissions in cache
+   * @param key - Cache key (format: "creator/group")
+   * @param permissions - Group permissions to cache
+   */
   set(key: string, permissions: GroupPermissions): void {
     // If key exists, delete it first (will be re-added at end)
     if (this.cache.has(key)) {
@@ -107,10 +125,17 @@ export class GroupPermissionLRUCache {
     });
   }
 
+  /**
+   * Clear all entries from the cache
+   */
   clear(): void {
     this.cache.clear();
   }
 
+  /**
+   * Get the number of entries in the cache (excludes expired entries)
+   * @returns Number of valid cache entries
+   */
   size(): number {
     // Lazy expiration: only check first entry (oldest)
     // This keeps size() O(1) amortized instead of O(n)

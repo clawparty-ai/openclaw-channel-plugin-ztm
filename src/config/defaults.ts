@@ -1,11 +1,15 @@
-// ZTM Chat Configuration Defaults and Resolution
-// Default values and configuration resolution logic
+/**
+ * @fileoverview ZTM Chat Configuration Defaults and Resolution
+ * @module config/defaults
+ * Default values and configuration resolution logic
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { DMPolicy } from './schema.js';
 
 /**
- * Get default configuration
+ * Get default configuration values for ZTM Chat plugin
+ * @returns A ZTMChatConfig object with all default values
  */
 export function getDefaultConfig(): ZTMChatConfig {
   return {
@@ -24,7 +28,9 @@ export function getDefaultConfig(): ZTMChatConfig {
 }
 
 /**
- * Resolve raw config with defaults
+ * Resolve raw config with defaults applied
+ * @param raw - Raw configuration object (may be undefined, null, or invalid)
+ * @returns A fully resolved ZTMChatConfig with defaults applied to missing fields
  */
 export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
   if (!raw || typeof raw !== 'object') {
@@ -77,7 +83,9 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
 }
 
 /**
- * Create a partial config for probing
+ * Create a partial config for probing ZTM Agent availability
+ * @param config - Partial configuration with optional fields
+ * @returns A complete ZTMChatConfig with defaults applied to missing fields
  */
 export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig {
   return {
@@ -96,7 +104,10 @@ export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig
 }
 
 /**
- * Merge base config with account overrides
+ * Merge base config with account-specific overrides
+ * @param baseConfig - Base configuration object
+ * @param accountConfig - Account-specific configuration overrides
+ * @returns Merged configuration object with account overrides applied
  */
 export function mergeAccountConfig(
   baseConfig: Record<string, unknown>,

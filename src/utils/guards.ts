@@ -1,5 +1,19 @@
+/**
+ * @fileoverview Type guards and null/undefined handling utilities
+ * @module utils/guards
+ *
+ * Provides consistent patterns for null checks, default values,
+ * and type narrowing across the codebase.
+ *
+ * Key utilities:
+ * - isDefined / isNullish: Type guards for null/undefined
+ * - requireDefined / requireValue: Throw on undefined values
+ * - getOrDefault / getOrCompute: Null-safe value retrieval
+ * - coalesce: First defined value in a chain
+ * - assert: Runtime invariant checking
+ */
+
 // Type guards and null/undefined handling utilities
-// Provides consistent patterns for null checks and default values
 
 /**
  * Type guard to check if a value is not null or undefined

@@ -1,5 +1,12 @@
+/**
+ * @fileoverview Error handling utilities
+ * @module utils/error
+ *
+ * Provides consistent error message extraction and error wrapping
+ * across the codebase.
+ */
+
 // Error handling utilities
-// Provides consistent error message extraction across the codebase
 
 /**
  * Safely extract error message from unknown error value

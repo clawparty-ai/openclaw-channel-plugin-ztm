@@ -1,6 +1,9 @@
-// Persistent pairing state store
-// Tracks pending pairing requests so they survive gateway restarts
-// and can be cleaned up automatically after expiration
+/**
+ * @fileoverview Persistent pairing state store
+ * @module runtime/pairing-store
+ * Tracks pending pairing requests so they survive gateway restarts
+ * and can be cleaned up automatically after expiration
+ */
 
 import * as path from 'path';
 import { defaultLogger, type Logger } from '../utils/logger.js';
@@ -43,6 +46,12 @@ export interface PairingStateStore {
    */
   deletePendingPairing(accountId: string, peer: string): void;
 
+  /**
+   * Clean up expired pairings for an account
+   * @param accountId - The account identifier
+   * @param maxAgeMs - Maximum age in milliseconds (default: 1 hour)
+   * @returns Number of expired pairings removed
+   */
   cleanupExpiredPairings(accountId: string, maxAgeMs?: number): number;
 
   /**
@@ -266,6 +275,10 @@ export class PairingStateStoreImpl implements PairingStateStore {
 /**
  * Factory function to create PairingStateStore instances
  * Allows dependency injection for testing
+ * @param statePath - Optional path to the state file
+ * @param fsImpl - Optional file system implementation for testing
+ * @param loggerImpl - Optional logger implementation for testing
+ * @returns New PairingStateStore instance
  */
 export function createPairingStateStore(
   statePath?: string,
@@ -280,6 +293,7 @@ let defaultInstance: PairingStateStore | null = null;
 
 /**
  * Get or create the default PairingStateStore instance
+ * @returns The default PairingStateStore singleton instance
  */
 export function getPairingStateStore(): PairingStateStore {
   if (!defaultInstance) {

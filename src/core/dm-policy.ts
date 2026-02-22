@@ -1,10 +1,14 @@
-// DM (Direct Message) Policy enforcement for ZTM Chat
-// Controls which users can send messages based on policy configuration
-//
-// DM Policy Types:
-// - "allow": Allow all messages (open policy)
-// - "deny": Block all messages from unknown users (closed policy)
-// - "pairing": Require pairing approval before accepting messages
+/**
+ * @fileoverview DM (Direct Message) Policy enforcement for ZTM Chat
+ * @module core/dm-policy
+ *
+ * Controls which users can send messages based on policy configuration.
+ *
+ * DM Policy Types:
+ * - "allow": Allow all messages (open policy)
+ * - "deny": Block all messages from unknown users (closed policy)
+ * - "pairing": Require pairing approval before accepting messages
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { MessageCheckResult } from '../types/messaging.js';

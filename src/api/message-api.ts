@@ -1,4 +1,8 @@
-// Message operations API for ZTM Chat
+/**
+ * @fileoverview Message operations API for ZTM Chat
+ * @module api/message-api
+ * Provides functions for sending/receiving messages and watching for changes
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage, WatchChangeItem } from '../types/api.js';
@@ -16,7 +20,13 @@ import {
 import { getOrDefault } from '../utils/guards.js';
 
 /**
- * Create message operations API
+ * Create message operations API for sending/receiving messages
+ *
+ * @param config - ZTM Chat configuration containing mesh name and other settings
+ * @param request - HTTP request handler for making API calls
+ * @param logger - Logger instance for debugging and error reporting
+ * @param getChats - Function to retrieve chats for change detection
+ * @returns Message API interface with methods for peer/group messages and change watching
  */
 export function createMessageApi(
   config: ZTMChatConfig,
@@ -31,6 +41,11 @@ export function createMessageApi(
   return {
     /**
      * Get peer messages from Chat App API
+     *
+     * @param peer - The peer's username
+     * @param since - Optional timestamp to get messages after
+     * @param before - Optional timestamp to get messages before
+     * @returns Promise resolving to a Result containing array of ZTMMessage objects, or failure with ZTMReadError
      */
     async getPeerMessages(
       peer: string,
@@ -91,6 +106,10 @@ export function createMessageApi(
 
     /**
      * Send a message to a peer
+     *
+     * @param peer - The peer's username
+     * @param message - The message to send
+     * @returns Promise resolving to a Result with true on success, or failure with ZTMSendError
      */
     async sendPeerMessage(
       peer: string,
@@ -158,6 +177,11 @@ export function createMessageApi(
 
     /**
      * Get group messages
+     *
+     * @param creator - The group creator's username
+     * @param group - The group ID
+     * @param since - Optional timestamp to get messages after
+     * @returns Promise resolving to a Result containing array of ZTMMessage objects, or failure with ZTMReadError
      */
     async getGroupMessages(
       creator: string,
@@ -235,6 +259,11 @@ export function createMessageApi(
 
     /**
      * Send a message to a group
+     *
+     * @param creator - The group creator's username
+     * @param group - The group ID
+     * @param message - The message to send
+     * @returns Promise resolving to a Result with true on success, or failure with ZTMSendError
      */
     async sendGroupMessage(
       creator: string,
@@ -315,6 +344,9 @@ export function createMessageApi(
 
     /**
      * Watch for changes in chats
+     *
+     * @param prefix - Filter prefix for chats to watch
+     * @returns Promise resolving to a Result containing array of WatchChangeItem objects, or failure with ZTMReadError
      */
     async watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>> {
       const safePrefix = sanitizeForLog(prefix);
@@ -405,6 +437,8 @@ export function createMessageApi(
 
     /**
      * Get the last poll time (for testing)
+     *
+     * @returns The last poll timestamp, or undefined if never polled
      */
     getLastPollTime(): number | undefined {
       return lastPollTime;
@@ -412,6 +446,8 @@ export function createMessageApi(
 
     /**
      * Set the last poll time (for testing)
+     *
+     * @param time - The timestamp to set as last poll time
      */
     setLastPollTime(time: number): void {
       lastPollTime = time;

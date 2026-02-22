@@ -1,4 +1,8 @@
-// Common request handling utilities for ZTM API Client
+/**
+ * @fileoverview Common request handling utilities for ZTM API Client
+ * @module api/request
+ * Provides HTTP request functionality with retry logic and timeout handling
+ */
 
 import { success, failure, type Result } from '../types/common.js';
 import { ZTMApiError, ZTMTimeoutError } from '../types/errors.js';

@@ -1,5 +1,18 @@
+/**
+ * @fileoverview Log sanitization utilities
+ * @module utils/log-sanitize
+ *
+ * Protects against CWE-117: Improper Output Neutralization for Logs.
+ * Removes or escapes control characters that could break log parsers
+ * or allow log injection attacks.
+ *
+ * Security: These utilities prevent log injection attacks by sanitizing:
+ * - Newlines and carriage returns
+ * - Control characters (ASCII 0x00-0x1F, 0x7F)
+ * - Multiple whitespace
+ */
+
 // Log sanitization utilities
-// Protects against CWE-117: Improper Output Neutralization for Logs
 
 /**
  * Sanitize a string for safe logging by removing or escaping control characters

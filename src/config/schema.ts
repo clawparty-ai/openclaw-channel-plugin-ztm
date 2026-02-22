@@ -1,6 +1,9 @@
-// ZTM Chat Configuration Schema
-// TypeBox schema definition with inferred types
-// Schema drives types - no separate type definitions needed
+/**
+ * @fileoverview ZTM Chat Configuration Schema Definition
+ * @module config/schema
+ * TypeBox schema definition with inferred types
+ * Schema drives types - no separate type definitions needed
+ */
 
 import { Type, type TSchema, type Static } from '@sinclair/typebox';
 
@@ -206,6 +209,11 @@ export interface ZTMChatConfigValidation {
 // ============================================
 
 // Export the schema for UI hints
+
+/**
+ * Get the ZTM Chat configuration schema
+ * @returns The TypeBox TSchema for ZTMChatConfig
+ */
 export function getConfigSchema(): TSchema {
   return ZTMChatConfigSchema;
 }

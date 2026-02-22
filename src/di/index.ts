@@ -1,5 +1,8 @@
-// Dependency Injection Module
-// Barrel exports for DI container and service factories
+/**
+ * @fileoverview Dependency Injection Module
+ * @module di/index
+ * Barrel exports for DI container and service factories
+ */
 
 import type { ILogger, IConfig, IApiClient, IApiClientFactory, IRuntime } from './container';
 import { DEPENDENCIES, container } from './container';

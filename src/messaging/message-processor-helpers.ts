@@ -1,5 +1,9 @@
-// Shared message processing logic for watcher and polling
-// Eliminates code duplication between long-polling and watch modes
+/**
+ * @fileoverview Message Processor Helpers
+ * @module messaging/message-processor-helpers
+ * Shared message processing logic for watcher and polling
+ * Eliminates code duplication between long-polling and watch modes
+ */
 
 import { logger } from '../utils/logger.js';
 import { sanitizeForLog } from '../utils/log-sanitize.js';
@@ -56,24 +60,33 @@ export function getWatermarkKey(
 }
 
 /**
- * Determine if a chat is a group chat
+ * Determine if a chat is a group chat.
+ *
+ * @param chat - The ZTM chat to check
+ * @returns True if the chat is a group chat, false otherwise
  */
 export function isGroupChat(chat: ZTMChat): boolean {
   return !!(chat.creator && chat.group);
 }
 
 /**
- * Determine if a chat is a peer (direct message) chat
- * This is the inverse of isGroupChat
+ * Determine if a chat is a peer (direct message) chat.
+ * This is the inverse of isGroupChat.
+ *
+ * @param chat - The ZTM chat to check
+ * @returns True if the chat is a peer chat, false otherwise
  */
 export function isPeerChat(chat: ZTMChat): boolean {
   return !isGroupChat(chat);
 }
 
 /**
- * Extract sender from a chat's latest message
- * Returns the sender from the message, or falls back to peer ID for peer chats only
- * For group chats, returns empty string if no explicit sender
+ * Extract sender from a chat's latest message.
+ * Returns the sender from the message, or falls back to peer ID for peer chats only.
+ * For group chats, returns empty string if no explicit sender.
+ *
+ * @param chat - The ZTM chat to extract sender from
+ * @returns The sender identifier
  */
 export function extractSender(chat: ZTMChat): string {
   const explicitSender = chat.latest?.sender;
@@ -91,8 +104,12 @@ export function extractSender(chat: ZTMChat): string {
 }
 
 /**
- * Check if a message is from the bot itself (self-message)
- * Returns true if the sender matches the bot's username
+ * Check if a message is from the bot itself (self-message).
+ * Returns true if the sender matches the bot's username.
+ *
+ * @param sender - The sender identifier to check
+ * @param botUsername - The bot's username
+ * @returns True if the message is from the bot itself
  */
 export function isSelfMessage(sender: string, botUsername: string): boolean {
   return sender === botUsername;
@@ -101,6 +118,10 @@ export function isSelfMessage(sender: string, botUsername: string): boolean {
 /**
  * Validate if a chat message should be processed.
  * Returns the reason for rejection, or null if the message is valid.
+ *
+ * @param chat - The ZTM chat to validate
+ * @param config - ZTM Chat configuration
+ * @returns Validation result with valid flag and optional reason
  */
 export function validateChatMessage(
   chat: ZTMChat,

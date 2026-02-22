@@ -1,4 +1,12 @@
-// ZTM Mesh connectivity management via Agent API
+/**
+ * @fileoverview ZTM Mesh connectivity management via Agent API
+ * @module connectivity/mesh
+ *
+ * Provides functions for managing ZTM mesh connectivity:
+ * - Port connectivity checking
+ * - Identity (public key) retrieval
+ * - Mesh joining operations
+ */
 
 import * as net from 'net';
 import { logger } from '../utils/logger.js';

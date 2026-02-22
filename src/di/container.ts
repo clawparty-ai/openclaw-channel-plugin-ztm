@@ -1,5 +1,8 @@
-// Dependency Injection Container
-// Provides centralized dependency management and enables testability
+/**
+ * @fileoverview Dependency Injection Container
+ * @module di/container
+ * Provides centralized dependency management and enables testability
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMApiClient } from '../types/api.js';
@@ -197,6 +200,7 @@ export class DIContainer {
    * Register a service factory
    * @param key The dependency key
    * @param factory Function that creates the service instance
+   * @returns void
    */
   register<T>(key: DependencyKey<T>, factory: () => T): void {
     if (this.services.has(key)) {
@@ -209,6 +213,7 @@ export class DIContainer {
    * Register an existing instance (useful for mocks in tests)
    * @param key The dependency key
    * @param instance The service instance
+   * @returns void
    */
   registerInstance<T>(key: DependencyKey<T>, instance: T): void {
     if (this.services.has(key)) {

@@ -1,4 +1,31 @@
 /**
+ * @fileoverview Path resolution utilities for cross-platform compatibility
+ * @module utils/paths
+ *
+ * Handles OpenClaw state directory resolution following OpenClaw SDK conventions.
+ * Provides per-account file isolation for state and permit storage.
+ *
+ * Directory resolution priority:
+ * - ZTM_STATE_PATH environment variable
+ * - OPENCLAW_STATE_DIR environment variable
+ * - (OPENCLAW_HOME or ~)/.openclaw/ztm/{accountId}
+ *
+ * Security: Validates against path traversal attacks in all overrides.
+ *
+ * @example
+ * import { resolveZTMStateDir, resolveStatePath, resolvePermitPath } from './utils/paths.js';
+ *
+ * const stateDir = resolveZTMStateDir('account-123');
+ * // Returns: /home/user/.openclaw/ztm/account-123
+ *
+ * const stateFile = resolveStatePath('account-123');
+ * // Returns: /home/user/.openclaw/ztm/account-123/state.json
+ *
+ * const permitFile = resolvePermitPath('account-123');
+ * // Returns: /home/user/.openclaw/ztm/account-123/permit.json
+ */
+
+/**
  * Path resolution utilities for cross-platform compatibility
  * Handles OpenClaw state directory resolution following OpenClaw SDK conventions
  */

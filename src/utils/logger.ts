@@ -1,5 +1,34 @@
+/**
+ * @fileoverview ZTM Chat Plugin Logger
+ * @module utils/logger
+ *
+ * Structured logging with level support (debug, info, warn, error).
+ * Provides singleton logger and context-aware logger factory.
+ *
+ * Features:
+ * - Log level configuration via ZTM_CHAT_LOG_LEVEL environment variable
+ * - Structured output with timestamp, level, channel, and context
+ * - Runtime logger injection for consistent logging across modules
+ * - Context-aware logger factory for module-specific logging
+ *
+ * @example
+ * import { logger, getLogger, createLogger } from './utils/logger.js';
+ *
+ * // Basic usage
+ * logger.info('Operation started');
+ *
+ * // With context
+ * logger.info('Message sent', { peerId: 'user@example.com', messageId: 'abc123' });
+ *
+ * // Context-aware logger
+ * const chatLogger = createLogger({ component: 'chat-processor' });
+ * chatLogger.info('Processing message');
+ *
+ * // Runtime logger (for dependency injection)
+ * const log = getLogger(); // Uses runtime logger if available
+ */
+
 // ZTM Chat Plugin Logger
-// Structured logging with level support
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 

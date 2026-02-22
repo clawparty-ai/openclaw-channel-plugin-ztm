@@ -1,5 +1,8 @@
-// Connectivity Management for ZTM Chat
-// Handles agent connectivity, permit loading, and mesh joining
+/**
+ * @fileoverview Connectivity Management for ZTM Chat
+ * @module channel/connectivity-manager
+ * Handles agent connectivity, permit loading, and mesh joining
+ */
 
 import * as fs from 'fs';
 import type { ZTMChatConfig } from '../types/config.js';

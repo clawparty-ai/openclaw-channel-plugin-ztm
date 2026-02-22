@@ -1,5 +1,9 @@
-// Shared chat message processing utilities
-// Used by both watcher.ts and polling.ts to process incoming messages
+/**
+ * @fileoverview Chat Message Processing
+ * @module messaging/chat-processor
+ * High-level chat message processing utilities
+ * Used by both watcher.ts and polling.ts to process incoming messages
+ */
 
 import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
@@ -11,8 +15,14 @@ import { checkDmPolicy } from '../core/dm-policy.js';
 import { handlePairingRequest } from '../connectivity/permit.js';
 
 /**
- * Process a single chat message and notify callbacks if valid
- * Returns true if a message was processed
+ * Process a single chat message and notify callbacks if valid.
+ * Returns true if a message was processed.
+ *
+ * @param chat - The ZTM chat to process
+ * @param config - ZTM Chat configuration
+ * @param storeAllowFrom - Allowed senders list for pairing mode
+ * @param accountId - Account identifier
+ * @returns True if message was processed, false otherwise
  */
 export async function processChatMessage(
   chat: ZTMChat,

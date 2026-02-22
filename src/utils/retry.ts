@@ -1,5 +1,33 @@
+/**
+ * @fileoverview Retry utilities for ZTM Chat
+ * @module utils/retry
+ *
+ * Provides retry logic with exponential backoff for network operations.
+ * Supports timeout, configurable retries, and error classification.
+ *
+ * Features:
+ * - Exponential backoff with configurable multiplier
+ * - Timeout support via AbortController
+ * - Retriable error classification (network, timeout, etc.)
+ * - Non-retriable error detection (auth errors)
+ * - Fetch wrapper with retry support
+ *
+ * @example
+ * import { retryAsync, fetchWithRetry, withRetry } from './utils/retry.js';
+ *
+ * // Retry a function
+ * const result = await retryAsync(async () => {
+ *   return await api.getData();
+ * }, { maxRetries: 3, initialDelay: 1000 });
+ *
+ * // Retry a fetch request
+ * const response = await fetchWithRetry(url, options, { maxRetries: 3 });
+ *
+ * // Wrap any async function
+ * const getDataWithRetry = withRetry(api.getData);
+ */
+
 // Retry utilities for ZTM Chat
-// Provides retry logic with exponential backoff for network operations
 
 import { logger } from './logger.js';
 import { RETRY_INITIAL_DELAY_MS, RETRY_MAX_DELAY_MS, RETRY_TIMEOUT_MS } from '../constants.js';

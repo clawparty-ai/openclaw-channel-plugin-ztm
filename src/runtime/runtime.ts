@@ -1,5 +1,8 @@
-// ZTM Runtime - Manages ZTM network connection and message handling
-// Refactored to use Dependency Injection + Singleton pattern for testability
+/**
+ * @fileoverview ZTM Runtime - Manages ZTM network connection and message handling
+ * @module runtime/runtime
+ * Refactored to use Dependency Injection + Singleton pattern for testability
+ */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { setRuntimeLogger } from '../utils/logger.js';
@@ -15,18 +18,20 @@ import { requireDefined, isDefined } from '../utils/guards.js';
 export interface RuntimeProvider {
   /**
    * Get the current runtime instance
+   * @returns The current PluginRuntime instance
    * @throws Error if runtime not initialized
    */
   getRuntime(): PluginRuntime;
 
   /**
    * Set a new runtime instance
-   * @param runtime The runtime to use
+   * @param runtime - The runtime to use
    */
   setRuntime(runtime: PluginRuntime): void;
 
   /**
    * Check if runtime is initialized
+   * @returns true if runtime has been set, false otherwise
    */
   isInitialized(): boolean;
 }
@@ -46,6 +51,7 @@ export class RuntimeManager implements RuntimeProvider {
   /**
    * Get the singleton instance
    * Creates instance on first call, returns existing instance thereafter
+   * @returns The RuntimeManager singleton instance
    */
   static getInstance(): RuntimeManager {
     if (!RuntimeManager.instance) {
@@ -64,7 +70,7 @@ export class RuntimeManager implements RuntimeProvider {
 
   /**
    * Set the runtime instance
-   * @param runtime The runtime to use
+   * @param runtime - The runtime to use
    */
   setRuntime(runtime: PluginRuntime): void {
     this.runtime = runtime;
@@ -72,6 +78,7 @@ export class RuntimeManager implements RuntimeProvider {
 
   /**
    * Get the current runtime instance
+   * @returns The current PluginRuntime instance
    * @throws Error if runtime not initialized
    */
   getRuntime(): PluginRuntime {
@@ -80,6 +87,7 @@ export class RuntimeManager implements RuntimeProvider {
 
   /**
    * Check if runtime is initialized
+   * @returns true if runtime has been set, false otherwise
    */
   isInitialized(): boolean {
     return isDefined(this.runtime);
@@ -100,7 +108,7 @@ function getRuntimeProvider(): RuntimeProvider {
 
 /**
  * Set the ZTM runtime
- * @param next The runtime to use
+ * @param next - The runtime to use
  */
 export function setZTMRuntime(next: PluginRuntime): void {
   getRuntimeProvider().setRuntime(next);

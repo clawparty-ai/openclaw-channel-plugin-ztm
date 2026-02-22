@@ -1,5 +1,8 @@
-// ZTM Chat Channel Plugin
-// Main plugin definition implementing ChannelPlugin interface
+/**
+ * @fileoverview ZTM Chat Channel Plugin
+ * @module channel/plugin
+ * Main plugin definition implementing ChannelPlugin interface
+ */
 
 import type { ChannelPlugin, OpenClawConfig } from 'openclaw/plugin-sdk';
 import { ZTMChatConfigSchema } from '../config/index.js';

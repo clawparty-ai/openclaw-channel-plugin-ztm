@@ -1,5 +1,8 @@
-// ZTM Chat Channel Configuration
-// Configuration parsing and schema utilities
+/**
+ * @fileoverview ZTM Chat Channel Configuration
+ * @module channel/config
+ * Configuration parsing, account resolution, and schema utilities
+ */
 
 import type { TSchema } from '@sinclair/typebox';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
@@ -26,6 +29,9 @@ export interface ResolvedZTMChatAccount {
 
 /**
  * Get effective channel config from openclaw.yaml: cfg.channels["ztm-chat"]
+ *
+ * @param cfg - OpenClaw configuration object
+ * @returns The channel configuration object, or null if not configured
  */
 export function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, unknown> | null {
   const inlineConfig = cfg?.channels?.['ztm-chat'] as Record<string, unknown>;
@@ -41,6 +47,9 @@ export function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, 
 
 /**
  * List available ZTM chat account IDs
+ *
+ * @param cfg - OpenClaw configuration object
+ * @returns Array of account IDs
  */
 export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
   const channelConfig = getEffectiveChannelConfig(cfg);
@@ -72,6 +81,11 @@ function isValidAccountId(accountId: string | undefined): boolean {
 
 /**
  * Resolve a ZTM chat account with its configuration
+ *
+ * @param params - Parameters containing configuration and account ID
+ * @param params.cfg - OpenClaw configuration object
+ * @param params.accountId - Account identifier
+ * @returns Resolved ZTM chat account with configuration
  */
 export function resolveZTMChatAccount({
   cfg,
@@ -125,6 +139,9 @@ export function resolveZTMChatAccount({
 
 /**
  * Build channel config schema with UI hints for the configuration UI
+ *
+ * @param _schema - The Typebox schema (unused, kept for API consistency)
+ * @returns Object with schema, parse function, and UI hints
  */
 export function buildChannelConfigSchemaWithHints(_schema: TSchema) {
   return {

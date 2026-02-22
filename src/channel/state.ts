@@ -1,5 +1,8 @@
-// ZTM Chat State Management
-// Account snapshot building and state utilities
+/**
+ * @fileoverview ZTM Chat State Management
+ * @module channel/state
+ * Account snapshot building and state utilities
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import { isConfigMinimallyValid } from '../config/validation.js';

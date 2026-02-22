@@ -1,12 +1,15 @@
-// ZTM Chat Common Types
-// Shared utility types used across modules
+/**
+ * @fileoverview ZTM Chat Common Types
+ * @module types/common
+ * Shared utility types used across modules
+ */
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // Result Type Pattern - Unified error handling for operations that can fail
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 /**
- * Result type for operations that can succeed or fail.
+ * @description Result type for operations that can succeed or fail.
  * This pattern avoids silent failures, null ambiguity, and unchecked exceptions.
  *
  * @example
@@ -152,11 +155,17 @@ export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
 // Other Common Types
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-/** Connection status for ZTM agents */
+/**
+ * @description Connection status for ZTM agents
+ */
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
-/** Message direction (inbound received, outbound sent) */
+/**
+ * @description Message direction (inbound received, outbound sent)
+ */
 export type MessageDirection = 'inbound' | 'outbound';
 
-/** Pairing status for peer authentication */
+/**
+ * @description Pairing status for peer authentication
+ */
 export type PairingStatus = 'none' | 'pending' | 'approved' | 'rejected';

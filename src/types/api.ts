@@ -1,5 +1,8 @@
-// ZTM Chat API Types
-// Types for ZTM Agent API communication
+/**
+ * @fileoverview ZTM Chat API Types
+ * @module types/api
+ * Types for ZTM Agent API communication
+ */
 
 import type { Result } from './common.js';
 import type { ZTMApiError, ZTMSendError, ZTMReadError, ZTMDiscoveryError } from './errors.js';
@@ -10,26 +13,34 @@ export type { ZTMDiscoveryError } from './errors.js';
 // Core ZTM Types
 // ═════════════════════════════════════════════════════════════════════════════
 
-// ZTM Message interface - matches ZTM Agent API format
+/**
+ * @description ZTM Message interface - matches ZTM Agent API format
+ */
 export interface ZTMMessage {
   time: number;
   message: string;
   sender: string;
 }
 
-// ZTM Peer interface
+/**
+ * @description ZTM Peer interface
+ */
 export interface ZTMPeer {
   username: string;
   endpoint?: string;
 }
 
-// ZTM User Info interface
+/**
+ * @description ZTM User Info interface
+ */
 export interface ZTMUserInfo {
   username: string;
   endpoint?: string;
 }
 
-// ZTM Mesh Info interface - matches /api/meshes/{name} response
+/**
+ * @description ZTM Mesh Info interface - matches /api/meshes/{name} response
+ */
 export interface ZTMMeshInfo {
   name: string;
   connected: boolean;
@@ -37,7 +48,9 @@ export interface ZTMMeshInfo {
   errors?: Array<{ time: string; message: string }>;
 }
 
-// ZTM Endpoint interface - matches /api/meshes/{name}/endpoints response
+/**
+ * @description ZTM Endpoint interface - matches /api/meshes/{name}/endpoints response
+ */
 export interface ZTMEndpoint {
   isLocal: boolean;
   id: string;
@@ -48,7 +61,9 @@ export interface ZTMEndpoint {
   online?: boolean;
 }
 
-// ZTM Chat interface - matches /apps/ztm/chat/api/chats response
+/**
+ * @description ZTM Chat interface - matches /apps/ztm/chat/api/chats response
+ */
 export interface ZTMChat {
   peer?: string;
   creator?: string;
@@ -60,6 +75,9 @@ export interface ZTMChat {
   latest: ZTMMessage;
 }
 
+/**
+ * @description Watch change item for storage monitoring
+ */
 export interface WatchChangeItem {
   type: 'peer' | 'group';
   peer?: string;
@@ -73,7 +91,7 @@ export interface WatchChangeItem {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * ZTM API Client interface with Result-based error handling.
+ * @description ZTM API Client interface with Result-based error handling.
  *
  * All operations return Result<T, E> types for consistent error handling:
  * - Success: { ok: true, value: T }
@@ -130,7 +148,11 @@ export interface ZTMApiClient {
   // ═════════════════════════════════════════════════════════════════════════════
 
   /** Get messages from a group. Returns Result with messages or read error. */
-  getGroupMessages(creator: string, group: string, since?: number): Promise<Result<ZTMMessage[], ZTMReadError>>;
+  getGroupMessages(
+    creator: string,
+    group: string,
+    since?: number
+  ): Promise<Result<ZTMMessage[], ZTMReadError>>;
 
   /** Send a message to a group. Returns Result with success or error. */
   sendGroupMessage(

@@ -1,10 +1,14 @@
-// Group Policy enforcement for ZTM Chat
-// Controls which users can send group messages and what tools are available
-//
-// Group Policy Types:
-// - "open": Allow all messages (with optional mention requirement)
-// - "disabled": Block all group messages
-// - "allowlist": Only allow whitelisted senders
+/**
+ * @fileoverview Group Policy enforcement for ZTM Chat
+ * @module core/group-policy
+ *
+ * Controls which users can send group messages and what tools are available.
+ *
+ * Group Policy Types:
+ * - "open": Allow all messages (with optional mention requirement)
+ * - "disabled": Block all group messages
+ * - "allowlist": Only allow whitelisted senders
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { GroupPermissions, GroupMessageCheckResult } from '../types/group-policy.js';

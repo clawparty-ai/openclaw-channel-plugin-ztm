@@ -1,5 +1,8 @@
-// ZTM Chat Gateway Implementation
-// Gateway methods for starting, stopping, and managing accounts
+/**
+ * @fileoverview ZTM Chat Gateway Implementation
+ * @module channel/gateway
+ * Gateway methods for starting, stopping, and managing accounts
+ */
 
 import type {
   ChannelAccountSnapshot as BaseChannelAccountSnapshot,

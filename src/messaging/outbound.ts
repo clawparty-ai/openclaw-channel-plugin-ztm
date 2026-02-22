@@ -1,4 +1,8 @@
-// Outbound message sending for ZTM Chat
+/**
+ * @fileoverview Outbound Message Sending
+ * @module messaging/outbound
+ * Outbound message sending for ZTM Chat
+ */
 
 import { randomBytes } from 'node:crypto';
 import { logger } from '../utils/logger.js';
@@ -8,11 +12,25 @@ import { failure, type Result } from '../types/common.js';
 import { ZTMSendError } from '../types/errors.js';
 import { validateUsername } from '../utils/validation.js';
 
+/**
+ * Generate a unique message ID for outbound messages.
+ *
+ * @returns A unique message ID string
+ */
 export function generateMessageId(): string {
   const randomPart = randomBytes(4).toString('hex');
   return `ztm-${Date.now()}-${randomPart}`;
 }
 
+/**
+ * Send a message to a ZTM peer or group.
+ *
+ * @param state - Account runtime state
+ * @param peer - The recipient peer identifier (for peer messages) or ignored (for group messages)
+ * @param content - The message content to send
+ * @param groupInfo - Optional group info for sending to a group
+ * @returns Result indicating success or failure with error details
+ */
 export async function sendZTMMessage(
   state: AccountRuntimeState,
   peer: string,

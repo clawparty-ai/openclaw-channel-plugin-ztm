@@ -1,4 +1,12 @@
-// ZTM Permit management
+/**
+ * @fileoverview ZTM Permit management for mesh connectivity
+ * @module connectivity/permit
+ *
+ * Provides functions for:
+ * - Requesting permits from permit server
+ * - Persisting and loading permit data
+ * - Handling pairing requests
+ */
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -19,6 +27,18 @@ import type { PermitData } from '../types/connectivity.js';
  * - agent.certificate: Certificate for this endpoint (signed by CA)
  * - agent.privateKey: Private key for this endpoint
  * - bootstraps: List of hub addresses to connect to
+ *
+ * @param permitUrl - The URL of the permit server
+ * @param publicKey - The public key of the agent requesting the permit
+ * @param username - The username to associate with the permit
+ * @returns Promise resolving to PermitData if successful, null otherwise
+ *
+ * @example
+ * const permit = await requestPermit(
+ *   "http://permit-server:8080",
+ *   "-----BEGIN PUBLIC KEY-----\n...",
+ *   "my-agent"
+ * );
  */
 export async function requestPermit(
   permitUrl: string,
@@ -68,7 +88,16 @@ export async function requestPermit(
   }
 }
 
-// Save permit data to file
+/**
+ * Save permit data to a local file
+ *
+ * @param permitData - The permit data to save
+ * @param permitPath - The file path where permit data should be saved
+ * @returns True if save was successful, false otherwise
+ *
+ * @example
+ * const saved = savePermitData(permitData, "/path/to/permit.json");
+ */
 export function savePermitData(permitData: PermitData, permitPath: string): boolean {
   try {
     // Ensure directory exists
@@ -88,6 +117,12 @@ export function savePermitData(permitData: PermitData, permitPath: string): bool
 
 /**
  * Load permit data from a local file
+ *
+ * @param filePath - The path to the permit file
+ * @returns PermitData if file exists and is valid, null otherwise
+ *
+ * @example
+ * const permit = loadPermitFromFile("/path/to/permit.json");
  */
 export function loadPermitFromFile(filePath: string): PermitData | null {
   try {
@@ -106,7 +141,24 @@ export function loadPermitFromFile(filePath: string): PermitData | null {
   }
 }
 
-// Handle pairing request - send a pairing request message to the peer
+/**
+ * Handle pairing request - send a pairing request message to the peer
+ *
+ * This function handles the pairing flow for new users:
+ * 1. Check if peer is already approved (config or store allowFrom)
+ * 2. Check if pairing request already exists (deduplication)
+ * 3. Register pairing request with OpenClaw's pairing store
+ * 4. Send pairing message to the peer with approval instructions
+ *
+ * @param state - The account runtime state
+ * @param peer - The username of the peer requesting pairing
+ * @param context - Additional context for the pairing request (currently unused)
+ * @param storeAllowFrom - Optional array of approved usernames from persistent store
+ * @returns Promise that resolves when pairing request handling is complete
+ *
+ * @example
+ * await handlePairingRequest(state, "alice", "initial contact");
+ */
 export async function handlePairingRequest(
   state: AccountRuntimeState,
   peer: string,

@@ -1,6 +1,9 @@
-// Messaging Context
-// Encapsulates dependencies needed by the messaging layer
-// Eliminates direct DI container access from messaging modules
+/**
+ * @fileoverview Messaging Context
+ * @module messaging/context
+ * Encapsulates dependencies needed by the messaging layer
+ * Eliminates direct DI container access from messaging modules
+ */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { container, DEPENDENCIES } from '../di/index.js';

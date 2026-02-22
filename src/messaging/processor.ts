@@ -1,12 +1,15 @@
-// Message processing for ZTM Chat
-// Normalizes and validates incoming messages
-//
-// This module handles the inbound message processing pipeline:
-// 1. Validate message has required fields
-// 2. Skip empty messages and self-messages
-// 3. Check watermark to skip duplicate/already-processed messages
-// 4. Enforce DM policy rules
-// 5. Return normalized ZTMChatMessage
+/**
+ * @fileoverview Message Processing
+ * @module messaging/processor
+ * Normalizes and validates incoming messages
+ *
+ * This module handles the inbound message processing pipeline:
+ * 1. Validate message has required fields
+ * 2. Skip empty messages and self-messages
+ * 3. Check watermark to skip duplicate/already-processed messages
+ * 4. Enforce DM policy rules
+ * 5. Return normalized ZTMChatMessage
+ */
 
 import { logger } from '../utils/logger.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
@@ -114,7 +117,10 @@ export function processIncomingMessage(
 }
 
 /**
- * Validate if a message object has required fields
+ * Validate if a message object has required fields.
+ *
+ * @param msg - The message object to validate
+ * @returns True if the message has all required fields
  */
 export function isValidMessage(
   msg: unknown
@@ -130,14 +136,21 @@ export function isValidMessage(
 }
 
 /**
- * Create a unique message ID from timestamp and sender
+ * Create a unique message ID from timestamp and sender.
+ *
+ * @param time - Message timestamp
+ * @param sender - Message sender identifier
+ * @returns A unique message ID string
  */
 export function createMessageId(time: number, sender: string): string {
   return `${time}-${sender}`;
 }
 
 /**
- * Parse and normalize message content
+ * Parse and normalize message content.
+ *
+ * @param raw - Raw message content (string or object)
+ * @returns Normalized message string
  */
 export function parseMessageContent(raw: unknown): string {
   if (typeof raw === 'string') return raw;

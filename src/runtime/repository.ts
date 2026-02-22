@@ -1,9 +1,12 @@
-// Repository interfaces for ZTM Chat
-// Defines abstraction boundaries between messaging and runtime layers
-//
-// This layer introduces the Repository pattern to decouple the messaging layer
-// from runtime implementation details. The messaging layer should depend on
-// these interfaces, not concrete implementations.
+/**
+ * @fileoverview Repository interfaces for ZTM Chat
+ * @module runtime/repository
+ * Defines abstraction boundaries between messaging and runtime layers
+ *
+ * This layer introduces the Repository pattern to decouple the messaging layer
+ * from runtime implementation details. The messaging layer should depend on
+ * these interfaces, not concrete implementations.
+ */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import type { FileMetadata } from './store.js';

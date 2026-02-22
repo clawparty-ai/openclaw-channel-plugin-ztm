@@ -1,5 +1,8 @@
-// Status Operations for ZTM Chat Channel Plugin
-// Handles runtime status collection and channel summaries
+/**
+ * @fileoverview Status Operations for ZTM Chat Channel Plugin
+ * @module channel/status
+ * Handles runtime status collection and channel summaries
+ */
 
 import type { ChannelAccountSnapshot as BaseChannelAccountSnapshot } from 'openclaw/plugin-sdk';
 

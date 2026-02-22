@@ -1,5 +1,8 @@
-// Message Dispatcher for ZTM Chat
-// Handles inbound message context creation and dispatch to AI agents
+/**
+ * @fileoverview Message Dispatcher for ZTM Chat
+ * @module channel/message-dispatcher
+ * Handles inbound message context creation and dispatch to AI agents
+ */
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChatMessage } from '../types/messaging.js';

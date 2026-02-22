@@ -1,5 +1,8 @@
-// ZTM Chat Configuration Validation
-// Validates configuration with detailed error messages using Result pattern
+/**
+ * @fileoverview ZTM Chat Configuration Validation
+ * @module config/validation
+ * Validates configuration with detailed error messages using Result pattern
+ */
 
 import type {
   ZTMChatConfig,
@@ -16,6 +19,8 @@ import {
 
 /**
  * Validate agent URL field
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validateAgentUrl(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.agentUrl;
@@ -35,6 +40,8 @@ function validateAgentUrl(config: Record<string, unknown>, errors: ConfigValidat
 
 /**
  * Validate mesh name field
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validateMeshName(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.meshName;
@@ -58,6 +65,8 @@ function validateMeshName(config: Record<string, unknown>, errors: ConfigValidat
 
 /**
  * Validate username field
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validateUsername(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.username;
@@ -81,6 +90,8 @@ function validateUsername(config: Record<string, unknown>, errors: ConfigValidat
 
 /**
  * Validate DM policy field
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validateDmPolicy(config: Record<string, unknown>, errors: ConfigValidationError[]): void {
   const value = config.dmPolicy;
@@ -98,6 +109,8 @@ function validateDmPolicy(config: Record<string, unknown>, errors: ConfigValidat
 
 /**
  * Validate API timeout field
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validateApiTimeout(
   config: Record<string, unknown>,
@@ -113,6 +126,8 @@ function validateApiTimeout(
 
 /**
  * Validate permitSource field
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validatePermitSource(
   config: Record<string, unknown>,
@@ -141,7 +156,9 @@ function validatePermitSource(
 }
 
 /**
- * Validate permitFilePath field (conditional)
+ * Validate permitFilePath field (conditional on permitSource)
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validatePermitFilePath(
   config: Record<string, unknown>,
@@ -176,7 +193,9 @@ function validatePermitFilePath(
 }
 
 /**
- * Validate permitUrl field (conditional)
+ * Validate permitUrl field (conditional on permitSource)
+ * @param config - Configuration object to validate
+ * @param errors - Array to collect validation errors
  */
 function validatePermitUrlConditional(
   config: Record<string, unknown>,
@@ -210,7 +229,6 @@ function validatePermitUrlConditional(
 
 /**
  * Validate configuration with detailed errors using Result pattern
- *
  * @param raw - Raw configuration object to validate
  * @returns Validation result with structured errors or resolved config
  *
@@ -299,6 +317,8 @@ export function validateZTMChatConfig(raw: unknown): ZTMChatConfigValidation {
 
 /**
  * Build resolved configuration from validated raw config
+ * @param config - Validated configuration object
+ * @returns Resolved ZTMChatConfig with normalized values
  */
 function buildResolvedConfig(config: Record<string, unknown>): ZTMChatConfig {
   const agentUrl = config.agentUrl?.toString().trim() ?? '';
@@ -341,6 +361,8 @@ function buildResolvedConfig(config: Record<string, unknown>): ZTMChatConfig {
 
 /**
  * Check if config is minimally valid (has required fields)
+ * @param config - Partial configuration to check
+ * @returns True if the config has required fields (agentUrl and username)
  */
 export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean {
   return Boolean(
@@ -350,6 +372,8 @@ export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean 
 
 /**
  * Validate a single username format
+ * @param username - Username string to validate
+ * @returns True if the username matches identifier pattern and length constraints
  */
 export function isValidUsername(username: string): boolean {
   return IDENTIFIER_PATTERN.test(username) && username.length > 0 && username.length <= 64;
@@ -357,6 +381,8 @@ export function isValidUsername(username: string): boolean {
 
 /**
  * Validate a mesh name format
+ * @param meshName - Mesh name string to validate
+ * @returns True if the mesh name matches identifier pattern and length constraints
  */
 export function isValidMeshName(meshName: string): boolean {
   return IDENTIFIER_PATTERN.test(meshName) && meshName.length > 0 && meshName.length <= 64;
@@ -364,6 +390,8 @@ export function isValidMeshName(meshName: string): boolean {
 
 /**
  * Validate DM policy value
+ * @param policy - Policy string to validate
+ * @returns True if the policy is a valid DMPolicy value ('allow', 'deny', or 'pairing')
  */
 export function isValidDmPolicy(policy: string): policy is DMPolicy {
   return ['allow', 'deny', 'pairing'].includes(policy);

@@ -1,5 +1,8 @@
-// ZTM Chat Configuration Module
-// Barrel export for all configuration-related functionality
+/**
+ * @fileoverview ZTM Chat Configuration Module barrel export
+ * @module config
+ * Barrel export for all configuration-related functionality
+ */
 
 // Schema definition (includes types via Static<typeof>)
 export * from './schema.js';

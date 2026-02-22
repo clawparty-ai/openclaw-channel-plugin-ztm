@@ -1,5 +1,8 @@
-// ZTM Chat Runtime Types
-// Runtime state and management types
+/**
+ * @fileoverview ZTM Chat Runtime Types
+ * @module types/runtime
+ * Runtime state and management types
+ */
 
 import type { ZTMChatConfig } from './config.js';
 import type { ZTMChatMessage } from './messaging.js';
@@ -7,14 +10,16 @@ import type { ZTMApiClient } from './api.js';
 import type { GroupPermissions } from './group-policy.js';
 import type { Semaphore } from '../utils/concurrency.js';
 
-// Cache entry with timestamp for TTL tracking
+/**
+ * @description Cache entry with timestamp for TTL tracking
+ */
 export interface CacheEntry<T> {
   value: T;
   timestamp: number;
 }
 
 /**
- * Interface for group permission cache with bounded size and TTL.
+ * @description Interface for group permission cache with bounded size and TTL.
  * Implementations must provide:
  * - LRU eviction to prevent unbounded growth
  * - TTL-based expiration to prevent stale data
@@ -48,10 +53,14 @@ export interface IGroupPermissionCache {
   size(): number;
 }
 
-// Message callback type - must be async
+/**
+ * @description Message callback type - must be async
+ */
 export type MessageCallback = (message: ZTMChatMessage) => Promise<void>;
 
-// Runtime state per account
+/**
+ * @description Runtime state per account
+ */
 export interface AccountRuntimeState {
   accountId: string;
   config: ZTMChatConfig;

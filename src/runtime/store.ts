@@ -1,6 +1,9 @@
-// Persistent message state store
-// Tracks per-account, per-peer watermarks so that already-processed messages
-// are skipped across gateway restarts.
+/**
+ * @fileoverview Persistent message state store
+ * @module runtime/store
+ * Tracks per-account, per-peer watermarks so that already-processed messages
+ * are skipped across gateway restarts.
+ */
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -71,48 +74,68 @@ export interface MessageStateData {
 export interface MessageStateStore {
   /**
    * Ensure state is loaded (async) - call during startup to prevent blocking in hot path
-   * Returns Promise that resolves once state is loaded
+   * @returns Promise that resolves once state is loaded
    */
   ensureLoaded(): Promise<void>;
 
   /**
    * Check if state has been loaded
+   * @returns true if state has been loaded, false otherwise
    */
   isLoaded(): boolean;
 
   /**
    * Get the last-processed message timestamp for a key under an account
+   * @param accountId - The account identifier
+   * @param key - The watermark key (e.g., "peer:alice" or "group:creator/groupid")
+   * @returns The watermark timestamp, or 0 if not found
    */
   getWatermark(accountId: string, key: string): number;
 
   /**
    * Get the global watermark (max across all keys) for an account
+   * @param accountId - The account identifier
+   * @returns The maximum watermark timestamp across all keys, or 0 if not found
    */
   getGlobalWatermark(accountId: string): number;
 
   /**
    * Update the watermark for a key (only advances forward)
+   * @param accountId - The account identifier
+   * @param key - The watermark key
+   * @param time - The timestamp to set
    */
   setWatermark(accountId: string, key: string, time: number): void;
 
   /**
    * Async version - Update the watermark with atomic check-and-update
    * Use this from async contexts to prevent race conditions
+   * @param accountId - The account identifier
+   * @param key - The watermark key
+   * @param time - The timestamp to set
+   * @returns Promise that resolves when the watermark is set
    */
   setWatermarkAsync(accountId: string, key: string, time: number): Promise<void>;
 
   /**
    * Get all persisted file metadata for an account
+   * @param accountId - The account identifier
+   * @returns Record of file path to metadata
    */
   getFileMetadata(accountId: string): Record<string, FileMetadata>;
 
   /**
    * Update a file's metadata
+   * @param accountId - The account identifier
+   * @param filePath - The file path
+   * @param metadata - The file metadata (time and size)
    */
   setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void;
 
   /**
    * Bulk-set file metadata (e.g. after initial scan)
+   * @param accountId - The account identifier
+   * @param metadata - Record of file path to metadata
    */
   setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void;
 
@@ -123,6 +146,7 @@ export interface MessageStateStore {
 
   /**
    * Async flush for graceful shutdown
+   * @returns Promise that resolves when flush is complete
    */
   flushAsync(): Promise<void>;
 
@@ -631,6 +655,9 @@ export class MessageStateStoreImpl implements MessageStateStore {
  * Factory function to create MessageStateStore instances
  * Allows dependency injection for testing
  * @param statePath - Required path to the state file (should be account-specific)
+ * @param fsImpl - Optional file system implementation for testing
+ * @param loggerImpl - Optional logger implementation for testing
+ * @returns New MessageStateStore instance
  */
 export function createMessageStateStore(
   statePath: string,

@@ -1,5 +1,8 @@
-// Message callback dispatching for ZTM Chat
-// Handles notification of registered message callbacks
+/**
+ * @fileoverview Message Callback Dispatching
+ * @module messaging/dispatcher
+ * Handles notification of registered message callbacks
+ */
 
 import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
