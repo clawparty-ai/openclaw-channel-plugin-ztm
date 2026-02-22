@@ -161,7 +161,10 @@ export async function sendTextGateway({
 /**
  * Resolve and validate ZTM chat configuration
  */
-function resolveAndValidateConfig(accountConfig: ZTMChatConfig): {
+function resolveAndValidateConfig(
+  accountConfig: ZTMChatConfig,
+  accountId: string
+): {
   config: ZTMChatConfig;
   endpointName: string;
   permitPath: string;
@@ -173,7 +176,7 @@ function resolveAndValidateConfig(accountConfig: ZTMChatConfig): {
     throw new Error(validation.errors.join('; '));
   }
 
-  const permitPath = resolveAccountPermitPath();
+  const permitPath = resolveAccountPermitPath(accountId);
   const endpointName = `${config.username}-ep`;
 
   return { config, endpointName, permitPath };
@@ -303,7 +306,10 @@ export async function startAccountGateway(ctx: {
   const { account } = ctx;
 
   // Step 1: Resolve and validate configuration
-  const { config, endpointName, permitPath } = resolveAndValidateConfig(account.config);
+  const { config, endpointName, permitPath } = resolveAndValidateConfig(
+    account.config,
+    account.accountId
+  );
 
   // Step 2: Validate connectivity for agent URL
   await validateAgentConnectivity(config.agentUrl, ctx);

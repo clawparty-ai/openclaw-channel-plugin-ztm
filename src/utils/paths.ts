@@ -84,52 +84,41 @@ export function resolveOpenclawStateDir(): string {
 }
 
 /**
- * Resolve the ZTM plugin state directory
- * Priority: ZTM_STATE_PATH > (OPENCLAW_STATE_DIR or ~/.openclaw)/ztm
+ * Resolve the ZTM plugin state directory for a specific account
+ * Priority: ZTM_STATE_PATH > (OPENCLAW_STATE_DIR or ~/.openclaw)/ztm/{accountId}
  *
  * This follows OpenClaw SDK conventions where plugin-specific data
- * is stored under the main state directory
+ * is stored under the main state directory, with per-account subdirectories
  */
-export function resolveZTMStateDir(): string {
+export function resolveZTMStateDir(accountId: string): string {
   // Check explicit ZTM_STATE_PATH override (for backward compatibility)
   if (process.env.ZTM_STATE_PATH) {
     const resolved = resolvePath(process.env.ZTM_STATE_PATH);
     // If it's a file path, extract the directory
     if (path.extname(resolved)) {
-      return path.dirname(resolved);
+      return path.join(path.dirname(resolved), accountId);
     }
-    return resolved;
+    return path.join(resolved, accountId);
   }
 
-  // Default: <openclaw-state-dir>/ztm
-  return path.join(resolveOpenclawStateDir(), ZTM_SUBDIR);
+  // Default: <openclaw-state-dir>/ztm/{accountId}
+  return path.join(resolveOpenclawStateDir(), ZTM_SUBDIR, accountId);
 }
 
 /**
- * Resolve the ZTM state file path
- * Priority: ZTM_STATE_PATH > (OPENCLAW_STATE_DIR or ~/.openclaw)/ztm/state.json
+ * Resolve the ZTM state file path for a specific account
+ * Uses per-account directory: {accountId}/state.json
  */
-export function resolveStatePath(): string {
-  // Check explicit ZTM_STATE_PATH override
-  if (process.env.ZTM_STATE_PATH) {
-    const resolved = resolvePath(process.env.ZTM_STATE_PATH);
-    // If it's a directory, append state.json
-    if (!path.extname(resolved)) {
-      return path.join(resolved, 'state.json');
-    }
-    return resolved;
-  }
-
-  // Default: <openclaw-state-dir>/ztm/state.json
-  return path.join(resolveZTMStateDir(), 'state.json');
+export function resolveStatePath(accountId: string): string {
+  return path.join(resolveZTMStateDir(accountId), 'state.json');
 }
 
 /**
- * Resolve the ZTM permit file path
- * Uses the same directory as state files
+ * Resolve the ZTM permit file path for a specific account
+ * Uses per-account directory: {accountId}/permit.json
  */
-export function resolvePermitPath(): string {
-  return path.join(resolveZTMStateDir(), 'permit.json');
+export function resolvePermitPath(accountId: string): string {
+  return path.join(resolveZTMStateDir(accountId), 'permit.json');
 }
 
 /**
@@ -172,7 +161,10 @@ export interface ResolveStateDirOptions {
  * Resolve ZTM state directory with overrides (for testing)
  * @internal - exported for testing only
  */
-export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptions): string {
+export function resolveZTMStateDirWithOverrides(
+  accountId: string,
+  overrides?: ResolveStateDirOptions
+): string {
   const env = overrides || {};
 
   // Check explicit ZTM_STATE_PATH override
@@ -183,9 +175,9 @@ export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptio
     }
     const resolved = resolvePath(env.ZTM_STATE_PATH);
     if (path.extname(resolved)) {
-      return path.dirname(resolved);
+      return path.join(path.dirname(resolved), accountId);
     }
-    return resolved;
+    return path.join(resolved, accountId);
   }
 
   // Check explicit OPENCLAW_STATE_DIR override
@@ -194,7 +186,7 @@ export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptio
     if (containsPathTraversal(env.OPENCLAW_STATE_DIR)) {
       throw new Error('Invalid path: path traversal detected');
     }
-    return path.join(resolvePath(env.OPENCLAW_STATE_DIR), ZTM_SUBDIR);
+    return path.join(resolvePath(env.OPENCLAW_STATE_DIR), ZTM_SUBDIR, accountId);
   }
 
   // Resolve home directory
@@ -223,40 +215,46 @@ export function resolveZTMStateDirWithOverrides(overrides?: ResolveStateDirOptio
     homeDir = os.homedir();
   }
 
-  return path.join(homeDir, '.openclaw', ZTM_SUBDIR);
+  return path.join(homeDir, '.openclaw', ZTM_SUBDIR, accountId);
 }
 
 /**
  * Resolve state file path with overrides (for testing)
  * @internal - exported for testing only
  */
-export function resolveStatePathWithOverrides(overrides?: ResolveStateDirOptions): string {
-  const env = overrides || {};
-
-  // Check explicit ZTM_STATE_PATH override
-  if (env.ZTM_STATE_PATH) {
-    const resolved = resolvePath(env.ZTM_STATE_PATH);
-    if (!path.extname(resolved)) {
-      return path.join(resolved, 'state.json');
-    }
-    return resolved;
-  }
-
-  // Default: <zmt-state-dir>/state.json
-  return path.join(resolveZTMStateDirWithOverrides(env), 'state.json');
+export function resolveStatePathWithOverrides(
+  accountId: string,
+  overrides?: ResolveStateDirOptions
+): string {
+  return resolveAccountFilePath(accountId, 'state.json', overrides);
 }
 
 /**
  * Resolve permit file path with overrides (for testing)
  * @internal - exported for testing only
  */
-export function resolvePermitPathWithOverrides(overrides?: ResolveStateDirOptions): string {
-  const baseDir = resolveZTMStateDirWithOverrides(overrides);
+export function resolvePermitPathWithOverrides(
+  accountId: string,
+  overrides?: ResolveStateDirOptions
+): string {
+  return resolveAccountFilePath(accountId, 'permit.json', overrides);
+}
+
+/**
+ * Internal helper to resolve account-specific file paths with overrides
+ * Reuses resolveZTMStateDirWithOverrides and adds security validation
+ */
+function resolveAccountFilePath(
+  accountId: string,
+  fileName: string,
+  overrides?: ResolveStateDirOptions
+): string {
+  const baseDir = resolveZTMStateDirWithOverrides(accountId, overrides);
 
   // Security: Validate against path traversal attacks
   if (containsPathTraversal(baseDir)) {
     throw new Error('Invalid path: path traversal detected');
   }
 
-  return path.join(baseDir, 'permit.json');
+  return path.join(baseDir, fileName);
 }

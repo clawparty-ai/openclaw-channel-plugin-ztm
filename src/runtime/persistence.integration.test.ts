@@ -343,13 +343,16 @@ describe('Runtime Persistence Integration (Real File I/O)', () => {
 
   describe('Message State Store Interface', () => {
     it('should have all required methods', async () => {
-      const store = createMessageStateStore(testAccountId);
+      await withTempDir(async dir => {
+        const statePath = join(dir, 'state.json');
+        const store = createMessageStateStore(statePath);
 
-      expect(typeof store.getWatermark).toBe('function');
-      expect(typeof store.setWatermark).toBe('function');
-      expect(typeof store.getFileMetadata).toBe('function');
-      expect(typeof store.setFileMetadataBulk).toBe('function');
-      expect(typeof store.flush).toBe('function');
+        expect(typeof store.getWatermark).toBe('function');
+        expect(typeof store.setWatermark).toBe('function');
+        expect(typeof store.getFileMetadata).toBe('function');
+        expect(typeof store.setFileMetadataBulk).toBe('function');
+        expect(typeof store.flush).toBe('function');
+      });
     });
   });
 });

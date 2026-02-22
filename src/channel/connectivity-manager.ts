@@ -175,10 +175,11 @@ export async function probeAccount({
 }
 
 /**
- * Resolve permit path using cross-platform compatible path resolution
+ * Resolve permit path for a specific account using cross-platform compatible path resolution
  *
+ * @param accountId - The account identifier
  * @returns The resolved path to the permit file
  */
-export function resolveAccountPermitPath(): string {
-  return resolvePermitPath();
+export function resolveAccountPermitPath(accountId: string): string {
+  return resolvePermitPath(accountId);
 }

@@ -233,18 +233,12 @@ export class MessageStateStoreImpl implements MessageStateStore {
   // Maximum number of peers to track per account (prevents unbounded state growth)
   // Uses constant from constants.ts
 
-  constructor(statePath?: string, fsImpl?: FileSystem, loggerImpl?: Logger) {
+  constructor(statePath: string, fsImpl?: FileSystem, loggerImpl?: Logger) {
     this.fs = fsImpl ?? nodeFs;
     this.logger = loggerImpl ?? defaultLogger;
 
-    // Allow overriding the state path (useful for testing)
-    // Priority: constructor param > ZTM_STATE_PATH env var > default path
-    // Uses cross-platform compatible path resolution from utils/paths.ts
-    if (statePath) {
-      this.statePath = statePath;
-    } else {
-      this.statePath = resolveStatePath();
-    }
+    // statePath is now required - caller should provide account-specific path
+    this.statePath = statePath;
     this.stateDir = path.dirname(this.statePath);
 
     // Initialize with empty data - load lazily on first access
@@ -636,9 +630,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
 /**
  * Factory function to create MessageStateStore instances
  * Allows dependency injection for testing
+ * @param statePath - Required path to the state file (should be account-specific)
  */
 export function createMessageStateStore(
-  statePath?: string,
+  statePath: string,
   fsImpl?: FileSystem,
   loggerImpl?: Logger
 ): MessageStateStore {
@@ -659,7 +654,7 @@ export function getAccountMessageStateStore(accountId: string): MessageStateStor
   let store = accountStores.get(accountId);
   if (!store) {
     // Create account-specific state path to isolate data
-    const accountStatePath = resolveStatePath().replace(/\.json$/, `-${accountId}.json`);
+    const accountStatePath = resolveStatePath(accountId);
     store = createMessageStateStore(accountStatePath);
     accountStores.set(accountId, store);
   }
