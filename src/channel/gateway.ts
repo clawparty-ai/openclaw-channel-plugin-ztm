@@ -211,7 +211,7 @@ function logPairingStatus(
 /**
  * Throw an error with account state error details when runtime initialization fails
  */
-function throwInitializationError(accountId: string): never {
+export function throwInitializationError(accountId: string): never {
   const accountStates = getAllAccountStates();
   const state = accountStates.get(accountId);
   throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
@@ -247,7 +247,7 @@ async function preloadMessageState(
 /**
  * Setup account message callbacks and periodic cleanup
  */
-async function setupAccountCallbacks(
+export async function setupAccountCallbacks(
   accountId: string,
   config: ZTMChatConfig,
   state: AccountRuntimeState,
