@@ -2,6 +2,99 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.2.23 - 2026-02-23
+
+[b5645d1](b5645d13cf1397a320de0ff565f3c609ef7f0223)...[4ff440d](4ff440de6ea9101b972439427c3c758b8d3dfbb4)
+
+
+
+### 🚀 Features
+
+- Support Unicode characters in usernames ([3be83c3](3be83c3b3c9d87c480458b9cc012a038d32ef52b)) - (Lin Yang)
+- Add validateGroupName for Unicode group names ([97c5248](97c5248288cc7ffc74e96d5e02da8fb4488e78e3)) - (Lin Yang)
+- Validate Unicode group names in watchChanges ([bb3e49e](bb3e49eacb187bd134438abbf7989cba855cfb62)) - (Lin Yang)
+- Skip groups with invalid names in watchChanges ([95f052d](95f052daecda7163ed79d038f1ca13a234bf81a1)) - (Lin Yang)
+- Limit initial sync to 5 minutes of history ([c57b42c](c57b42c02f56906b004e9d6486fe23eb3556240d)) - (Lin Yang)
+- Add per-account file isolation for state and permit storage ([34ae2f9](34ae2f99b19e83cc57f70fda9102266641968b2d)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Propagate message processing errors to caller in watcher ([6bf7370](6bf73701dd5531a578715c4d1e4b9a0a601e3bd9)) - (Lin Yang)
+- Replace magic number with API_TIMEOUT_MS constant ([971931f](971931f7630ab3c5cb06144f32e27f0639b9f7db)) - (Lin Yang)
+- Use underscore prefix for unused parameters per ESLint rule ([a61e43d](a61e43d11c72e87784501ce49b9559ce77933166)) - (Lin Yang)
+- Schedule full sync only on activity transition ([887d66d](887d66d85cdadddb95c55cc3d11a89119f7c0d66)) - (Lin Yang)
+- Add max queue size limit to Semaphore ([cbd0752](cbd075284fd09526da1ff344f89bb872968fbd57)) - (Lin Yang)
+- Resolve test failures and add field comments to http-server.ts ([22f0472](22f0472532409855a25a6f30a88ee4b5221e167b)) - (Lin Yang)
+- Resolve ESLint unused variable errors ([2fd3f31](2fd3f318fea86cfb49047f47c5dc37330ca04b06)) - (Lin Yang)
+
+### 🔒 Security
+
+- Add path traversal validation for permitFilePath ([ab95704](ab957044dc70a0ca4e6493fa80ce18943edecbcb)) - (Lin Yang)
+- Prevent cache stampede in AccountStateManager ([9ab6da5](9ab6da59c3cdffa71cb3a226faf2cc5fd763ecc3)) - (Lin Yang)
+
+### ⚡ Performance
+
+- Optimize cache eviction to O(1) ([2386a84](2386a84e6e5259942f546cee22278bbba69cc76b)) - (Lin Yang)
+
+### ♻️ Refactor
+
+- Use normalizeUsername utility in dm-policy.ts ([c2a530e](c2a530e6a6bc73254d815dbe5e2d7267907458c7)) - (Lin Yang)
+- Add isPeerChat helper for peer/group chat classification ([8afec4c](8afec4c8ed9063c84ae5731cac6b0a0485f8ca98)) - (Lin Yang)
+- Extract helper functions to reduce startAccountGateway complexity ([73b5065](73b5065404c24cd94d2e96a81ed0af9a73dad137)) - (Lin Yang)
+- Extract nested callbacks in WatchLoopController ([835d192](835d192f22f815f96cab1cc7d02d9edefade12e1)) - (Lin Yang)
+- Extract buildResolvedConfig from validateZTMChatConfig ([eafd230](eafd230a3f40cc13cd4c413c14295208b6eb0711)) - (Lin Yang)
+- Reduce feature envy in processAndNotifyChat ([2029af2](2029af277ee997555dc446a6a47262aa9e86cad7)) - (Lin Yang)
+- Use DI container consistently for singleton services ([a978486](a978486e63272b2e856689293508ab2cdd71d827)) - (Lin Yang)
+- Simplify plugin status model and remove mesh health monitoring ([733efc0](733efc064b4df0838faf4e42e90f8eb4f65e8bae)) - (Eric Lin)
+- Remove fileMetadata tracking - messages now via Chat API only ([ada01ce](ada01cedddafa851b2119f9e4167af62c7730513)) - (Lin Yang)
+- Remove unused autoReply and messagePath config fields ([ea72d4e](ea72d4eeb2e559957ea8b05900637098acda5076)) - (Lin Yang)
+- Remove backward compatibility code ([d1a5119](d1a5119b73843eb5b25a93f7cf0b7bfe4148b589)) - (Lin Yang)
+
+### ✅ Testing
+
+- Add index.ts tests and include in coverage ([15d0e4f](15d0e4f684c9d6df257e1599915544bd11f8c2fe)) - (Lin Yang)
+- Add tests for DI factories and cache TTL behavior ([5b894e7](5b894e7f10e6e8a2fc11eda233ccbcb29177a1aa)) - (Lin Yang)
+- Add error handling tests for watcher.ts ([9e74461](9e7446148e71bc5aa279daa840c34c9485e57f03)) - (Lin Yang)
+- Add error handling tests for gateway.ts ([0a4bb38](0a4bb3879aaaf40af6d5257446359aea19f65903)) - (Lin Yang)
+- Add WatchLoopController behavior tests ([e8ca4e2](e8ca4e2bccbd04f47e83bd10a8375043c6afb769)) - (Lin Yang)
+- Improve DI container test coverage ([12a9fbe](12a9fbe8238cd98c7e49dca0c3d02897a00ebd71)) - (Lin Yang)
+- Implement real integration test architecture improvement ([7479fa9](7479fa96a0071b15020153b8ed73394ef37fe1ba)) - (Lin Yang)
+- Add cache stampede prevention tests to AccountStateManager ([bbc02aa](bbc02aa95ad614f3efb449f797d6806e28a16573)) - (Lin Yang)
+- Add network error path integration tests ([e97efbf](e97efbfd548a93a76984c1841207cc4c958ec3fa)) - (Lin Yang)
+- Extend http-server.ts with delay and error injection for E2E tests ([9f07f56](9f07f562eacf9a2a791d61e602660dfbc9fe5f2e)) - (Lin Yang)
+- Create E2E test directories ([61bde2f](61bde2f12f7451d1baa0cce15df94ad2e9fac6ad)) - (Lin Yang)
+- Add remaining E2E tests ([915986c](915986cbeca1ae33ddb608f34889f4820d1d236e)) - (Lin Yang)
+- Add E2E test for message flow ([331d0f3](331d0f354cf1466dae80a52acab2886a2b2eee5e)) - (Lin Yang)
+- Fix connection error test for Bun compatibility ([d41b9bd](d41b9bd896e8b07a8e36241d686a36e92bc1b6fe)) - (Lin Yang)
+- Add more Unicode language tests ([fe53bd3](fe53bd39db0d3f13d7c173428d7d7809ea7134a1)) - (Lin Yang)
+- Update API tests for Unicode usernames and group names ([a001b34](a001b343009755efa4cad40598901e8ead4737c9)) - (Lin Yang)
+- Add comprehensive test coverage for security, boundaries, and E2E scenarios ([ce7c180](ce7c180ad76c9caaeaf0255c23b402d869ba2a89)) - (Lin Yang)
+- Optimize pre-commit to run unit tests only, add E2E test fixes ([8c07bcd](8c07bcd7038f0172fa13ec92c8173f1b523d6e68)) - (Lin Yang)
+
+### 💄 Styling
+
+- Apply Prettier formatting to all project files ([ca66c1e](ca66c1e901fc2b0168ab7c5b6e3398c03b8961ce)) - (Lin Yang)
+
+### 🔨 Build
+
+- Add esbuild for npm package publishing ([4ff440d](4ff440de6ea9101b972439427c3c758b8d3dfbb4)) - (Lin Yang)
+
+### 📖 Documentation
+
+- Add SECURITY.md with vulnerability reporting policy ([ace1d1c](ace1d1ce9f52c15961bc40bb213ce37404005fc5)) - (Lin Yang)
+- Add CODE_OF_CONDUCT.md based on Contributor Covenant ([6713425](6713425d62e2e52569eecf739bb7ee7f919a3566)) - (Lin Yang)
+- Add CONTRIBUTING.md with development guidelines ([b44e2d2](b44e2d2d4047b323d876481e31a301357c0d060e)) - (Lin Yang)
+- Add GitHub issue and PR templates ([5f02c70](5f02c70996613a0f429e11789ec7236428afe601)) - (Lin Yang)
+- Use dynamic codecov badge instead of static ([86d574c](86d574c12dec9405ab2e966135bf4b99e78dedae)) - (Lin Yang)
+- Clarify getAllowFromCache return value semantics ([a32c43f](a32c43f503ea976f75ed4e536cc79edd95a462b2)) - (Lin Yang)
+- Complete JSDoc comments with @param and @returns tags ([01171a1](01171a15915a15567fd8b7d614515484eb6c3124)) - (Lin Yang)
+- Add JSDoc to IGroupPermissionCache interface ([141a76b](141a76b724b83e315a2da6b5d49fbb5bd91d2017)) - (Lin Yang)
+- Add Architecture Decision Records (ADR) ([77e0b0d](77e0b0d691492504c279e633d7ecce133a8a0f97)) - (Lin Yang)
+- Add API documentation ([93fa1cc](93fa1cc61514458f25e104792a468a5b1772dcee)) - (Lin Yang)
+- Convert Error Flow Diagram to Mermaid format ([e205644](e205644e666fa13dcec4a6566f951902a94d2ec0)) - (Lin Yang)
+- Add comprehensive JSDoc comments to all source files ([ee52a8d](ee52a8d0c6de0e04aad967395407d4f0ea79f68c)) - (Lin Yang)
+
+
 ## 2026.2.20-rc.3 - 2026-02-19
 
 [0e727cd](0e727cd79176e0dd2e749b6009d995ebfc375261)...[b5645d1](b5645d13cf1397a320de0ff565f3c609ef7f0223)
