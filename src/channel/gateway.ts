@@ -11,15 +11,12 @@ import type {
 import type { ZTMChatConfig } from '../types/config.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
-import { resolveZTMChatConfig, validateZTMChatConfig } from '../config/index.js';
 import { isConfigMinimallyValid } from '../config/validation.js';
 import { logger } from '../utils/logger.js';
-import { getOrDefault } from '../utils/guards.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { ZTMTimeoutError, ZTMApiError } from '../types/errors.js';
 import {
   getAllAccountStates,
-  initializeRuntime,
   stopRuntime,
   removeAccountState,
   cleanupExpiredPairings,
@@ -30,15 +27,9 @@ import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
 import { createMessagingContext } from '../messaging/context.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
-import {
-  validateAgentConnectivity,
-  loadOrRequestPermit,
-  joinMeshIfNeeded,
-  configureAgent,
-  probeAccount as probeAccountConnectivity,
-  resolveAccountPermitPath,
-} from './connectivity-manager.js';
+import { probeAccount as probeAccountConnectivity } from './connectivity-manager.js';
 import { createInboundContext, createMessageCallback } from './message-dispatcher.js';
+import type { StepContext } from './gateway-pipeline.types.js';
 
 // ============================================================================
 // Local Types
@@ -163,91 +154,23 @@ export async function sendTextGateway({
 // ============================================================================
 
 /**
- * Resolve and validate ZTM chat configuration
+ * Start the ZTM Chat account gateway
+ * @param ctx - Context object containing account config, logger, and status setter
+ * @returns Promise resolving to a cleanup function to be called on shutdown
+ * @remarks
+ * This function initiates the account gateway using the Pipeline pattern.
+ * It executes 7 sequential steps: validate_config, validate_connectivity,
+ * load_permit, join_mesh, initialize_runtime, preload_message_state, and setup_callbacks.
+ * Each step has configurable retry policies for fault tolerance.
+ *
+ * The returned cleanup function should be called when stopping the account:
+ * ```typescript
+ * const cleanup = await startAccountGateway({ account, log, setStatus });
+ * // ... account is running
+ * await cleanup(); // stop account
+ * ```
  */
-function resolveAndValidateConfig(
-  accountConfig: ZTMChatConfig,
-  accountId: string
-): {
-  config: ZTMChatConfig;
-  endpointName: string;
-  permitPath: string;
-} {
-  const config = resolveZTMChatConfig(accountConfig);
-  const validation = validateZTMChatConfig(config);
-
-  if (!validation.valid) {
-    throw new Error(validation.errors.join('; '));
-  }
-
-  const permitPath = resolveAccountPermitPath(accountId);
-  const endpointName = `${config.username}-ep`;
-
-  return { config, endpointName, permitPath };
-}
-
-/**
- * Log pairing mode status
- */
-function logPairingStatus(
-  accountId: string,
-  config: ZTMChatConfig,
-  log?: { info: (...args: unknown[]) => void }
-): void {
-  if (config.dmPolicy === 'pairing') {
-    const allowFrom = getOrDefault(config.allowFrom, []);
-    if (allowFrom.length === 0) {
-      log?.info(
-        `[${accountId}] Pairing mode active - no approved users. ` +
-          `Users must send a message to initiate pairing. ` +
-          `Approve users with: openclaw pairing approve ztm-chat <username>`
-      );
-    } else {
-      log?.info(`[${accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`);
-    }
-  }
-}
-
-/**
- * Throw an error with account state error details when runtime initialization fails
- */
-function throwInitializationError(accountId: string): never {
-  const accountStates = getAllAccountStates();
-  const state = accountStates.get(accountId);
-  throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
-}
-
-/**
- * Get account runtime state by account ID
- */
-function getAccountState(accountId: string): AccountRuntimeState {
-  const accountStates = getAllAccountStates();
-  const state = accountStates.get(accountId);
-  if (!state) {
-    throw new Error(`Account state not found for: ${accountId}`);
-  }
-  return state;
-}
-
-/**
- * Pre-load message state asynchronously to prevent blocking in hot path
- * This ensures state is loaded before any getWatermark/setWatermark calls
- */
-async function preloadMessageState(
-  accountId: string,
-  log?: { error?: (...args: unknown[]) => void }
-): Promise<void> {
-  const { getAccountMessageStateStore } = await import('../runtime/store.js');
-  const messageStateStore = getAccountMessageStateStore(accountId);
-  messageStateStore.ensureLoaded().catch(err => {
-    log?.error?.(`[${accountId}] Failed to pre-load message state: ${err}`);
-  });
-}
-
-/**
- * Setup account message callbacks and periodic cleanup
- */
-async function setupAccountCallbacks(
+export async function setupAccountCallbacks(
   accountId: string,
   config: ZTMChatConfig,
   state: AccountRuntimeState,
@@ -292,6 +215,23 @@ async function setupAccountCallbacks(
   return { messageCallback, cleanupInterval };
 }
 
+/**
+ * Start the ZTM Chat account gateway
+ * @param ctx - Context object containing account config, logger, and status setter
+ * @returns Promise resolving to a cleanup function to be called on shutdown
+ * @remarks
+ * This function initiates the account gateway using the Pipeline pattern.
+ * It executes 7 sequential steps: validate_config, validate_connectivity,
+ * load_permit, join_mesh, initialize_runtime, preload_message_state, and setup_callbacks.
+ * Each step has configurable retry policies for fault tolerance.
+ *
+ * The returned cleanup function should be called when stopping the account:
+ * ```typescript
+ * const cleanup = await startAccountGateway({ account, log, setStatus });
+ * // ... account is running
+ * await cleanup(); // stop account
+ * ```
+ */
 export async function startAccountGateway(ctx: {
   account: { config: ZTMChatConfig; accountId: string };
   log?: {
@@ -307,68 +247,47 @@ export async function startAccountGateway(ctx: {
     lastStopAt?: number;
   }) => void;
 }): Promise<() => Promise<void>> {
-  const { account } = ctx;
+  // Import here to avoid circular dependencies
+  const { GatewayPipeline } = await import('./gateway-pipeline.js');
+  const { createGatewaySteps } = await import('./gateway-steps.js');
+  const { getOrDefault } = await import('../utils/guards.js');
 
-  // Step 1: Resolve and validate configuration
-  const { config, endpointName, permitPath } = resolveAndValidateConfig(
-    account.config,
-    account.accountId
+  const stepCtx: StepContext = {
+    account: ctx.account,
+    log: ctx.log,
+    cfg: ctx.cfg,
+    setStatus: ctx.setStatus,
+  };
+
+  // Create and execute pipeline
+  const steps = createGatewaySteps(stepCtx);
+  const pipeline = new GatewayPipeline(stepCtx, steps);
+  const cleanupFn = await pipeline.execute();
+
+  // Type assertion - pipeline populates config
+  const resolvedConfig = stepCtx.config;
+
+  // Log success and pairing status (moved from inline to here)
+  ctx.log?.info(
+    `[${ctx.account.accountId}] Connected to ZTM mesh "${resolvedConfig?.meshName}" as ${resolvedConfig?.username}`
   );
 
-  // Step 2: Validate connectivity for agent URL
-  await validateAgentConnectivity(config.agentUrl, ctx);
-
-  // Step 3-5: Load or request permit
-  const permitData = await loadOrRequestPermit(config, permitPath, ctx);
-
-  // Step 6: Configure agent (similar to ztm config --agent)
-  await configureAgent(config, ctx);
-
-  // Step 7: Join mesh if needed
-  await joinMeshIfNeeded(config, endpointName, permitData, ctx);
-
-  // Step 7: Initialize runtime
-  const initialized = await initializeRuntime(config, account.accountId);
-  if (!initialized) {
-    throwInitializationError(account.accountId);
+  if (resolvedConfig?.dmPolicy === 'pairing') {
+    const allowFrom = getOrDefault(resolvedConfig.allowFrom, []);
+    if (allowFrom.length === 0) {
+      ctx.log?.info(
+        `[${ctx.account.accountId}] Pairing mode active - no approved users. ` +
+          `Users must send a message to initiate pairing. ` +
+          `Approve users with: openclaw pairing approve ztm-chat <username>`
+      );
+    } else {
+      ctx.log?.info(
+        `[${ctx.account.accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`
+      );
+    }
   }
 
-  // Step 7.5: Pre-load message state asynchronously to prevent blocking in hot path
-  await preloadMessageState(account.accountId, ctx.log);
-
-  // Get account state and update start time
-  const state = getAccountState(account.accountId);
-  state.lastStartAt = new Date();
-
-  // Report running status to OpenClaw core
-  ctx.setStatus?.({ accountId: account.accountId, running: true, lastStartAt: Date.now() });
-
-  // Log connection success
-  ctx.log?.info(
-    `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`
-  );
-
-  // Log pairing mode status
-  logPairingStatus(account.accountId, config, ctx.log);
-
-  // Step 8: Setup message callbacks and cleanup
-  const { messageCallback, cleanupInterval } = await setupAccountCallbacks(
-    account.accountId,
-    config,
-    state,
-    ctx
-  );
-
-  // Return cleanup function
-  return async () => {
-    clearInterval(cleanupInterval);
-    state.messageCallbacks.delete(messageCallback);
-    state.watchAbortController?.abort();
-    await stopRuntime(account.accountId);
-
-    // Report stopped status to OpenClaw core
-    ctx.setStatus?.({ accountId: account.accountId, running: false, lastStopAt: Date.now() });
-  };
+  return cleanupFn;
 }
 
 // ============================================================================
