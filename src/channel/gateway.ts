@@ -154,30 +154,21 @@ export async function sendTextGateway({
 // ============================================================================
 
 /**
- * Resolve and validate ZTM chat configuration
- */
-/**
- * Log pairing mode status
- */
-/**
- * Throw an error with account state error details when runtime initialization fails
- */
-export function throwInitializationError(accountId: string): never {
-  const accountStates = getAllAccountStates();
-  const state = accountStates.get(accountId);
-  throw new Error(state?.lastError ?? 'Failed to initialize ZTM connection');
-}
-
-/**
- * Get account runtime state by account ID
- */
-/**
- * Pre-load message state asynchronously to prevent blocking in hot path
- * This ensures state is loaded before any getWatermark/setWatermark calls
- */
-
-/**
- * Setup account message callbacks and periodic cleanup
+ * Start the ZTM Chat account gateway
+ * @param ctx - Context object containing account config, logger, and status setter
+ * @returns Promise resolving to a cleanup function to be called on shutdown
+ * @remarks
+ * This function initiates the account gateway using the Pipeline pattern.
+ * It executes 7 sequential steps: validate_config, validate_connectivity,
+ * load_permit, join_mesh, initialize_runtime, preload_message_state, and setup_callbacks.
+ * Each step has configurable retry policies for fault tolerance.
+ *
+ * The returned cleanup function should be called when stopping the account:
+ * ```typescript
+ * const cleanup = await startAccountGateway({ account, log, setStatus });
+ * // ... account is running
+ * await cleanup(); // stop account
+ * ```
  */
 export async function setupAccountCallbacks(
   accountId: string,
@@ -224,6 +215,23 @@ export async function setupAccountCallbacks(
   return { messageCallback, cleanupInterval };
 }
 
+/**
+ * Start the ZTM Chat account gateway
+ * @param ctx - Context object containing account config, logger, and status setter
+ * @returns Promise resolving to a cleanup function to be called on shutdown
+ * @remarks
+ * This function initiates the account gateway using the Pipeline pattern.
+ * It executes 7 sequential steps: validate_config, validate_connectivity,
+ * load_permit, join_mesh, initialize_runtime, preload_message_state, and setup_callbacks.
+ * Each step has configurable retry policies for fault tolerance.
+ *
+ * The returned cleanup function should be called when stopping the account:
+ * ```typescript
+ * const cleanup = await startAccountGateway({ account, log, setStatus });
+ * // ... account is running
+ * await cleanup(); // stop account
+ * ```
+ */
 export async function startAccountGateway(ctx: {
   account: { config: ZTMChatConfig; accountId: string };
   log?: {
