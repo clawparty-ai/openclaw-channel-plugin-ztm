@@ -47,6 +47,7 @@ CLAUDE.md
 .mcp.json
 _bmad/
 _bmad-output/
+.opencode/
 
 # Worktrees
 .worktrees/
