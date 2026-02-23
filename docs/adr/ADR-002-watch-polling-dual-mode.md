@@ -64,6 +64,45 @@ flowchart TD
 - Initial sync delay: 500ms
 - Full sync delay: 30000ms (30s silence period)
 
+## Implementation Details
+
+The dual-mode architecture is implemented across three files:
+
+- `src/messaging/watcher.ts` - Watch mode with long-polling
+- `src/messaging/polling.ts` - Polling fallback mode
+- `src/messaging/message-processor-helpers.ts` - Shared processing logic
+
+Error threshold switching logic:
+```typescript
+// watcher.ts
+if (watchErrorCount >= WATCH_ERROR_THRESHOLD) {
+  logger.warn('Watch error threshold exceeded, switching to polling');
+  startPollingWatcher(state, context);
+  return; // Exit watch mode
+}
+```
+
+## Alternatives Considered
+
+| Alternative | Pros | Cons | Why Not Chosen |
+|-------------|------|------|----------------|
+| **Watch only** | Real-time, simple implementation | Single point of failure, no fallback | Unreliable if Watch API is unavailable |
+| **Polling only** | Reliable, always works | Not real-time, higher latency | Poor user experience for chat |
+| **WebSocket** | True real-time, bi-directional | Not supported by ZTM Agent | Not available in our environment |
+| **Server-Sent Events** | Server push, simpler than WebSocket | Not supported by ZTM Agent | Not available in our environment |
+| **Dual-mode (chosen)** | Real-time + reliability fallback | Complex state management | Best balance for our requirements |
+
+### Key Trade-offs
+
+- **Error threshold (5)**: Higher threshold = longer recovery time, lower threshold = premature switching
+- **Polling interval (2s)**: Lower = more resource usage, higher = slower message delivery
+- **Full sync delay (30s)**: Shorter = more network traffic, longer = potential message loss
+
+## Related Decisions
+
+- **ADR-010**: Multi-Layer Message Pipeline - Both Watch and Polling use the same pipeline
+- **ADR-003**: Watermark + LRU Cache - Deduplication works across mode switches
+
 ## Consequences
 
 ### Positive
@@ -72,15 +111,18 @@ flowchart TD
 - **Graceful degradation**: Auto-switch to Polling on Watch failure, ensuring no message loss
 - **Fault tolerance**: Error count + threshold mechanism prevents frequent switching
 - **Deduplication**: Watermark mechanism ensures messages are not processed twice
+- **Shared logic**: Both modes use `message-processor-helpers.ts` to avoid duplication
 
 ### Negative
 
 - **Code complexity**: Need to maintain switching logic between two modes
 - **State management complexity**: Need to share state between Watcher and Poller
 - **Debugging difficulty**: Behavioral differences between modes may cause hard-to-reproduce issues
+- **Memory overhead**: Both modes can be loaded simultaneously during transition
 
 ## References
 
 - `src/messaging/watcher.ts` - Watch mode implementation
 - `src/messaging/polling.ts` - Polling fallback implementation
 - `src/messaging/message-processor-helpers.ts` - Shared processing logic
+- `src/constants.ts` - Timing constants (`WATCH_ERROR_THRESHOLD`, `POLLING_INTERVAL_DEFAULT_MS`)

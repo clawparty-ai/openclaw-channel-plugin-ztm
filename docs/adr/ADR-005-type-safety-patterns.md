@@ -147,6 +147,28 @@ function validateStateData(data: unknown): StateData {
 - **Over-engineering risk**: Not all code needs heavy typing
 - **Migration cost**: Adding types to existing JavaScript code is time-consuming
 
+## Alternatives Considered
+
+| Alternative | Pros | Cons | Why Not Chosen |
+|-------------|------|------|----------------|
+| **Runtime-only validation** | Simple, no build overhead | Errors caught at runtime only | Too late for production bugs |
+| **Any types everywhere** | Fastest compilation | Zero type safety | Defeats purpose of TypeScript |
+| **Zod schema validation** | Runtime + compile-time validation | External dependency, verbose | Overkill for our use case |
+| **TypeScript strict mode only** | Standard, simple | Limited custom type enforcement | Doesn't prevent all bugs |
+| **Comprehensive typing (chosen)** | Maximum safety, self-documenting | More verbose, slower builds | Worth it for production quality |
+
+### Key Trade-offs
+
+- **Brand types vs strings**: Brand types prevent mixing but require explicit casting
+- **Interface segregation**: More interfaces = more files but better modularity
+- **Runtime validation**: Adds overhead but prevents security vulnerabilities
+
+## Related Decisions
+
+- **ADR-001**: Dependency Injection Container - Uses brand types for dependency keys
+- **ADR-004**: Result Type + Errors - Uses generics for type-safe error handling
+- **ADR-013**: Functional Policy Engine - Uses type-safe return types for policy decisions
+
 ## References
 
 - `src/types/common.ts` - Result types and utilities

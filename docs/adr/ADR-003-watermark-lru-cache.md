@@ -102,8 +102,31 @@ async setWatermarkAsync(...): Promise<void> {
 - **Consistency delay**: Async persistence may cause brief state inconsistency
 - **Complexity**: Need to understand collaboration of three layers
 
+## Alternatives Considered
+
+| Alternative | Pros | Cons | Why Not Chosen |
+|-------------|------|------|----------------|
+| **Pure in-memory cache** | Fastest performance | Data loss on crash, no persistence | Unacceptable data loss risk |
+| **Pure disk-based storage** | Persistent, simple | Slow I/O, poor performance | Unacceptable latency |
+| **Redis cache** | Production-grade, distributed | External dependency, operational overhead | Overkill for single-process plugin |
+| **node-cache** | Feature-rich, TTL support | External dependency (~100KB) | Avoid unnecessary dependencies |
+| **Hybrid approach (chosen)** | Performance + persistence | More complex code | Best balance of requirements |
+
+### Key Trade-offs
+
+- **Debounce delay (500ms)**: Shorter = more I/O, longer = higher data loss risk
+- **Max flush delay (5s)**: Shorter = more frequent writes, longer = more data at risk
+- **LRU size (1000)**: Larger = more memory, smaller = more cache misses
+- **TTL (5 min)**: Shorter = more frequent refreshes, longer = stale data
+
+## Related Decisions
+
+- **ADR-011**: Dual-Timer Persistence Strategy - Details the debounce + max-delay timers
+- **ADR-012**: LRU + TTL Hybrid Caching - Details the cache implementation
+- **ADR-009**: Request Coalescing Pattern - Details the cache stampede protection
+
 ## References
 
-- `src/runtime/store.ts` - State persistence
-- `src/runtime/state.ts` - Account state management
-- `src/runtime/cache.ts` - Cache implementation
+- `src/runtime/store.ts` - State persistence with dual-timer strategy
+- `src/runtime/state.ts` - Account state management with coalescing
+- `src/runtime/cache.ts` - LRU + TTL cache implementation

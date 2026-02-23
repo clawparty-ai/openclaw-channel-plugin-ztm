@@ -118,8 +118,30 @@ function isRetriableError(error: Error): boolean {
 - **Learning curve**: Team needs to understand Result pattern
 - **Not all errors are recoverable**: Need to decide which errors to retry
 
+## Alternatives Considered
+
+| Alternative | Pros | Cons | Why Not Chosen |
+|-------------|------|------|----------------|
+| **Try-catch everywhere** | Standard JavaScript, simple | Hidden error paths, no compile-time checking | Type safety is important |
+| **EventEmitter errors** | Decoupled, async-friendly | No return values, hard to trace | Poor fit for sync/async mix |
+| **Go-style error returns** | Simple, explicit | No type guards, verbose | TypeScript can do better |
+| **Neverthrow library** | Production-tested, feature-rich | External dependency (~20KB) | Avoid unnecessary dependencies |
+| **Custom Result (chosen)** | Lightweight, type-safe, exact fit | Maintenance burden | Best balance for our needs |
+
+### Key Trade-offs
+
+- **Max retries (3)**: Higher = more resilience, lower = faster failure
+- **Backoff multiplier (2x)**: Higher = longer recovery, lower = retry storm risk
+- **Max delay (10s)**: Higher = more patient, lower = faster feedback
+
+## Related Decisions
+
+- **ADR-008**: Authentication Error Non-Retry Policy - Auth errors are never retried
+- **ADR-005**: Type Safety Patterns - Result types integrate with brand types and generics
+- **ADR-013**: Functional Policy Engine - Policy functions return typed results
+
 ## References
 
 - `src/types/common.ts` - Result type and utilities
 - `src/types/errors.ts` - Error type definitions
-- `src/utils/retry.ts` - Retry logic implementation
+- `src/utils/retry.ts` - Retry logic implementation with auth error detection
