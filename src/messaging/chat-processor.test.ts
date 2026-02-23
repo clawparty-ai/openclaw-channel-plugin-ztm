@@ -1,7 +1,7 @@
 // Unit tests for Chat Processor
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { processChatMessage, processAndNotifyChat } from './chat-processor.js';
+import { processChatMessage, processAndNotify } from './chat-processor.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChat, ZTMMessage } from '../types/api.js';
@@ -171,7 +171,7 @@ describe('processChatMessage', () => {
   });
 });
 
-describe('processAndNotifyChat', () => {
+describe('processAndNotify', () => {
   let mockState: AccountRuntimeState;
 
   beforeEach(() => {
@@ -203,7 +203,7 @@ describe('processAndNotifyChat', () => {
         latest: undefined as unknown as ZTMMessage,
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(false);
     });
 
@@ -215,7 +215,7 @@ describe('processAndNotifyChat', () => {
         latest: createMockMessage({ sender: 'testuser' }),
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(false);
     });
 
@@ -227,7 +227,7 @@ describe('processAndNotifyChat', () => {
         latest: createMockMessage({ sender: 'bob', message: 'Hello from group' }),
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(true);
     });
   });
@@ -238,7 +238,7 @@ describe('processAndNotifyChat', () => {
         peer: '',
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(false);
     });
 
@@ -247,7 +247,7 @@ describe('processAndNotifyChat', () => {
         peer: 'testuser',
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(false);
     });
 
@@ -256,7 +256,7 @@ describe('processAndNotifyChat', () => {
         latest: undefined as unknown as ZTMMessage,
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(false);
     });
 
@@ -265,7 +265,7 @@ describe('processAndNotifyChat', () => {
         latest: createMockMessage({ sender: 'testuser' }),
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(false);
     });
 
@@ -274,7 +274,7 @@ describe('processAndNotifyChat', () => {
         latest: createMockMessage({ sender: 'bob', message: 'Hello from alice' }),
       });
 
-      const result = await processAndNotifyChat(chat, mockState, []);
+      const result = await processAndNotify(chat, mockState, []);
       expect(result).toBe(true);
     });
 
@@ -293,7 +293,7 @@ describe('processAndNotifyChat', () => {
         config: pairingConfig,
       };
 
-      await processAndNotifyChat(chat, stateWithPairingConfig, []);
+      await processAndNotify(chat, stateWithPairingConfig, []);
     });
   });
 });
