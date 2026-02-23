@@ -119,7 +119,7 @@ vi.mock('../utils/error.js', () => ({
 
 vi.mock('../runtime/index.js', () => ({
   getZTMRuntime: vi.fn(),
-  hasZTMRuntime: vi.fn().mockReturnValue(false),
+  isRuntimeInitialized: vi.fn().mockReturnValue(false),
   setZTMRuntime: vi.fn(),
 }));
 

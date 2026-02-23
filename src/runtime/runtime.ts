@@ -95,7 +95,7 @@ export class RuntimeManager implements RuntimeProvider {
 }
 
 // ============================================================================
-// CONVENIENCE EXPORTS (Backward Compatible)
+// CONVENIENCE EXPORTS
 // ============================================================================
 
 /**
@@ -147,13 +147,5 @@ export function getZTMRuntime(): PluginRuntime {
  * @returns true if runtime has been set
  */
 export function isRuntimeInitialized(): boolean {
-  return getRuntimeProvider().isInitialized();
-}
-
-/**
- * Alias for isRuntimeInitialized - checks if ZTM runtime is available
- * @returns true if runtime has been set
- */
-export function hasZTMRuntime(): boolean {
   return getRuntimeProvider().isInitialized();
 }

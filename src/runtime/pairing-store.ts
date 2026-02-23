@@ -288,7 +288,7 @@ export function createPairingStateStore(
   return new PairingStateStoreImpl(statePath, fsImpl, loggerImpl);
 }
 
-// Default instance for backward compatibility
+// Default instance
 let defaultInstance: PairingStateStore | null = null;
 
 /**

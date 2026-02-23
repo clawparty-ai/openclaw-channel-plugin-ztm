@@ -5,14 +5,14 @@
  *
  * This module provides:
  * - AccountStateManager class: Explicit state ownership with clear lifecycle
- * - Module-level convenience functions: Backward-compatible API wrapping AccountStateManager
+ * - Module-level convenience functions wrapping AccountStateManager
  * - Account initialization and cleanup
  * - Runtime start/stop operations
  *
  * Architecture Note:
  * The AccountStateManager class provides explicit state ownership with a clear lifecycle.
  * Module-level functions (getOrCreateAccountState, removeAccountState, getAllAccountStates)
- * delegate to the AccountStateManager singleton for backward compatibility.
+ * delegate to the AccountStateManager singleton.
  * For DI-based injection, use getAccountStateManager() to obtain the manager instance.
  */
 
@@ -49,7 +49,7 @@ interface AccountStateManagerDeps {
   logger: Logger;
 }
 
-// Re-export types and cache for backward compatibility
+// Re-export types and cache
 export type { AccountRuntimeState };
 export { GroupPermissionLRUCache } from './cache.js';
 

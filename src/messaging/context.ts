@@ -33,10 +33,7 @@ export interface MessagingContext {
  * Create messaging context
  *
  * Uses the DI container to get the required repositories.
- * The runtime parameter is kept for potential future use but
- * currently the container is accessed directly.
  *
- * @param _runtime - Plugin runtime instance (unused, kept for API compatibility)
  * @returns Messaging context with all required dependencies
  */
 export function createMessagingContext(_runtime: PluginRuntime): MessagingContext {

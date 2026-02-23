@@ -1005,7 +1005,7 @@ describe('ZTMChatWizard', () => {
   describe('discoverConfig error handling', () => {
     it('should return null when runtime is not available', async () => {
       vi.mock('../runtime/index.js', () => ({
-        hasZTMRuntime: vi.fn(() => false),
+        isRuntimeInitialized: vi.fn(() => false),
         getZTMRuntime: vi.fn(),
       }));
 
@@ -1017,7 +1017,7 @@ describe('ZTMChatWizard', () => {
 
     it('should handle config read errors gracefully', async () => {
       vi.mock('../runtime/index.js', () => ({
-        hasZTMRuntime: vi.fn(() => true),
+        isRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
             loadConfig: vi.fn(() => {
@@ -1036,7 +1036,7 @@ describe('ZTMChatWizard', () => {
 
     it('should handle missing ztm-chat channel config', async () => {
       vi.mock('../runtime/index.js', () => ({
-        hasZTMRuntime: vi.fn(() => true),
+        isRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
             loadConfig: vi.fn(() => ({
@@ -1055,7 +1055,7 @@ describe('ZTMChatWizard', () => {
 
     it('should handle empty accounts in channel config', async () => {
       vi.mock('../runtime/index.js', () => ({
-        hasZTMRuntime: vi.fn(() => true),
+        isRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
             loadConfig: vi.fn(() => ({

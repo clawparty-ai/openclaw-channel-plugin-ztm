@@ -9,7 +9,7 @@ import type { ZTMChatConfig } from '../types/config.js';
 import type { DMPolicy, GroupPolicy } from '../config/schema.js';
 import { isValidUrl, IDENTIFIER_PATTERN } from '../utils/validation.js';
 import { extractErrorMessage } from '../utils/error.js';
-import { getZTMRuntime, hasZTMRuntime } from '../runtime/index.js';
+import { getZTMRuntime, isRuntimeInitialized } from '../runtime/index.js';
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -560,7 +560,7 @@ export class ZTMChatWizard {
       const accountId = this.config.username || 'default';
 
       // Write to openclaw.yaml using runtime
-      if (!hasZTMRuntime()) {
+      if (!isRuntimeInitialized()) {
         this.prompts.error('Runtime not available. Please run through OpenClaw CLI.');
         return {
           config: this.buildConfig(),
@@ -669,7 +669,7 @@ export async function discoverConfig(): Promise<DiscoveredConfig | null> {
   const agentUrl = process.env.ZTM_AGENT_URL || 'http://localhost:7777';
 
   // Try to read from openclaw.yaml via runtime API
-  if (!hasZTMRuntime()) {
+  if (!isRuntimeInitialized()) {
     return null;
   }
 

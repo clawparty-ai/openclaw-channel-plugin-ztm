@@ -50,7 +50,7 @@ vi.mock('../utils/logger.js', () => ({
 
 vi.mock('../runtime/index.js', () => ({
   getZTMRuntime: vi.fn(),
-  hasZTMRuntime: vi.fn(() => false),
+  isRuntimeInitialized: vi.fn(() => false),
   setZTMRuntime: vi.fn(),
 }));
 

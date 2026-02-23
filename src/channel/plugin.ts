@@ -5,7 +5,6 @@
  */
 
 import type { ChannelPlugin, OpenClawConfig } from 'openclaw/plugin-sdk';
-import { ZTMChatConfigSchema } from '../config/index.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import {
@@ -259,7 +258,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // ---------------------------------------------------------------------------
   // Config Schema Section - Configuration validation
   // ---------------------------------------------------------------------------
-  configSchema: buildChannelConfigSchemaWithHints(ZTMChatConfigSchema),
+  configSchema: buildChannelConfigSchemaWithHints(),
 
   // ---------------------------------------------------------------------------
   // Config Section - Account configuration resolution

@@ -4,7 +4,6 @@
  * Configuration parsing, account resolution, and schema utilities
  */
 
-import type { TSchema } from '@sinclair/typebox';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
 import type { ZTMChatConfig } from '../types/config.js';
 import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../config/index.js';
@@ -140,10 +139,9 @@ export function resolveZTMChatAccount({
 /**
  * Build channel config schema with UI hints for the configuration UI
  *
- * @param _schema - The Typebox schema (unused, kept for API consistency)
  * @returns Object with schema, parse function, and UI hints
  */
-export function buildChannelConfigSchemaWithHints(_schema: TSchema) {
+export function buildChannelConfigSchemaWithHints() {
   return {
     schema: {},
     parse(value: unknown) {

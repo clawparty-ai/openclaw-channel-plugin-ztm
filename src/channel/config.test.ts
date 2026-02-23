@@ -2,7 +2,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import type { TSchema } from '@sinclair/typebox';
 import {
   getEffectiveChannelConfig,
   listZTMChatAccountIds,
@@ -432,8 +431,7 @@ describe('Channel Config', () => {
 
   describe('buildChannelConfigSchemaWithHints', () => {
     it('should return schema with uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result).toHaveProperty('schema');
       expect(result).toHaveProperty('parse');
@@ -441,23 +439,20 @@ describe('Channel Config', () => {
     });
 
     it('should provide parse function', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(typeof result.parse).toBe('function');
     });
 
     it('should parse config through parse function', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
       const testConfig = { username: 'test', agentUrl: 'https://test.com' };
 
       expect(() => result.parse(testConfig)).not.toThrow();
     });
 
     it('should include agentUrl in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.agentUrl).toBeDefined();
       expect(result.uiHints.agentUrl.label).toBe('ZTM Agent URL');
@@ -465,8 +460,7 @@ describe('Channel Config', () => {
     });
 
     it('should include meshName in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.meshName).toBeDefined();
       expect(result.uiHints.meshName.label).toBe('Mesh Name');
@@ -474,8 +468,7 @@ describe('Channel Config', () => {
     });
 
     it('should include username in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.username).toBeDefined();
       expect(result.uiHints.username.label).toBe('Bot Username');
@@ -483,8 +476,7 @@ describe('Channel Config', () => {
     });
 
     it('should include enableGroups in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.enableGroups).toBeDefined();
       expect(result.uiHints.enableGroups.label).toBe('Enable Groups');
@@ -492,8 +484,7 @@ describe('Channel Config', () => {
     });
 
     it('should include validation patterns in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.agentUrl.validation).toBeDefined();
       expect(result.uiHints.meshName.validation).toBeDefined();
@@ -501,8 +492,7 @@ describe('Channel Config', () => {
     });
 
     it('should include help text in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.agentUrl.help).toBeDefined();
       expect(result.uiHints.meshName.help).toBeDefined();
@@ -510,8 +500,7 @@ describe('Channel Config', () => {
     });
 
     it('should include placeholder text in uiHints', () => {
-      const mockSchema = {} as TSchema;
-      const result = buildChannelConfigSchemaWithHints(mockSchema);
+      const result = buildChannelConfigSchemaWithHints();
 
       expect(result.uiHints.agentUrl.placeholder).toContain('example.com');
       expect(result.uiHints.meshName.placeholder).toBeDefined();

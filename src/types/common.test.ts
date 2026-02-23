@@ -4,8 +4,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   success,
   failure,
-  ok,
-  err,
   isSuccess,
   isFailure,
   unwrap,
@@ -28,20 +26,10 @@ describe('Result type factories', () => {
 
   describe('failure', () => {
     it('should create a failure Result', () => {
-      const err = new Error('fail');
-      const result = failure(err);
+      const testError = new Error('fail');
+      const result = failure(testError);
       expect(result.ok).toBe(false);
-      expect(result.error).toBe(err);
-    });
-  });
-
-  describe('ok and err aliases', () => {
-    it('should work as aliases for success', () => {
-      expect(ok('test').ok).toBe(true);
-    });
-
-    it('should work as aliases for failure', () => {
-      expect(err(new Error('test')).ok).toBe(false);
+      expect(result.error).toBe(testError);
     });
   });
 });

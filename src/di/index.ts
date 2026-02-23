@@ -45,7 +45,6 @@ import { getAllowFromRepository, getMessageStateRepository } from '../runtime/re
  * Logger factory
  * Returns a factory function that creates a logger instance
  *
- * @param _serviceName - The name of the service (unused, for DI compatibility)
  * @returns Factory function that returns an ILogger instance
  */
 export function createLogger(_serviceName: string): () => ILogger {

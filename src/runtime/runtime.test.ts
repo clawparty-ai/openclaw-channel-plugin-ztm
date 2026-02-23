@@ -1,13 +1,7 @@
 // Unit tests for Runtime
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  setZTMRuntime,
-  getZTMRuntime,
-  isRuntimeInitialized,
-  hasZTMRuntime,
-  RuntimeManager,
-} from './runtime.js';
+import { setZTMRuntime, getZTMRuntime, isRuntimeInitialized, RuntimeManager } from './runtime.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 
 // Mock logger - must be hoisted
@@ -143,32 +137,6 @@ describe('Runtime Management', () => {
       RuntimeManager.reset();
 
       expect(isRuntimeInitialized()).toBe(false);
-    });
-  });
-
-  describe('hasZTMRuntime', () => {
-    it('should return false when runtime not set', () => {
-      expect(hasZTMRuntime()).toBe(false);
-    });
-
-    it('should return true after runtime is set', () => {
-      const mockRuntime = {
-        channel: { routing: { resolveAgentRoute: vi.fn() } },
-      } as unknown as PluginRuntime;
-
-      setZTMRuntime(mockRuntime);
-
-      expect(hasZTMRuntime()).toBe(true);
-    });
-
-    it('should be alias for isRuntimeInitialized', () => {
-      const mockRuntime = {
-        channel: { routing: { resolveAgentRoute: vi.fn() } },
-      } as unknown as PluginRuntime;
-
-      setZTMRuntime(mockRuntime);
-
-      expect(hasZTMRuntime()).toBe(isRuntimeInitialized());
     });
   });
 });

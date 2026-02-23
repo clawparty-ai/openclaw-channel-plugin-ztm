@@ -44,10 +44,6 @@ export function failure<T = never, E extends Error = Error>(error: E): Result<T,
   return { ok: false, error } as Result<T, E>;
 }
 
-/** Alias for backward compatibility */
-export const ok = success;
-export const err = failure;
-
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // Type Guards - Type-safe way to check Result state at runtime
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════

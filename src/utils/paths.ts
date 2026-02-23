@@ -118,7 +118,7 @@ export function resolveOpenclawStateDir(): string {
  * is stored under the main state directory, with per-account subdirectories
  */
 export function resolveZTMStateDir(accountId: string): string {
-  // Check explicit ZTM_STATE_PATH override (for backward compatibility)
+  // Check explicit ZTM_STATE_PATH override
   if (process.env.ZTM_STATE_PATH) {
     const resolved = resolvePath(process.env.ZTM_STATE_PATH);
     // If it's a file path, extract the directory

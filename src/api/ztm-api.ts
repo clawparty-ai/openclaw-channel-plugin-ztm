@@ -34,7 +34,7 @@ import { createMeshApi } from './mesh-api.js';
 import { createChatApi } from './chat-api.js';
 import { createMessageApi } from './message-api.js';
 
-// Re-export types for backward compatibility
+// Re-export types
 export type { ZTMApiClientDeps };
 
 /**
@@ -101,5 +101,5 @@ export function createZTMApiClient(
   return client;
 }
 
-// Re-export test utilities for backward compatibility
+// Re-export test utilities
 export * from './test-utils.js';

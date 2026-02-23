@@ -5,7 +5,7 @@
  * DO NOT redefine types here - import from config/schema.ts instead
  */
 
-// Re-export all types from schema for backward compatibility
+// Re-export all types from schema
 export type {
   ZTMChatConfig,
   DMPolicy,

@@ -224,7 +224,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
   }
 
   /**
-   * Synchronous load for backward compatibility
+   * Synchronous load
    * Loads data immediately if not already loaded
    */
   private load(): void {
@@ -413,7 +413,7 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
   /** Get the last-processed message timestamp for a key under an account */
   getWatermark(accountId: string, key: string): number {
-    // Ensure data is loaded before reading (sync load to maintain backward compatibility)
+    // Ensure data is loaded before reading
     if (!this.loaded) {
       this.load();
     }
