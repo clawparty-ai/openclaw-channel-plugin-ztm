@@ -1,7 +1,7 @@
 /**
  * Vitest configuration for Integration Tests
  *
- * This config only runs integration tests (*.integration.test.ts), excluding unit tests.
+ * This config only runs integration tests (*.integration.test.ts), excluding unit and e2e tests.
  *
  * Usage: npm run test:integration
  */

@@ -11,13 +11,22 @@
  */
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { getOrCreateAccountState, removeAccountState, RuntimeManager } from '../runtime/index.js';
+import {
+  getOrCreateAccountState,
+  removeAccountState,
+  RuntimeManager,
+  disposeMessageStateStore,
+} from '../runtime/index.js';
 import { processIncomingMessage } from '../messaging/processor.js';
 import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
 describe('E2E: Network Resilience', () => {
+  // Unique sender prefix to avoid watermark collisions between test files
+  const SENDER_PREFIX = 'nr-';
+
   beforeEach(() => {
+    disposeMessageStateStore();
     RuntimeManager.reset();
     getOrCreateAccountState(testAccountId);
   });
@@ -51,7 +60,7 @@ describe('E2E: Network Resilience', () => {
           const msg = {
             time: NOW + cycle * 10000 + i * 1000,
             message: `Disconnect message ${cycle}-${i}`,
-            sender: `user-${i}`,
+            sender: `${SENDER_PREFIX}user-${i}`,
           };
           const result = processIncomingMessage(msg, context);
           if (result) processedDuringDisconnect++;
@@ -67,7 +76,7 @@ describe('E2E: Network Resilience', () => {
           const msg = {
             time: NOW + cycle * 10000 + 5000 + i * 1000,
             message: `Reconnect message ${cycle}-${i}`,
-            sender: `user-${i}`,
+            sender: `${SENDER_PREFIX}user-${i}`,
           };
           const result = processIncomingMessage(msg, context);
           if (result) processedAfterReconnect++;
@@ -81,7 +90,7 @@ describe('E2E: Network Resilience', () => {
       }
 
       // Verify all cycles completed successfully
-      const successfulCycles = results.filter((r) => r.success).length;
+      const successfulCycles = results.filter(r => r.success).length;
       expect(successfulCycles).toBe(cycleCount);
 
       // Total messages processed should be reasonable
@@ -117,7 +126,7 @@ describe('E2E: Network Resilience', () => {
         const msg = {
           time: lastMessageTime,
           message: `Transition message ${i}`,
-          sender: `user-${i % 3}`,
+          sender: `${SENDER_PREFIX}user-${i % 3}`,
         };
 
         const result = processIncomingMessage(msg, context);
@@ -144,17 +153,15 @@ describe('E2E: Network Resilience', () => {
       for (let i = 0; i < messageCount; i++) {
         // Simulate random network delay between 100-500ms
         const delay = Math.floor(Math.random() * 401) + 100;
-        const startTime = Date.now();
 
         // Process message
         const msg = {
           time: NOW + i * 1000,
           message: `Jitter message ${i}`,
-          sender: `user-${i % 5}`,
+          sender: `${SENDER_PREFIX}user-${i % 5}`,
         };
 
         const result = processIncomingMessage(msg, context);
-        const actualDelay = Date.now() - startTime;
 
         delayResults.push({
           messageIndex: i,
@@ -163,11 +170,11 @@ describe('E2E: Network Resilience', () => {
         });
 
         // Simulate the network delay
-        await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 50)));
+        await new Promise(resolve => setTimeout(resolve, Math.min(delay, 50)));
       }
 
       // All messages should be processed despite jitter
-      const processedCount = delayResults.filter((r) => r.processed).length;
+      const processedCount = delayResults.filter(r => r.processed).length;
       expect(processedCount).toBe(messageCount);
 
       // Verify reasonable processing times
@@ -190,7 +197,7 @@ describe('E2E: Network Resilience', () => {
       const messages = Array.from({ length: 20 }, (_, i) => ({
         time: NOW + i * 1000,
         message: `Ordered message ${i}`,
-        sender: `user-${i % 3}`,
+        sender: `${SENDER_PREFIX}user-${i % 3}`,
         sequence: i,
       }));
 
@@ -200,7 +207,7 @@ describe('E2E: Network Resilience', () => {
       for (const msg of messages) {
         const delay = Math.floor(Math.random() * 401) + 100;
 
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
 
         const result = processIncomingMessage(msg, context);
         if (result) {
@@ -237,12 +244,12 @@ describe('E2E: Network Resilience', () => {
         for (let i = 0; i < batchSize; i++) {
           // Random delay between batches
           const delay = Math.floor(Math.random() * 401) + 100;
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          await new Promise(resolve => setTimeout(resolve, delay));
 
           const msg = {
             time: NOW + batch * 10000 + i * 1000,
             message: `Batch ${batch} message ${i}`,
-            sender: `user-${i}`,
+            sender: `${SENDER_PREFIX}user-${i}`,
           };
 
           processIncomingMessage(msg, context);
@@ -260,7 +267,7 @@ describe('E2E: Network Resilience', () => {
       expect(totalProcessed).toBe(batchCount * batchSize);
 
       // Verify no batch took excessively long
-      const maxDuration = Math.max(...batchResults.map((r) => r.duration));
+      const maxDuration = Math.max(...batchResults.map(r => r.duration));
       expect(maxDuration).toBeLessThan(10000); // Should complete within 10 seconds
 
       console.log(
@@ -300,7 +307,7 @@ describe('E2E: Network Resilience', () => {
           const msg = {
             time: NOW + i * 1000,
             message: `Success message ${i}`,
-            sender: `user-${i % 5}`,
+            sender: `${SENDER_PREFIX}user-${i % 5}`,
           };
 
           const result = processIncomingMessage(msg, context);
@@ -349,7 +356,7 @@ describe('E2E: Network Resilience', () => {
         const msg = {
           time: NOW + i * 1000,
           message: `Normal message ${i}`,
-          sender: `user-${i % 3}`,
+          sender: `${SENDER_PREFIX}user-${i % 3}`,
         };
         if (processIncomingMessage(msg, context)) processedBefore++;
       }
@@ -364,7 +371,7 @@ describe('E2E: Network Resilience', () => {
           const msg = {
             time: NOW + 10000 + i * 1000,
             message: `Failure burst message ${i}`,
-            sender: `user-${i % 3}`,
+            sender: `${SENDER_PREFIX}user-${i % 3}`,
           };
           processIncomingMessage(msg, context);
         }
@@ -376,7 +383,7 @@ describe('E2E: Network Resilience', () => {
         const msg = {
           time: NOW + 30000 + i * 1000,
           message: `Recovery message ${i}`,
-          sender: `user-${i % 3}`,
+          sender: `${SENDER_PREFIX}user-${i % 3}`,
         };
         if (processIncomingMessage(msg, context)) processedAfter++;
       }
@@ -417,7 +424,7 @@ describe('E2E: Network Resilience', () => {
             const msg = {
               time: NOW + i * 1000,
               message: `State test message ${i}`,
-              sender: `user-${i % 3}`,
+              sender: `${SENDER_PREFIX}user-${i % 3}`,
             };
             processIncomingMessage(msg, context);
           } else {
@@ -463,7 +470,7 @@ describe('E2E: Network Resilience', () => {
         { time: NOW + 2000, message: 'With mention', sender: 'charlie' },
       ];
 
-      const results = partialScenarios.map((msg) => {
+      const results = partialScenarios.map(msg => {
         return processIncomingMessage(msg, context);
       });
 
@@ -471,12 +478,10 @@ describe('E2E: Network Resilience', () => {
       expect(results.length).toBe(partialScenarios.length);
 
       // At least one should be processed successfully
-      const processedCount = results.filter((r) => r !== null).length;
+      const processedCount = results.filter(r => r !== null).length;
       expect(processedCount).toBeGreaterThan(0);
 
-      console.log(
-        `Partial response test: ${processedCount}/${partialScenarios.length} handled`
-      );
+      console.log(`Partial response test: ${processedCount}/${partialScenarios.length} handled`);
     });
   });
 
@@ -504,7 +509,7 @@ describe('E2E: Network Resilience', () => {
 
         // Random delay
         const delay = Math.floor(Math.random() * 401) + 100;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
 
         // Random failure
         const shouldFail = Math.random() < 0.2;
@@ -515,7 +520,7 @@ describe('E2E: Network Resilience', () => {
           const msg = {
             time: NOW + i * 1000,
             message: `Combined stress message ${i}`,
-            sender: `user-${i % 5}`,
+            sender: `${SENDER_PREFIX}user-${i % 5}`,
           };
           if (processIncomingMessage(msg, context)) {
             totalProcessed++;

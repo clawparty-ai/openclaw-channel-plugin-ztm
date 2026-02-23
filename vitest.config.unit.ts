@@ -1,7 +1,7 @@
 /**
  * Vitest configuration for Unit Tests
  *
- * This config only runs unit tests (*.test.ts), excluding integration tests.
+ * This config only runs unit tests (*.test.ts), excluding integration and e2e tests.
  *
  * Usage: npm run test:unit
  */
@@ -14,6 +14,6 @@ export default defineConfig({
     pool: 'forks',
     isolate: true,
     include: ['**/*.test.ts'],
-    exclude: ['**/*.integration.test.ts', '**/node_modules/**'],
+    exclude: ['**/*.integration.test.ts', '**/*.e2e.test.ts', '**/node_modules/**'],
   },
 });

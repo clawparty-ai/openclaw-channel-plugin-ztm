@@ -12,14 +12,23 @@
 
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { processIncomingMessage } from '../messaging/processor.js';
-import { getOrCreateAccountState, removeAccountState, RuntimeManager } from '../runtime/index.js';
-import { createMockState, testConfigOpenDM, testAccountId, NOW, createMessage } from '../test-utils/fixtures.js';
+import {
+  getOrCreateAccountState,
+  removeAccountState,
+  RuntimeManager,
+  disposeMessageStateStore,
+} from '../runtime/index.js';
+import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
 describe('E2E: Stress Messaging', () => {
+  // Unique sender prefix to avoid watermark collisions between test files
+  const SENDER_PREFIX = 'sm-';
+
   beforeEach(() => {
     // Setup fresh account state for each test
     // Use open DM policy to allow all messages for testing
+    disposeMessageStateStore();
     RuntimeManager.reset();
     getOrCreateAccountState(testAccountId);
   });
@@ -52,7 +61,7 @@ describe('E2E: Stress Messaging', () => {
         messages.push({
           time: startTime + i * 100, // 10 messages per second
           message: `Burst message ${i + 1}`,
-          sender: `user-${i % 5}`, // 5 different senders
+          sender: `${SENDER_PREFIX}user-${i % 5}`, // 5 different senders
         });
       }
 
@@ -77,7 +86,9 @@ describe('E2E: Stress Messaging', () => {
       const throughput = processedMessages.length / (processingTime / 1000);
       expect(throughput).toBeGreaterThan(5); // At least 5 msg/sec in test environment
 
-      console.log(`Burst test: Processed ${processedMessages.length} messages in ${processingTime}ms (${throughput.toFixed(2)} msg/sec)`);
+      console.log(
+        `Burst test: Processed ${processedMessages.length} messages in ${processingTime}ms (${throughput.toFixed(2)} msg/sec)`
+      );
     });
 
     /**
@@ -108,7 +119,7 @@ describe('E2E: Stress Messaging', () => {
       }
 
       // Process concurrently using Promise.all
-      const processedPromises = allMessages.map((msg) =>
+      const processedPromises = allMessages.map(msg =>
         Promise.resolve(processIncomingMessage(msg, context))
       );
 
@@ -119,10 +130,12 @@ describe('E2E: Stress Messaging', () => {
       expect(processedMessages.length).toBe(allMessages.length);
 
       // Verify each sender is represented
-      const uniqueSenders = new Set(processedMessages.map((m) => m.sender));
+      const uniqueSenders = new Set(processedMessages.map(m => m.sender));
       expect(uniqueSenders.size).toBe(senderCount);
 
-      console.log(`Concurrent test: ${processedMessages.length} messages from ${uniqueSenders.size} senders processed`);
+      console.log(
+        `Concurrent test: ${processedMessages.length} messages from ${uniqueSenders.size} senders processed`
+      );
     });
   });
 
@@ -146,7 +159,7 @@ describe('E2E: Stress Messaging', () => {
         const msg = {
           time: NOW + i * 1000,
           message: `Memory test message ${i} with some content to simulate real messages`,
-          sender: `user-${i % 20}`,
+          sender: `${SENDER_PREFIX}user-${i % 20}`,
         };
 
         processIncomingMessage(msg, context);
@@ -165,7 +178,9 @@ describe('E2E: Stress Messaging', () => {
       // This accounts for internal data structures and overhead
       expect(memoryIncreaseMB).toBeLessThan(50);
 
-      console.log(`Memory test: ${messageCount} messages processed, memory increase: ${memoryIncreaseMB.toFixed(2)} MB`);
+      console.log(
+        `Memory test: ${messageCount} messages processed, memory increase: ${memoryIncreaseMB.toFixed(2)} MB`
+      );
     });
 
     /**
@@ -185,7 +200,7 @@ describe('E2E: Stress Messaging', () => {
       // Process messages from many unique senders
       for (let sender = 0; sender < uniqueSenders; sender++) {
         for (let msg = 0; msg < messagesPerSender; msg++) {
-          const result = processIncomingMessage(
+          processIncomingMessage(
             {
               time: startTime + sender * 10000 + msg * 1000,
               message: `Test message ${msg} from sender ${sender}`,
@@ -208,7 +223,9 @@ describe('E2E: Stress Messaging', () => {
       // (The actual implementation stores watermarks per sender)
       expect(store).toBeDefined();
 
-      console.log(`Watermark test: ${uniqueSenders} senders x ${messagesPerSender} messages tracked`);
+      console.log(
+        `Watermark test: ${uniqueSenders} senders x ${messagesPerSender} messages tracked`
+      );
     });
   });
 
@@ -241,7 +258,7 @@ describe('E2E: Stress Messaging', () => {
           const msg = {
             time: NOW + totalProcessed * 1000,
             message: `Long-running test message ${totalProcessed}`,
-            sender: `user-${totalProcessed % 10}`,
+            sender: `${SENDER_PREFIX}user-${totalProcessed % 10}`,
           };
 
           const result = processIncomingMessage(msg, context);
@@ -256,7 +273,7 @@ describe('E2E: Stress Messaging', () => {
         // Wait for next batch interval
         const waitTime = batchInterval - batchTime;
         if (waitTime > 0) {
-          await new Promise((resolve) => setTimeout(resolve, waitTime));
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
 
@@ -290,7 +307,7 @@ describe('E2E: Stress Messaging', () => {
       const messageTemplates = Array.from({ length: 10 }, (_, i) => ({
         time: NOW + i * 1000,
         message: `Pattern message ${i}`,
-        sender: `user-${i}`,
+        sender: `${SENDER_PREFIX}user-${i}`,
       }));
 
       const iterations = 100;
@@ -310,8 +327,7 @@ describe('E2E: Stress Messaging', () => {
       // First iteration should be slowest (all new messages)
       // Subsequent iterations should be faster (watermark skips duplicates)
       const firstIteration = processingTimes[0];
-      const avgSubsequent =
-        processingTimes.slice(1).reduce((a, b) => a + b, 0) / (iterations - 1);
+      const avgSubsequent = processingTimes.slice(1).reduce((a, b) => a + b, 0) / (iterations - 1);
 
       // Subsequent iterations should be at least as fast (watermark working)
       // If first iteration is very fast (near 0), just verify subsequent is also fast

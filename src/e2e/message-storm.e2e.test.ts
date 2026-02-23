@@ -13,13 +13,22 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { processIncomingMessage } from '../messaging/processor.js';
 import { notifyMessageCallbacks } from '../messaging/dispatcher.js';
-import { getOrCreateAccountState, removeAccountState, RuntimeManager } from '../runtime/index.js';
-import { testConfigOpenDM, testAccountId, NOW, createMessage } from '../test-utils/fixtures.js';
+import {
+  getOrCreateAccountState,
+  removeAccountState,
+  RuntimeManager,
+  disposeMessageStateStore,
+} from '../runtime/index.js';
+import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
 describe('E2E: Message Storm', () => {
+  // Unique sender prefix to avoid watermark collisions between test files
+  const SENDER_PREFIX = 'ms-';
+
   beforeEach(() => {
     // Setup fresh account state for each test
+    disposeMessageStateStore();
     RuntimeManager.reset();
     getOrCreateAccountState(testAccountId);
   });
@@ -53,7 +62,7 @@ describe('E2E: Message Storm', () => {
         messages.push({
           time: baseTime + i, // Nearly simultaneous (1ms apart)
           message: `Burst message ${i + 1}`,
-          sender: `user-${i % senderCount}`,
+          sender: `${SENDER_PREFIX}user-${i % senderCount}`,
         });
       }
 
@@ -84,7 +93,7 @@ describe('E2E: Message Storm', () => {
       );
 
       // Verify unique senders are represented
-      const uniqueSenders = new Set(processedMessages.map((m) => m.sender));
+      const uniqueSenders = new Set(processedMessages.map(m => m.sender));
       expect(uniqueSenders.size).toBe(senderCount);
     });
 
@@ -96,10 +105,10 @@ describe('E2E: Message Storm', () => {
 
       // Register a slow callback to simulate AI agent processing
       let callbackInvocations = 0;
-      const slowCallback = async (message: ZTMChatMessage): Promise<void> => {
+      const slowCallback = async (_message: ZTMChatMessage): Promise<void> => {
         callbackInvocations++;
         // Simulate some processing time
-        await new Promise((resolve) => setTimeout(resolve, 1));
+        await new Promise(resolve => setTimeout(resolve, 1));
       };
 
       state.messageCallbacks.add(slowCallback);
@@ -113,7 +122,7 @@ describe('E2E: Message Storm', () => {
         const rawMsg = {
           time: baseTime + i,
           message: `Callback test message ${i}`,
-          sender: `user-${i % 50}`,
+          sender: `${SENDER_PREFIX}user-${i % 50}`,
         };
         const processed = processIncomingMessage(rawMsg, {
           config: testConfigOpenDM,
@@ -173,7 +182,7 @@ describe('E2E: Message Storm', () => {
           const msg = {
             time: NOW + i,
             message: `Backlog message ${i + 1}`,
-            sender: `user-${i % senderCount}`,
+            sender: `${SENDER_PREFIX}user-${i % senderCount}`,
           };
 
           const result = processIncomingMessage(msg, context);
@@ -229,7 +238,7 @@ describe('E2E: Message Storm', () => {
         const msg = {
           time: NOW + i,
           message: `Memory stable message ${i}`,
-          sender: `user-${i % 100}`,
+          sender: `${SENDER_PREFIX}user-${i % 100}`,
         };
         processIncomingMessage(msg, context);
       }
@@ -246,7 +255,9 @@ describe('E2E: Message Storm', () => {
       // This accounts for internal data structures and overhead
       expect(memoryIncrease).toBeLessThan(200);
 
-      console.log(`Backlog memory: ${messageCount} messages, memory increase: ${memoryIncrease.toFixed(2)} MB`);
+      console.log(
+        `Backlog memory: ${messageCount} messages, memory increase: ${memoryIncrease.toFixed(2)} MB`
+      );
     });
   });
 
@@ -256,8 +267,6 @@ describe('E2E: Message Storm', () => {
      * Simulates slow callback processing while messages arrive quickly.
      */
     it('should handle backpressure with slow callbacks', async () => {
-      const state = getOrCreateAccountState(testAccountId);
-
       // Reset account state for fresh watermark tracking
       removeAccountState(testAccountId);
       const freshState = getOrCreateAccountState(testAccountId);
@@ -267,11 +276,11 @@ describe('E2E: Message Storm', () => {
       let callbackInvocations = 0;
       const messagesProcessed: ZTMChatMessage[] = [];
 
-      const slowCallback = async (message: ZTMChatMessage): Promise<void> => {
+      const slowCallback = async (_message: ZTMChatMessage): Promise<void> => {
         callbackInvocations++;
-        messagesProcessed.push(message);
+        messagesProcessed.push(_message);
         // Simulate slow AI agent processing
-        await new Promise((resolve) => setTimeout(resolve, processingDelay));
+        await new Promise(resolve => setTimeout(resolve, processingDelay));
       };
 
       freshState.messageCallbacks.add(slowCallback);
@@ -292,7 +301,7 @@ describe('E2E: Message Storm', () => {
         const rawMsg = {
           time: uniqueTime,
           message: `Backpressure message ${i}`,
-          sender: `user-${i % 10}`,
+          sender: `${SENDER_PREFIX}user-${i % 10}`,
         };
         const processed = processIncomingMessage(rawMsg, {
           config: testConfigOpenDM,
@@ -331,13 +340,13 @@ describe('E2E: Message Storm', () => {
       // Track queue size by measuring in-flight messages
       let inFlight = 0;
 
-      const slowCallback = async (message: ZTMChatMessage): Promise<void> => {
+      const slowCallback = async (_message: ZTMChatMessage): Promise<void> => {
         inFlight++;
         currentQueueSize = Math.max(currentQueueSize, inFlight);
         callbackInvocations++;
 
         // Simulate very slow processing
-        await new Promise((resolve) => setTimeout(resolve, processingDelay));
+        await new Promise(resolve => setTimeout(resolve, processingDelay));
 
         inFlight--;
       };
@@ -352,7 +361,7 @@ describe('E2E: Message Storm', () => {
         const rawMsg = {
           time: Date.now() + i * 1000, // Unique timestamps
           message: `Queue test message ${i}`,
-          sender: `storm2-user-${i}`, // Unique sender per message
+          sender: `${SENDER_PREFIX}storm2-user-${i}`, // Unique sender per message
         };
         const processed = processIncomingMessage(rawMsg, {
           config: testConfigOpenDM,
@@ -368,7 +377,7 @@ describe('E2E: Message Storm', () => {
       const startTime = Date.now();
 
       // Send all messages to callbacks (producer flooding)
-      const sendPromises = messages.map((msg) => notifyMessageCallbacks(state, msg));
+      const sendPromises = messages.map(msg => notifyMessageCallbacks(state, msg));
 
       // Wait for all to complete
       await Promise.all(sendPromises);
@@ -405,7 +414,7 @@ describe('E2E: Message Storm', () => {
       let invocationCount = 0;
       const results: { time: number; duration: number }[] = [];
 
-      const adaptiveCallback = async (message: ZTMChatMessage): Promise<void> => {
+      const adaptiveCallback = async (_message: ZTMChatMessage): Promise<void> => {
         invocationCount++;
 
         // First 20 messages: fast processing (1ms)
@@ -413,7 +422,7 @@ describe('E2E: Message Storm', () => {
         const delay = fastMode && invocationCount <= 20 ? 1 : 10;
 
         const start = Date.now();
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
         results.push({ time: start, duration: Date.now() - start });
       };
 
@@ -425,7 +434,7 @@ describe('E2E: Message Storm', () => {
         const rawMsg = {
           time: Date.now() + i * 1000, // Unique timestamps
           message: `Recovery test ${i}`,
-          sender: `storm3-user-${i}`,
+          sender: `${SENDER_PREFIX}storm3-user-${i}`,
         };
         const processed = processIncomingMessage(rawMsg, {
           config: testConfigOpenDM,
@@ -443,7 +452,7 @@ describe('E2E: Message Storm', () => {
         const rawMsg = {
           time: Date.now() + i * 1000, // Unique timestamps
           message: `Recovery test ${i}`,
-          sender: `storm3-user-${i}`,
+          sender: `${SENDER_PREFIX}storm3-user-${i}`,
         };
         const processed = processIncomingMessage(rawMsg, {
           config: testConfigOpenDM,
@@ -486,11 +495,11 @@ describe('E2E: Message Storm', () => {
       const state = getOrCreateAccountState(accountId4);
 
       let totalCallbacks = 0;
-      const callback = async (message: ZTMChatMessage): Promise<void> => {
+      const callback = async (_message: ZTMChatMessage): Promise<void> => {
         totalCallbacks++;
         // Simulate variable processing time
         const delay = Math.random() * 3; // 0-3ms random
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
       };
 
       state.messageCallbacks.add(callback);
@@ -515,7 +524,7 @@ describe('E2E: Message Storm', () => {
           const rawMsg = {
             time: uniqueTime,
             message: `${scenario.name} message ${i}`,
-            sender: `storm4-user-${messageId}`,
+            sender: `${SENDER_PREFIX}storm4-user-${messageId}`,
           };
           const processed = processIncomingMessage(rawMsg, {
             config: testConfigOpenDM,
@@ -529,12 +538,10 @@ describe('E2E: Message Storm', () => {
         }
 
         const duration = Date.now() - startTime;
-        console.log(
-          `${scenario.name}: ${scenarioProcessed} messages in ${duration}ms`
-        );
+        console.log(`${scenario.name}: ${scenarioProcessed} messages in ${duration}ms`);
 
         // Small pause between scenarios
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
 
       // Most messages should be processed
