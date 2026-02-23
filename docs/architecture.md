@@ -457,7 +457,7 @@ flowchart LR
 ```mermaid
 classDiagram
     class DIContainer {
-        -services: Map~Symbol, ServiceDescriptor~
+        -services: Map
         +register()
         +resolve()
         +has()
@@ -465,7 +465,7 @@ classDiagram
     }
 
     class ServiceDescriptor {
-        +factory: Factory
+        +factory: FactoryFunction
         +lifetime: Lifetime
         +dependencies: Symbol[]
     }
@@ -477,20 +477,20 @@ classDiagram
         Transient
     }
 
-    class Factory {
+    class FactoryFunction {
         <<type>>
-        (container: DIContainer) => any
+        Factory function that creates services
     }
 
     class ServiceSymbol {
         <<type>>
-        unique symbol
+        Unique symbol for service keys
     }
 
     DIContainer --> ServiceDescriptor
     ServiceDescriptor --> Lifetime
-    ServiceDescriptor --> Factory
-    Factory : Symbol keys
+    ServiceDescriptor --> FactoryFunction
+    FactoryFunction : Uses Symbol as keys
 ```
 
 ### Service Registration Examples
