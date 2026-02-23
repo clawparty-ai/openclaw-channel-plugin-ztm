@@ -4,11 +4,9 @@
   "description": "ZTM Chat channel plugin for OpenClaw",
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -18,7 +16,9 @@
     "tar": ">=7.5.7"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationDir dist --removeComments",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.config.unit.ts",
     "test:integration": "vitest run --config vitest.config.integration.ts",
@@ -48,6 +48,7 @@
     "conventional-changelog-angular": "^8.1.0",
     "conventional-changelog-cli": "^2.2.2",
     "conventional-changelog-conventionalcommits": "^9.1.0",
+    "esbuild": "^0.27.3",
     "eslint": "^10.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
