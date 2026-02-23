@@ -1,5 +1,5 @@
 /**
- * @fileoverview Persistent message state store
+ * Persistent message state store
  * @module runtime/store
  * Tracks per-account, per-peer watermarks so that already-processed messages
  * are skipped across gateway restarts.

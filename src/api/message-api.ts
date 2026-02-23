@@ -1,5 +1,5 @@
 /**
- * @fileoverview Message operations API for ZTM Chat
+ * Message operations API for ZTM Chat
  * @module api/message-api
  * Provides functions for sending/receiving messages and watching for changes
  */

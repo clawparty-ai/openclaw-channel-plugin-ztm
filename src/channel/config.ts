@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Channel Configuration
+ * ZTM Chat Channel Configuration
  * @module channel/config
  * Configuration parsing, account resolution, and schema utilities
  */

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "index.ts",
+    "src/channel/index.ts",
+    "src/messaging/index.ts",
+    "src/runtime/index.ts",
+    "src/api/index.ts",
+    "src/config/index.ts"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs/typedoc",
+  "name": "ZTM Chat Plugin",
+  "includeVersion": true,
+  "readme": "README.md",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeReferences": true,
+  "treatWarningsAsErrors": false,
+  "blockTags": [
+    "@defaultValue",
+    "@deprecated",
+    "@example",
+    "@jsx",
+    "@module",
+    "@param",
+    "@privateRemarks",
+    "@remarks",
+    "@returns",
+    "@see",
+    "@summary",
+    "@throws"
+  ],
+  "highlightLanguages": [
+    "bash",
+    "console",
+    "css",
+    "html",
+    "javascript",
+    "json",
+    "jsonc",
+    "json5",
+    "yaml",
+    "tsx",
+    "typescript",
+    "mermaid"
+  ],
+  "validation": {
+    "invalidLink": false,
+    "notExported": false,
+    "notDocumented": false
+  }
+}

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Onboarding Wizard
+ * ZTM Chat Onboarding Wizard
  * @module onboarding/onboarding
  * Interactive CLI wizard for configuring the ZTM Chat channel
  */

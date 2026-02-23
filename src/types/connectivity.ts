@@ -1,11 +1,11 @@
 /**
- * @fileoverview ZTM Chat Connectivity Types
+ * ZTM Chat Connectivity Types
  * @module types/connectivity
  * Types for ZTM mesh connectivity and permit data
  */
 
 /**
- * @description ZTM Permit Data Structure
+ * ZTM Permit Data Structure
  *
  * This data structure is returned by the permit server and contains
  * all necessary information to join a ZTM mesh.

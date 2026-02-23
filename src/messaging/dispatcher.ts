@@ -1,5 +1,5 @@
 /**
- * @fileoverview Message Callback Dispatching
+ * Message Callback Dispatching
  * @module messaging/dispatcher
  * Handles notification of registered message callbacks
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Mesh connectivity management via Agent API
+ * ZTM Mesh connectivity management via Agent API
  * @module connectivity/mesh
  *
  * Provides functions for managing ZTM mesh connectivity:

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Constants for ZTM Chat Channel Plugin
+ * Constants for ZTM Chat Channel Plugin
  * @module constants
  * Centralizes all magic numbers and strings for better maintainability
  */

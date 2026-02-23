@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Channel Plugin
+ * ZTM Chat Channel Plugin
  * @module channel/plugin
  * Main plugin definition implementing ChannelPlugin interface
  */

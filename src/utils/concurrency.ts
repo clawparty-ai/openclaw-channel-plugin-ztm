@@ -1,5 +1,5 @@
 /**
- * @fileoverview Concurrency utilities for ZTM Chat
+ * Concurrency utilities for ZTM Chat
  * @module utils/concurrency
  *
  * Provides Semaphore for limiting concurrent operations.

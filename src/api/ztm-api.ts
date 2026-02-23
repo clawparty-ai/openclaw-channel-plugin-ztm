@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Agent API Client
+ * ZTM Agent API Client
  * @module api/ztm-api
  * Handles HTTP communication with remote ZTM Agent for Chat operations
  * Supports both direct storage API access and Chat App HTTP endpoints

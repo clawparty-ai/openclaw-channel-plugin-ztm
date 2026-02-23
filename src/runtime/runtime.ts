@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Runtime - Manages ZTM network connection and message handling
+ * ZTM Runtime - Manages ZTM network connection and message handling
  * @module runtime/runtime
  * Refactored to use Dependency Injection + Singleton pattern for testability
  */

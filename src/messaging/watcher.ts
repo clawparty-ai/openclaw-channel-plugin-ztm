@@ -1,5 +1,5 @@
 /**
- * @fileoverview Message Watching and Polling
+ * Message Watching and Polling
  * @module messaging/watcher
  * Monitors for new messages via Watch mechanism with fallback to polling
  */

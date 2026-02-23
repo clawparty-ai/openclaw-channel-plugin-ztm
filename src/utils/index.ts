@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Utility Functions
+ * ZTM Chat Utility Functions
  * @module utils
  *
  * Barrel export for all utility modules providing:

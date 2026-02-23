@@ -1,5 +1,5 @@
 /**
- * @fileoverview Path resolution utilities for cross-platform compatibility
+ * Path resolution utilities for cross-platform compatibility
  * @module utils/paths
  *
  * Handles OpenClaw state directory resolution following OpenClaw SDK conventions.

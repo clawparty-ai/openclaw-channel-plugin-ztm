@@ -1,5 +1,5 @@
 /**
- * @fileoverview Retry utilities for ZTM Chat
+ * Retry utilities for ZTM Chat
  * @module utils/retry
  *
  * Provides retry logic with exponential backoff for network operations.

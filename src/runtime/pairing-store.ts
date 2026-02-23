@@ -1,5 +1,5 @@
 /**
- * @fileoverview Persistent pairing state store
+ * Persistent pairing state store
  * @module runtime/pairing-store
  * Tracks pending pairing requests so they survive gateway restarts
  * and can be cleaned up automatically after expiration

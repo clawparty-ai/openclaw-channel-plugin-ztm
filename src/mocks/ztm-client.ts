@@ -1,5 +1,5 @@
 /**
- * @fileoverview Mock ZTM Agent Server for Integration Testing
+ * Mock ZTM Agent Server for Integration Testing
  * @module mocks/ztm-client
  * Simulates the ZTM Chat API endpoints for testing purposes.
  * Provides an in-memory HTTP server that responds to ZTM Agent API calls.

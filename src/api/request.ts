@@ -1,5 +1,5 @@
 /**
- * @fileoverview Common request handling utilities for ZTM API Client
+ * Common request handling utilities for ZTM API Client
  * @module api/request
  * Provides HTTP request functionality with retry logic and timeout handling
  */

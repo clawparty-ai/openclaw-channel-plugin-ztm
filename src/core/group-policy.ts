@@ -1,5 +1,5 @@
 /**
- * @fileoverview Group Policy enforcement for ZTM Chat
+ * Group Policy enforcement for ZTM Chat
  * @module core/group-policy
  *
  * Controls which users can send group messages and what tools are available.

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Repository implementations for ZTM Chat
+ * Repository implementations for ZTM Chat
  * @module runtime/repository-impl
  * Concrete implementations of repository interfaces defined in repository.ts
  *

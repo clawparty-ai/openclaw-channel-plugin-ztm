@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Configuration Validation
+ * ZTM Chat Configuration Validation
  * @module config/validation
  * Validates configuration with detailed error messages using Result pattern
  */

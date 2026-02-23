@@ -1,5 +1,5 @@
 /**
- * @fileoverview Input validation utilities
+ * Input validation utilities
  * @module utils/validation
  *
  * Provides input validation and sanitization for:

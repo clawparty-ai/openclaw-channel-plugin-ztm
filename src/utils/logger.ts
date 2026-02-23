@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Plugin Logger
+ * ZTM Chat Plugin Logger
  * @module utils/logger
  *
  * Structured logging with level support (debug, info, warn, error).

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Configuration Schema Definition
+ * ZTM Chat Configuration Schema Definition
  * @module config/schema
  * TypeBox schema definition with inferred types
  * Schema drives types - no separate type definitions needed

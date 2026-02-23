@@ -1,5 +1,5 @@
 /**
- * @fileoverview Connectivity Management for ZTM Chat
+ * Connectivity Management for ZTM Chat
  * @module channel/connectivity-manager
  * Handles agent connectivity, permit loading, and mesh joining
  */

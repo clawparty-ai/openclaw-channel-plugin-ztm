@@ -1,5 +1,5 @@
 /**
- * @fileoverview Message Dispatcher for ZTM Chat
+ * Message Dispatcher for ZTM Chat
  * @module channel/message-dispatcher
  * Handles inbound message context creation and dispatch to AI agents
  */

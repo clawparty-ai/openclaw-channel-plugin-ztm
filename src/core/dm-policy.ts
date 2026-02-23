@@ -1,5 +1,5 @@
 /**
- * @fileoverview DM (Direct Message) Policy enforcement for ZTM Chat
+ * DM (Direct Message) Policy enforcement for ZTM Chat
  * @module core/dm-policy
  *
  * Controls which users can send messages based on policy configuration.

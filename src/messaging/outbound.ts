@@ -1,5 +1,5 @@
 /**
- * @fileoverview Outbound Message Sending
+ * Outbound Message Sending
  * @module messaging/outbound
  * Outbound message sending for ZTM Chat
  */

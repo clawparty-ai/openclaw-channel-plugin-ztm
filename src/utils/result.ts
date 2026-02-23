@@ -1,5 +1,5 @@
 /**
- * @fileoverview Result handling utilities
+ * Result handling utilities
  * @module utils/result
  *
  * Unified error handling for Result types. Reduces repetitive

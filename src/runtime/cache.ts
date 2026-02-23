@@ -1,5 +1,5 @@
 /**
- * @fileoverview Cache utilities for runtime state management
+ * Cache utilities for runtime state management
  * @module runtime/cache
  * Provides bounded caches with TTL support for group permissions
  */

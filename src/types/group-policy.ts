@@ -1,7 +1,6 @@
 /**
- * @fileoverview Group Policy Types for ZTM Chat
+ * Group Policy Types for ZTM Chat
  * @module types/group-policy
- * Defines types for group permissions and policy enforcement
  *
  * NOTE ON TYPE RELATIONSHIP TO CONFIG SCHEMA:
  * This module defines runtime types (with required fields and defaults applied).
@@ -20,7 +19,7 @@ import type { GroupPolicy } from '../config/schema.js';
 export type { GroupPolicy } from '../config/schema.js';
 
 /**
- * @description Tool policy for a group
+ * Tool policy for a group
  */
 export interface GroupToolPolicy {
   /** Allowed tools (if specified, only these tools are allowed) */
@@ -30,7 +29,7 @@ export interface GroupToolPolicy {
 }
 
 /**
- * @description Per-sender tool policy overrides
+ * Per-sender tool policy overrides
  */
 export interface GroupToolPolicyBySender {
   [sender: string]: {
@@ -42,7 +41,7 @@ export interface GroupToolPolicyBySender {
 }
 
 /**
- * @description Group permissions configuration
+ * Group permissions configuration
  */
 export interface GroupPermissions {
   /** Group creator (always has full access) */
@@ -62,7 +61,7 @@ export interface GroupPermissions {
 }
 
 /**
- * @description Result of group policy check
+ * Result of group policy check
  */
 export interface GroupMessageCheckResult {
   /** Whether the message is allowed to be processed */

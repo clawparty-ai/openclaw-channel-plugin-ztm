@@ -1,5 +1,5 @@
 /**
- * @fileoverview Repository interfaces for ZTM Chat
+ * Repository interfaces for ZTM Chat
  * @module runtime/repository
  * Defines abstraction boundaries between messaging and runtime layers
  *

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM API Client barrel export
+ * ZTM API Client barrel export
  * @module api
  * Re-exports all API client functionality
  */

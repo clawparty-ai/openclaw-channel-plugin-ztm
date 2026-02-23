@@ -1,5 +1,5 @@
 /**
- * @fileoverview Message sync time utilities
+ * Message sync time utilities
  * @module utils/sync-time
  *
  * Handles initial sync logic for first install or missing state scenarios.

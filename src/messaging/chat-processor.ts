@@ -1,5 +1,5 @@
 /**
- * @fileoverview Chat Message Processing
+ * Chat Message Processing
  * @module messaging/chat-processor
  * High-level chat message processing utilities
  * Used by both watcher.ts and polling.ts to process incoming messages

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Account runtime state management
+ * Account runtime state management
  * @module runtime/state
  * Manages runtime state for multiple ZTM Chat accounts
  *

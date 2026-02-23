@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat API Types
+ * ZTM Chat API Types
  * @module types/api
  * Types for ZTM Agent API communication
  */
@@ -14,7 +14,7 @@ export type { ZTMDiscoveryError } from './errors.js';
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * @description ZTM Message interface - matches ZTM Agent API format
+ * ZTM Message interface - matches ZTM Agent API format
  */
 export interface ZTMMessage {
   time: number;
@@ -23,7 +23,7 @@ export interface ZTMMessage {
 }
 
 /**
- * @description ZTM Peer interface
+ * ZTM Peer interface
  */
 export interface ZTMPeer {
   username: string;
@@ -31,7 +31,7 @@ export interface ZTMPeer {
 }
 
 /**
- * @description ZTM User Info interface
+ * ZTM User Info interface
  */
 export interface ZTMUserInfo {
   username: string;
@@ -39,7 +39,7 @@ export interface ZTMUserInfo {
 }
 
 /**
- * @description ZTM Mesh Info interface - matches /api/meshes/{name} response
+ * ZTM Mesh Info interface - matches /api/meshes/{name} response
  */
 export interface ZTMMeshInfo {
   name: string;
@@ -49,7 +49,7 @@ export interface ZTMMeshInfo {
 }
 
 /**
- * @description ZTM Endpoint interface - matches /api/meshes/{name}/endpoints response
+ * ZTM Endpoint interface - matches /api/meshes/{name}/endpoints response
  */
 export interface ZTMEndpoint {
   isLocal: boolean;
@@ -62,7 +62,7 @@ export interface ZTMEndpoint {
 }
 
 /**
- * @description ZTM Chat interface - matches /apps/ztm/chat/api/chats response
+ * ZTM Chat interface - matches /apps/ztm/chat/api/chats response
  */
 export interface ZTMChat {
   peer?: string;
@@ -76,7 +76,7 @@ export interface ZTMChat {
 }
 
 /**
- * @description Watch change item for storage monitoring
+ * Watch change item for storage monitoring
  */
 export interface WatchChangeItem {
   type: 'peer' | 'group';
@@ -91,7 +91,7 @@ export interface WatchChangeItem {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * @description ZTM API Client interface with Result-based error handling.
+ * ZTM API Client interface with Result-based error handling.
  *
  * All operations return Result<T, E> types for consistent error handling:
  * - Success: { ok: true, value: T }

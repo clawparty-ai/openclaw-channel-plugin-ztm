@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat State Management
+ * ZTM Chat State Management
  * @module channel/state
  * Account snapshot building and state utilities
  */

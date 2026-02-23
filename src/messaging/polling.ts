@@ -1,5 +1,5 @@
 /**
- * @fileoverview Fallback Polling Watcher
+ * Fallback Polling Watcher
  * @module messaging/polling
  * Fallback polling watcher for ZTM Chat
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Configuration Defaults and Resolution
+ * ZTM Chat Configuration Defaults and Resolution
  * @module config/defaults
  * Default values and configuration resolution logic
  */

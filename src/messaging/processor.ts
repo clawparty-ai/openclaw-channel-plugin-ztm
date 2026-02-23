@@ -1,5 +1,5 @@
 /**
- * @fileoverview Message Processing
+ * Message Processing
  * @module messaging/processor
  * Normalizes and validates incoming messages
  *

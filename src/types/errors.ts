@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Error Types
+ * ZTM Chat Error Types
  * @module types/errors
  * Specialized error types for ZTM Chat operations with rich context information
  * Follows the Result<T, E> error handling pattern
@@ -12,7 +12,7 @@ import { success, failure, type Result } from './common.js';
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * @description Base error class for all ZTM Chat operations.
+ * Base error class for all ZTM Chat operations.
  * Provides structured error information including context and cause.
  */
 export abstract class ZTMError extends Error {

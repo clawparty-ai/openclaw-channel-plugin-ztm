@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Configuration Types
+ * ZTM Chat Configuration Types
  * @module types/config
  * Single source of truth: types are inferred from config/schema.ts
  * DO NOT redefine types here - import from config/schema.ts instead

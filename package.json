@@ -34,7 +34,9 @@
     "changelog": "git-cliff --output CHANGELOG.md",
     "changelog:unreleased": "git-cliff --unreleased",
     "changelog:preview": "git-cliff --unreleased",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.48",
@@ -53,6 +55,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.0.0",
+    "typedoc": "^0.28.17",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Channel Module barrel export
+ * ZTM Chat Channel Module barrel export
  * @module channel
  * Barrel export for all channel-related functionality
  */

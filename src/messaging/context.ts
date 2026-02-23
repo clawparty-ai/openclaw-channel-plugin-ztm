@@ -1,5 +1,5 @@
 /**
- * @fileoverview Messaging Context
+ * Messaging Context
  * @module messaging/context
  * Encapsulates dependencies needed by the messaging layer
  * Eliminates direct DI container access from messaging modules

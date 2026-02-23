@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Configuration Module barrel export
+ * ZTM Chat Configuration Module barrel export
  * @module config
  * Barrel export for all configuration-related functionality
  */

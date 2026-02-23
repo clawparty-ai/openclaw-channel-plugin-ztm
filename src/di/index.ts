@@ -1,5 +1,5 @@
 /**
- * @fileoverview Dependency Injection Module
+ * Dependency Injection Module
  * @module di/index
  * Barrel exports for DI container and service factories
  */

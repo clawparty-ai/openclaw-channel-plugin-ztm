@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type guards and null/undefined handling utilities
+ * Type guards and null/undefined handling utilities
  * @module utils/guards
  *
  * Provides consistent patterns for null checks, default values,

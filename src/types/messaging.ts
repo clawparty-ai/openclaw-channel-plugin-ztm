@@ -1,11 +1,11 @@
 /**
- * @fileoverview ZTM Chat Messaging Types
+ * ZTM Chat Messaging Types
  * @module types/messaging
  * Message processing and handling types
  */
 
 /**
- * @description Local type for ZTM chat messages (normalized)
+ * Local type for ZTM chat messages (normalized)
  */
 export interface ZTMChatMessage {
   id: string;
@@ -22,7 +22,7 @@ export interface ZTMChatMessage {
 }
 
 /**
- * @description Message processing result
+ * Message processing result
  */
 export interface MessageCheckResult {
   allowed: boolean;
@@ -31,7 +31,7 @@ export interface MessageCheckResult {
 }
 
 /**
- * @description Raw ZTM message format (from API)
+ * Raw ZTM message format (from API)
  */
 export interface RawZTMMessage {
   time: number;

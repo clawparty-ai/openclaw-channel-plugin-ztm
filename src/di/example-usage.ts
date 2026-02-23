@@ -1,5 +1,5 @@
 /**
- * @fileoverview Dependency Injection Usage Example
+ * Dependency Injection Usage Example
  * @module di/example-usage
  * Demonstrates how to refactor plugin.ts to use DI container
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Dependency Injection Container
+ * Dependency Injection Container
  * @module di/container
  * Provides centralized dependency management and enables testability
  */

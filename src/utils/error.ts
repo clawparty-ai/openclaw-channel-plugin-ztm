@@ -1,5 +1,5 @@
 /**
- * @fileoverview Error handling utilities
+ * Error handling utilities
  * @module utils/error
  *
  * Provides consistent error message extraction and error wrapping

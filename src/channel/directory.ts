@@ -1,5 +1,5 @@
 /**
- * @fileoverview Directory Operations for ZTM Chat Channel Plugin
+ * Directory Operations for ZTM Chat Channel Plugin
  * @module channel/directory
  * Handles user and peer discovery functionality
  */

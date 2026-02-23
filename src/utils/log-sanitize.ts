@@ -1,5 +1,5 @@
 /**
- * @fileoverview Log sanitization utilities
+ * Log sanitization utilities
  * @module utils/log-sanitize
  *
  * Protects against CWE-117: Improper Output Neutralization for Logs.

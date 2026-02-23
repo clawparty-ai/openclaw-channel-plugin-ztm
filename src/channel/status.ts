@@ -1,5 +1,5 @@
 /**
- * @fileoverview Status Operations for ZTM Chat Channel Plugin
+ * Status Operations for ZTM Chat Channel Plugin
  * @module channel/status
  * Handles runtime status collection and channel summaries
  */

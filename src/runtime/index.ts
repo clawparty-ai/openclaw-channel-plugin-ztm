@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Runtime Module barrel export
+ * ZTM Chat Runtime Module barrel export
  * @module runtime
  * Barrel export for all runtime-related functionality
  */

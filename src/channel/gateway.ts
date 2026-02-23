@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Gateway Implementation
+ * ZTM Chat Gateway Implementation
  * @module channel/gateway
  * Gateway methods for starting, stopping, and managing accounts
  */
@@ -379,7 +379,6 @@ export async function startAccountGateway(ctx: {
  * Logout account gateway implementation
  *
  * @param accountId - The account ID to logout
- * @param cfg - Optional OpenClaw configuration
  * @returns Promise resolving to cleared status
  */
 export async function logoutAccountGateway({

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Type Definitions
+ * ZTM Chat Type Definitions
  * @module types
  * Barrel export for all ZTM Chat type definitions
  */

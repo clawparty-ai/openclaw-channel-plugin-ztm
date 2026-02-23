@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Permit management for mesh connectivity
+ * ZTM Permit management for mesh connectivity
  * @module connectivity/permit
  *
  * Provides functions for:

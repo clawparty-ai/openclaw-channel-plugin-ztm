@@ -1,5 +1,5 @@
 /**
- * @fileoverview Mesh operations API for ZTM Chat
+ * Mesh operations API for ZTM Chat
  * @module api/mesh-api
  * Provides functions for mesh network operations and peer discovery
  */

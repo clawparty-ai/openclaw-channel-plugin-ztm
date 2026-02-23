@@ -1,5 +1,5 @@
 /**
- * @fileoverview Chat operations API for ZTM Chat
+ * Chat operations API for ZTM Chat
  * @module api/chat-api
  * Provides functions for retrieving chat list from ZTM Agent
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview ZTM Chat Messaging Module
+ * ZTM Chat Messaging Module
  * @module messaging
  * Barrel export for all messaging-related functionality
  */
