@@ -43,7 +43,7 @@
     "openclaw": "^2026.2.22"
   },
   "devDependencies": {
-    "@types/node": "^24.10.13",
+    "@types/node": "^25.3.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^4.0.18",
