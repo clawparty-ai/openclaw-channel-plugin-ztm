@@ -13,8 +13,8 @@ npx lint-staged
 echo "Running typecheck..."
 npx tsc --noEmit
 
-# Run tests (unit only, excluding E2E for faster pre-commit)
-echo "Running unit tests..."
-npm run test:unit
+# Run tests
+echo "Running tests..."
+npm test
 
 echo "All pre-commit checks passed!"
