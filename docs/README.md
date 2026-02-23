@@ -6,14 +6,19 @@ Welcome to the ZTM Chat Plugin documentation. This section contains comprehensiv
 
 ```
 docs/
-├── user-guide.md         # End-user guide
+├── README.md                    # Documentation index (this file)
+├── user-guide.md                # End-user guide
+├── developer-quickstart.md      # Developer quick start guide
+├── architecture.md              # System architecture documentation
+├── integration-examples.md      # Code examples and integration guide
+├── troubleshooting.md           # Troubleshooting guide
 ├── api/
-│   ├── README.md        # API documentation index
-│   ├── reference.md     # API reference
-│   ├── types.md         # TypeScript type definitions
-│   └── errors.md        # Error handling
+│   ├── README.md                # API documentation index
+│   ├── reference.md             # API reference
+│   ├── types.md                 # TypeScript type definitions
+│   └── errors.md                # Error handling
 └── adr/
-    └── README.md        # Architecture Decision Records
+    └── README.md                # Architecture Decision Records
 ```
 
 ## Quick Links
@@ -21,9 +26,12 @@ docs/
 ### For Users
 - [User Guide](user-guide.md) - Getting started and configuration
 - [Configuration Options](user-guide.md#configuration-options)
-- [Troubleshooting](user-guide.md#troubleshooting)
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
 
 ### For Developers
+- [Developer Quick Start](developer-quickstart.md) - Get started with development
+- [System Architecture](architecture.md) - Detailed system architecture
+- [Integration Examples](integration-examples.md) - Code examples and patterns
 - [API Reference](api/reference.md) - Complete API documentation
 - [Type Definitions](api/types.md) - TypeScript types
 - [Error Handling](api/errors.md) - Error codes and handling
