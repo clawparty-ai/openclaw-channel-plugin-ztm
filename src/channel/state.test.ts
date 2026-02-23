@@ -149,7 +149,6 @@ describe('buildAccountSnapshot', () => {
 
       const account = createMockAccount();
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _snapshot = buildAccountSnapshot({ account });
     });
 
@@ -186,7 +185,6 @@ describe('buildAccountSnapshot', () => {
 
       const account = createMockAccount();
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _snapshot = buildAccountSnapshot({ account });
     });
   });

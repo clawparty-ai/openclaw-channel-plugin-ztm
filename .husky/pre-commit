@@ -9,6 +9,10 @@ echo "Running pre-commit checks..."
 echo "Running lint-staged..."
 npx lint-staged
 
+# Run ESLint on all source files
+echo "Running eslint..."
+npx eslint src/
+
 # Run TypeScript type checking
 echo "Running typecheck..."
 npx tsc --noEmit

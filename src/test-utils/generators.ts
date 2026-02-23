@@ -3,7 +3,13 @@
 
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage, ZTMChat, ZTMPeer } from '../types/api.js';
-import { ZTMError, ZTMApiError, ZTMTimeoutError, ZTMReadError, ZTMSendError } from '../types/errors.js';
+import {
+  ZTMError,
+  ZTMApiError,
+  ZTMTimeoutError,
+  ZTMReadError,
+  ZTMSendError,
+} from '../types/errors.js';
 
 // ============================================================================
 // Error Types for Network Error Generation
@@ -246,7 +252,6 @@ export function generateNetworkError(
 ): ZTMError {
   const method = options?.method ?? 'GET';
   const path = options?.path ?? '/api/test';
-  const peer = options?.peer ?? 'test-peer';
 
   switch (type) {
     case NetworkErrorType.TIMEOUT:
