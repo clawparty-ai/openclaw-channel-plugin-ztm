@@ -30,6 +30,7 @@ export interface StepContext {
   cleanupInterval?: NodeJS.Timeout;
   log?: GatewayLogger;
   setStatus?: StatusSetter;
+  cfg?: Record<string, unknown>;
 }
 
 export interface RetryPolicy {
