@@ -45,6 +45,8 @@ npm-debug.log*
 CLAUDE.md
 .claude/
 .mcp.json
+_bmad/
+_bmad-output/
 
 # Worktrees
 .worktrees/
