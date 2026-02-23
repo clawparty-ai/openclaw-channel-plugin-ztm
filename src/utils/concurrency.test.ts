@@ -597,4 +597,226 @@ describe('Race condition tests', () => {
       expect(results).toEqual([false, false, false]);
     });
   });
+
+  describe('boundary: Semaphore full rejection (exceed MAX_CONCURRENT)', () => {
+    it('should reject acquire when queue is at exactly max capacity', async () => {
+      const semaphore = new Semaphore(1, 3); // 1 permit, max queue 3
+
+      // Acquire the only permit
+      await semaphore.acquire();
+
+      // Fill the queue exactly to capacity
+      const p1 = semaphore.acquire();
+      const p2 = semaphore.acquire();
+      const p3 = semaphore.acquire();
+
+      // Wait for queue to be filled
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Queue should be exactly at capacity
+      expect(semaphore.queuedWaiters()).toBe(3);
+
+      // This acquire should be rejected immediately (queue is full)
+      const result = await semaphore.acquire();
+
+      expect(result).toBe(false);
+    });
+
+    it('should reject acquire when queue exceeds max capacity', async () => {
+      const semaphore = new Semaphore(1, 2); // 1 permit, max queue 2
+
+      // Acquire the only permit
+      await semaphore.acquire();
+
+      // Fill the queue beyond capacity
+      const p1 = semaphore.acquire();
+      const p2 = semaphore.acquire();
+
+      // Wait for queue to be filled
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Queue should be at capacity
+      expect(semaphore.queuedWaiters()).toBe(2);
+
+      // Try to add more - should be rejected
+      const result1 = await semaphore.acquire();
+      const result2 = await semaphore.acquire();
+      const result3 = await semaphore.acquire();
+
+      // All should be rejected
+      expect(result1).toBe(false);
+      expect(result2).toBe(false);
+      expect(result3).toBe(false);
+    });
+
+    it('should allow new acquire after queue slot becomes available', async () => {
+      const semaphore = new Semaphore(1, 2); // 1 permit, max queue 2
+
+      // Acquire the only permit
+      await semaphore.acquire();
+
+      // Fill the queue - these will wait for permits (2 = max queue)
+      const p1 = semaphore.acquire();
+      const p2 = semaphore.acquire();
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // This should be rejected (queue full)
+      const rejected = await semaphore.acquire();
+      expect(rejected).toBe(false);
+
+      // Queue should be at capacity
+      expect(semaphore.queuedWaiters()).toBe(2);
+
+      // Release one permit - should allow one waiting waiter to proceed
+      semaphore.release();
+
+      // Wait for waiter to be resolved
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Now queue should have one spot available
+      expect(semaphore.queuedWaiters()).toBe(1);
+
+      // Clean up
+      semaphore.drain();
+    });
+
+    it('should reject excess acquires when queue is full', async () => {
+      const semaphore = new Semaphore(1, 5); // Small queue for testing
+
+      await semaphore.acquire();
+
+      // Fill queue to exactly capacity
+      const promises = Array(5)
+        .fill(null)
+        .map(() => semaphore.acquire());
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Queue should be exactly at capacity
+      expect(semaphore.queuedWaiters()).toBe(5);
+
+      // Additional acquires should be rejected immediately
+      const rejected1 = await semaphore.acquire();
+      const rejected2 = await semaphore.acquire();
+
+      expect(rejected1).toBe(false);
+      expect(rejected2).toBe(false);
+
+      // Queue still at capacity (not increased)
+      expect(semaphore.queuedWaiters()).toBe(5);
+
+      // Clean up
+      semaphore.drain();
+    });
+
+    it('should correctly track permits after multiple rejections', async () => {
+      const semaphore = new Semaphore(2, 3); // 2 permits, max queue 3
+
+      // Use all permits
+      await semaphore.acquire();
+      await semaphore.acquire();
+
+      expect(semaphore.availablePermits()).toBe(0);
+
+      // Try to exceed queue capacity - use long timeout
+      const p1 = semaphore.acquire(10000);
+      const p2 = semaphore.acquire(10000);
+      const p3 = semaphore.acquire(10000);
+
+      // Wait a bit
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // This should be rejected immediately (queue full)
+      const rejected = await semaphore.acquire();
+      expect(rejected).toBe(false);
+
+      // Check queue - should have 3 waiters
+      expect(semaphore.queuedWaiters()).toBe(3);
+
+      // Release all 3 waiters - each release transfers permit to a waiter
+      semaphore.release(); // First waiter gets permit (permits stays 0, waiter proceeds)
+      semaphore.release(); // Second waiter gets permit
+      semaphore.release(); // Third waiter gets permit
+
+      // Wait for waiters to proceed
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // All permits should be used by waiters now
+      expect(semaphore.availablePermits()).toBe(0);
+      expect(semaphore.queuedWaiters()).toBe(0);
+
+      // Clean up
+      semaphore.drain();
+    });
+  });
+
+  describe('boundary: timeout = 0', () => {
+    it('should fail immediately with timeout = 0', async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      const result = await semaphore.acquire(0);
+
+      expect(result).toBe(false);
+      expect(semaphore.queuedWaiters()).toBe(0); // Should be cleaned up
+    });
+
+    it('should succeed immediately when permit available with timeout = 0', async () => {
+      const semaphore = new Semaphore(2);
+
+      const result = await semaphore.acquire(0);
+
+      expect(result).toBe(true);
+      expect(semaphore.availablePermits()).toBe(1);
+    });
+  });
+
+  describe('boundary: timeout negative', () => {
+    it('should timeout immediately with negative timeout', async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      // Negative timeout is treated as 1ms by Node.js, so it times out immediately
+      const result = await semaphore.acquire(-100);
+
+      // Should fail immediately (timeout fires right away)
+      expect(result).toBe(false);
+      expect(semaphore.queuedWaiters()).toBe(0); // Cleaned up after timeout
+    });
+
+    it('should handle very large negative timeout', async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      // Large negative is also treated as 1ms by Node.js
+      const result = await semaphore.acquire(-Number.MAX_SAFE_INTEGER);
+
+      // Should timeout immediately
+      expect(result).toBe(false);
+      expect(semaphore.queuedWaiters()).toBe(0);
+    });
+  });
+
+  describe('boundary: execute with edge case timeouts', () => {
+    it('should fail immediately with timeout = 0 in execute', async () => {
+      const semaphore = new Semaphore(1);
+
+      await semaphore.acquire();
+
+      await expect(semaphore.execute(async () => 'done', 0)).rejects.toThrow();
+    });
+
+    it('should succeed with immediate execution when permits available', async () => {
+      const semaphore = new Semaphore(1);
+
+      const result = await semaphore.execute(async () => 'success', 0);
+
+      expect(result).toBe('success');
+      expect(semaphore.availablePermits()).toBe(1);
+    });
+  });
 });

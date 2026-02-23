@@ -15,3 +15,6 @@ export * from './http-server.js';
 
 // Re-export file system test utilities
 export * from './fs-helpers.js';
+
+// Re-export stress testing utilities
+export * from './stress-helpers.js';

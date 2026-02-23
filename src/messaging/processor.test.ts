@@ -110,6 +110,23 @@ describe('Message Processor', () => {
     const baseMessage = { time: Date.now(), sender: 'alice' };
     const context = { config: testConfigOpenDM, storeAllowFrom: [] as string[], accountId: 'test' };
 
+    // Empty message handling
+    it('should reject empty message', () => {
+      const message = '';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).toBeNull();
+    });
+
+    // Single character message
+    it('should accept single character message', () => {
+      const message = 'a';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.content).toBe('a');
+    });
+
     it('should accept message at exactly MAX_MESSAGE_LENGTH', () => {
       const message = 'a'.repeat(MAX_MESSAGE_LENGTH);
       const result = processIncomingMessage({ ...baseMessage, message }, context);
@@ -145,6 +162,58 @@ describe('Message Processor', () => {
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe('Hello world');
+    });
+
+    // Ultra large message (100KB) - performance test
+    it('should reject 100KB message for memory protection', () => {
+      const largeMessage = 'a'.repeat(100 * 1024); // 100KB
+      const result = processIncomingMessage({ ...baseMessage, message: largeMessage }, context);
+
+      // Should be rejected as it exceeds MAX_MESSAGE_LENGTH (10KB)
+      expect(result).toBeNull();
+    });
+
+    // Unicode mixed message - Chinese + English + emoji
+    it('should handle Unicode mixed message (Chinese + English + emoji)', () => {
+      const message = '你好 Hello 世界 🌍 这是测试 message! 🎉';
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.content).toBe(message);
+    });
+
+    it('should handle Unicode at MAX_MESSAGE_LENGTH boundary', () => {
+      // Create a message with mixed Unicode that approaches the limit
+      // Each Chinese character and emoji is 1 codepoint but counts as character length
+      const chineseChars = '你好世界';
+      const emoji = '🎉🧩🚀';
+      const base = 'Hello';
+      // Build message to exactly MAX_MESSAGE_LENGTH characters
+      const repeatingUnit = `${base}${chineseChars}${emoji}`;
+      const repeatCount = Math.floor(MAX_MESSAGE_LENGTH / repeatingUnit.length);
+      const message = repeatingUnit.repeat(repeatCount).slice(0, MAX_MESSAGE_LENGTH);
+
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.content.length).toBe(message.length);
+    });
+
+    it('should reject Unicode message exceeding MAX_MESSAGE_LENGTH', () => {
+      // Build a Unicode message that exceeds the limit
+      // Note: JavaScript .length counts UTF-16 code units, emoji are 2 units each
+      // "你好Hello🎉" = 9 code units (你=1, 好=1, H=1, e=1, l=1, l=1, o=1, 🎉=2)
+      const repeatingUnit = '你好Hello🎉';
+      const unitLength = repeatingUnit.length; // 9
+      // Need enough repeats to exceed MAX_MESSAGE_LENGTH (10000)
+      const repeatCount = Math.ceil((MAX_MESSAGE_LENGTH + 1) / unitLength) + 1; // ~1112
+      const message = repeatingUnit.repeat(repeatCount).slice(0, MAX_MESSAGE_LENGTH + 1);
+
+      expect(message.length).toBe(MAX_MESSAGE_LENGTH + 1); // Verify test setup
+
+      const result = processIncomingMessage({ ...baseMessage, message }, context);
+
+      expect(result).toBeNull();
     });
   });
 

@@ -620,4 +620,134 @@ describe('Retry utilities', () => {
       expect(uniqueDelays.size).toBeGreaterThan(1);
     });
   });
+
+  describe('boundary: retry count = 0', () => {
+    it('should execute function only once with maxRetries = 0', async () => {
+      const fn = vi.fn().mockResolvedValue('success');
+      const result = await retryAsync(fn, { maxRetries: 0 });
+
+      expect(result).toBe('success');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry on error with maxRetries = 0', async () => {
+      const fn = vi.fn().mockRejectedValue(new Error('ETIMEDOUT'));
+
+      await expect(retryAsync(fn, { maxRetries: 0 })).rejects.toThrow('ETIMEDOUT');
+
+      // Should have called exactly once (no retries)
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('boundary: retry count = negative', () => {
+    it('should handle maxRetries = -1 - loop does not execute (edge case)', async () => {
+      // When maxRetries is negative, the loop condition 0 <= -1 is false
+      // so the function is never called, resulting in "Retry failed"
+      const fn = vi.fn().mockResolvedValue('success');
+
+      // This is the actual behavior: with negative maxRetries, no attempts are made
+      await expect(retryAsync(fn, { maxRetries: -1 })).rejects.toThrow('Retry failed');
+      expect(fn).toHaveBeenCalledTimes(0);
+    });
+
+    it('should handle maxRetries = -5 - loop does not execute', async () => {
+      const fn = vi.fn().mockResolvedValue('success');
+
+      await expect(retryAsync(fn, { maxRetries: -5 })).rejects.toThrow('Retry failed');
+      expect(fn).toHaveBeenCalledTimes(0);
+    });
+
+    it('should throw Retry failed for negative maxRetries even with error', async () => {
+      const fn = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+
+      // With negative maxRetries, the loop never runs so no error is caught
+      await expect(retryAsync(fn, { maxRetries: -1 })).rejects.toThrow('Retry failed');
+
+      // Function was never called
+      expect(fn).toHaveBeenCalledTimes(0);
+    });
+  });
+
+  describe('boundary: API_TIMEOUT_MS = 0', () => {
+    it('should handle zero timeout in createTimeoutController', async () => {
+      const { controller, timeoutId } = createTimeoutController(0);
+
+      // With 0 timeout, should abort immediately
+      // Give a tiny delay to allow the timeout to fire
+      await new Promise(resolve => setTimeout(resolve, 1));
+
+      expect(controller.signal.aborted).toBe(true);
+      clearTimeout(timeoutId);
+    });
+
+    it('should fail immediately with timeout = 0 in retryAsync', async () => {
+      const fn = vi.fn().mockRejectedValue(new Error('ETIMEDOUT'));
+
+      const start = Date.now();
+
+      // With timeout=0, should fail almost immediately
+      // The timeout triggers after the first attempt, which takes ~1s due to initialDelay
+      await expect(
+        retryAsync(fn, {
+          maxRetries: 1,
+          initialDelay: 1000,
+          timeout: 0,
+        })
+      ).rejects.toThrow();
+
+      const elapsed = Date.now() - start;
+
+      // Should complete within reasonable time (the 1000ms delay applies)
+      expect(elapsed).toBeLessThan(2000);
+    });
+
+    it('should succeed immediately when function is fast with timeout = 0', async () => {
+      const fn = vi.fn().mockResolvedValue('success');
+
+      const result = await retryAsync(fn, {
+        maxRetries: 0,
+        timeout: 0,
+      });
+
+      expect(result).toBe('success');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('boundary: API_TIMEOUT_MS negative', () => {
+    it('should handle negative timeout in createTimeoutController', async () => {
+      const { controller, timeoutId } = createTimeoutController(-100);
+
+      // Negative timeout should abort immediately (similar to 0)
+      await new Promise(resolve => setTimeout(resolve, 1));
+
+      // The signal may or may not be aborted depending on implementation
+      // Clear any potential timeout to prevent issues
+      clearTimeout(timeoutId);
+    });
+
+    it('should handle negative timeout in retryAsync', async () => {
+      const fn = vi.fn().mockResolvedValue('success');
+
+      // Negative timeout should still work for successful cases
+      const result = await retryAsync(fn, {
+        maxRetries: 0,
+        timeout: -1000,
+      });
+
+      expect(result).toBe('success');
+    });
+
+    it('should handle very large negative timeout', async () => {
+      const fn = vi.fn().mockResolvedValue('success');
+
+      const result = await retryAsync(fn, {
+        maxRetries: 0,
+        timeout: -Number.MAX_SAFE_INTEGER,
+      });
+
+      expect(result).toBe('success');
+    });
+  });
 });

@@ -65,6 +65,11 @@ export interface AccountRuntimeState {
   accountId: string;
   config: ZTMChatConfig;
   apiClient: ZTMApiClient | null;
+  // Connection status tracking for network resilience tests
+  // connected: API client connectivity status
+  // meshConnected: ZTM mesh network connectivity status
+  connected?: boolean;
+  meshConnected?: boolean;
   started?: boolean; // Process running state: watcher is active
   lastError: string | null;
   lastStartAt: Date | null;
