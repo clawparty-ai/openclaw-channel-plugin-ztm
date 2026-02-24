@@ -38,7 +38,7 @@ export async function sendZTMMessage(
   groupInfo?: { creator: string; group: string }
 ): Promise<Result<boolean, ZTMSendError>> {
   // Check initialization first
-  if (!state.config || !state.apiClient) {
+  if (!state.config || !state.chatSender) {
     const error = new ZTMSendError({
       peer,
       messageTime: Date.now(),
@@ -72,8 +72,8 @@ export async function sendZTMMessage(
 
   // Route to appropriate API method based on groupInfo
   const result = groupInfo
-    ? await state.apiClient.sendGroupMessage(groupInfo.creator, groupInfo.group, message)
-    : await state.apiClient.sendPeerMessage(peer, message);
+    ? await state.chatSender.sendGroupMessage(groupInfo.creator, groupInfo.group, message)
+    : await state.chatSender.sendPeerMessage(peer, message);
 
   // Handle result with consistent logging and state updates
   if (result.ok) {
