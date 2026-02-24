@@ -15,7 +15,7 @@ import { processIncomingMessage } from '../messaging/processor.js';
 import {
   getOrCreateAccountState,
   removeAccountState,
-  RuntimeManager,
+  resetDefaultProvider,
   disposeMessageStateStore,
 } from '../runtime/index.js';
 import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
@@ -29,14 +29,14 @@ describe('E2E: Stress Messaging', () => {
     // Setup fresh account state for each test
     // Use open DM policy to allow all messages for testing
     disposeMessageStateStore();
-    RuntimeManager.reset();
+    resetDefaultProvider();
     getOrCreateAccountState(testAccountId);
   });
 
   afterEach(async () => {
     // Cleanup
     removeAccountState(testAccountId);
-    RuntimeManager.reset();
+    resetDefaultProvider();
   });
 
   describe('High-Frequency Message Handling', () => {

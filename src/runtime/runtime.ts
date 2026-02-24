@@ -1,7 +1,7 @@
 /**
  * ZTM Runtime - Manages ZTM network connection and message handling
  * @module runtime/runtime
- * Refactored to use pure Factory Function + DI pattern
+ * Pure Factory Function + DI pattern - no singleton
  */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
@@ -63,25 +63,29 @@ export function createRuntimeProvider(): RuntimeProvider {
 }
 
 // ============================================================================
-// DEFAULT PROVIDER (for backward compatibility during migration)
+// DEFAULT PROVIDER
 // ============================================================================
 
 /**
- * Default runtime provider instance (used during migration)
- * In production, this should be obtained from DI container
+ * Default runtime provider instance for the application
  */
 let defaultProvider: RuntimeProvider | null = null;
 
 /**
  * Get the default runtime provider
- * NOTE: This is a temporary solution during migration
- * After migration, all code should use DI container
  */
 export function getDefaultRuntimeProvider(): RuntimeProvider {
   if (!defaultProvider) {
     defaultProvider = createRuntimeProvider();
   }
   return defaultProvider;
+}
+
+/**
+ * Reset the default provider (for testing purposes)
+ */
+export function resetDefaultProvider(): void {
+  defaultProvider = null;
 }
 
 /**
@@ -126,66 +130,4 @@ export function getZTMRuntime(): PluginRuntime {
  */
 export function isRuntimeInitialized(): boolean {
   return getDefaultRuntimeProvider().isInitialized();
-}
-
-// ============================================================================
-// DEPRECATED: Legacy RuntimeManager class (for backward compatibility)
-// ============================================================================
-
-/**
- * @deprecated Use createRuntimeProvider() instead
- * Singleton manager for ZTM runtime
- * Provides testable runtime management with dependency injection capability
- */
-export class RuntimeManager implements RuntimeProvider {
-  private static instance: RuntimeManager | null = null;
-  private runtime: PluginRuntime | null = null;
-
-  /**
-   * Get the singleton instance
-   * Creates instance on first call, returns existing instance thereafter
-   * @returns The RuntimeManager singleton instance
-   * @deprecated Use createRuntimeProvider() instead
-   */
-  static getInstance(): RuntimeManager {
-    if (!RuntimeManager.instance) {
-      RuntimeManager.instance = new RuntimeManager();
-    }
-    return RuntimeManager.instance;
-  }
-
-  /**
-   * Reset the singleton instance (for testing purposes)
-   * Call this in test beforeEach to clean state between tests
-   * @deprecated Use fresh createRuntimeProvider() instance instead
-   */
-  static reset(): void {
-    RuntimeManager.instance = null;
-    defaultProvider = null;
-  }
-
-  /**
-   * Set the runtime instance
-   * @param runtime - The runtime to use
-   */
-  setRuntime(runtime: PluginRuntime): void {
-    this.runtime = runtime;
-  }
-
-  /**
-   * Get the current runtime instance
-   * @returns The current PluginRuntime instance
-   * @throws Error if runtime not initialized
-   */
-  getRuntime(): PluginRuntime {
-    return requireDefined(this.runtime, 'ZTM runtime not initialized - call setZTMRuntime first');
-  }
-
-  /**
-   * Check if runtime is initialized
-   * @returns true if runtime has been set, false otherwise
-   */
-  isInitialized(): boolean {
-    return isDefined(this.runtime);
-  }
 }

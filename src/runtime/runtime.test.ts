@@ -5,9 +5,9 @@ import {
   setZTMRuntime,
   getZTMRuntime,
   isRuntimeInitialized,
-  RuntimeManager,
   createRuntimeProvider,
   getDefaultRuntimeProvider,
+  resetDefaultProvider,
 } from './runtime.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 
@@ -24,14 +24,12 @@ vi.mock('../utils/logger.js', () => ({
 
 describe('Runtime Management', () => {
   beforeEach(() => {
-    // Reset singleton before each test
-    RuntimeManager.reset();
+    resetDefaultProvider();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    // Clean up runtime
-    RuntimeManager.reset();
+    resetDefaultProvider();
   });
 
   describe('getZTMRuntime', () => {
@@ -93,8 +91,6 @@ describe('Runtime Management', () => {
     });
 
     it('should call setRuntimeLogger when runtime has log property', () => {
-      // This test verifies the runtime can be set with a log property
-      // The actual logger integration uses require() which doesn't work well with ESM mocks
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
         log: {
@@ -105,7 +101,6 @@ describe('Runtime Management', () => {
         },
       } as unknown as PluginRuntime;
 
-      // Should not throw - runtime is set successfully
       expect(() => setZTMRuntime(mockRuntime)).not.toThrow();
       expect(getZTMRuntime()).toBe(mockRuntime);
     });
@@ -115,7 +110,6 @@ describe('Runtime Management', () => {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
 
-      // Should not throw
       expect(() => setZTMRuntime(mockRuntime)).not.toThrow();
     });
   });
@@ -141,7 +135,7 @@ describe('Runtime Management', () => {
       } as unknown as PluginRuntime;
 
       setZTMRuntime(mockRuntime);
-      RuntimeManager.reset();
+      resetDefaultProvider();
 
       expect(isRuntimeInitialized()).toBe(false);
     });
@@ -190,7 +184,6 @@ describe('createRuntimeProvider', () => {
     const runtime1 = { id: 1 } as unknown as PluginRuntime;
     provider1.setRuntime(runtime1);
 
-    // provider2 should be independent
     expect(provider2.isInitialized()).toBe(false);
     expect(() => provider2.getRuntime()).toThrow();
   });
@@ -198,11 +191,11 @@ describe('createRuntimeProvider', () => {
 
 describe('getDefaultRuntimeProvider', () => {
   beforeEach(() => {
-    RuntimeManager.reset();
+    resetDefaultProvider();
   });
 
   afterEach(() => {
-    RuntimeManager.reset();
+    resetDefaultProvider();
   });
 
   it('should return same provider on multiple calls', () => {
@@ -210,58 +203,5 @@ describe('getDefaultRuntimeProvider', () => {
     const provider2 = getDefaultRuntimeProvider();
 
     expect(provider1).toBe(provider2);
-  });
-});
-
-describe('RuntimeManager Singleton', () => {
-  beforeEach(() => {
-    RuntimeManager.reset();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    RuntimeManager.reset();
-  });
-
-  it('should return same instance on multiple getInstance calls', () => {
-    const instance1 = RuntimeManager.getInstance();
-    const instance2 = RuntimeManager.getInstance();
-
-    expect(instance1).toBe(instance2);
-  });
-
-  it('should allow setting and getting runtime', () => {
-    const manager = RuntimeManager.getInstance();
-    const mockRuntime = {
-      channel: { routing: { resolveAgentRoute: vi.fn() } },
-    } as unknown as PluginRuntime;
-
-    manager.setRuntime(mockRuntime);
-
-    expect(manager.getRuntime()).toBe(mockRuntime);
-    expect(manager.isInitialized()).toBe(true);
-  });
-
-  it('should throw error when getting runtime before set', () => {
-    const manager = RuntimeManager.getInstance();
-
-    expect(() => manager.getRuntime()).toThrow('ZTM runtime not initialized');
-  });
-
-  it('should report uninitialized state correctly', () => {
-    const manager = RuntimeManager.getInstance();
-
-    expect(manager.isInitialized()).toBe(false);
-  });
-
-  it('should report initialized state after setting runtime', () => {
-    const manager = RuntimeManager.getInstance();
-    const mockRuntime = {
-      channel: { routing: { resolveAgentRoute: vi.fn() } },
-    } as unknown as PluginRuntime;
-
-    manager.setRuntime(mockRuntime);
-
-    expect(manager.isInitialized()).toBe(true);
   });
 });

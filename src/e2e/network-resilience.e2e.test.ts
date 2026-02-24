@@ -14,7 +14,7 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import {
   getOrCreateAccountState,
   removeAccountState,
-  RuntimeManager,
+  resetDefaultProvider,
   disposeMessageStateStore,
 } from '../runtime/index.js';
 import { processIncomingMessage } from '../messaging/processor.js';
@@ -27,13 +27,13 @@ describe('E2E: Network Resilience', () => {
 
   beforeEach(() => {
     disposeMessageStateStore();
-    RuntimeManager.reset();
+    resetDefaultProvider();
     getOrCreateAccountState(testAccountId);
   });
 
   afterEach(async () => {
     removeAccountState(testAccountId);
-    RuntimeManager.reset();
+    resetDefaultProvider();
     vi.restoreAllMocks();
   });
 
