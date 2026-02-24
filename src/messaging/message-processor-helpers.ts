@@ -87,23 +87,15 @@ export function isPeerChat(chat: ZTMChat): boolean {
 export function extractSender(chat: ZTMChat): string {
   const explicitSender = chat.latest?.sender;
 
-  logger.debug(
-    `[extractSender] chat.peer="${chat.peer ?? ''}", chat.latest?.sender="${explicitSender ?? '(none)'}", isPeer=${isPeerChat(chat)}`
-  );
-
   if (explicitSender) {
-    logger.debug(`[extractSender] returning explicitSender="${explicitSender}"`);
     return explicitSender;
   }
 
   // For peer chats, fall back to peer ID
   // For group chats, return empty string (no fallback)
   if (isPeerChat(chat)) {
-    const fallback = chat.peer || '';
-    logger.debug(`[extractSender] no explicit sender, falling back to peer="${fallback}"`);
-    return fallback;
+    return chat.peer || '';
   }
-  logger.debug(`[extractSender] group chat with no sender, returning empty string`);
   return '';
 }
 

@@ -29,9 +29,7 @@ async function processGroupChat(
     name?: string;
     latest?: { time: number; message: string; sender?: string } | null;
   },
-  config: ZTMChatConfig,
   pollStoreAllowFrom: string[],
-  accountId: string,
   state: AccountRuntimeState
 ): Promise<void> {
   if (!chat.latest || !chat.creator || !chat.group) return;
@@ -58,23 +56,16 @@ async function processPeerChat(
   chat: { peer?: string; latest?: { time: number; message: string; sender?: string } | null },
   config: ZTMChatConfig,
   pollStoreAllowFrom: string[],
-  accountId: string,
   state: AccountRuntimeState
 ): Promise<void> {
-  logger.debug(
-    `[${accountId}] processPeerChat: chat.peer="${chat.peer ?? '(none)'}", config.username="${config.username}", latest.sender="${chat.latest?.sender ?? '(none)'}"`
-  );
   if (!chat.peer || chat.peer === config.username) return;
   if (!chat.latest) return;
-  logger.debug(
-    `[${accountId}] processPeerChat: chat.peer !== config.username and latest exists, will process`
-  );
 
   const normalized = processPeerMessage(
     {
       time: chat.latest.time,
       message: chat.latest.message,
-      sender: chat.latest.sender || chat.peer, // Fix: use latest.sender (actual sender) to avoid processing bot's own messages
+      sender: chat.latest.sender || chat.peer,
     },
     state,
     pollStoreAllowFrom
@@ -98,18 +89,17 @@ async function processChats(
   }>,
   config: ZTMChatConfig,
   pollStoreAllowFrom: string[],
-  accountId: string,
   state: AccountRuntimeState
 ): Promise<void> {
   for (const chat of chats) {
     const isGroup = !!(chat.creator && chat.group);
 
     if (isGroup) {
-      await processGroupChat(chat, config, pollStoreAllowFrom, accountId, state);
+      await processGroupChat(chat, pollStoreAllowFrom, state);
       continue;
     }
 
-    await processPeerChat(chat, config, pollStoreAllowFrom, accountId, state);
+    await processPeerChat(chat, config, pollStoreAllowFrom, state);
   }
 }
 
@@ -171,7 +161,7 @@ export async function startPollingWatcher(
       );
     }
 
-    await processChats(chatsToProcess, config, effectiveAllowFrom, state.accountId, state);
+    await processChats(chatsToProcess, config, effectiveAllowFrom, state);
   }, pollingInterval);
 
   if (abortSignal) {
