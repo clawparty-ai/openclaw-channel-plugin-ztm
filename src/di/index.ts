@@ -4,7 +4,16 @@
  * Barrel exports for DI container and service factories
  */
 
-import type { ILogger, IConfig, IApiClient, IApiClientFactory, IRuntime, IChatReader, IChatSender, IDiscovery } from './container';
+import type {
+  ILogger,
+  IConfig,
+  IApiClient,
+  IApiClientFactory,
+  IRuntime,
+  IChatReader,
+  IChatSender,
+  IDiscovery,
+} from './container';
 import { DEPENDENCIES, container } from './container';
 
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
@@ -162,15 +171,17 @@ export function createApiDiscoveryService(): () => IDiscovery {
  * Runtime service factory
  * Returns a factory function for DI container registration
  *
- * This factory uses createRuntimeProvider to avoid hidden dependencies
- * but accessing it through DI makes the dependency explicit.
+ * This factory uses the default runtime provider to share the same
+ * runtime instance that is set by setZTMRuntime() in index.ts.
+ * This ensures consistency across the application.
  *
  * @returns Factory function that returns an IRuntime instance
  */
 export function createRuntimeService(): () => IRuntime {
-  // Use the new factory function - no singleton dependency
-  const { createRuntimeProvider } = require('../runtime/runtime.js');
-  const provider = createRuntimeProvider();
+  // Use the default provider to share the same runtime instance
+  // that is set by setZTMRuntime() in index.ts
+  const { getDefaultRuntimeProvider } = require('../runtime/runtime.js');
+  const provider = getDefaultRuntimeProvider();
 
   return () => ({
     get: () => provider.getRuntime(),
