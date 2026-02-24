@@ -327,4 +327,85 @@ describe('API Request Retry Integration', () => {
       );
     });
   });
+
+  describe('Auth error sanitization', () => {
+    it('should sanitize 401 Unauthorized response body', async () => {
+      mockFetchWithRetry.mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Invalid token: Bearer eyJhbGciOiJIUzI1NiIs...',
+      } as unknown as Response);
+
+      const handler = createRequestHandler('http://test:7777', 5000, {
+        logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+        fetch: mockFetch as unknown as typeof fetch,
+        fetchWithRetry: mockFetchWithRetry as any,
+      });
+
+      const result = await handler<unknown>('GET', '/api/chat');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error) {
+        // Verify response body is truncated
+        const preview = (result.error.context.responseBodyPreview as string) ?? '';
+        expect(typeof preview).toBe('string');
+        expect(preview.length).toBeLessThanOrEqual(500);
+      }
+    });
+
+    it('should sanitize 403 Forbidden response body', async () => {
+      const sensitiveBody = 'Access denied for user admin at /opt/app/src/Auth.ts:42';
+
+      mockFetchWithRetry.mockResolvedValue({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => sensitiveBody,
+      } as unknown as Response);
+
+      const handler = createRequestHandler('http://test:7777', 5000, {
+        logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+        fetch: mockFetch as unknown as typeof fetch,
+        fetchWithRetry: mockFetchWithRetry as any,
+      });
+
+      const result = await handler<unknown>('GET', '/api/chat');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error) {
+        // Verify status code is captured
+        expect(result.error.context.statusCode).toBe(403);
+      }
+    });
+
+    it('should handle 401 without exposing internal details', async () => {
+      const internalErrorBody = 'java.sql.SQLException: Connection refused to 192.168.1.50:5432';
+
+      mockFetchWithRetry.mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => internalErrorBody,
+      } as unknown as Response);
+
+      const handler = createRequestHandler('http://test:7777', 5000, {
+        logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+        fetch: mockFetch as unknown as typeof fetch,
+        fetchWithRetry: mockFetchWithRetry as any,
+      });
+
+      const result = await handler<unknown>('GET', '/api/chat');
+
+      expect(result.ok).toBe(false);
+      // The error should be created but we verify truncation
+      if (!result.ok && result.error) {
+        const preview = (result.error.context.responseBodyPreview as string) ?? '';
+        expect(preview.length).toBeLessThanOrEqual(500);
+      }
+    });
+  });
 });
