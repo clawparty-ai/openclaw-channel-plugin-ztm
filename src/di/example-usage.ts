@@ -23,7 +23,7 @@ runtime.doSomething();
 */
 
 // ============================================================================
-// AFTER (Dependency Injection - Loose Coupling)
+// AFTER (Dependency Injection - Loose Coupling with ISP)
 // ============================================================================
 /*
 import {
@@ -32,23 +32,32 @@ import {
   createDependencyKey,
   createLogger,
   createConfigService,
-  createApiClientService,
+  createApiReaderService,
+  createApiSenderService,
+  createApiDiscoveryService,
   createRuntimeService,
   type ILogger,
-  type IApiClient,
+  type IConfig,
+  type IChatReader,
+  type IChatSender,
+  type IDiscovery,
   type IRuntime,
 } from "../di/index.js";
 
 // Services are lazy-loaded from container
 const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
 const config = container.get<IConfig>(DEPENDENCIES.CONFIG);
-const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
+
+// Use segregated interfaces - each component gets only what it needs
+const chatReader = container.get<IChatReader>(DEPENDENCIES.API_CLIENT_READER);
+const chatSender = container.get<IChatSender>(DEPENDENCIES.API_CLIENT_SENDER);
+const discovery = container.get<IDiscovery>(DEPENDENCIES.API_CLIENT_DISCOVERY);
 const runtime = container.get<IRuntime>(DEPENDENCIES.RUNTIME);
 
-// Use services through container interface...
-const result = await apiClient.getChats();
+// Use services through specific interfaces...
+const result = await chatReader.getChats();
 logger.info("Chats loaded");
-runtime.doSomething();
+const meshInfo = await discovery.getMeshInfo();
 */
 
 // ============================================================================
@@ -99,19 +108,25 @@ describe("Channel Plugin with DI", () => {
     expect(logger.info).toHaveBeenCalledWith("Test message");
   });
 
-  it("should use injected api client", async () => {
-    const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
-    const chats = await apiClient.getChats();
-    expect(apiClient.getChats).toHaveBeenCalled();
-    });
+  it("should use injected chat reader", async () => {
+    const chatReader = container.get<IChatReader>(DEPENDENCIES.API_CLIENT_READER);
+    const chats = await chatReader.getChats();
+    expect(chatReader.getChats).toHaveBeenCalled();
+  });
+
+  it("should use injected chat sender", async () => {
+    const chatSender = container.get<IChatSender>(DEPENDENCIES.API_CLIENT_SENDER);
+    const result = await chatSender.sendPeerMessage("peer", { time: 1, message: "test", sender: "me" });
+    expect(chatSender.sendPeerMessage).toHaveBeenCalled();
+  });
 });
 */
 
 // ============================================================================
-// MIGRATION PATH FOR plugin.ts
+// MIGRATION PATH FOR plugin.ts (with Interface Segregation)
 // ============================================================================
 /*
-To migrate plugin.ts to use DI:
+To migrate plugin.ts to use DI with segregated interfaces:
 
 1. Add imports:
    import {
@@ -120,31 +135,53 @@ To migrate plugin.ts to use DI:
      createDependencyKey,
      createLogger,
      createConfigService,
-     createApiClientService,
+     createApiReaderService,
+     createApiSenderService,
+     createApiDiscoveryService,
      createRuntimeService,
      type ILogger,
-     type IApiClient,
+     type IConfig,
+     type IChatReader,
+     type IChatSender,
+     type IDiscovery,
      type IRuntime,
    } from "../di/index.js";
 
 2. Register services in plugin initialization (before first use):
    container.register(DEPENDENCIES.LOGGER, createLogger("ztm-chat"));
    container.register(DEPENDENCIES.CONFIG, createConfigService());
-   container.register(DEPENDENCIES.API_CLIENT, createApiClientService());
+   container.register(DEPENDENCIES.API_CLIENT_READER, createApiReaderService());
+   container.register(DEPENDENCIES.API_CLIENT_SENDER, createApiSenderService());
+   container.register(DEPENDENCIES.API_CLIENT_DISCOVERY, createApiDiscoveryService());
    container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 
-3. Replace direct imports with container.get():
+3. Replace direct imports with container.get() - request only what you need:
    Before: const log = logger;
    After:  const log = container.get<ILogger>(DEPENDENCIES.LOGGER);
 
+   For message reading:
+   const chatReader = container.get<IChatReader>(DEPENDENCIES.API_CLIENT_READER);
+   const chats = await chatReader.getChats();
+
+   For message sending:
+   const chatSender = container.get<IChatSender>(DEPENDENCIES.API_CLIENT_SENDER);
+   await chatSender.sendPeerMessage(peer, message);
+
+   For discovery:
+   const discovery = container.get<IDiscovery>(DEPENDENCIES.API_CLIENT_DISCOVERY);
+   const meshInfo = await discovery.getMeshInfo();
+
 4. For testing: Replace container with mock in beforeEach
    container.registerInstance(DEPENDENCIES.LOGGER, mockLogger);
+   container.registerInstance(DEPENDENCIES.API_CLIENT_READER, mockChatReader);
 
 This migration:
 - Eliminates 14 direct import dependencies
 - Makes services injectable and testable
 - Provides lazy initialization
 - Enables service lifecycle management
+- Follows Interface Segregation Principle (ISP)
+- Each component gets only the interfaces it needs
 */
 
 export {};
