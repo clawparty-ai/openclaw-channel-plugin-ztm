@@ -50,6 +50,11 @@ export interface RetryConfig {
 }
 
 /**
+ * Type for error class constructors
+ */
+type ErrorConstructor = new (...args: any) => Error;
+
+/**
  * Configuration for RetryableErrorChecker
  */
 export interface RetryableErrorConfig {
@@ -58,6 +63,12 @@ export interface RetryableErrorConfig {
 
   /** Regex patterns to match retryable error messages */
   retryableErrorPatterns: RegExp[];
+
+  /** Error types that should never be retried */
+  nonRetryableErrorTypes: ErrorConstructor[];
+
+  /** Error types that are always retryable */
+  retryableErrorTypes: ErrorConstructor[];
 }
 
 /**
@@ -75,6 +86,8 @@ export const DEFAULT_RETRYABLE_ERROR_CONFIG: RetryableErrorConfig = {
     /aborterror/i,
     /fetch/i,
   ],
+  nonRetryableErrorTypes: [],
+  retryableErrorTypes: [ZTMTimeoutError, ZTMApiError],
 };
 
 /**
@@ -94,7 +107,21 @@ export class RetryableErrorChecker {
       return false;
     }
 
-    // Check explicitly retryable ZTM error types
+    // Check non-retryable types first
+    for (const Type of this.config.nonRetryableErrorTypes) {
+      if (error instanceof Type) {
+        return false;
+      }
+    }
+
+    // Check explicitly retryable types from config
+    for (const Type of this.config.retryableErrorTypes) {
+      if (error instanceof Type) {
+        return this.checkRetryableSubconditions(error);
+      }
+    }
+
+    // Check ZTM-specific error types
     if (error instanceof ZTMTimeoutError) {
       return true;
     }
@@ -117,6 +144,29 @@ export class RetryableErrorChecker {
     }
 
     return false;
+  }
+
+  /**
+   * Check subconditions for retryable error types (e.g., status codes)
+   */
+  private checkRetryableSubconditions(error: Error): boolean {
+    // For ZTMApiError, check status code
+    if (error instanceof ZTMApiError) {
+      const statusCode = error.context.statusCode as number | undefined;
+      if (statusCode !== undefined) {
+        return this.config.retryableStatusCodes.includes(statusCode);
+      }
+      // If no status code, be conservative and allow retry
+      return true;
+    }
+
+    // For ZTMTimeoutError, always retry
+    if (error instanceof ZTMTimeoutError) {
+      return true;
+    }
+
+    // For other types in retryableErrorTypes, allow retry
+    return true;
   }
 }
 
