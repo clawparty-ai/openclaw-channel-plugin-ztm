@@ -10,12 +10,6 @@ on:
       - 'index.ts'
       - 'typedoc.json'
       - 'package.json'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/**/*.ts'
-      - 'index.ts'
-      - 'typedoc.json'
   workflow_dispatch:
 
 permissions:

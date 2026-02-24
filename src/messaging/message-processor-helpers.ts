@@ -17,6 +17,14 @@ import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
 /**
+ * Watermark key input types - discriminated union for type-safe parameter handling
+ */
+export type WatermarkKeyInput =
+  | { type: 'message'; data: ZTMChatMessage }
+  | { type: 'group'; data: { group: string; creator: string } }
+  | { type: 'peer'; data: string };
+
+/**
  * Result of processing a single message
  */
 export interface ProcessMessageResult {
@@ -26,37 +34,25 @@ export interface ProcessMessageResult {
 
 /**
  * Generate a watermark key for message deduplication.
- * For group messages: "group:{creator}/{groupId}"
- * For peer messages: the peer identifier
+ * Uses discriminated union for type-safe parameter handling.
  *
- * @param messageOrGroupInfo - Either a ZTMChatMessage (from dispatcher) or group info object (from processor)
- * @param peer - Fallback peer identifier for peer messages (used when messageOrGroupInfo is not a ZTMChatMessage)
+ * @param input - Discriminated union containing message, group, or peer info
+ * @returns Watermark key: "group:{creator}/{groupId}" for groups, or peer identifier
  */
-export function getWatermarkKey(
-  messageOrGroupInfo: ZTMChatMessage | { group?: string; creator?: string } | null | undefined,
-  peer?: string
-): string {
-  // Handle ZTMChatMessage type (from dispatcher) - has 'peer' property
-  if (messageOrGroupInfo && 'peer' in messageOrGroupInfo) {
-    const msg = messageOrGroupInfo as ZTMChatMessage;
-    // Check for group message
-    if (msg.isGroup && msg.groupCreator && msg.groupId) {
-      return `group:${msg.groupCreator}/${msg.groupId}`;
+export function getWatermarkKey(input: WatermarkKeyInput): string {
+  switch (input.type) {
+    case 'message': {
+      const msg = input.data;
+      if (msg.isGroup && msg.groupCreator && msg.groupId) {
+        return `group:${msg.groupCreator}/${msg.groupId}`;
+      }
+      return msg.peer;
     }
-    // Peer message - use peer field
-    return msg.peer;
+    case 'group':
+      return `group:${input.data.creator}/${input.data.group}`;
+    case 'peer':
+      return input.data;
   }
-
-  // Handle groupInfo object (from processor) - has 'group' and 'creator' properties
-  if (messageOrGroupInfo && 'group' in messageOrGroupInfo && 'creator' in messageOrGroupInfo) {
-    const groupInfo = messageOrGroupInfo as { group?: string; creator?: string };
-    if (groupInfo.group && groupInfo.creator) {
-      return `group:${groupInfo.creator}/${groupInfo.group}`;
-    }
-  }
-
-  // Handle peer messages - use provided peer or fall back to empty string
-  return peer || '';
 }
 
 /**

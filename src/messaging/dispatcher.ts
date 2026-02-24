@@ -77,7 +77,7 @@ export async function notifyMessageCallbacks(
     logger.debug(`[${state.accountId}] Notified ${successCount} callbacks, ${errorCount} errors`);
   }
 
-  const watermarkKey = getWatermarkKey(message);
+  const watermarkKey = getWatermarkKey({ type: 'message', data: message });
   if (successCount > 0) {
     // Use async version to ensure atomic watermark update in concurrent scenarios
     await getAccountMessageStateStore(state.accountId).setWatermarkAsync(
