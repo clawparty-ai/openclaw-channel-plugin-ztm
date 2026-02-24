@@ -10,6 +10,7 @@ import type { ZTMMessage } from '../types/api.js';
 import type { AsyncResult } from '../types/common.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
+import type { MessagingContext } from '../messaging/context.js';
 
 // ============================================================================
 // DEPENDENCY KEYS
@@ -34,6 +35,7 @@ const _messageDispatcherKey = Symbol('ztm:message-dispatcher');
 const _allowFromRepoKey = Symbol('ztm:allow-from-repo');
 const _messageStateRepoKey = Symbol('ztm:message-state-repo');
 const _accountStateManagerKey = Symbol('ztm:account-state-manager');
+const _messagingContextKey = Symbol('ztm:messaging-context');
 
 export const DEPENDENCIES = {
   LOGGER: createDependencyKey<ILogger>(_loggerKey),
@@ -51,6 +53,7 @@ export const DEPENDENCIES = {
   ALLOW_FROM_REPO: createDependencyKey<IAllowFromRepository>(_allowFromRepoKey),
   MESSAGE_STATE_REPO: createDependencyKey<IMessageStateRepository>(_messageStateRepoKey),
   ACCOUNT_STATE_MANAGER: createDependencyKey<unknown>(_accountStateManagerKey),
+  MESSAGING_CONTEXT: createDependencyKey<MessagingContext>(_messagingContextKey),
 } as const;
 
 /**

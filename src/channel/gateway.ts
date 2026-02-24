@@ -24,7 +24,6 @@ import {
 import { PAIRING_CLEANUP_INTERVAL_MS } from '../constants.js';
 import { startMessageWatcher } from '../messaging/watcher.js';
 import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
-import { createMessagingContext } from '../messaging/context.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
 import { probeAccount as probeAccountConnectivity } from './connectivity-manager.js';
@@ -204,7 +203,7 @@ export async function setupAccountCallbacks(
   state.watchAbortController = watchAbortController;
 
   // Create messaging context and start watching for messages
-  const messagingContext = createMessagingContext(rt);
+  const messagingContext = container.get(DEPENDENCIES.MESSAGING_CONTEXT);
   await startMessageWatcher(state, messagingContext, watchAbortController.signal);
 
   // Setup periodic cleanup to prevent unbounded growth of pending pairings

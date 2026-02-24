@@ -3,48 +3,28 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMessagingContext } from './context.js';
-
-// Mock the DI container
-vi.mock('../di/index.js', () => ({
-  container: {
-    get: vi.fn(),
-  },
-  DEPENDENCIES: {
-    ALLOW_FROM_REPO: 'ALLOW_FROM_REPO',
-    MESSAGE_STATE_REPO: 'MESSAGE_STATE_REPO',
-  },
-}));
+import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
 
 // Mock repositories based on actual interface
-const mockAllowFromRepo = {
+const mockAllowFromRepo: IAllowFromRepository = {
   getAllowFrom: vi.fn().mockResolvedValue(['alice', 'bob']),
   clearCache: vi.fn(),
 };
 
-const mockMessageStateRepo = {
+const mockMessageStateRepo: IMessageStateRepository = {
   getWatermark: vi.fn().mockReturnValue(0),
   setWatermark: vi.fn(),
+  flush: vi.fn(),
 };
 
 describe('MessagingContext', () => {
-  let mockContainer: {
-    get: ReturnType<typeof vi.fn>;
-  };
-
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { container } = await import('../di/index.js');
-    mockContainer = container as unknown as typeof mockContainer;
-    mockContainer.get = vi.fn();
   });
 
   describe('createMessagingContext', () => {
-    it('should create messaging context with required repositories', async () => {
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
+    it('should create messaging context with required repositories', () => {
+      const context = createMessagingContext(mockAllowFromRepo, mockMessageStateRepo);
 
       expect(context).toHaveProperty('allowFromRepo');
       expect(context).toHaveProperty('messageStateRepo');
@@ -52,135 +32,46 @@ describe('MessagingContext', () => {
       expect(context.messageStateRepo).toBe(mockMessageStateRepo);
     });
 
-    it('should throw error when allowFromRepo is not available', async () => {
-      mockContainer.get.mockReturnValueOnce(null).mockReturnValueOnce(mockMessageStateRepo);
-
-      expect(() => createMessagingContext({} as any)).toThrow(
-        'Required repositories not available in container'
+    it('should throw error when allowFromRepo is not available', () => {
+      expect(() => createMessagingContext(null as any, mockMessageStateRepo)).toThrow(
+        'Required repositories not available'
       );
     });
 
-    it('should throw error when messageStateRepo is not available', async () => {
-      mockContainer.get.mockReturnValueOnce(mockAllowFromRepo).mockReturnValueOnce(null);
-
-      expect(() => createMessagingContext({} as any)).toThrow(
-        'Required repositories not available in container'
+    it('should throw error when messageStateRepo is not available', () => {
+      expect(() => createMessagingContext(mockAllowFromRepo, null as any)).toThrow(
+        'Required repositories not available'
       );
     });
 
-    it('should throw error when both repositories are not available', async () => {
-      mockContainer.get.mockReturnValueOnce(null).mockReturnValueOnce(null);
-
-      expect(() => createMessagingContext({} as any)).toThrow(
-        'Required repositories not available in container'
+    it('should throw error when both repositories are not available', () => {
+      expect(() => createMessagingContext(null as any, null as any)).toThrow(
+        'Required repositories not available'
       );
     });
-  });
 
-  describe('MessagingContext interface', () => {
-    it('should provide allowFromRepo with required methods', async () => {
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
+    it('should return context with correct structure', () => {
+      const context = createMessagingContext(mockAllowFromRepo, mockMessageStateRepo);
 
-      const context = createMessagingContext({} as any);
-
-      expect(typeof context.allowFromRepo.getAllowFrom).toBe('function');
-      expect(typeof context.allowFromRepo.clearCache).toBe('function');
+      expect(context.allowFromRepo.getAllowFrom).toBeDefined();
+      expect(context.allowFromRepo.clearCache).toBeDefined();
+      expect(context.messageStateRepo.getWatermark).toBeDefined();
+      expect(context.messageStateRepo.setWatermark).toBeDefined();
+      expect(context.messageStateRepo.flush).toBeDefined();
     });
 
-    it('should provide messageStateRepo with required methods', async () => {
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
+    it('should allow calling repository methods on returned context', async () => {
+      const context = createMessagingContext(mockAllowFromRepo, mockMessageStateRepo);
+      const mockRuntime = {} as any;
 
-      const context = createMessagingContext({} as any);
+      await context.allowFromRepo.getAllowFrom('account1', mockRuntime);
+      expect(mockAllowFromRepo.getAllowFrom).toHaveBeenCalledWith('account1', mockRuntime);
 
-      expect(typeof context.messageStateRepo.getWatermark).toBe('function');
-      expect(typeof context.messageStateRepo.setWatermark).toBe('function');
-    });
-  });
+      context.messageStateRepo.setWatermark('account1', 'peer:alice', 100);
+      expect(mockMessageStateRepo.setWatermark).toHaveBeenCalledWith('account1', 'peer:alice', 100);
 
-  describe('allowFromRepo operations', () => {
-    it('should get allowFrom list', async () => {
-      const mockSenders = ['alice', 'bob'];
-      mockAllowFromRepo.getAllowFrom.mockResolvedValue(mockSenders);
-
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      const runtime = {} as any;
-      const result = await context.allowFromRepo.getAllowFrom('test-account', runtime);
-
-      expect(result).toEqual(mockSenders);
-      expect(mockAllowFromRepo.getAllowFrom).toHaveBeenCalledWith('test-account', runtime);
-    });
-
-    it('should clear allowFrom cache', async () => {
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      context.allowFromRepo.clearCache('test-account');
-
-      expect(mockAllowFromRepo.clearCache).toHaveBeenCalledWith('test-account');
-    });
-
-    it('should handle null from getAllowFrom', async () => {
-      mockAllowFromRepo.getAllowFrom.mockResolvedValue(null);
-
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      const runtime = {} as any;
-      const result = await context.allowFromRepo.getAllowFrom('test-account', runtime);
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('messageStateRepo operations', () => {
-    it('should get watermark', async () => {
-      mockMessageStateRepo.getWatermark.mockReturnValue(100);
-
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      const watermark = context.messageStateRepo.getWatermark('test-account', 'alice');
-
-      expect(watermark).toBe(100);
-      expect(mockMessageStateRepo.getWatermark).toHaveBeenCalledWith('test-account', 'alice');
-    });
-
-    it('should set watermark', async () => {
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      context.messageStateRepo.setWatermark('test-account', 'alice', 100);
-
-      expect(mockMessageStateRepo.setWatermark).toHaveBeenCalledWith('test-account', 'alice', 100);
-    });
-
-    it('should return 0 for missing watermark', async () => {
-      mockMessageStateRepo.getWatermark.mockReturnValue(0);
-
-      mockContainer.get
-        .mockReturnValueOnce(mockAllowFromRepo)
-        .mockReturnValueOnce(mockMessageStateRepo);
-
-      const context = createMessagingContext({} as any);
-      const watermark = context.messageStateRepo.getWatermark('test-account', 'nonexistent');
-
-      expect(watermark).toBe(0);
+      context.messageStateRepo.flush();
+      expect(mockMessageStateRepo.flush).toHaveBeenCalledTimes(1);
     });
   });
 });
