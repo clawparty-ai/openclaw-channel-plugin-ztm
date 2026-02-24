@@ -49,7 +49,11 @@ describe('Mesh API', () => {
 
   describe('createMeshApi', () => {
     it('should return an object with all required methods', () => {
-      const mockRequest = createMockRequest({ ok: true, value: {} as ZTMMeshInfo });
+      // Return valid API response format to avoid accessing undefined properties
+      const mockRequest = createMockRequest({
+        ok: true,
+        value: { name: 'test-mesh', connected: false, agent: { username: 'test' } },
+      });
       const meshApi = createMeshApi(testConfig, mockRequest, mockLogger);
 
       expect(meshApi).toHaveProperty('getMeshInfo');
@@ -60,7 +64,10 @@ describe('Mesh API', () => {
 
     it('should use config.meshName in API paths', () => {
       const customConfig = { ...testConfig, meshName: 'custom-mesh' };
-      const mockRequest = createMockRequest({ ok: true, value: {} as ZTMMeshInfo });
+      const mockRequest = createMockRequest({
+        ok: true,
+        value: { name: 'custom-mesh', connected: false, agent: { username: 'test' } },
+      });
       const meshApi = createMeshApi(customConfig, mockRequest, mockLogger);
 
       // Call getMeshInfo to trigger the request
