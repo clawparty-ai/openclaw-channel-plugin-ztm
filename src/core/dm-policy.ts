@@ -42,14 +42,20 @@ import { normalizeUsername } from '../utils/validation.js';
 export function checkDmPolicy(
   sender: string,
   config: ZTMChatConfig,
-  storeAllowFrom: string[] = []
+  storeAllowFrom: string[] | null | undefined = []
 ): MessageCheckResult {
   // Reject empty or whitespace-only sender (security: prevent spoofing)
   if (!sender || !sender.trim()) {
     return { allowed: false, reason: 'denied', action: 'ignore' };
   }
 
+  // Normalize sender for comparison
   const normalizedSender = normalizeUsername(sender);
+
+  // Reject sender with only special characters (normalizes to empty string)
+  if (!normalizedSender) {
+    return { allowed: false, reason: 'denied', action: 'ignore' };
+  }
 
   const allowFrom = getOrDefault(config.allowFrom, []);
   const isWhitelisted =
@@ -59,9 +65,11 @@ export function checkDmPolicy(
     return { allowed: true, reason: 'whitelisted', action: 'process' };
   }
 
+  // Safely handle null/undefined storeAllowFrom
+  const safeStoreAllowFrom = storeAllowFrom ?? [];
   const isStoreApproved =
-    storeAllowFrom.length > 0 &&
-    storeAllowFrom.some(entry => normalizeUsername(entry) === normalizedSender);
+    safeStoreAllowFrom.length > 0 &&
+    safeStoreAllowFrom.some(entry => normalizeUsername(entry) === normalizedSender);
 
   if (isStoreApproved) {
     return { allowed: true, reason: 'whitelisted', action: 'process' };
@@ -103,13 +111,24 @@ export function checkDmPolicy(
 export function isUserWhitelisted(
   username: string,
   config: ZTMChatConfig,
-  storeAllowFrom: string[] = []
+  storeAllowFrom: string[] | null | undefined = []
 ): boolean {
+  // Handle null/undefined username
+  if (!username) {
+    return false;
+  }
+
   const normalized = normalizeUsername(username);
+
+  // Empty after normalization means invalid username
+  if (!normalized) {
+    return false;
+  }
+
   const allowFrom = getOrDefault(config.allowFrom, []);
 
   const inConfig = allowFrom.some(entry => normalizeUsername(entry) === normalized);
-  const inStore = storeAllowFrom.some(entry => normalizeUsername(entry) === normalized);
+  const inStore = (storeAllowFrom ?? []).some(entry => normalizeUsername(entry) === normalized);
 
   return inConfig || inStore;
 }
