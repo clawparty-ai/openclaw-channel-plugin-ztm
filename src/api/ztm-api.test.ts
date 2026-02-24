@@ -160,9 +160,10 @@ describe('ZTM API Client Integration', () => {
 
   it('should get mesh info successfully', async () => {
     const { fetch, mockResponse, calls } = createMockFetch();
+    // API returns nested agent.username structure
     mockResponse({
       connected: true,
-      username: 'test-user',
+      agent: { username: 'test-user' },
       errors: [],
     });
 
