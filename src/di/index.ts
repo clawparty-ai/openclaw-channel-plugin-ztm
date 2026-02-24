@@ -103,13 +103,13 @@ export function createApiClientService(): () => IApiClient {
  * @returns Factory function that returns an IRuntime instance
  */
 export function createRuntimeService(): () => IRuntime {
-  // Import RuntimeManager directly to ensure DI container is the entry point
-  const { RuntimeManager } = require('../runtime/runtime.js');
-  const manager = RuntimeManager.getInstance();
+  // Use the new factory function - no singleton dependency
+  const { createRuntimeProvider } = require('../runtime/runtime.js');
+  const provider = createRuntimeProvider();
 
   return () => ({
-    get: () => manager.getRuntime(),
-    isInitialized: () => manager.isInitialized(),
+    get: () => provider.getRuntime(),
+    isInitialized: () => provider.isInitialized(),
   });
 }
 
