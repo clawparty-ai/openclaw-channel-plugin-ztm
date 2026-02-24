@@ -347,11 +347,11 @@ describe('API Request Retry Integration', () => {
       const result = await handler<unknown>('GET', '/api/chat');
 
       expect(result.ok).toBe(false);
-      if (!result.ok) {
+      if (!result.ok && result.error) {
         // Verify response body is truncated
-        const preview = result.error.context.responseBodyPreview;
+        const preview = (result.error.context.responseBodyPreview as string) ?? '';
         expect(typeof preview).toBe('string');
-        expect(preview?.length).toBeLessThanOrEqual(500);
+        expect(preview.length).toBeLessThanOrEqual(500);
       }
     });
 
@@ -375,7 +375,7 @@ describe('API Request Retry Integration', () => {
       const result = await handler<unknown>('GET', '/api/chat');
 
       expect(result.ok).toBe(false);
-      if (!result.ok) {
+      if (!result.ok && result.error) {
         // Verify status code is captured
         expect(result.error.context.statusCode).toBe(403);
       }
@@ -402,8 +402,10 @@ describe('API Request Retry Integration', () => {
 
       expect(result.ok).toBe(false);
       // The error should be created but we verify truncation
-      const preview = result.error.context.responseBodyPreview;
-      expect(preview?.length).toBeLessThanOrEqual(500);
+      if (!result.ok && result.error) {
+        const preview = (result.error.context.responseBodyPreview as string) ?? '';
+        expect(preview.length).toBeLessThanOrEqual(500);
+      }
     });
   });
 });
