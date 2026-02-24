@@ -46,8 +46,8 @@ export async function startMessageWatcher(
   context: MessagingContext,
   abortSignal?: AbortSignal
 ): Promise<void> {
-  const { apiClient } = state;
-  if (!apiClient) return;
+  const { chatReader } = state;
+  if (!chatReader) return;
 
   const messagePath = '/apps/ztm/chat/shared/';
 
@@ -78,9 +78,9 @@ async function performInitialSync(
   state: AccountRuntimeState,
   storeAllowFrom: string[]
 ): Promise<ZTMChat[]> {
-  if (!state.apiClient) return [];
+  if (!state.chatReader) return [];
 
-  const chatsResult = await state.apiClient.getChats();
+  const chatsResult = await state.chatReader.getChats();
   if (!isSuccess(chatsResult)) {
     logger.warn(`[${state.accountId}] Initial read failed: ${chatsResult.error?.message}`);
     return [];
@@ -222,11 +222,11 @@ class WatchLoopController {
    * Execute a single watch iteration and return changed items
    */
   private async executeWatch(): Promise<WatchResult> {
-    if (!this.state.apiClient || !this.state.config) {
+    if (!this.state.chatReader || !this.state.config) {
       return { success: false, errorMessage: 'API client or config not available' };
     }
 
-    const changedResult = await this.state.apiClient.watchChanges(this.messagePath);
+    const changedResult = await this.state.chatReader.watchChanges(this.messagePath);
 
     if (!changedResult.ok) {
       return { success: false, errorMessage: changedResult.error?.message ?? 'Watch failed' };
@@ -450,7 +450,7 @@ async function processChangedPeer(
   peer: string,
   storeAllowFrom: string[]
 ): Promise<void> {
-  if (!state.apiClient) return;
+  if (!state.chatReader) return;
 
   // Get watermark and calculate sync start (limit to recent messages on first sync)
   const watermark = getAccountMessageStateStore(state.accountId).getWatermark(
@@ -458,7 +458,7 @@ async function processChangedPeer(
     peer
   );
   const since = getMessageSyncStart(watermark);
-  const messagesResult = await state.apiClient.getPeerMessages(peer, since);
+  const messagesResult = await state.chatReader.getPeerMessages(peer, since);
 
   if (!messagesResult.ok) {
     const safePeer = sanitizeForLog(peer);
@@ -496,7 +496,7 @@ async function processChangedGroup(
   name: string | undefined,
   storeAllowFrom: string[]
 ): Promise<void> {
-  if (!state.apiClient) return;
+  if (!state.chatReader) return;
 
   const groupKey = `group:${creator}/${group}`;
   const watermark = getAccountMessageStateStore(state.accountId).getWatermark(
@@ -510,7 +510,7 @@ async function processChangedGroup(
     `[${state.accountId}] Processing group messages from "${safeGroupKey}" since=${since}${hasNoHistory ? ' (no history)' : ''}`
   );
 
-  const messagesResult = await state.apiClient.getGroupMessages(creator, group, since);
+  const messagesResult = await state.chatReader.getGroupMessages(creator, group, since);
 
   if (!messagesResult.ok) {
     logger.warn(
@@ -535,9 +535,9 @@ async function performFullSync(
   state: AccountRuntimeState,
   storeAllowFrom: string[]
 ): Promise<void> {
-  if (!state.apiClient) return;
+  if (!state.chatReader) return;
 
-  const chatsResult = await state.apiClient.getChats();
+  const chatsResult = await state.chatReader.getChats();
   if (!isSuccess(chatsResult)) {
     logger.warn(`[${state.accountId}] Full sync failed: ${chatsResult.error?.message}`);
     return;

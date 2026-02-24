@@ -120,8 +120,8 @@ export async function startPollingWatcher(
   context: MessagingContext,
   abortSignal?: AbortSignal
 ): Promise<void> {
-  const { config, apiClient } = state;
-  if (!apiClient) return;
+  const { config, chatReader } = state;
+  if (!chatReader) return;
 
   const rawInterval = (config as Record<string, unknown>).pollingInterval;
   const pollingInterval =
@@ -138,7 +138,7 @@ export async function startPollingWatcher(
       return;
     }
 
-    if (!state.apiClient || !state.config) return;
+    if (!state.chatReader || !state.config) return;
 
     // Use cached allowFrom to avoid redundant async calls every poll cycle
     const rt = container.get(DEPENDENCIES.RUNTIME).get();
@@ -147,7 +147,7 @@ export async function startPollingWatcher(
     if (pollStoreAllowFrom === null) {
       return;
     }
-    const chatsResult = await state.apiClient.getChats();
+    const chatsResult = await state.chatReader.getChats();
     const chats = handleResult(chatsResult, {
       operation: 'getChats',
       peer: state.accountId,

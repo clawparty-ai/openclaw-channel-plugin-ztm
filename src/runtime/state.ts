@@ -19,6 +19,7 @@
 // External dependencies - these will use DI
 import { createZTMApiClient } from '../api/ztm-api.js';
 import { logger, type Logger } from '../utils/logger.js';
+import type { IChatReader, IChatSender, IDiscovery } from '../di/container.js';
 
 // Pure functions - keep as direct imports (deterministic, no side effects)
 import { getGroupPermission } from '../core/group-policy.js';
@@ -100,7 +101,9 @@ export class AccountStateManager {
     return {
       accountId,
       config: emptyConfig,
-      apiClient: null,
+      chatReader: null,
+      chatSender: null,
+      discovery: null,
       started: false,
       lastError: null,
       lastStartAt: null,
@@ -381,7 +384,9 @@ export class AccountStateManager {
       return false;
     }
 
-    state.apiClient = apiClient;
+    state.chatReader = apiClient as unknown as IChatReader;
+    state.chatSender = apiClient as unknown as IChatSender;
+    state.discovery = apiClient as unknown as IDiscovery;
     state.started = true;
     state.lastError = meshInfo.connected ? null : 'Not connected to ZTM mesh';
 
@@ -411,7 +416,9 @@ export class AccountStateManager {
     state.pendingPairings.clear();
     state.allowFromCache = null;
     state.groupPermissionCache?.clear();
-    state.apiClient = null;
+    state.chatReader = null;
+    state.chatSender = null;
+    state.discovery = null;
     state.started = false;
     state.lastStopAt = new Date();
 

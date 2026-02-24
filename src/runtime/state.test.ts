@@ -150,7 +150,7 @@ describe('Account Runtime State Management', () => {
       expect(state).toBeDefined();
       expect(state.accountId).toBe(testAccountId);
       expect(state.config).toBeDefined();
-      expect(state.apiClient).toBeNull();
+      expect(state.chatReader).toBeNull();
     });
 
     it('should return existing state for known account', () => {
@@ -289,7 +289,7 @@ describe('Account Runtime State Management', () => {
       expect(initialized).toBe(true);
 
       const state = getAllAccountStates().get(testAccountId);
-      expect(state?.apiClient).toBeDefined();
+      expect(state?.chatReader).toBeDefined();
     });
 
     it('should set config on state', async () => {
@@ -353,7 +353,7 @@ describe('Account Runtime State Management', () => {
       await stopRuntime(testAccountId);
 
       const stoppedState = getAllAccountStates().get(testAccountId);
-      expect(stoppedState?.apiClient).toBeNull();
+      expect(stoppedState?.chatReader).toBeNull();
     });
 
     it('should clear watch interval if set', async () => {
@@ -446,7 +446,9 @@ describe('Account Runtime State Management', () => {
 
       expect(state).toHaveProperty('accountId');
       expect(state).toHaveProperty('config');
-      expect(state).toHaveProperty('apiClient');
+      expect(state).toHaveProperty('chatReader');
+      expect(state).toHaveProperty('chatSender');
+      expect(state).toHaveProperty('discovery');
       expect(state).toHaveProperty('lastError');
       expect(state).toHaveProperty('lastStartAt');
       expect(state).toHaveProperty('lastStopAt');
