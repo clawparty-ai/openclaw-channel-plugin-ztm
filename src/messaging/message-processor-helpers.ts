@@ -17,6 +17,14 @@ import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
 /**
+ * Watermark key input types - discriminated union for type-safe parameter handling
+ */
+export type WatermarkKeyInput =
+  | { type: 'message'; data: ZTMChatMessage }
+  | { type: 'group'; data: { group: string; creator: string } }
+  | { type: 'peer'; data: string };
+
+/**
  * Result of processing a single message
  */
 export interface ProcessMessageResult {
