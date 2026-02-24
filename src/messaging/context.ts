@@ -5,8 +5,6 @@
  * Eliminates direct DI container access from messaging modules
  */
 
-import type { PluginRuntime } from 'openclaw/plugin-sdk';
-import { container, DEPENDENCIES } from '../di/index.js';
 import type { IAllowFromRepository } from '../runtime/repository.js';
 import type { IMessageStateRepository } from '../runtime/repository.js';
 
@@ -18,7 +16,7 @@ import type { IMessageStateRepository } from '../runtime/repository.js';
  *
  * Usage:
  * ```typescript
- * const context = createMessagingContext(runtime);
+ * const context = createMessagingContext(allowFromRepo, messageStateRepo);
  * await startMessageWatcher(state, context);
  * ```
  */
@@ -32,20 +30,18 @@ export interface MessagingContext {
 /**
  * Create messaging context
  *
- * Uses the DI container to get the required repositories.
+ * Accepts repositories as parameters for explicit dependency injection.
  *
+ * @param allowFromRepo - AllowFrom repository instance
+ * @param messageStateRepo - Message state repository instance
  * @returns Messaging context with all required dependencies
  */
-export function createMessagingContext(_runtime: PluginRuntime): MessagingContext {
-  // Get repositories from DI container
-  // This keeps container access in one place (this function)
-  const allowFromRepo = container.get(DEPENDENCIES.ALLOW_FROM_REPO) as IAllowFromRepository;
-  const messageStateRepo = container.get(
-    DEPENDENCIES.MESSAGE_STATE_REPO
-  ) as IMessageStateRepository;
-
+export function createMessagingContext(
+  allowFromRepo: IAllowFromRepository,
+  messageStateRepo: IMessageStateRepository
+): MessagingContext {
   if (!allowFromRepo || !messageStateRepo) {
-    throw new Error('Required repositories not available in container');
+    throw new Error('Required repositories not available');
   }
 
   return {

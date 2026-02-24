@@ -23,6 +23,7 @@ import {
   type IApiClientFactory,
   type IRuntime,
 } from '../di/index.js';
+import { createMessagingContext } from '../messaging/context.js';
 import type { ResolvedZTMChatAccount } from './config.js';
 import { PROBE_TIMEOUT_MS } from '../constants.js';
 import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
@@ -80,6 +81,11 @@ container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 container.register(DEPENDENCIES.ALLOW_FROM_REPO, createAllowFromRepositoryService());
 container.register(DEPENDENCIES.MESSAGE_STATE_REPO, createMessageStateRepositoryService());
 container.register(DEPENDENCIES.ACCOUNT_STATE_MANAGER, createAccountStateManagerService());
+container.register(DEPENDENCIES.MESSAGING_CONTEXT, () => {
+  const allowFromRepo = container.get(DEPENDENCIES.ALLOW_FROM_REPO);
+  const messageStateRepo = container.get(DEPENDENCIES.MESSAGE_STATE_REPO);
+  return createMessagingContext(allowFromRepo, messageStateRepo);
+});
 
 // ============================================================================
 // Helper Functions (imported from other modules)
