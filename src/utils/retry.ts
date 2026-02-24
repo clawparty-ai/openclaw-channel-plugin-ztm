@@ -52,7 +52,8 @@ export interface RetryConfig {
 /**
  * Type for error class constructors
  */
-type ErrorConstructor = new (...args: any) => Error;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ErrorConstructor = new (...args: any[]) => Error;
 
 /**
  * Configuration for RetryableErrorChecker

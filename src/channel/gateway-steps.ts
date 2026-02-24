@@ -11,8 +11,9 @@
  * 6. preload_message_state - Pre-load message state for performance
  * 7. setup_callbacks - Setup message callbacks and watchers
  */
-import type { StepContext, PipelineStep } from './gateway-pipeline.types.js';
+import type { StepContext, PipelineStep, GatewayLogger } from './gateway-pipeline.types.js';
 import type { ZTMChatConfig } from '../types/config.js';
+import type { PermitData } from '../types/connectivity.js';
 import { RETRY_POLICIES } from './gateway-retry.js';
 import { resolveZTMChatConfig, validateZTMChatConfig } from '../config/index.js';
 import { initializeRuntime, getAllAccountStates } from '../runtime/state.js';
@@ -111,7 +112,7 @@ export function createGatewaySteps(_ctx: StepContext): PipelineStep[] {
         await joinMeshIfNeeded(
           stepCtx.config!,
           stepCtx.endpointName!,
-          stepCtx.permitData as any,
+          stepCtx.permitData as PermitData,
           stepCtx
         );
       },
@@ -150,7 +151,7 @@ export function createGatewaySteps(_ctx: StepContext): PipelineStep[] {
           stepCtx.account.accountId,
           stepCtx.config!,
           state,
-          stepCtx as any
+          { log: stepCtx.log, cfg: stepCtx.cfg }
         );
 
         stepCtx.state = state;
@@ -200,12 +201,10 @@ function resolveAndValidateConfig(
  * This ensures state is loaded before any getWatermark/setWatermark calls.
  * Errors are logged but not thrown to avoid blocking account initialization.
  */
-async function preloadMessageState(accountId: string, log?: unknown): Promise<void> {
+async function preloadMessageState(accountId: string, log?: GatewayLogger): Promise<void> {
   const { getAccountMessageStateStore } = await import('../runtime/store.js');
   const messageStateStore = getAccountMessageStateStore(accountId);
   messageStateStore.ensureLoaded().catch(err => {
-    if (log && typeof log === 'object' && 'error' in log) {
-      (log as any).error(`[${accountId}] Failed to pre-load message state: ${err}`);
-    }
+    log?.error?.(`[${accountId}] Failed to pre-load message state: ${err}`);
   });
 }
