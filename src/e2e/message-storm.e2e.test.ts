@@ -16,7 +16,7 @@ import { notifyMessageCallbacks } from '../messaging/dispatcher.js';
 import {
   getOrCreateAccountState,
   removeAccountState,
-  RuntimeManager,
+  resetDefaultProvider,
   disposeMessageStateStore,
 } from '../runtime/index.js';
 import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
@@ -29,14 +29,14 @@ describe('E2E: Message Storm', () => {
   beforeEach(() => {
     // Setup fresh account state for each test
     disposeMessageStateStore();
-    RuntimeManager.reset();
+    resetDefaultProvider();
     getOrCreateAccountState(testAccountId);
   });
 
   afterEach(async () => {
     // Cleanup
     removeAccountState(testAccountId);
-    RuntimeManager.reset();
+    resetDefaultProvider();
   });
 
   describe('Burst Message Peak - 500 Messages Simultaneously', () => {

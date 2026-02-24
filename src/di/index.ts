@@ -96,20 +96,19 @@ export function createApiClientService(): () => IApiClient {
  * Runtime service factory
  * Returns a factory function for DI container registration
  *
- * This factory uses RuntimeManager directly to avoid hidden dependencies
- * on module-level singletons. The RuntimeManager is still a singleton,
+ * This factory uses createRuntimeProvider to avoid hidden dependencies
  * but accessing it through DI makes the dependency explicit.
  *
  * @returns Factory function that returns an IRuntime instance
  */
 export function createRuntimeService(): () => IRuntime {
-  // Import RuntimeManager directly to ensure DI container is the entry point
-  const { RuntimeManager } = require('../runtime/runtime.js');
-  const manager = RuntimeManager.getInstance();
+  // Use the new factory function - no singleton dependency
+  const { createRuntimeProvider } = require('../runtime/runtime.js');
+  const provider = createRuntimeProvider();
 
   return () => ({
-    get: () => manager.getRuntime(),
-    isInitialized: () => manager.isInitialized(),
+    get: () => provider.getRuntime(),
+    isInitialized: () => provider.isInitialized(),
   });
 }
 

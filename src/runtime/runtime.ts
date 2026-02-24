@@ -1,7 +1,7 @@
 /**
  * ZTM Runtime - Manages ZTM network connection and message handling
  * @module runtime/runtime
- * Refactored to use Dependency Injection + Singleton pattern for testability
+ * Pure Factory Function + DI pattern - no singleton
  */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
@@ -17,17 +17,17 @@ import { requireDefined, isDefined } from '../utils/guards.js';
  */
 export interface RuntimeProvider {
   /**
+   * Set a new runtime instance
+   * @param runtime - The runtime to use
+   */
+  setRuntime(runtime: PluginRuntime): void;
+
+  /**
    * Get the current runtime instance
    * @returns The current PluginRuntime instance
    * @throws Error if runtime not initialized
    */
   getRuntime(): PluginRuntime;
-
-  /**
-   * Set a new runtime instance
-   * @param runtime - The runtime to use
-   */
-  setRuntime(runtime: PluginRuntime): void;
 
   /**
    * Check if runtime is initialized
@@ -37,84 +37,66 @@ export interface RuntimeProvider {
 }
 
 // ============================================================================
-// RUNTIME MANAGER (Singleton)
+// RUNTIME PROVIDER FACTORY
 // ============================================================================
 
 /**
- * Singleton manager for ZTM runtime
- * Provides testable runtime management with dependency injection capability
+ * Create a new RuntimeProvider instance
+ * Each call creates a new instance - no singleton
  */
-export class RuntimeManager implements RuntimeProvider {
-  private static instance: RuntimeManager | null = null;
-  private runtime: PluginRuntime | null = null;
+export function createRuntimeProvider(): RuntimeProvider {
+  let runtime: PluginRuntime | null = null;
 
-  /**
-   * Get the singleton instance
-   * Creates instance on first call, returns existing instance thereafter
-   * @returns The RuntimeManager singleton instance
-   */
-  static getInstance(): RuntimeManager {
-    if (!RuntimeManager.instance) {
-      RuntimeManager.instance = new RuntimeManager();
-    }
-    return RuntimeManager.instance;
-  }
+  return {
+    setRuntime(rt: PluginRuntime): void {
+      runtime = rt;
+    },
 
-  /**
-   * Reset the singleton instance (for testing purposes)
-   * Call this in test beforeEach to clean state between tests
-   */
-  static reset(): void {
-    RuntimeManager.instance = null;
-  }
+    getRuntime(): PluginRuntime {
+      return requireDefined(runtime, 'ZTM runtime not initialized - call setRuntime first');
+    },
 
-  /**
-   * Set the runtime instance
-   * @param runtime - The runtime to use
-   */
-  setRuntime(runtime: PluginRuntime): void {
-    this.runtime = runtime;
-  }
-
-  /**
-   * Get the current runtime instance
-   * @returns The current PluginRuntime instance
-   * @throws Error if runtime not initialized
-   */
-  getRuntime(): PluginRuntime {
-    return requireDefined(this.runtime, 'ZTM runtime not initialized - call setZTMRuntime first');
-  }
-
-  /**
-   * Check if runtime is initialized
-   * @returns true if runtime has been set, false otherwise
-   */
-  isInitialized(): boolean {
-    return isDefined(this.runtime);
-  }
+    isInitialized(): boolean {
+      return isDefined(runtime);
+    },
+  };
 }
 
 // ============================================================================
-// CONVENIENCE EXPORTS
+// DEFAULT PROVIDER
 // ============================================================================
 
 /**
- * Get the runtime provider instance lazily
- * Only creates the singleton when first accessed, not at module load time
+ * Default runtime provider instance for the application
  */
-function getRuntimeProvider(): RuntimeProvider {
-  return RuntimeManager.getInstance();
+let defaultProvider: RuntimeProvider | null = null;
+
+/**
+ * Get the default runtime provider
+ */
+export function getDefaultRuntimeProvider(): RuntimeProvider {
+  if (!defaultProvider) {
+    defaultProvider = createRuntimeProvider();
+  }
+  return defaultProvider;
 }
 
 /**
- * Set the ZTM runtime
+ * Reset the default provider (for testing purposes)
+ */
+export function resetDefaultProvider(): void {
+  defaultProvider = null;
+}
+
+/**
+ * Set the ZTM runtime (uses default provider)
  * @param next - The runtime to use
  */
 export function setZTMRuntime(next: PluginRuntime): void {
-  getRuntimeProvider().setRuntime(next);
+  const provider = getDefaultRuntimeProvider();
+  provider.setRuntime(next);
 
   // Set runtime logger if available for consistent logging
-  // Cast to any to access runtime.log which may not be in type definition
   const rt = next as unknown as {
     log?: {
       debug?: (msg: string) => void;
@@ -134,12 +116,12 @@ export function setZTMRuntime(next: PluginRuntime): void {
 }
 
 /**
- * Get the ZTM runtime
+ * Get the ZTM runtime (uses default provider)
  * @returns The current runtime instance
  * @throws Error if runtime not initialized
  */
 export function getZTMRuntime(): PluginRuntime {
-  return getRuntimeProvider().getRuntime();
+  return getDefaultRuntimeProvider().getRuntime();
 }
 
 /**
@@ -147,5 +129,5 @@ export function getZTMRuntime(): PluginRuntime {
  * @returns true if runtime has been set
  */
 export function isRuntimeInitialized(): boolean {
-  return getRuntimeProvider().isInitialized();
+  return getDefaultRuntimeProvider().isInitialized();
 }
