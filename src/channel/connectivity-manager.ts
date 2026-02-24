@@ -145,14 +145,20 @@ export async function joinMeshIfNeeded(
   // Create API client directly
   const preCheckClient = createZTMApiClient(config);
   let alreadyConnected = false;
+  let meshUsername: string | undefined;
   const preCheckResult = await preCheckClient.getMeshInfo();
   if (isSuccess(preCheckResult)) {
     alreadyConnected = preCheckResult.value.connected;
+    meshUsername = preCheckResult.value.username;
   }
 
   if (alreadyConnected) {
-    ctx.log?.info(`Already connected to mesh ${config.meshName}, skipping join`);
-    return;
+    // Strict mode: also check username match
+    if (meshUsername === config.username) {
+      ctx.log?.info(`Already connected to mesh ${config.meshName} as ${meshUsername}, skipping join`);
+      return;
+    }
+    ctx.log?.info(`Connected as ${meshUsername}, but config expects ${config.username}, re-joining...`);
   }
 
   ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);

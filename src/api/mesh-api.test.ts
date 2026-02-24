@@ -49,7 +49,11 @@ describe('Mesh API', () => {
 
   describe('createMeshApi', () => {
     it('should return an object with all required methods', () => {
-      const mockRequest = createMockRequest({ ok: true, value: {} as ZTMMeshInfo });
+      // Return valid API response format to avoid accessing undefined properties
+      const mockRequest = createMockRequest({
+        ok: true,
+        value: { name: 'test-mesh', connected: false, agent: { username: 'test' } },
+      });
       const meshApi = createMeshApi(testConfig, mockRequest, mockLogger);
 
       expect(meshApi).toHaveProperty('getMeshInfo');
@@ -60,7 +64,10 @@ describe('Mesh API', () => {
 
     it('should use config.meshName in API paths', () => {
       const customConfig = { ...testConfig, meshName: 'custom-mesh' };
-      const mockRequest = createMockRequest({ ok: true, value: {} as ZTMMeshInfo });
+      const mockRequest = createMockRequest({
+        ok: true,
+        value: { name: 'custom-mesh', connected: false, agent: { username: 'test' } },
+      });
       const meshApi = createMeshApi(customConfig, mockRequest, mockLogger);
 
       // Call getMeshInfo to trigger the request
@@ -72,19 +79,26 @@ describe('Mesh API', () => {
 
   describe('getMeshInfo', () => {
     it('should return mesh info successfully', async () => {
-      const meshInfo: ZTMMeshInfo = {
+      // API returns agent.username, we map it to top-level username
+      const apiResponse = {
         name: 'test-mesh',
         connected: true,
-        endpoints: 5,
+        agent: { username: 'test-user' },
         errors: [],
       };
-      const mockRequest = createMockRequest({ ok: true, value: meshInfo });
+      const expectedMeshInfo: ZTMMeshInfo = {
+        name: 'test-mesh',
+        connected: true,
+        username: 'test-user',
+        errors: [],
+      };
+      const mockRequest = createMockRequest({ ok: true, value: apiResponse });
       const meshApi = createMeshApi(testConfig, mockRequest, mockLogger);
 
       const result = await meshApi.getMeshInfo();
 
       expect(result.ok).toBe(true);
-      expect(result.value).toEqual(meshInfo);
+      expect(result.value).toEqual(expectedMeshInfo);
       expect(mockRequest).toHaveBeenCalledWith('GET', '/api/meshes/test-mesh');
     });
 

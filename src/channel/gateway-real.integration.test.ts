@@ -340,7 +340,7 @@ describe('Gateway Real HTTP Integration', () => {
           } else if (req.url === '/api/meshes/test-mesh' && req.method === 'GET') {
             // Pre-check endpoint - not connected yet
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ connected: false, meshName: 'test-mesh' }));
+            res.end(JSON.stringify({ connected: false, meshName: 'test-mesh', agent: { username: 'testuser' } }));
           } else {
             res.writeHead(404);
             res.end('Not found');
@@ -386,7 +386,7 @@ describe('Gateway Real HTTP Integration', () => {
           if (req.url === '/api/meshes/test-mesh' && req.method === 'GET') {
             // Already connected
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ connected: true, meshName: 'test-mesh' }));
+            res.end(JSON.stringify({ connected: true, meshName: 'test-mesh', agent: { username: 'testuser' } }));
           } else {
             res.writeHead(404);
             res.end('Not found');
@@ -431,7 +431,7 @@ describe('Gateway Real HTTP Integration', () => {
         handler: (req, res) => {
           if (req.url === '/api/meshes/test-mesh' && req.method === 'GET') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ connected: false, meshName: 'test-mesh' }));
+            res.end(JSON.stringify({ connected: false, meshName: 'test-mesh', agent: { username: 'testuser' } }));
           } else if (req.url?.match(/\/api\/meshes\//) && req.method === 'POST') {
             // Join fails
             res.writeHead(500);
@@ -481,7 +481,7 @@ describe('Gateway Real HTTP Integration', () => {
               JSON.stringify({
                 connected: true,
                 meshName: 'test-mesh',
-                endpointId: 'test-endpoint',
+                agent: { username: 'testuser' },
               })
             );
           } else {
@@ -520,6 +520,7 @@ describe('Gateway Real HTTP Integration', () => {
               JSON.stringify({
                 connected: false,
                 meshName: 'test-mesh',
+                agent: { username: 'testuser' },
               })
             );
           } else {
@@ -606,7 +607,7 @@ describe('Gateway Real HTTP Integration', () => {
               JSON.stringify({
                 connected: true,
                 name: 'api-test-mesh',
-                endpoints: 1,
+                agent: { username: 'testuser' },
               })
             );
           } else {
