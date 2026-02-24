@@ -7,6 +7,7 @@
 import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
+import type { MessageStateStore } from '../runtime/store.js';
 import { getWatermarkKey } from './message-processor-helpers.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
@@ -52,7 +53,8 @@ async function executeCallbackWithSemaphore(
  */
 export async function notifyMessageCallbacks(
   state: AccountRuntimeState,
-  message: ZTMChatMessage
+  message: ZTMChatMessage,
+  watermarkStore?: MessageStateStore
 ): Promise<void> {
   // Update last inbound timestamp
   state.lastInboundAt = new Date();
@@ -80,7 +82,8 @@ export async function notifyMessageCallbacks(
   const watermarkKey = getWatermarkKey({ type: 'message', data: message });
   if (successCount > 0) {
     // Use async version to ensure atomic watermark update in concurrent scenarios
-    await getAccountMessageStateStore(state.accountId).setWatermarkAsync(
+    const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
+    await store.setWatermarkAsync(
       state.accountId,
       watermarkKey,
       message.timestamp.getTime()

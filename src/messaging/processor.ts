@@ -13,6 +13,7 @@
 
 import { logger } from '../utils/logger.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
+import type { MessageStateStore } from '../runtime/store.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
 import { escapeHtml } from '../utils/validation.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
@@ -32,6 +33,8 @@ export interface ProcessMessageContext {
   accountId?: string;
   /** Optional group info for group messages */
   groupInfo?: { creator: string; group: string };
+  /** Optional watermark store for testing (falls back to singleton) */
+  watermarkStore?: MessageStateStore;
 }
 
 /**
@@ -85,7 +88,8 @@ export function processIncomingMessage(
   }
 
   // Step 3: Check watermark (skip already-processed messages)
-  const watermark = getAccountMessageStateStore(accountId).getWatermark(accountId, watermarkKey);
+  const watermarkStore = context.watermarkStore ?? getAccountMessageStateStore(accountId);
+  const watermark = watermarkStore.getWatermark(accountId, watermarkKey);
   if (msg.time <= watermark) {
     logger.debug(
       `Skipping already-processed message from ${watermarkKey} (time=${msg.time} <= watermark=${watermark})`

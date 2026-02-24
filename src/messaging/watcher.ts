@@ -19,6 +19,7 @@ import type { AccountRuntimeState } from '../types/runtime.js';
 import { isSuccess } from '../types/common.js';
 import type { ZTMChat, WatchChangeItem, ZTMMessage } from '../types/api.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
+import type { MessageStateStore } from '../runtime/store.js';
 import {
   FULL_SYNC_DELAY_MS,
   WATCH_INTERVAL_MS,
@@ -448,12 +449,14 @@ async function processChangedPeer(
   state: AccountRuntimeState,
   rt: PluginRuntime,
   peer: string,
-  storeAllowFrom: string[]
+  storeAllowFrom: string[],
+  watermarkStore?: MessageStateStore
 ): Promise<void> {
   if (!state.chatReader) return;
 
   // Get watermark and calculate sync start (limit to recent messages on first sync)
-  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(
+  const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
+  const watermark = store.getWatermark(
     state.accountId,
     peer
   );
@@ -494,12 +497,14 @@ async function processChangedGroup(
   creator: string,
   group: string,
   name: string | undefined,
-  storeAllowFrom: string[]
+  storeAllowFrom: string[],
+  watermarkStore?: MessageStateStore
 ): Promise<void> {
   if (!state.chatReader) return;
 
   const groupKey = `group:${creator}/${group}`;
-  const watermark = getAccountMessageStateStore(state.accountId).getWatermark(
+  const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
+  const watermark = store.getWatermark(
     state.accountId,
     groupKey
   );
