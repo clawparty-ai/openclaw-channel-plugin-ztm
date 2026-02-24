@@ -162,7 +162,7 @@ describe('ZTM API Client Integration', () => {
     const { fetch, mockResponse, calls } = createMockFetch();
     mockResponse({
       connected: true,
-      endpoints: 5,
+      username: 'test-user',
       errors: [],
     });
 
@@ -172,7 +172,7 @@ describe('ZTM API Client Integration', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value?.connected).toBe(true);
-      expect(result.value?.endpoints).toBe(5);
+      expect(result.value?.username).toBe('test-user');
     }
 
     expect(calls.length).toBe(1);

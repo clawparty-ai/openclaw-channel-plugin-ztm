@@ -44,7 +44,7 @@ export interface ZTMUserInfo {
 export interface ZTMMeshInfo {
   name: string;
   connected: boolean;
-  endpoints?: number;
+  username: string;
   errors?: Array<{ time: string; message: string }>;
 }
 

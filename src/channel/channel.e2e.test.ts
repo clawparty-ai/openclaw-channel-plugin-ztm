@@ -111,7 +111,7 @@ vi.mock('../api/ztm-api.js', () => ({
         ok: true,
         value: {
           connected: mockState.preCheckConnected,
-          endpoints: 5,
+          username: 'test-bot',
           errors: [],
         },
       }),
@@ -235,7 +235,7 @@ describe('startAccount E2E Tests', () => {
       const meshInfoResult = await client.getMeshInfo();
 
       expect(meshInfoResult.ok).toBe(true);
-      expect(meshInfoResult.value?.endpoints).toBe(5);
+      expect(meshInfoResult.value?.username).toBe('test-bot');
     });
   });
 

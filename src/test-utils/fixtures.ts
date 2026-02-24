@@ -148,14 +148,14 @@ export const testGroupChats: ZTMChat[] = [
 export const testMeshInfo: ZTMMeshInfo = {
   name: 'test-mesh',
   connected: true,
-  endpoints: 5,
+  username: 'test-bot',
   errors: [],
 };
 
 export const testMeshInfoDisconnected: ZTMMeshInfo = {
   name: 'test-mesh',
   connected: false,
-  endpoints: 0,
+  username: 'test-bot',
   errors: [{ time: new Date().toISOString(), message: 'Connection lost' }],
 };
 

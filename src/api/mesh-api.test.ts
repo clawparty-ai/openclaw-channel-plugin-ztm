@@ -75,7 +75,7 @@ describe('Mesh API', () => {
       const meshInfo: ZTMMeshInfo = {
         name: 'test-mesh',
         connected: true,
-        endpoints: 5,
+        username: 'test-user',
         errors: [],
       };
       const mockRequest = createMockRequest({ ok: true, value: meshInfo });
