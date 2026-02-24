@@ -49,7 +49,12 @@ const { resolveZTMChatAccountMock } = vi.hoisted(() => ({
   })),
 }));
 
-const { initializeRuntimeMock, getOrCreateAccountStateMock, cleanupExpiredPairingsMock, getGroupPermissionCachedMock } = vi.hoisted(() => ({
+const {
+  initializeRuntimeMock,
+  getOrCreateAccountStateMock,
+  cleanupExpiredPairingsMock,
+  getGroupPermissionCachedMock,
+} = vi.hoisted(() => ({
   initializeRuntimeMock: vi.fn().mockResolvedValue(true),
   getOrCreateAccountStateMock: vi.fn(),
   cleanupExpiredPairingsMock: vi.fn(),
@@ -60,15 +65,33 @@ const { startMessageWatcherMock } = vi.hoisted(() => ({
   startMessageWatcherMock: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { createMessagingContextMock } = vi.hoisted(() => ({
-  createMessagingContextMock: vi.fn(() => ({
-    runtime: {},
-    apiClient: {},
-    config: {},
-  })),
+const { containerMock } = vi.hoisted(() => ({
+  containerMock: {
+    get: vi.fn(key => {
+      if (String(key).includes('ztm:messaging-context')) {
+        return {
+          allowFromRepo: {
+            getAllowFrom: vi.fn(() => Promise.resolve([])),
+            clearCache: vi.fn(),
+          },
+          messageStateRepo: {
+            getWatermark: vi.fn(() => 0),
+            setWatermark: vi.fn(),
+            flush: vi.fn(),
+          },
+        };
+      }
+      return null;
+    }),
+  },
 }));
 
-const { validateAgentConnectivityMock, loadOrRequestPermitMock, joinMeshIfNeededMock, probeAccountMock } = vi.hoisted(() => ({
+const {
+  validateAgentConnectivityMock,
+  loadOrRequestPermitMock,
+  joinMeshIfNeededMock,
+  probeAccountMock,
+} = vi.hoisted(() => ({
   validateAgentConnectivityMock: vi.fn().mockResolvedValue({ ok: true }),
   loadOrRequestPermitMock: vi.fn().mockResolvedValue({ token: 'test-token' }),
   joinMeshIfNeededMock: vi.fn().mockResolvedValue(undefined),
@@ -129,8 +152,11 @@ vi.mock('../messaging/watcher.js', () => ({
   startMessageWatcher: startMessageWatcherMock,
 }));
 
-vi.mock('../messaging/context.js', () => ({
-  createMessagingContext: createMessagingContextMock,
+vi.mock('../di/index.js', () => ({
+  DEPENDENCIES: {
+    MESSAGING_CONTEXT: Symbol('ztm:messaging-context'),
+  },
+  container: containerMock,
 }));
 
 vi.mock('./connectivity-manager.js', () => ({

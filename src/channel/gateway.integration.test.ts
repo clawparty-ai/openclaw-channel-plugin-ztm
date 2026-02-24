@@ -31,12 +31,28 @@ vi.mock('../messaging/watcher.js', () => ({
   startMessageWatcher: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../messaging/context.js', () => ({
-  createMessagingContext: vi.fn(() => ({
-    runtime: {},
-    apiClient: {},
-    config: {},
-  })),
+vi.mock('../di/index.js', () => ({
+  DEPENDENCIES: {
+    MESSAGING_CONTEXT: Symbol('ztm:messaging-context'),
+  },
+  container: {
+    get: vi.fn(key => {
+      if (String(key).includes('ztm:messaging-context')) {
+        return {
+          allowFromRepo: {
+            getAllowFrom: vi.fn(() => Promise.resolve([])),
+            clearCache: vi.fn(),
+          },
+          messageStateRepo: {
+            getWatermark: vi.fn(() => 0),
+            setWatermark: vi.fn(),
+            flush: vi.fn(),
+          },
+        };
+      }
+      return null;
+    }),
+  },
 }));
 
 vi.mock('./connectivity-manager.js', () => ({

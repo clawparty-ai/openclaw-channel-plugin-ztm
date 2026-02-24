@@ -156,6 +156,7 @@ vi.mock('../di/index.js', () => ({
     ALLOW_FROM_REPO: Symbol('ztm:allow-from-repo'),
     API_CLIENT_FACTORY: Symbol('ztm:api-client-factory'),
     ACCOUNT_STATE_MANAGER: Symbol('ztm:account-state-manager'),
+    MESSAGING_CONTEXT: Symbol('ztm:messaging-context'),
   },
   container: {
     get: vi.fn(key => {
@@ -204,6 +205,19 @@ vi.mock('../di/index.js', () => ({
           getAllowFrom: vi.fn(() => Promise.resolve([])),
           addAllowFrom: vi.fn(),
           removeAllowFrom: vi.fn(),
+        };
+      }
+      if (keyStr.includes('ztm:messaging-context')) {
+        return {
+          allowFromRepo: {
+            getAllowFrom: vi.fn(() => Promise.resolve([])),
+            clearCache: vi.fn(),
+          },
+          messageStateRepo: {
+            getWatermark: vi.fn(() => 0),
+            setWatermark: vi.fn(),
+            flush: vi.fn(),
+          },
         };
       }
       if (keyStr.includes('ztm:api-client-factory')) {
@@ -1582,7 +1596,7 @@ describe('Multi-account concurrent startup', () => {
     mockGetAllAccountStates.mockReturnValue(states);
 
     // Start all accounts concurrently
-    const startPromises = accountIds.map(async (accountId) => {
+    const startPromises = accountIds.map(async accountId => {
       const ctx = {
         account: { accountId, config: mockConfig },
         log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -1630,7 +1644,7 @@ describe('Multi-account concurrent startup', () => {
     mockGetAllAccountStates.mockReturnValue(states);
 
     const cleanups = await Promise.all(
-      accountIds.map(async (accountId) => {
+      accountIds.map(async accountId => {
         const ctx = {
           account: { accountId, config: mockConfig },
           log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -1780,7 +1794,9 @@ describe('Fast start-stop race', () => {
     await cleanup1();
 
     // Second start
-    mockGetAllAccountStates.mockReturnValue(new Map([['sequence-test', { ...mockState, messageCallbacks: new Set() }]]));
+    mockGetAllAccountStates.mockReturnValue(
+      new Map([['sequence-test', { ...mockState, messageCallbacks: new Set() }]])
+    );
     const ctx2 = {
       account: { accountId: 'sequence-test', config: mockConfig },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -1881,7 +1897,9 @@ describe('Config hot reload', () => {
 
     // Update config in state (simulating hot reload)
     const updatedConfig = { ...mockConfig, dmPolicy: 'allow' as const };
-    mockGetAllAccountStates.mockReturnValue(new Map([['config-test', { ...mockState, config: updatedConfig }]]));
+    mockGetAllAccountStates.mockReturnValue(
+      new Map([['config-test', { ...mockState, config: updatedConfig }]])
+    );
 
     // Start another account with new config
     const ctx2 = {
@@ -2134,9 +2152,25 @@ describe('Exception account isolation', () => {
     // Account 1 and 3 should still be running
     // Start another account - should work
     const newStates = new Map();
-    newStates.set('isolated-1', { accountId: 'isolated-1', config: mockConfig, messageCallbacks: new Set() });
-    newStates.set('isolated-3', { accountId: 'isolated-3', config: mockConfig, messageCallbacks: new Set() });
-    newStates.set('new-account', { accountId: 'new-account', config: mockConfig, messageCallbacks: new Set(), connected: true, meshConnected: true, lastError: null, pendingPairings: new Map() });
+    newStates.set('isolated-1', {
+      accountId: 'isolated-1',
+      config: mockConfig,
+      messageCallbacks: new Set(),
+    });
+    newStates.set('isolated-3', {
+      accountId: 'isolated-3',
+      config: mockConfig,
+      messageCallbacks: new Set(),
+    });
+    newStates.set('new-account', {
+      accountId: 'new-account',
+      config: mockConfig,
+      messageCallbacks: new Set(),
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      pendingPairings: new Map(),
+    });
     mockGetAllAccountStates.mockReturnValue(newStates);
 
     const ctxNew = {
@@ -2417,7 +2451,9 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
     // Make sendZTMMessage fail
     const { sendZTMMessage } = await import('../messaging/outbound.js');
 
-    let deliverCallback: ((payload: { text?: string; mediaUrl?: string }) => Promise<void>) | undefined;
+    let deliverCallback:
+      | ((payload: { text?: string; mediaUrl?: string }) => Promise<void>)
+      | undefined;
     let errorCallback: ((err: unknown) => void) | undefined;
 
     const mockRuntime = {
@@ -2431,14 +2467,16 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
         },
         reply: {
           finalizeInboundContext: vi.fn(ctx => ctx),
-          dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockImplementation(async ({ dispatcherOptions }) => {
-            // Capture the deliver callback
-            deliverCallback = dispatcherOptions.deliver;
-            errorCallback = dispatcherOptions.onError;
-            // Call deliver which will fail
-            await dispatcherOptions.deliver({ text: 'Reply text' });
-            return { queuedFinal: true };
-          }),
+          dispatchReplyWithBufferedBlockDispatcher: vi
+            .fn()
+            .mockImplementation(async ({ dispatcherOptions }) => {
+              // Capture the deliver callback
+              deliverCallback = dispatcherOptions.deliver;
+              errorCallback = dispatcherOptions.onError;
+              // Call deliver which will fail
+              await dispatcherOptions.deliver({ text: 'Reply text' });
+              return { queuedFinal: true };
+            }),
           resolveHumanDelayConfig: vi.fn(() => ({ delay: 0 })),
         },
       },
@@ -2565,7 +2603,7 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
         },
         reply: {
           finalizeInboundContext: vi.fn(ctx => ctx),
-          dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockImplementation(async (opts) => {
+          dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockImplementation(async opts => {
             capturedOptions = opts.dispatcherOptions;
             return { queuedFinal: true };
           }),
