@@ -13,6 +13,9 @@ import {
   createLogger,
   createConfigService,
   createApiClientService,
+  createApiReaderService,
+  createApiSenderService,
+  createApiDiscoveryService,
   createApiClientFactory,
   createRuntimeService,
   createAllowFromRepositoryService,
@@ -20,6 +23,7 @@ import {
   createAccountStateManagerService,
   type ILogger,
   type IApiClient,
+  type IChatSender,
   type IApiClientFactory,
   type IRuntime,
 } from '../di/index.js';
@@ -75,7 +79,9 @@ const meta = {
 // Initialize services on module load
 container.register(DEPENDENCIES.LOGGER, createLogger('ztm-chat'));
 container.register(DEPENDENCIES.CONFIG, createConfigService());
-container.register(DEPENDENCIES.API_CLIENT, createApiClientService());
+container.register(DEPENDENCIES.API_CLIENT_READER, createApiReaderService());
+container.register(DEPENDENCIES.API_CLIENT_SENDER, createApiSenderService());
+container.register(DEPENDENCIES.API_CLIENT_DISCOVERY, createApiDiscoveryService());
 container.register(DEPENDENCIES.API_CLIENT_FACTORY, createApiClientFactory());
 container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 container.register(DEPENDENCIES.ALLOW_FROM_REPO, createAllowFromRepositoryService());
