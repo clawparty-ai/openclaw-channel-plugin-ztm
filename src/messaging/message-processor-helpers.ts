@@ -87,15 +87,23 @@ export function isPeerChat(chat: ZTMChat): boolean {
 export function extractSender(chat: ZTMChat): string {
   const explicitSender = chat.latest?.sender;
 
+  logger.debug(
+    `[extractSender] chat.peer="${chat.peer ?? ''}", chat.latest?.sender="${explicitSender ?? '(none)'}", isPeer=${isPeerChat(chat)}`
+  );
+
   if (explicitSender) {
+    logger.debug(`[extractSender] returning explicitSender="${explicitSender}"`);
     return explicitSender;
   }
 
   // For peer chats, fall back to peer ID
   // For group chats, return empty string (no fallback)
   if (isPeerChat(chat)) {
-    return chat.peer || '';
+    const fallback = chat.peer || '';
+    logger.debug(`[extractSender] no explicit sender, falling back to peer="${fallback}"`);
+    return fallback;
   }
+  logger.debug(`[extractSender] group chat with no sender, returning empty string`);
   return '';
 }
 
@@ -171,7 +179,7 @@ export function processPeerMessage(
 ): ZTMChatMessage | null {
   const safeSender = sanitizeForLog(msg.sender);
   logger.debug(
-    `[${state.accountId}] Message check: sender="${safeSender}", botUsername="${state.config.username}"`
+    `[${state.accountId}] processPeerMessage: msg.sender="${safeSender}", config.username="${state.config.username}", match=${msg.sender === state.config.username}`
   );
 
   // Skip self-messages

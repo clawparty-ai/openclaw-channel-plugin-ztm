@@ -61,14 +61,20 @@ async function processPeerChat(
   accountId: string,
   state: AccountRuntimeState
 ): Promise<void> {
+  logger.debug(
+    `[${accountId}] processPeerChat: chat.peer="${chat.peer ?? '(none)'}", config.username="${config.username}", latest.sender="${chat.latest?.sender ?? '(none)'}"`
+  );
   if (!chat.peer || chat.peer === config.username) return;
   if (!chat.latest) return;
+  logger.debug(
+    `[${accountId}] processPeerChat: chat.peer !== config.username and latest exists, will process`
+  );
 
   const normalized = processPeerMessage(
     {
       time: chat.latest.time,
       message: chat.latest.message,
-      sender: chat.peer,
+      sender: chat.latest.sender || chat.peer, // Fix: use latest.sender (actual sender) to avoid processing bot's own messages
     },
     state,
     pollStoreAllowFrom
