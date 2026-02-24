@@ -14,7 +14,7 @@ import type { ZTMChatMessage } from '../types/messaging.js';
 import { isConfigMinimallyValid } from '../config/validation.js';
 import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
-import { ZTMTimeoutError, ZTMApiError } from '../types/errors.js';
+import { isRetryableError } from '../utils/retry.js';
 import {
   getAllAccountStates,
   stopRuntime,
@@ -326,42 +326,6 @@ const MESSAGE_RETRY_DELAY_MS = 2000;
  * Errors that can be retried include:
  * - Network timeouts
  * - API errors with 5xx status codes
- * - Temporary service unavailability
- *
- * @param error - The error to check
- * @returns true if the error is retryable
- */
-function isRetryableError(error: unknown): boolean {
-  // ZTMError types with retryable codes
-  if (error instanceof ZTMTimeoutError) {
-    return true;
-  }
-
-  if (error instanceof ZTMApiError) {
-    // Retry on server errors (5xx) or rate limiting (429)
-    const statusCode = error.context.statusCode as number | undefined;
-    if (statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode < 600)) {
-      return true;
-    }
-  }
-
-  // Check for network-related errors
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    if (
-      message.includes('timeout') ||
-      message.includes('network') ||
-      message.includes('ECONNREFUSED') ||
-      message.includes('ETIMEDOUT') ||
-      message.includes('ENOTFOUND')
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 /**
  * Retry a message later with exponential backoff
  *

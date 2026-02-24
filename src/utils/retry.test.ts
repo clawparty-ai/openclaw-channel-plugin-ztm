@@ -7,9 +7,10 @@ import {
   createTimeoutController,
   retryAsync,
   fetchWithRetry,
-  isRetriableError,
+  isRetryableError,
   withRetry,
 } from './retry.js';
+import { ZTMTimeoutError, ZTMApiError } from '../types/errors.js';
 
 describe('Retry utilities', () => {
   describe('sleep', () => {
@@ -70,34 +71,151 @@ describe('Retry utilities', () => {
     });
   });
 
-  describe('isRetriableError', () => {
-    it('should identify network errors as retriable', () => {
-      const error = new Error('ECONNREFUSED');
-      expect(isRetriableError(error)).toBe(true);
+  describe('isRetryableError', () => {
+    // ZTM-specific error types
+    describe('ZTMTimeoutError', () => {
+      it('should return true for ZTMTimeoutError', () => {
+        const error = new ZTMTimeoutError({ method: 'GET', path: '/test', timeoutMs: 5000 });
+        expect(isRetryableError(error)).toBe(true);
+      });
     });
 
-    it('should identify timeout errors as retriable', () => {
-      const error = new Error('ETIMEDOUT');
-      expect(isRetriableError(error)).toBe(true);
+    describe('ZTMApiError', () => {
+      it('should return true for 429 (rate limit)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 429 });
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for 500 (server error)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 500 });
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for 502 (bad gateway)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 502 });
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for 503 (service unavailable)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 503 });
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for 504 (gateway timeout)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 504 });
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return false for 400 (bad request)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 400 });
+        expect(isRetryableError(error)).toBe(false);
+      });
+
+      it('should return false for 401 (unauthorized)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 401 });
+        expect(isRetryableError(error)).toBe(false);
+      });
+
+      it('should return false for 403 (forbidden)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test', statusCode: 403 });
+        expect(isRetryableError(error)).toBe(false);
+      });
+
+      it('should return true for undefined statusCode (assume retryable)', () => {
+        const error = new ZTMApiError({ method: 'GET', path: '/test' });
+        expect(isRetryableError(error)).toBe(true);
+      });
     });
 
-    it('should identify fetch errors as retriable', () => {
-      const error = new Error('fetch failed');
-      expect(isRetriableError(error)).toBe(true);
+    // Standard Error patterns
+    describe('Error message patterns', () => {
+      it('should return true for timeout in message', () => {
+        const error = new Error('Request timeout');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for NETWORK error in message', () => {
+        const error = new Error('NETWORK error');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for ECONNREFUSED', () => {
+        const error = new Error('ECONNREFUSED');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for ETIMEDOUT', () => {
+        const error = new Error('ETIMEDOUT');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for ENOTFOUND', () => {
+        const error = new Error('ENOTFOUND');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for econnreset', () => {
+        const error = new Error('econnreset');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for AbortError', () => {
+        const error = new Error('AbortError');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return true for fetch failed', () => {
+        const error = new Error('fetch failed');
+        expect(isRetryableError(error)).toBe(true);
+      });
+
+      it('should return false for unrelated error', () => {
+        const error = new Error('Some unrelated error');
+        expect(isRetryableError(error)).toBe(false);
+      });
+
+      it('should return false for validation error', () => {
+        const error = new Error('Validation failed');
+        expect(isRetryableError(error)).toBe(false);
+      });
+
+      it('should return false for unauthorized', () => {
+        const error = new Error('Unauthorized');
+        expect(isRetryableError(error)).toBe(false);
+      });
     });
 
-    it('should identify AbortError as retriable', () => {
-      const error = new Error('AbortError');
-      Object.defineProperty(error, 'name', { value: 'AbortError' });
-      expect(isRetriableError(error)).toBe(true);
-    });
+    // Boundary cases
+    describe('boundary cases', () => {
+      it('should return false for null', () => {
+        expect(isRetryableError(null)).toBe(false);
+      });
 
-    it('should not identify non-retriable errors', () => {
-      const error = new Error('Unauthorized');
-      expect(isRetriableError(error)).toBe(false);
+      it('should return false for undefined', () => {
+        expect(isRetryableError(undefined)).toBe(false);
+      });
 
-      const validationError = new Error('Validation failed');
-      expect(isRetriableError(validationError)).toBe(false);
+      it('should return false for non-Error object', () => {
+        expect(isRetryableError({ message: 'test' })).toBe(false);
+      });
+
+      it('should return false for string', () => {
+        expect(isRetryableError('error string')).toBe(false);
+      });
+
+      it('should return false for number', () => {
+        expect(isRetryableError(404)).toBe(false);
+      });
+
+      it('should handle empty error message', () => {
+        const error = new Error('');
+        expect(isRetryableError(error)).toBe(false);
+      });
+
+      it('should handle error with special characters', () => {
+        const error = new Error('Error: [ECONNREFUSED] @ localhost:8080');
+        expect(isRetryableError(error)).toBe(true);
+      });
     });
   });
 
@@ -390,7 +508,7 @@ describe('Retry utilities', () => {
       ];
 
       for (const error of authErrors) {
-        expect(isRetriableError(error)).toBe(false);
+        expect(isRetryableError(error)).toBe(false);
       }
     });
 
