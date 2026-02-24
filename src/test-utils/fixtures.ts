@@ -5,6 +5,7 @@ import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage, ZTMChat, ZTMPeer, ZTMUserInfo, ZTMMeshInfo } from '../api/ztm-api.js';
 import { Semaphore } from '../utils/concurrency.js';
 import type { MessageCallback } from '../types/runtime.js';
+import type { IChatReader, IChatSender, IDiscovery } from '../di/container.js';
 
 // ============================================================================
 // Time Constants
@@ -306,7 +307,9 @@ export function createMockState(
   return {
     accountId,
     config,
-    apiClient: apiClient as ZTMApiClient,
+    chatReader: apiClient as unknown as IChatReader | null,
+    chatSender: apiClient as unknown as IChatSender | null,
+    discovery: apiClient as unknown as IDiscovery | null,
     started: true,
     lastError: null,
     lastStartAt: new Date(),

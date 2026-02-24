@@ -6,6 +6,7 @@ import { testConfig, testAccountId, createMockChat } from '../test-utils/fixture
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
+import type { IChatSender, IDiscovery } from '../di/container.js';
 import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS, WATCH_ERROR_THRESHOLD } from '../constants.js';
 import type { MessagingContext } from './context.js';
 
@@ -166,7 +167,11 @@ describe('startMessageWatcher', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -203,7 +208,7 @@ describe('startMessageWatcher', () => {
 
   describe('initialization', () => {
     it('should return early if no apiClient', async () => {
-      const stateWithoutApi = { ...mockState, apiClient: null };
+      const stateWithoutApi = { ...mockState, chatReader: null, chatSender: null, discovery: null };
       const mockContext = createMockMessagingContext();
       await startMessageWatcher(stateWithoutApi as AccountRuntimeState, mockContext);
       // Should not throw and should return quickly
@@ -211,7 +216,7 @@ describe('startMessageWatcher', () => {
 
     it('should perform initial sync', async () => {
       const chats = [createMockChat('alice', 'Hello', 1000)];
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       apiClient.getChats = vi.fn(() => mockSuccess({ value: chats }));
 
       const mockContext = createMockMessagingContext();
@@ -230,7 +235,7 @@ describe('startMessageWatcher', () => {
     });
 
     it('should handle empty changed items', async () => {
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
       const mockContext = createMockMessagingContext();
@@ -241,7 +246,7 @@ describe('startMessageWatcher', () => {
     });
 
     it('should handle peer change items', async () => {
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       const mockWatchChanges = vi.fn(() =>
         Promise.resolve(
           mockSuccess({
@@ -270,7 +275,7 @@ describe('startMessageWatcher', () => {
     });
 
     it('should handle group change items', async () => {
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       const mockWatchChanges = vi.fn(() =>
         Promise.resolve(
           mockSuccess({
@@ -303,7 +308,7 @@ describe('startMessageWatcher', () => {
 
   describe('error handling', () => {
     it('should handle API client errors gracefully', async () => {
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       apiClient.watchChanges = vi.fn(() => Promise.reject(new Error('Network error')));
 
       const mockContext = createMockMessagingContext();
@@ -313,7 +318,7 @@ describe('startMessageWatcher', () => {
     });
 
     it('should handle getChats errors gracefully', async () => {
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       apiClient.getChats = vi.fn(() =>
         Promise.resolve({
           ok: false,
@@ -333,7 +338,7 @@ describe('startMessageWatcher', () => {
     });
 
     it('should handle getPeerMessages errors gracefully', async () => {
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       const mockWatchChanges = vi.fn(() =>
         Promise.resolve(
           mockSuccess({
@@ -354,7 +359,7 @@ describe('startMessageWatcher', () => {
   describe('crash recovery', () => {
     it('should restart loop after unexpected error', async () => {
       let callCount = 0;
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
       apiClient.watchChanges = vi.fn(() => {
         callCount++;
         if (callCount === 1) {
@@ -378,7 +383,11 @@ describe('watch error count behavior', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: null,
       lastStopAt: null,
@@ -403,7 +412,11 @@ describe('watch error count behavior', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: null,
       lastStopAt: null,
@@ -428,10 +441,18 @@ describe('full sync behavior', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: {
+      chatReader: {
         getChats: vi.fn(() => mockSuccess({ value: [] })),
         exportFileMetadata: vi.fn(() => ({})),
       } as unknown as ZTMApiClient,
+      chatSender: {
+        sendPeerMessage: vi.fn(() => Promise.resolve(mockSuccess({ value: true }))),
+        sendGroupMessage: vi.fn(() => Promise.resolve(mockSuccess({ value: true }))),
+      } as unknown as IChatSender,
+      discovery: {
+        listMeshes: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+        listPeers: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+      } as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -467,7 +488,11 @@ describe('watch loop timing', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -517,7 +542,7 @@ describe('watch loop timing', () => {
   });
 
   it('should schedule next loop iteration after completion', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
     const mockContext = createMockMessagingContext();
@@ -533,7 +558,7 @@ describe('watch loop timing', () => {
   });
 
   it('should calculate correct interval accounting for iteration time', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     let watchCallCount = 0;
 
     apiClient.watchChanges = vi.fn(() => {
@@ -559,7 +584,11 @@ describe('performInitialSync edge cases', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -625,7 +654,11 @@ describe('processChangedPaths scenarios', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -668,12 +701,12 @@ describe('processChangedPaths scenarios', () => {
     await new Promise(resolve => setTimeout(resolve, 1100));
 
     // Verify watchChanges was called with correct path
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     expect(apiClient.watchChanges).toHaveBeenCalled();
   });
 
   it('should handle empty peer list gracefully', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
     const mockContext = createMockMessagingContext();
@@ -708,7 +741,11 @@ describe('error threshold and polling fallback', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -788,7 +825,11 @@ describe('watch error handling edge cases', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -854,7 +895,11 @@ describe('multiple iteration scenarios', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -883,7 +928,7 @@ describe('multiple iteration scenarios', () => {
   });
 
   it('should execute watch loop successfully', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: [] })));
 
     const mockContext = createMockMessagingContext();
@@ -913,7 +958,11 @@ describe('initial sync scenarios', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -958,7 +1007,7 @@ describe('initial sync scenarios', () => {
     await startMessageWatcher(mockState, mockContext);
 
     // getChats should have been called during initial sync
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     expect(apiClient.getChats).toHaveBeenCalled();
   });
 
@@ -969,7 +1018,7 @@ describe('initial sync scenarios', () => {
     await startMessageWatcher(mockState, mockContext);
 
     // Should not crash with empty chats
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     expect(apiClient.getChats).toHaveBeenCalled();
   });
 
@@ -993,7 +1042,11 @@ describe('initial sync scenarios', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1028,7 +1081,11 @@ describe('WatchLoopController scenarios', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1078,7 +1135,7 @@ describe('WatchLoopController scenarios', () => {
     mockState = createMockState();
     let cycleCount = 0;
 
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => {
       cycleCount++;
       return Promise.resolve(mockSuccess({ value: [] }));
@@ -1123,7 +1180,11 @@ describe('WatchLoopController scenarios', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1150,7 +1211,7 @@ describe('handleInitialPairingRequests edge cases', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: { ...testConfig, username: 'testuser' },
-      apiClient: {
+      chatReader: {
         getChats: vi.fn(() =>
           mockSuccess({
             value: [
@@ -1164,6 +1225,14 @@ describe('handleInitialPairingRequests edge cases', () => {
         watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
         exportFileMetadata: vi.fn(() => ({})),
       } as unknown as ZTMApiClient,
+      chatSender: {
+        sendPeerMessage: vi.fn(() => Promise.resolve(mockSuccess({ value: true }))),
+        sendGroupMessage: vi.fn(() => Promise.resolve(mockSuccess({ value: true }))),
+      } as unknown as IChatSender,
+      discovery: {
+        listMeshes: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+        listPeers: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+      } as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1197,7 +1266,11 @@ describe('getOrDefault fallback scenarios', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1222,7 +1295,11 @@ describe('executeWatch edge cases', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1249,7 +1326,11 @@ describe('executeWatch edge cases', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: null as any,
-      apiClient: mockApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1298,7 +1379,11 @@ describe('processChangedPeer error handling', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1351,7 +1436,11 @@ describe('processChangedGroup error handling', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1381,7 +1470,11 @@ describe('performFullSync edge cases', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1419,7 +1512,11 @@ describe('performFullSync edge cases', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1453,7 +1550,11 @@ describe('processChangedPaths empty items', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1478,7 +1579,11 @@ describe('pending iteration flag behavior', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1501,7 +1606,11 @@ describe('watch error threshold behavior', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1528,7 +1637,11 @@ describe('watch error threshold behavior', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1579,7 +1692,11 @@ describe('processChangedPaths empty items', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1623,7 +1740,11 @@ describe('processChangedPeer error handling', () => {
     const stateWithNullClient: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1657,7 +1778,11 @@ describe('processChangedGroup error handling', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: failingApiClient as unknown as ZTMApiClient,
+      chatReader: failingApiClient as unknown as ZTMApiClient,
+
+      chatSender: failingApiClient as unknown as IChatSender,
+
+      discovery: failingApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1689,7 +1814,11 @@ describe('performFullSync error handling', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: failingApiClient as unknown as ZTMApiClient,
+      chatReader: failingApiClient as unknown as ZTMApiClient,
+
+      chatSender: failingApiClient as unknown as IChatSender,
+
+      discovery: failingApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1712,7 +1841,11 @@ describe('performFullSync error handling', () => {
     const stateWithNullClient: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1737,7 +1870,11 @@ describe('executeWatch error handling', () => {
     const stateWithoutClient: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+
+      chatSender: null,
+
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1781,7 +1918,11 @@ describe('WatchLoopController behavior', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -1833,7 +1974,7 @@ describe('WatchLoopController behavior', () => {
       // is an internal implementation detail of WatchLoopController.
 
       let callCount = 0;
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
 
       // First call returns error, second succeeds
       apiClient.watchChanges = vi.fn(() => {
@@ -1860,7 +2001,7 @@ describe('WatchLoopController behavior', () => {
   describe('full sync scheduling', () => {
     it('should schedule full sync after activity stops', async () => {
       let callCount = 0;
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
 
       // First call returns items (activity), second returns empty (idle)
       apiClient.watchChanges = vi.fn(() => {
@@ -1900,7 +2041,7 @@ describe('WatchLoopController behavior', () => {
       let maxConcurrent = 0;
       const processingOrder: number[] = [];
 
-      const apiClient = mockState.apiClient as any;
+      const apiClient = mockState.chatReader as any;
 
       // Mock getPeerMessages to track concurrent access
       apiClient.getPeerMessages = vi.fn((_peer: string) => {
@@ -1995,7 +2136,11 @@ describe('abortSignal support', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2046,7 +2191,11 @@ describe('abortSignal support', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2090,7 +2239,11 @@ describe('executeWatchCycle network timeout handling', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2126,7 +2279,7 @@ describe('executeWatchCycle network timeout handling', () => {
   });
 
   it('should handle watch API timeout scenarios', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     // Return error result (not rejected promise) to trigger error path
     apiClient.watchChanges = vi.fn(() => {
       return Promise.resolve({
@@ -2152,7 +2305,7 @@ describe('executeWatchCycle network timeout handling', () => {
   });
 
   it('should handle network error with detailed error message', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     // Return error result to trigger error handling path
     apiClient.watchChanges = vi.fn(() => {
       return Promise.resolve({
@@ -2194,7 +2347,11 @@ describe('executeWatchCycle concurrent error recovery', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2232,7 +2389,7 @@ describe('executeWatchCycle concurrent error recovery', () => {
   it('should recover after consecutive errors', async () => {
     let callCount = 0;
 
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => {
       callCount++;
       // First 3 calls fail, then recover
@@ -2258,7 +2415,7 @@ describe('executeWatchCycle concurrent error recovery', () => {
   it('should handle alternating success and failure', async () => {
     let callCount = 0;
 
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => {
       callCount++;
       // Alternate between success and failure
@@ -2318,7 +2475,11 @@ describe('startMessageWatcher idempotency', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2362,7 +2523,11 @@ describe('startMessageWatcher idempotency', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2409,7 +2574,11 @@ describe('message batch processing boundary', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2450,7 +2619,7 @@ describe('message batch processing boundary', () => {
       .fill(null)
       .map((_, i) => ({ type: 'peer' as const, peer: `peer${i}`, name: `Peer ${i}` }));
 
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: peerItems })));
 
     const mockContext = createMockMessagingContext();
@@ -2482,7 +2651,7 @@ describe('message batch processing boundary', () => {
         })),
     ];
 
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => Promise.resolve(mockSuccess({ value: items })));
 
     const mockContext = createMockMessagingContext();
@@ -2521,7 +2690,11 @@ describe('Watch to Polling degradation complete flow', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2560,7 +2733,7 @@ describe('Watch to Polling degradation complete flow', () => {
   it('should fallback to polling after 5 consecutive errors', async () => {
     let errorCount = 0;
 
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() => {
       errorCount++;
       if (errorCount <= 5) {
@@ -2601,7 +2774,11 @@ describe('Watch to Polling degradation complete flow', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2681,7 +2858,11 @@ describe('signal interrupt resource cleanup', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2728,7 +2909,11 @@ describe('signal interrupt resource cleanup', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2798,7 +2983,11 @@ describe('watermark persistence failure handling', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2853,7 +3042,11 @@ describe('watermark persistence failure handling', () => {
     const state: AccountRuntimeState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2900,7 +3093,11 @@ describe('concurrent message processing order', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -2936,7 +3133,7 @@ describe('concurrent message processing order', () => {
   });
 
   it('should process messages with semaphore limiting concurrency', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() =>
       Promise.resolve(
         mockSuccess({
@@ -2963,7 +3160,7 @@ describe('concurrent message processing order', () => {
   });
 
   it('should maintain message order within same peer', async () => {
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     apiClient.watchChanges = vi.fn(() =>
       Promise.resolve(
         mockSuccess({
@@ -3045,7 +3242,11 @@ describe('processChangedPaths full sync trigger', () => {
     return {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3099,7 +3300,7 @@ describe('processChangedPaths full sync trigger', () => {
     await new Promise(resolve => setTimeout(resolve, 1100));
 
     // getChats should be called during initial sync and potentially during full sync
-    const apiClient = mockState.apiClient as any;
+    const apiClient = mockState.chatReader as any;
     expect(apiClient.getChats).toHaveBeenCalled();
   });
 
@@ -3154,7 +3355,7 @@ describe('handleInitialPairingRequests with different peers', () => {
     const stateWithUsername: AccountRuntimeState = {
       accountId: testAccountId,
       config: { ...testConfig, username: 'myuser' },
-      apiClient: {
+      chatReader: {
         watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
         getChats: vi.fn(() =>
           Promise.resolve(
@@ -3169,6 +3370,8 @@ describe('handleInitialPairingRequests with different peers', () => {
         getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
         getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
       } as unknown as ZTMApiClient,
+      chatSender: null,
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3189,7 +3392,7 @@ describe('handleInitialPairingRequests with different peers', () => {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // getChats should be called during initial sync
-    const apiClient = stateWithUsername.apiClient as any;
+    const apiClient = stateWithUsername.chatReader as any;
     expect(apiClient.getChats).toHaveBeenCalled();
   });
 });
@@ -3252,7 +3455,11 @@ describe('processChangedPeer success path', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3297,7 +3504,11 @@ describe('processChangedPeer success path', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3385,7 +3596,11 @@ describe('processChangedGroup success path', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3438,7 +3653,11 @@ describe('processChangedGroup success path', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3524,7 +3743,11 @@ describe('performFullSync success path', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3585,7 +3808,11 @@ describe('performFullSync success path', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -3676,7 +3903,11 @@ describe('WatchLoopController additional coverage', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: mockApiClient as unknown as ZTMApiClient,
+      chatReader: mockApiClient as unknown as ZTMApiClient,
+
+      chatSender: mockApiClient as unknown as IChatSender,
+
+      discovery: mockApiClient as unknown as IDiscovery,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,

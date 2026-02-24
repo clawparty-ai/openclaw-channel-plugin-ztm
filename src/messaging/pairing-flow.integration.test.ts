@@ -45,9 +45,11 @@ describe('Complete Pairing Request Flow', () => {
     return {
       accountId: testAccountId,
       config: baseConfig,
-      apiClient: {
+      chatSender: {
         sendPeerMessage: mockResolved(true),
       },
+      chatReader: null,
+      discovery: null,
       connected: true,
       meshConnected: true,
       lastError: null,
@@ -97,15 +99,15 @@ describe('Complete Pairing Request Flow', () => {
       const sender = 'alice';
       const pairingCode = 'ABC123';
 
-      if (mockState.apiClient) {
-        await mockState.apiClient.sendPeerMessage(sender, {
+      if (mockState.chatSender) {
+        await mockState.chatSender.sendPeerMessage(sender, {
           message: `Pairing code: ${pairingCode}`,
           time: Date.now(),
           sender: mockState.config.username,
         });
       }
 
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+      expect(mockState.chatSender.sendPeerMessage).toHaveBeenCalledWith(
         sender,
         expect.objectContaining({
           message: expect.stringContaining('ABC123'),
@@ -140,8 +142,8 @@ describe('Complete Pairing Request Flow', () => {
 
       const isPending = mockState.pendingPairings.has(sender);
       if (!isPending) {
-        if (mockState.apiClient) {
-          await mockState.apiClient.sendPeerMessage(sender, {
+        if (mockState.chatSender) {
+          await mockState.chatSender.sendPeerMessage(sender, {
             message: 'test',
             time: Date.now(),
             sender: mockState.config.username,
@@ -149,7 +151,7 @@ describe('Complete Pairing Request Flow', () => {
         }
       }
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender.sendPeerMessage).not.toHaveBeenCalled();
     });
   });
 

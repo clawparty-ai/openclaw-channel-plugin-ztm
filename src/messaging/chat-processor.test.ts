@@ -180,7 +180,9 @@ describe('processAndNotify', () => {
     mockState = {
       accountId: testAccountId,
       config: { ...testConfig, dmPolicy: 'allow', username: 'testuser' },
-      apiClient: null,
+      chatReader: null,
+    chatSender: null,
+    discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,

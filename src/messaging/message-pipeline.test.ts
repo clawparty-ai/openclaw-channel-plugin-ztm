@@ -52,7 +52,9 @@ describe('Inbound message processing', () => {
   const mockState: AccountRuntimeState = {
     accountId: testAccountId,
     config: baseConfig,
-    apiClient: null,
+    chatReader: null,
+    chatSender: null,
+    discovery: null,
     lastError: null,
     lastStartAt: null,
     lastStopAt: null,

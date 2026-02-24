@@ -12,6 +12,7 @@
 import type { ZTMChatConfig } from '../types/config.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
+import type { PermitData } from '../types/connectivity.js';
 
 /**
  * Logger interface for gateway pipeline operations
@@ -51,7 +52,7 @@ export interface StepContext {
   config?: ZTMChatConfig;
   endpointName?: string;
   permitPath?: string;
-  permitData?: unknown;
+  permitData?: PermitData;
   state?: AccountRuntimeState;
   messageCallback?: (msg: ZTMChatMessage) => Promise<void>;
   cleanupInterval?: NodeJS.Timeout;

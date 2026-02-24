@@ -12,16 +12,17 @@ import {
   DEPENDENCIES,
   createLogger,
   createConfigService,
-  createApiClientService,
+  createApiReaderService,
+  createApiSenderService,
+  createApiDiscoveryService,
   createApiClientFactory,
   createRuntimeService,
   createAllowFromRepositoryService,
   createMessageStateRepositoryService,
   createAccountStateManagerService,
   type ILogger,
-  type IApiClient,
+  type IChatSender,
   type IApiClientFactory,
-  type IRuntime,
 } from '../di/index.js';
 import { createMessagingContext } from '../messaging/context.js';
 import type { ResolvedZTMChatAccount } from './config.js';
@@ -75,7 +76,9 @@ const meta = {
 // Initialize services on module load
 container.register(DEPENDENCIES.LOGGER, createLogger('ztm-chat'));
 container.register(DEPENDENCIES.CONFIG, createConfigService());
-container.register(DEPENDENCIES.API_CLIENT, createApiClientService());
+container.register(DEPENDENCIES.API_CLIENT_READER, createApiReaderService());
+container.register(DEPENDENCIES.API_CLIENT_SENDER, createApiSenderService());
+container.register(DEPENDENCIES.API_CLIENT_DISCOVERY, createApiDiscoveryService());
 container.register(DEPENDENCIES.API_CLIENT_FACTORY, createApiClientFactory());
 container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 container.register(DEPENDENCIES.ALLOW_FROM_REPO, createAllowFromRepositoryService());
@@ -227,15 +230,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       const config = getZTMChatConfig(account);
       if (!config) return;
       const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
-      const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const runtime = container.get<IRuntime>(DEPENDENCIES.RUNTIME);
+      const sender = container.get<IChatSender>(DEPENDENCIES.API_CLIENT_SENDER);
       const message: ZTMMessage = {
         time: Date.now(),
         message: `Pairing approved! You can now send messages to this bot.`,
         sender: config.username,
       };
-      const result = await apiClient.sendPeerMessage(id, message);
+      const result = await sender.sendPeerMessage(id, message);
       if (!result.ok) {
         logger.warn?.(
           `[ZTM] Failed to send pairing approval message to ${id}: ${result.error?.message}`

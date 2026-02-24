@@ -6,9 +6,9 @@
 
 import type { ZTMChatConfig } from './config.js';
 import type { ZTMChatMessage } from './messaging.js';
-import type { ZTMApiClient } from './api.js';
 import type { GroupPermissions } from './group-policy.js';
 import type { Semaphore } from '../utils/concurrency.js';
+import type { IChatReader, IChatSender, IDiscovery } from '../di/container.js';
 
 /**
  * Cache entry with timestamp for TTL tracking
@@ -64,7 +64,9 @@ export type MessageCallback = (message: ZTMChatMessage) => Promise<void>;
 export interface AccountRuntimeState {
   accountId: string;
   config: ZTMChatConfig;
-  apiClient: ZTMApiClient | null;
+  chatReader: IChatReader | null;
+  chatSender: IChatSender | null;
+  discovery: IDiscovery | null;
   // Connection status tracking for network resilience tests
   // connected: API client connectivity status
   // meshConnected: ZTM mesh network connectivity status

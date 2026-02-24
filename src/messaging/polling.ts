@@ -14,9 +14,11 @@ import {
 import { notifyMessageCallbacks } from './dispatcher.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatConfig } from '../types/config.js';
+import type { ZTMChat } from '../api/ztm-api.js';
 import { handleResult } from '../utils/result.js';
 import { POLLING_INTERVAL_DEFAULT_MS, POLLING_INTERVAL_MIN_MS } from '../constants.js';
 import type { MessagingContext } from './context.js';
+import type { Result } from '../types/common.js';
 
 // Process a group chat message (async - uses async callback notification)
 async function processGroupChat(
@@ -120,8 +122,8 @@ export async function startPollingWatcher(
   context: MessagingContext,
   abortSignal?: AbortSignal
 ): Promise<void> {
-  const { config, apiClient } = state;
-  if (!apiClient) return;
+  const { config, chatReader } = state;
+  if (!chatReader) return;
 
   const rawInterval = (config as Record<string, unknown>).pollingInterval;
   const pollingInterval =
@@ -138,7 +140,7 @@ export async function startPollingWatcher(
       return;
     }
 
-    if (!state.apiClient || !state.config) return;
+    if (!state.chatReader || !state.config) return;
 
     // Use cached allowFrom to avoid redundant async calls every poll cycle
     const rt = container.get(DEPENDENCIES.RUNTIME).get();
@@ -147,8 +149,8 @@ export async function startPollingWatcher(
     if (pollStoreAllowFrom === null) {
       return;
     }
-    const chatsResult = await state.apiClient.getChats();
-    const chats = handleResult(chatsResult, {
+    const chatsResult = await state.chatReader.getChats();
+    const chats = handleResult(chatsResult as Result<ZTMChat[], Error>, {
       operation: 'getChats',
       peer: state.accountId,
       logger,
@@ -157,10 +159,10 @@ export async function startPollingWatcher(
     if (!chats) return;
 
     // Limit chats processed per cycle to prevent memory spikes from large histories
-    const chatsToProcess = chats.slice(0, MAX_CHATS_PER_POLL);
-    if (chats.length > MAX_CHATS_PER_POLL) {
+    const chatsToProcess = (chats as ZTMChat[]).slice(0, MAX_CHATS_PER_POLL);
+    if ((chats as ZTMChat[]).length > MAX_CHATS_PER_POLL) {
       logger.debug(
-        `[${state.accountId}] Limiting poll to ${MAX_CHATS_PER_POLL} of ${chats.length} chats`
+        `[${state.accountId}] Limiting poll to ${MAX_CHATS_PER_POLL} of ${(chats as ZTMChat[]).length} chats`
       );
     }
 

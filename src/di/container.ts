@@ -24,6 +24,9 @@ const _loggerKey = Symbol('ztm:logger');
 const _configKey = Symbol('ztm:config');
 const _apiClientKey = Symbol('ztm:api-client');
 const _apiClientFactoryKey = Symbol('ztm:api-client-factory');
+const _apiClientReaderKey = Symbol('ztm:api-client-reader');
+const _apiClientSenderKey = Symbol('ztm:api-client-sender');
+const _apiClientDiscoveryKey = Symbol('ztm:api-client-discovery');
 const _runtimeKey = Symbol('ztm:runtime');
 const _channelStateKey = Symbol('ztm:channel-state');
 const _meshConnectivityKey = Symbol('ztm:mesh-connectivity');
@@ -42,6 +45,9 @@ export const DEPENDENCIES = {
   CONFIG: createDependencyKey<IConfig>(_configKey),
   API_CLIENT: createDependencyKey<IApiClient>(_apiClientKey),
   API_CLIENT_FACTORY: createDependencyKey<IApiClientFactory>(_apiClientFactoryKey),
+  API_CLIENT_READER: createDependencyKey<IChatReader>(_apiClientReaderKey),
+  API_CLIENT_SENDER: createDependencyKey<IChatSender>(_apiClientSenderKey),
+  API_CLIENT_DISCOVERY: createDependencyKey<IDiscovery>(_apiClientDiscoveryKey),
   RUNTIME: createDependencyKey<IRuntime>(_runtimeKey),
   CHANNEL_STATE: createDependencyKey<unknown>(_channelStateKey),
   MESH_CONNECTIVITY: createDependencyKey<unknown>(_meshConnectivityKey),
@@ -96,8 +102,8 @@ export interface IConfig {
  */
 export interface IChatReader {
   getChats(): AsyncResult<unknown, Error>;
-  getPeerMessages(peer: string): AsyncResult<unknown, Error>;
-  getGroupMessages(creator: string, group: string): AsyncResult<unknown, Error>;
+  getPeerMessages(peer: string, since?: number, before?: number): AsyncResult<unknown, Error>;
+  getGroupMessages(creator: string, group: string, since?: number, before?: number): AsyncResult<unknown, Error>;
   watchChanges(prefix: string): AsyncResult<unknown, Error>;
 }
 

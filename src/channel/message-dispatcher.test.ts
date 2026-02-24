@@ -187,7 +187,9 @@ describe('handleInboundMessage', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+    chatSender: null,
+    discovery: null,
           lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -359,7 +361,9 @@ describe('createMessageCallback', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+    chatSender: null,
+    discovery: null,
           lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -539,7 +543,9 @@ describe('checkGroupMessagePolicy', () => {
     mockState = {
       accountId: testAccountId,
       config: testConfig,
-      apiClient: null,
+      chatReader: null,
+    chatSender: null,
+    discovery: null,
           lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,

@@ -4,7 +4,7 @@
  * Barrel exports for DI container and service factories
  */
 
-import type { ILogger, IConfig, IApiClient, IApiClientFactory, IRuntime } from './container';
+import type { ILogger, IConfig, IApiClient, IApiClientFactory, IRuntime, IChatReader, IChatSender, IDiscovery } from './container';
 import { DEPENDENCIES, container } from './container';
 
 import type { IAllowFromRepository, IMessageStateRepository } from '../runtime/repository.js';
@@ -22,6 +22,9 @@ export {
   type IApiClient,
   type IApiClientFactory,
   type IRuntime,
+  type IChatReader,
+  type IChatSender,
+  type IDiscovery,
 } from './container';
 
 export type { IAllowFromRepository, IMessageStateRepository };
@@ -89,6 +92,69 @@ export function createApiClientService(): () => IApiClient {
     });
     // Return client implementing all IApiClient interfaces
     return client as unknown as IApiClient;
+  };
+}
+
+/**
+ * API client reader factory - Read operations only
+ * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IChatReader instance
+ */
+export function createApiReaderService(): () => IChatReader {
+  return (): IChatReader => {
+    const client = createZTMApiClient({
+      agentUrl: '',
+      permitUrl: '',
+      permitSource: 'server',
+      meshName: '',
+      username: '',
+      dmPolicy: 'pairing',
+      enableGroups: false,
+    });
+    return client as unknown as IChatReader;
+  };
+}
+
+/**
+ * API client sender factory - Write operations only
+ * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IChatSender instance
+ */
+export function createApiSenderService(): () => IChatSender {
+  return (): IChatSender => {
+    const client = createZTMApiClient({
+      agentUrl: '',
+      permitUrl: '',
+      permitSource: 'server',
+      meshName: '',
+      username: '',
+      dmPolicy: 'pairing',
+      enableGroups: false,
+    });
+    return client as unknown as IChatSender;
+  };
+}
+
+/**
+ * API client discovery factory - Discovery operations only
+ * Returns a factory function for DI container registration
+ *
+ * @returns Factory function that returns an IDiscovery instance
+ */
+export function createApiDiscoveryService(): () => IDiscovery {
+  return (): IDiscovery => {
+    const client = createZTMApiClient({
+      agentUrl: '',
+      permitUrl: '',
+      permitSource: 'server',
+      meshName: '',
+      username: '',
+      dmPolicy: 'pairing',
+      enableGroups: false,
+    });
+    return client as unknown as IDiscovery;
   };
 }
 

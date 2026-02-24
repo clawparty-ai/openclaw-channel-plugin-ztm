@@ -61,7 +61,9 @@ describe('Message Dispatcher', () => {
     return {
       accountId: testAccountId,
       config: {} as any,
-      apiClient: null,
+      chatReader: null,
+    chatSender: null,
+    discovery: null,
       lastError: null,
       lastStartAt: null,
       lastStopAt: null,

@@ -45,10 +45,12 @@ describe('Outbound Message Sending Integration', () => {
   const createMockState = (overrides?: Partial<AccountRuntimeState>): AccountRuntimeState => ({
     accountId: 'test-account',
     config: testConfig,
-    apiClient: {
+    chatSender: {
       sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
       sendGroupMessage: vi.fn().mockResolvedValue(success(true)),
     } as any,
+    chatReader: null,
+    discovery: null,
     messageCallbacks: new Set(),
     watchInterval: null,
     lastError: null,
@@ -71,7 +73,7 @@ describe('Outbound Message Sending Integration', () => {
       const result = await sendZTMMessage(mockState, 'alice', 'Hello World');
 
       expect(result.ok).toBe(true);
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalledWith(
         'alice',
         expect.objectContaining({
           message: 'Hello World',
@@ -86,7 +88,7 @@ describe('Outbound Message Sending Integration', () => {
       const result = await sendZTMMessage(mockState, 'admin', 'Hello Group', groupInfo);
 
       expect(result.ok).toBe(true);
-      expect(mockState.apiClient?.sendGroupMessage).toHaveBeenCalledWith(
+      expect(mockState.chatSender?.sendGroupMessage).toHaveBeenCalledWith(
         'admin',
         'developers',
         expect.objectContaining({
@@ -100,7 +102,9 @@ describe('Outbound Message Sending Integration', () => {
     it('should return failure when runtime not initialized', async () => {
       const uninitializedState = createMockState({
         config: null as any,
-        apiClient: null,
+        chatReader: null,
+    chatSender: null,
+    discovery: null,
       });
 
       const result = await sendZTMMessage(uninitializedState, 'alice', 'Hello');
@@ -125,7 +129,7 @@ describe('Outbound Message Sending Integration', () => {
     });
 
     it('should handle send message failure', async () => {
-      (mockState.apiClient?.sendPeerMessage as any).mockResolvedValue(
+      (mockState.chatSender?.sendPeerMessage as any).mockResolvedValue(
         failure(new Error('Network error'))
       );
 
@@ -148,7 +152,7 @@ describe('Outbound Message Sending Integration', () => {
     it('should include sender username in message', async () => {
       await sendZTMMessage(mockState, 'alice', 'Hello');
 
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalledWith(
         'alice',
         expect.objectContaining({
           sender: testConfig.username,
@@ -159,7 +163,7 @@ describe('Outbound Message Sending Integration', () => {
     it('should include timestamp in message', async () => {
       await sendZTMMessage(mockState, 'alice', 'Hello');
 
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalledWith(
         'alice',
         expect.objectContaining({
           time: expect.any(Number),
@@ -197,7 +201,7 @@ describe('Outbound Message Sending Integration', () => {
 
       await sendZTMMessage(state, 'alice', 'Hello');
 
-      expect(state.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+      expect(state.chatSender?.sendPeerMessage).toHaveBeenCalledWith(
         'alice',
         expect.objectContaining({
           sender: 'custom-bot',
@@ -219,7 +223,7 @@ describe('Outbound Message Sending Integration', () => {
   describe('error handling integration', () => {
     it('should log error on send failure', async () => {
       const { logger } = await import('../utils/logger.js');
-      (mockState.apiClient?.sendPeerMessage as any).mockResolvedValue(
+      (mockState.chatSender?.sendPeerMessage as any).mockResolvedValue(
         failure(new Error('Connection refused'))
       );
 
@@ -229,7 +233,7 @@ describe('Outbound Message Sending Integration', () => {
     });
 
     it('should set lastError on send failure', async () => {
-      (mockState.apiClient?.sendPeerMessage as any).mockResolvedValue(
+      (mockState.chatSender?.sendPeerMessage as any).mockResolvedValue(
         failure(new Error('Test error'))
       );
 
@@ -240,7 +244,7 @@ describe('Outbound Message Sending Integration', () => {
 
     it('should preserve previous lastOutboundAt on failure', async () => {
       mockState.lastOutboundAt = new Date('2024-01-01');
-      (mockState.apiClient?.sendPeerMessage as any).mockResolvedValue(failure(new Error('Error')));
+      (mockState.chatSender?.sendPeerMessage as any).mockResolvedValue(failure(new Error('Error')));
 
       await sendZTMMessage(mockState, 'alice', 'Hello');
 
