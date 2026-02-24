@@ -266,6 +266,9 @@ export async function handlePeerPolicyCheck(
  * @param state - Account runtime state
  * @param storeAllowFrom - Persisted allowFrom list for pairing mode
  */
+// Re-export unified function from strategies
+export { processAndNotify } from './strategies/message-strategies.js';
+
 export async function processAndNotifyPeerMessages(
   messages: Array<{ time: number; message: string; sender: string }>,
   state: AccountRuntimeState,

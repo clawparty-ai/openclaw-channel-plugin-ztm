@@ -10,13 +10,9 @@ import { getOrDefault } from '../utils/guards.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { startPollingWatcher } from './polling.js';
-import { processAndNotifyChat } from './chat-processor.js';
+import { processAndNotify } from './strategies/message-strategies.js';
 import type { MessagingContext } from './context.js';
-import {
-  processAndNotifyPeerMessages,
-  processAndNotifyGroupMessages,
-  handlePeerPolicyCheck,
-} from './message-processor-helpers.js';
+import { handlePeerPolicyCheck } from './message-processor-helpers.js';
 import { Semaphore } from '../utils/concurrency.js';
 import { getMessageSyncStart } from '../utils/sync-time.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
@@ -72,7 +68,7 @@ export async function startMessageWatcher(
   startWatchLoop(state, rt, messagePath, context, abortSignal);
 }
 
-// processAndNotifyChat is now imported from chat-processor.ts
+// processAndNotify is now imported from chat-processor.ts
 
 /**
  * Perform initial sync of all existing messages
@@ -94,7 +90,7 @@ async function performInitialSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (await processAndNotifyChat(chat, state, storeAllowFrom)) {
+    if (await processAndNotify(chat, state, storeAllowFrom)) {
       processedCount++;
     }
   }
@@ -479,8 +475,11 @@ async function processChangedPeer(
     `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}" since=${since}${hasNoHistory ? ' (no history)' : ''}`
   );
 
-  // Use shared message processing logic
-  await processAndNotifyPeerMessages(messages, state, storeAllowFrom);
+  // Use unified message processing logic
+  for (const msg of messages) {
+    const chat = { peer, time: msg.time, updated: msg.time, latest: msg };
+    await processAndNotify(chat, state, storeAllowFrom);
+  }
 
   // Handle DM policy check for pairing
   await handlePeerPolicyCheck(peer, state, storeAllowFrom, 'New message');
@@ -522,8 +521,11 @@ async function processChangedGroup(
 
   const messages = getOrDefault(messagesResult.value, []);
 
-  // Use shared message processing logic
-  processAndNotifyGroupMessages(messages, state, storeAllowFrom, { creator, group }, name);
+  // Use unified message processing logic
+  for (const msg of messages) {
+    const chat = { creator, group, latest: msg, time: msg.time, updated: msg.time };
+    await processAndNotify(chat, state, storeAllowFrom);
+  }
 }
 
 /**
@@ -545,7 +547,7 @@ async function performFullSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (await processAndNotifyChat(chat, state, storeAllowFrom)) {
+    if (await processAndNotify(chat, state, storeAllowFrom)) {
       processedCount++;
     }
   }
