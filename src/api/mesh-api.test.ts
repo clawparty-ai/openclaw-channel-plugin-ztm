@@ -72,19 +72,26 @@ describe('Mesh API', () => {
 
   describe('getMeshInfo', () => {
     it('should return mesh info successfully', async () => {
-      const meshInfo: ZTMMeshInfo = {
+      // API returns agent.username, we map it to top-level username
+      const apiResponse = {
+        name: 'test-mesh',
+        connected: true,
+        agent: { username: 'test-user' },
+        errors: [],
+      };
+      const expectedMeshInfo: ZTMMeshInfo = {
         name: 'test-mesh',
         connected: true,
         username: 'test-user',
         errors: [],
       };
-      const mockRequest = createMockRequest({ ok: true, value: meshInfo });
+      const mockRequest = createMockRequest({ ok: true, value: apiResponse });
       const meshApi = createMeshApi(testConfig, mockRequest, mockLogger);
 
       const result = await meshApi.getMeshInfo();
 
       expect(result.ok).toBe(true);
-      expect(result.value).toEqual(meshInfo);
+      expect(result.value).toEqual(expectedMeshInfo);
       expect(mockRequest).toHaveBeenCalledWith('GET', '/api/meshes/test-mesh');
     });
 

@@ -23,7 +23,33 @@ export function createMeshApi(config: ZTMChatConfig, request: RequestHandler, lo
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
   async function getMeshInfo(): Promise<Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>> {
-    return request<ZTMMeshInfo>('GET', `/api/meshes/${config.meshName}`);
+    const result = await request<{
+      name: string;
+      connected: boolean;
+      agent: { username: string };
+      errors?: Array<{ time: string; message: string }>;
+    }>('GET', `/api/meshes/${config.meshName}`);
+
+    if (!result.ok) {
+      return result as unknown as Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>;
+    }
+
+    const value = result.value;
+    if (!value) {
+      return failure(new ZTMApiError({
+        method: 'GET',
+        path: `/api/meshes/${config.meshName}`,
+        statusCode: 500,
+        cause: new Error('Unexpected empty response'),
+      })) as Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>;
+    }
+
+    return success({
+      name: value.name,
+      connected: value.connected,
+      username: value.agent.username,
+      errors: value.errors,
+    });
   }
 
   async function getEndpoints(): Promise<Result<ZTMEndpoint[], ZTMApiError | ZTMTimeoutError>> {
