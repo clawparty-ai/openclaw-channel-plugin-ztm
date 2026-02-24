@@ -1,7 +1,14 @@
 // Unit tests for Runtime
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { setZTMRuntime, getZTMRuntime, isRuntimeInitialized, RuntimeManager } from './runtime.js';
+import {
+  setZTMRuntime,
+  getZTMRuntime,
+  isRuntimeInitialized,
+  RuntimeManager,
+  createRuntimeProvider,
+  getDefaultRuntimeProvider,
+} from './runtime.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 
 // Mock logger - must be hoisted
@@ -138,6 +145,71 @@ describe('Runtime Management', () => {
 
       expect(isRuntimeInitialized()).toBe(false);
     });
+  });
+});
+
+describe('createRuntimeProvider', () => {
+  it('should return uninitialized state initially', () => {
+    const provider = createRuntimeProvider();
+    expect(provider.isInitialized()).toBe(false);
+  });
+
+  it('should throw when getRuntime() called before setRuntime()', () => {
+    const provider = createRuntimeProvider();
+    expect(() => provider.getRuntime()).toThrow('ZTM runtime not initialized');
+  });
+
+  it('should return set runtime after setRuntime()', () => {
+    const provider = createRuntimeProvider();
+    const mockRuntime = {
+      channel: { routing: { resolveAgentRoute: vi.fn() } },
+    } as unknown as PluginRuntime;
+
+    provider.setRuntime(mockRuntime);
+
+    expect(provider.getRuntime()).toBe(mockRuntime);
+    expect(provider.isInitialized()).toBe(true);
+  });
+
+  it('should allow runtime replacement', () => {
+    const provider = createRuntimeProvider();
+    const runtime1 = { id: 1 } as unknown as PluginRuntime;
+    const runtime2 = { id: 2 } as unknown as PluginRuntime;
+
+    provider.setRuntime(runtime1);
+    expect(provider.getRuntime()).toBe(runtime1);
+
+    provider.setRuntime(runtime2);
+    expect(provider.getRuntime()).toBe(runtime2);
+  });
+
+  it('should create independent instances', () => {
+    const provider1 = createRuntimeProvider();
+    const provider2 = createRuntimeProvider();
+
+    const runtime1 = { id: 1 } as unknown as PluginRuntime;
+    provider1.setRuntime(runtime1);
+
+    // provider2 should be independent
+    expect(provider2.isInitialized()).toBe(false);
+    expect(() => provider2.getRuntime()).toThrow();
+  });
+});
+
+describe('getDefaultRuntimeProvider', () => {
+  beforeEach(() => {
+    RuntimeManager.reset();
+  });
+
+  afterEach(() => {
+    RuntimeManager.reset();
+  });
+
+  it('should return same provider on multiple calls', () => {
+    const provider1 = getDefaultRuntimeProvider();
+    const provider2 = getDefaultRuntimeProvider();
+
+    expect(provider1).toBe(provider2);
   });
 });
 
