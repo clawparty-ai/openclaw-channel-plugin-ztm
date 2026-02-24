@@ -242,7 +242,7 @@ export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions 
       lastError = error instanceof Error ? error : new Error(String(error));
 
       // Check if error is retriable
-      const isRetriable = isRetriableError(lastError);
+      const isRetriable = isRetryableError(lastError);
       if (!isRetriable || attempt >= config.maxRetries) {
         throw lastError;
       }
@@ -259,59 +259,6 @@ export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions 
   }
 
   throw lastError || new Error('Retry failed');
-}
-
-/**
- * Check if an error is an authentication/authorization error
- * These errors should NOT be retried as they indicate invalid credentials
- */
-function isAuthError(error: Error): boolean {
-  const errorMessage = error.message.toLowerCase();
-  const errorName = error.name.toLowerCase();
-
-  // Check for auth-related keywords
-  const authKeywords = [
-    'unauthorized',
-    'forbidden',
-    'authentication',
-    'auth',
-    'credential',
-    'token',
-    'jwt',
-    'bearer',
-    'api key',
-    'apikey',
-    'invalid token',
-    'expired token',
-    'invalid credentials',
-    'access denied',
-  ];
-
-  return errorName.includes('auth') || authKeywords.some(keyword => errorMessage.includes(keyword));
-}
-
-/**
- * Check if an error is retriable
- */
-export function isRetriableError(error: Error): boolean {
-  const errorMessage = error.message.toLowerCase();
-  const errorName = error.name.toLowerCase();
-
-  // Authentication errors should never be retried
-  if (isAuthError(error)) {
-    return false;
-  }
-
-  return (
-    errorName.includes('aborterror') ||
-    errorMessage.includes('timeout') ||
-    errorMessage.includes('fetch') ||
-    errorMessage.includes('network') ||
-    errorMessage.includes('econnrefused') ||
-    errorMessage.includes('enotfound') ||
-    errorMessage.includes('etimedout') ||
-    errorMessage.includes('econnreset')
-  );
 }
 
 /**
