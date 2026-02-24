@@ -96,8 +96,7 @@ export function createApiClientService(): () => IApiClient {
  * Runtime service factory
  * Returns a factory function for DI container registration
  *
- * This factory uses RuntimeManager directly to avoid hidden dependencies
- * on module-level singletons. The RuntimeManager is still a singleton,
+ * This factory uses createRuntimeProvider to avoid hidden dependencies
  * but accessing it through DI makes the dependency explicit.
  *
  * @returns Factory function that returns an IRuntime instance
