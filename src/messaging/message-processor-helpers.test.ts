@@ -59,7 +59,7 @@ describe('message-processor-helpers', () => {
         timestamp: new Date(1000),
         peer: 'alice',
       };
-      expect(getWatermarkKey(msg)).toBe('alice');
+      expect(getWatermarkKey({ type: 'message', data: msg })).toBe('alice');
     });
 
     it('should return group key for group message', () => {
@@ -74,31 +74,23 @@ describe('message-processor-helpers', () => {
         groupCreator: 'creator1',
         groupId: 'group1',
       };
-      expect(getWatermarkKey(msg)).toBe('group:creator1/group1');
+      expect(getWatermarkKey({ type: 'message', data: msg })).toBe('group:creator1/group1');
     });
 
     it('should return group key from groupInfo object', () => {
       const groupInfo = { creator: 'creator1', group: 'group1' };
-      expect(getWatermarkKey(groupInfo)).toBe('group:creator1/group1');
+      expect(getWatermarkKey({ type: 'group', data: groupInfo })).toBe('group:creator1/group1');
     });
 
-    it('should return peer fallback when provided', () => {
-      const msg = null;
-      expect(getWatermarkKey(msg, 'bob')).toBe('bob');
+    it('should return peer from peer type', () => {
+      expect(getWatermarkKey({ type: 'peer', data: 'bob' })).toBe('bob');
     });
 
-    it('should return empty string when no peer provided', () => {
-      const msg = null;
-      expect(getWatermarkKey(msg)).toBe('');
-    });
-
-    it('should return empty string for incomplete group info', () => {
+    it('should return group key with undefined for incomplete group info', () => {
       const groupInfo = { creator: 'creator1' };
-      expect(getWatermarkKey(groupInfo)).toBe('');
-    });
-
-    it('should handle undefined input', () => {
-      expect(getWatermarkKey(undefined)).toBe('');
+      expect(
+        getWatermarkKey({ type: 'group', data: groupInfo as { creator: string; group: string } })
+      ).toBe('group:creator1/undefined');
     });
   });
 
@@ -317,12 +309,12 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         apiClient: null,
-                lastError: null,
+        lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
         pendingPairings: new Map(),
@@ -367,12 +359,12 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         apiClient: null,
-                lastError: null,
+        lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
         pendingPairings: new Map(),
@@ -429,12 +421,12 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         apiClient: null,
-                lastError: null,
+        lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
         pendingPairings: new Map(),
@@ -488,12 +480,12 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         apiClient: null,
-                lastError: null,
+        lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
         pendingPairings: new Map(),
@@ -541,12 +533,12 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         apiClient: null,
-                lastError: null,
+        lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
         pendingPairings: new Map(),

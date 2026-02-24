@@ -60,7 +60,9 @@ export function processIncomingMessage(
 ): ZTMChatMessage | null {
   const { config, storeAllowFrom = [], accountId = 'default', groupInfo } = context;
 
-  const watermarkKey = getWatermarkKey(groupInfo, msg.sender);
+  const watermarkKey = getWatermarkKey(
+    groupInfo ? { type: 'group', data: groupInfo } : { type: 'peer', data: msg.sender }
+  );
 
   // Step 1: Skip empty or whitespace-only messages
   if (typeof msg.message !== 'string' || msg.message.trim() === '') {
