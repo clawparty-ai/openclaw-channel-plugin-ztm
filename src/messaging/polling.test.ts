@@ -83,15 +83,17 @@ describe('polling', () => {
       mockState = {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
-        apiClient: {
+        chatReader: {
           getChats: vi.fn().mockResolvedValue({ ok: true, value: [] }),
         } as any,
-                lastError: null,
+        chatSender: null,
+        discovery: null,
+        lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
         pendingPairings: new Map(),
@@ -116,7 +118,9 @@ describe('polling', () => {
     it('should return early when apiClient is null', async () => {
       const stateWithoutApi = {
         ...mockState,
-        apiClient: null,
+        chatReader: null,
+    chatSender: null,
+    discovery: null,
       };
 
       await startPollingWatcher(stateWithoutApi, mockContext);
@@ -154,7 +158,7 @@ describe('polling', () => {
 
     it('should call getAllowFrom from context on each poll cycle', async () => {
       const chats = [{ peer: 'alice', latest: { time: 1000, message: 'hello' } }];
-      (mockState.apiClient as any).getChats.mockResolvedValue({ ok: true, value: chats });
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: chats });
 
       await startPollingWatcher(mockState, mockContext);
 
@@ -172,12 +176,12 @@ describe('polling', () => {
       // Wait for first poll cycle to complete
       await new Promise(resolve => setTimeout(resolve, 2100));
 
-      expect(mockState.apiClient?.getChats).not.toHaveBeenCalled();
+      expect(mockState.chatReader?.getChats).not.toHaveBeenCalled();
     }, 10000);
 
     it('should process chats and notify callbacks', async () => {
       const chats = [{ peer: 'alice', latest: { time: 1000, message: 'hello' } }];
-      (mockState.apiClient as any).getChats.mockResolvedValue({ ok: true, value: chats });
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: chats });
 
       const normalizedMsg = {
         id: 'msg-1',
@@ -199,7 +203,7 @@ describe('polling', () => {
     }, 10000);
 
     it('should handle empty chats array', async () => {
-      (mockState.apiClient as any).getChats.mockResolvedValue({ ok: true, value: [] });
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: [] });
 
       await startPollingWatcher(mockState, mockContext);
 
@@ -217,7 +221,7 @@ describe('polling', () => {
           latest: { time: 1000, message: 'hello', sender: 'alice' },
         },
       ];
-      (mockState.apiClient as any).getChats.mockResolvedValue({ ok: true, value: chats });
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: chats });
 
       const normalizedMsg = {
         id: 'msg-1',
@@ -242,7 +246,7 @@ describe('polling', () => {
 
     it('should skip peer chat when peer is same as bot username', async () => {
       const chats = [{ peer: 'mybot', latest: { time: 1000, message: 'hello' } }];
-      (mockState.apiClient as any).getChats.mockResolvedValue({ ok: true, value: chats });
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: chats });
 
       await startPollingWatcher(mockState, mockContext);
 
@@ -258,7 +262,7 @@ describe('polling', () => {
         // Missing creator
         { group: 'testgroup', latest: { time: 1000, message: 'hello' } },
       ];
-      (mockState.apiClient as any).getChats.mockResolvedValue({ ok: true, value: chats });
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: chats });
 
       await startPollingWatcher(mockState, mockContext);
 

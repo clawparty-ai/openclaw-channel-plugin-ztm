@@ -58,7 +58,9 @@ function createMockState(): AccountRuntimeState {
   return {
     accountId: testAccountId,
     config: { ...testConfig, allowFrom: ['alice', 'bob'] },
-    apiClient: null,
+    chatReader: null,
+    chatSender: null,
+    discovery: null,
     lastError: null,
     lastStartAt: new Date(),
     lastStopAt: null,
@@ -173,7 +175,9 @@ describe('Watch → Polling Fallback Integration', () => {
       const apiClient = createMockApiClient({
         watchErrors: 10, // Always return errors
       });
-      state.apiClient = apiClient;
+      state.chatReader = apiClient as any;
+      state.chatSender = apiClient as any;
+      state.discovery = apiClient as any;
 
       // Simulate watch error count progression
       const errors: string[] = [];

@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import { mockResolved } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
-import type { ZTMApiClient } from '../types/api.js';
+import type { IChatReader } from '../di/index.js';
 
 // Mock dependencies
 vi.mock('../utils/logger.js', () => ({
@@ -46,11 +46,13 @@ describe('Watch → Polling Fallback', () => {
     return {
       accountId: testAccountId,
       config: baseConfig,
-      apiClient: {
+      chatReader: {
         watchChanges: mockResolved(undefined),
         getChats: mockResolved({ ok: true, value: [] }),
         getPeerMessages: mockResolved({ ok: true, value: [] }),
-      } as unknown as ZTMApiClient,
+      } as unknown as IChatReader,
+      chatSender: null,
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,

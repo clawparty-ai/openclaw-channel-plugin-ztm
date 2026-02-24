@@ -102,8 +102,8 @@ export interface IConfig {
  */
 export interface IChatReader {
   getChats(): AsyncResult<unknown, Error>;
-  getPeerMessages(peer: string): AsyncResult<unknown, Error>;
-  getGroupMessages(creator: string, group: string): AsyncResult<unknown, Error>;
+  getPeerMessages(peer: string, since?: number, before?: number): AsyncResult<unknown, Error>;
+  getGroupMessages(creator: string, group: string, since?: number, before?: number): AsyncResult<unknown, Error>;
   watchChanges(prefix: string): AsyncResult<unknown, Error>;
 }
 

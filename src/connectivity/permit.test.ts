@@ -102,9 +102,11 @@ describe('Permit management functions', () => {
   const mockState: AccountRuntimeState = {
     accountId: 'test-account',
     config: { ...testConfig },
-    apiClient: {
+    chatSender: {
       sendPeerMessage: vi.fn().mockResolvedValue(true),
     } as any, // Partial mock for testing
+    chatReader: null,
+    discovery: null,
     lastError: null,
     lastStartAt: null,
     lastStopAt: null,
@@ -133,8 +135,8 @@ describe('Permit management functions', () => {
     mockPairingReplyMessage = 'Pairing reply message';
     mockBuildPairingReplyThrows = false;
 
-    // Reset apiClient mock and config
-    mockState.apiClient = {
+    // Reset chatSender mock and config
+    mockState.chatSender = {
       sendPeerMessage: vi.fn().mockResolvedValue(true),
     } as any; // Partial mock for testing
     mockState.config.allowFrom = undefined;
@@ -591,7 +593,7 @@ describe('Permit management functions', () => {
       await handlePairingRequest(mockState, 'alice', 'Test context', []);
 
       expect(mockUpsertPairingRequest).toHaveBeenCalled();
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalled();
     });
 
     it('should add peer to pendingPairings after successful registration', async () => {
@@ -616,7 +618,7 @@ describe('Permit management functions', () => {
 
       // Should not register new pairing or send message
       expect(mockUpsertPairingRequest).not.toHaveBeenCalled();
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should use normalized peer name for pendingPairings check', async () => {
@@ -629,7 +631,7 @@ describe('Permit management functions', () => {
 
       // Should skip because normalized name matches
       expect(mockUpsertPairingRequest).not.toHaveBeenCalled();
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should not send message if pairing already exists', async () => {
@@ -639,7 +641,7 @@ describe('Permit management functions', () => {
       await handlePairingRequest(mockState, 'alice', 'Test context', []);
 
       // When pairing already exists (created=false), don't re-send message
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should skip if already approved in allowFrom', async () => {
@@ -647,7 +649,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'alice', 'Test context', []);
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should skip if in store allowFrom', async () => {
@@ -655,7 +657,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'alice', 'Test context', storeAllowFrom);
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should normalize peer name', async () => {
@@ -665,7 +667,7 @@ describe('Permit management functions', () => {
 
       // Verify OpenClaw's pairing API was called
       expect(mockUpsertPairingRequest).toHaveBeenCalled();
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalled();
     });
 
     it('should handle registration failure gracefully', async () => {
@@ -694,7 +696,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'alice', 'Test context', []);
 
-      const sentMessage = (mockState.apiClient as any).sendPeerMessage.mock.calls[0];
+      const sentMessage = (mockState.chatSender as any).sendPeerMessage.mock.calls[0];
       expect(sentMessage[1].message).toContain('CODE123');
     });
 
@@ -704,12 +706,12 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'alice', 'Test context', []);
 
-      const sentMessage = (mockState.apiClient as any).sendPeerMessage.mock.calls[0];
+      const sentMessage = (mockState.chatSender as any).sendPeerMessage.mock.calls[0];
       expect(sentMessage[1].message).toContain('PAIRING');
     });
 
     it('should handle send failure gracefully', async () => {
-      (mockState.apiClient as any).sendPeerMessage.mockRejectedValue(new Error('Send failed'));
+      (mockState.chatSender as any).sendPeerMessage.mockRejectedValue(new Error('Send failed'));
 
       // Should not throw
       await expect(
@@ -721,7 +723,9 @@ describe('Permit management functions', () => {
       // Create a new state with null apiClient
       const stateWithNullClient: AccountRuntimeState = {
         ...mockState,
-        apiClient: null,
+        chatReader: null,
+    chatSender: null,
+    discovery: null,
       };
 
       await handlePairingRequest(stateWithNullClient, 'alice', 'Test context', []);
@@ -732,7 +736,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'alice', 'Test context', storeAllowFrom);
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should check config allowFrom with normalized names', async () => {
@@ -740,7 +744,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'Alice', 'Test context', []);
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should use correct pairing request parameters', async () => {
@@ -769,7 +773,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'ALICE', 'context', []);
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
     it('should send message with proper structure', async () => {
@@ -777,7 +781,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'Peer', 'context', []);
 
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalledWith(
         'Peer',
         expect.objectContaining({
           time: expect.any(Number),
@@ -792,7 +796,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'alice', 'context', emptyStore);
 
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalled();
     });
 
     it('should handle peer with special characters', async () => {
@@ -832,7 +836,9 @@ describe('Permit management functions', () => {
     it('should handle null apiClient config', async () => {
       const noClientState: AccountRuntimeState = {
         ...mockState,
-        apiClient: null,
+        chatReader: null,
+    chatSender: null,
+    discovery: null,
       };
 
       await handlePairingRequest(noClientState, 'peer', 'context', []);
@@ -845,7 +851,7 @@ describe('Permit management functions', () => {
 
       await handlePairingRequest(mockState, 'ExistingPeer', 'context', []);
 
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+      expect(mockState.chatSender?.sendPeerMessage).not.toHaveBeenCalled();
     });
   });
 
@@ -855,7 +861,7 @@ describe('Permit management functions', () => {
 
       await Promise.all(peers.map(peer => handlePairingRequest(mockState, peer, 'context', [])));
 
-      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledTimes(3);
+      expect(mockState.chatSender?.sendPeerMessage).toHaveBeenCalledTimes(3);
     });
 
     it('should handle very long peer names', async () => {

@@ -8,7 +8,7 @@ import { randomBytes } from 'node:crypto';
 import { logger } from '../utils/logger.js';
 import { type ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
-import { failure, type Result } from '../types/common.js';
+import { failure, success, type Result } from '../types/common.js';
 import { ZTMSendError } from '../types/errors.js';
 import { validateUsername } from '../utils/validation.js';
 
@@ -81,7 +81,8 @@ export async function sendZTMMessage(
     const operation = groupInfo ? 'sendGroupMessage' : 'sendPeerMessage';
     const target = groupInfo ? `${groupInfo.creator}/${groupInfo.group}` : peer;
     logger.debug(`[${state.accountId}] ${operation} to "${target}" succeeded`);
-    return result;
+    // Cast the result to the expected return type
+    return success(result.value as boolean);
   }
 
   // Error path - update state and log
@@ -90,5 +91,13 @@ export async function sendZTMMessage(
   const target = groupInfo ? `${groupInfo.creator}/${groupInfo.group}` : peer;
   logger.warn(`[${state.accountId}] ${operation} to "${target}" failed: ${state.lastError}`);
 
-  return result;
+  // Wrap the error in ZTMSendError if it's not already one
+  const sendError = result.error instanceof ZTMSendError
+    ? result.error
+    : new ZTMSendError({
+        peer,
+        messageTime: message.time,
+        cause: result.error,
+      });
+  return failure(sendError);
 }

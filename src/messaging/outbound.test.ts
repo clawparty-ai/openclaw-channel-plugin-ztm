@@ -14,7 +14,9 @@ function createMockState(): AccountRuntimeState {
   return {
     accountId: testAccountId,
     config: testConfig,
-    apiClient: null,
+    chatReader: null,
+    chatSender: null,
+    discovery: null,
     lastError: null,
     lastStartAt: null,
     lastStopAt: null,
@@ -100,9 +102,9 @@ describe('Outbound message functions', () => {
     it('should send message successfully', async () => {
       const state = createMockState();
       const mockSendPeerMessage = mockSuccess(true);
-      state.apiClient = {
+      state.chatSender = {
         sendPeerMessage: mockSendPeerMessage,
-      } as unknown as typeof state.apiClient;
+      } as unknown as typeof state.chatSender;
 
       const result = await sendZTMMessage(state, 'alice', 'Hello, world!');
 
@@ -118,7 +120,7 @@ describe('Outbound message functions', () => {
 
     it('should return failure when apiClient is null', async () => {
       const state = createMockState();
-      state.apiClient = null;
+      state.chatSender = null;
 
       const result = await sendZTMMessage(state, 'alice', 'Hello!');
 
@@ -141,7 +143,7 @@ describe('Outbound message functions', () => {
       const mockSendPeerMessage = vi
         .fn()
         .mockResolvedValue(createSendFailure('alice', 'Message not delivered'));
-      state.apiClient = { sendPeerMessage: mockSendPeerMessage } as unknown as ZTMApiClient;
+      state.chatSender = { sendPeerMessage: mockSendPeerMessage } as unknown as ZTMApiClient;
 
       const result = await sendZTMMessage(state, 'alice', 'Hello!');
 
@@ -155,7 +157,7 @@ describe('Outbound message functions', () => {
       const mockSendPeerMessage = vi
         .fn()
         .mockResolvedValue(createSendFailure('alice', 'Network error'));
-      state.apiClient = { sendPeerMessage: mockSendPeerMessage } as unknown as ZTMApiClient;
+      state.chatSender = { sendPeerMessage: mockSendPeerMessage } as unknown as ZTMApiClient;
 
       const result = await sendZTMMessage(state, 'alice', 'Hello!');
 
@@ -166,9 +168,9 @@ describe('Outbound message functions', () => {
     it('should handle empty message', async () => {
       const state = createMockState();
       const mockSendPeerMessage = mockSuccess(true);
-      state.apiClient = {
+      state.chatSender = {
         sendPeerMessage: mockSendPeerMessage,
-      } as unknown as typeof state.apiClient;
+      } as unknown as typeof state.chatSender;
 
       const result = await sendZTMMessage(state, 'alice', '');
 
@@ -184,9 +186,9 @@ describe('Outbound message functions', () => {
       const state = createMockState();
       const specialMessage = 'Hello! 🌍 世界\nNew line\tTab';
       const mockSendPeerMessage = mockSuccess(true);
-      state.apiClient = {
+      state.chatSender = {
         sendPeerMessage: mockSendPeerMessage,
-      } as unknown as typeof state.apiClient;
+      } as unknown as typeof state.chatSender;
 
       const result = await sendZTMMessage(state, 'alice', specialMessage);
 

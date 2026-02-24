@@ -165,8 +165,8 @@ export async function handlePairingRequest(
   context: string,
   storeAllowFrom: string[] = []
 ): Promise<void> {
-  const { config, apiClient } = state;
-  if (!apiClient) return;
+  const { config, chatSender } = state;
+  if (!chatSender) return;
 
   const normalizedPeer = normalizeUsername(peer);
 
@@ -260,7 +260,7 @@ export async function handlePairingRequest(
     };
 
     try {
-      await apiClient.sendPeerMessage(peer, pairingMessage);
+      await chatSender.sendPeerMessage(peer, pairingMessage);
       logger.info(`[${state.accountId}] Sent pairing request to ${peer}`);
     } catch (error) {
       logger.warn(`[${state.accountId}] Failed to send pairing request to ${peer}: ${error}`);

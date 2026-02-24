@@ -17,7 +17,7 @@ import { Semaphore } from '../utils/concurrency.js';
 import { getMessageSyncStart } from '../utils/sync-time.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import { isSuccess } from '../types/common.js';
-import type { ZTMChat, WatchChangeItem } from '../types/api.js';
+import type { ZTMChat, WatchChangeItem, ZTMMessage } from '../types/api.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
 import {
   FULL_SYNC_DELAY_MS,
@@ -86,7 +86,7 @@ async function performInitialSync(
     return [];
   }
 
-  const chats = chatsResult.value;
+  const chats = chatsResult.value as ZTMChat[];
   let processedCount = 0;
 
   for (const chat of chats) {
@@ -232,7 +232,7 @@ class WatchLoopController {
       return { success: false, errorMessage: changedResult.error?.message ?? 'Watch failed' };
     }
 
-    return { success: true, items: getOrDefault(changedResult.value, []) };
+    return { success: true, items: getOrDefault(changedResult.value as WatchChangeItem[], []) };
   }
 
   /**
@@ -468,7 +468,7 @@ async function processChangedPeer(
     return;
   }
 
-  const messages = getOrDefault(messagesResult.value, []);
+  const messages = getOrDefault(messagesResult.value as ZTMMessage[], []);
   const safePeer = sanitizeForLog(peer);
   const hasNoHistory = watermark === 0;
   logger.debug(
@@ -476,7 +476,7 @@ async function processChangedPeer(
   );
 
   // Use unified message processing logic
-  for (const msg of messages) {
+  for (const msg of messages as ZTMMessage[]) {
     const chat = { peer, time: msg.time, updated: msg.time, latest: msg };
     await processAndNotify(chat, state, storeAllowFrom);
   }
@@ -519,10 +519,10 @@ async function processChangedGroup(
     return;
   }
 
-  const messages = getOrDefault(messagesResult.value, []);
+  const messages = getOrDefault(messagesResult.value as ZTMMessage[], []);
 
   // Use unified message processing logic
-  for (const msg of messages) {
+  for (const msg of messages as ZTMMessage[]) {
     const chat = { creator, group, latest: msg, time: msg.time, updated: msg.time };
     await processAndNotify(chat, state, storeAllowFrom);
   }
@@ -543,7 +543,7 @@ async function performFullSync(
     return;
   }
 
-  const chats = chatsResult.value;
+  const chats = chatsResult.value as ZTMChat[];
   let processedCount = 0;
 
   for (const chat of chats) {
@@ -554,7 +554,7 @@ async function performFullSync(
 
   if (processedCount > 0) {
     logger.debug(
-      `[${state.accountId}] Full sync completed: ${processedCount} new messages from ${chats.length} peers`
+      `[${state.accountId}] Full sync completed: ${processedCount} new messages from ${(chats as ZTMChat[]).length} peers`
     );
   }
 }

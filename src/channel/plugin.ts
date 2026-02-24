@@ -12,7 +12,6 @@ import {
   DEPENDENCIES,
   createLogger,
   createConfigService,
-  createApiClientService,
   createApiReaderService,
   createApiSenderService,
   createApiDiscoveryService,
@@ -22,10 +21,8 @@ import {
   createMessageStateRepositoryService,
   createAccountStateManagerService,
   type ILogger,
-  type IApiClient,
   type IChatSender,
   type IApiClientFactory,
-  type IRuntime,
 } from '../di/index.js';
 import { createMessagingContext } from '../messaging/context.js';
 import type { ResolvedZTMChatAccount } from './config.js';

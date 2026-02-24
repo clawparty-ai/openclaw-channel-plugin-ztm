@@ -92,18 +92,21 @@ describe('Outbound Message Real HTTP Integration', () => {
     meshName: string = 'test-mesh'
   ): AccountRuntimeState => {
     const config = { ...testConfig, agentUrl, meshName };
+    const apiClient = createZTMApiClient(config, { logger: mockLogger });
     return {
       accountId: testAccountId,
       config,
-      apiClient: createZTMApiClient(config, { logger: mockLogger }),
-          messageCallbacks: new Set(),
+      chatReader: apiClient as any,
+      chatSender: apiClient as any,
+      discovery: apiClient as any,
+      messageCallbacks: new Set(),
       watchInterval: null,
       lastError: null,
       lastStartAt: null,
       lastStopAt: null,
       lastInboundAt: null,
       lastOutboundAt: null,
-        watchErrorCount: 0,
+      watchErrorCount: 0,
       pendingPairings: new Map(),
     };
   };
@@ -440,18 +443,21 @@ describe('Outbound Message Real HTTP Integration', () => {
         apiTimeout: 100,
         meshName: 'test-mesh',
       };
+      const apiClient = createZTMApiClient(config, { logger: mockLogger });
       const state: AccountRuntimeState = {
         accountId: testAccountId,
         config,
-        apiClient: createZTMApiClient(config, { logger: mockLogger }),
-                messageCallbacks: new Set(),
+        chatReader: apiClient as any,
+        chatSender: apiClient as any,
+        discovery: apiClient as any,
+        messageCallbacks: new Set(),
         watchInterval: null,
         lastError: null,
         lastStartAt: null,
         lastStopAt: null,
         lastInboundAt: null,
         lastOutboundAt: null,
-            watchErrorCount: 0,
+        watchErrorCount: 0,
         pendingPairings: new Map(),
       };
 

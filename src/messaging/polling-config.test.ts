@@ -5,7 +5,7 @@ import { startPollingWatcher } from './polling.js';
 import { testConfig, testAccountId } from '../test-utils/fixtures.js';
 import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
-import type { ZTMApiClient } from '../types/api.js';
+import type { IChatReader } from '../di/index.js';
 import type { MessagingContext } from './context.js';
 
 // Helper to create a mock MessagingContext
@@ -76,9 +76,11 @@ describe('Configuration Edge Cases', () => {
     return {
       accountId: testAccountId,
       config: baseConfig,
-      apiClient: {
+      chatReader: {
         getChats: mockSuccess([]),
-      } as unknown as ZTMApiClient,
+      } as unknown as IChatReader,
+      chatSender: null,
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,

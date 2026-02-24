@@ -86,7 +86,9 @@ function createMockState(accountId: string, config?: typeof testConfig): Account
   return {
     accountId,
     config: config ?? createBaseConfig(),
-    apiClient: null,
+    chatReader: null,
+    chatSender: null,
+    discovery: null,
     lastError: null,
     lastStartAt: null,
     lastStopAt: null,
@@ -99,15 +101,15 @@ function createMockState(accountId: string, config?: typeof testConfig): Account
   };
 }
 
-// Helper to create mock API client
-function createMockApiClient(overrides?: {
+// Helper to create mock chatSender
+function createMockChatSender(overrides?: {
   sendPeerMessage?: ReturnType<typeof vi.fn>;
   sendGroupMessage?: ReturnType<typeof vi.fn>;
 }) {
   return {
     sendPeerMessage: overrides?.sendPeerMessage ?? mockSuccess(true),
     sendGroupMessage: overrides?.sendGroupMessage ?? mockSuccess(true),
-  } as unknown as ReturnType<typeof createMockState>['apiClient'];
+  } as unknown as ReturnType<typeof createMockState>['chatSender'];
 }
 
 // Helper to create a unique message
@@ -171,7 +173,7 @@ describe('Integration: Complete Message Flow', () => {
 
       // Setup mock API client
       const mockSendPeerMessage = mockSuccess(true);
-      state.apiClient = createMockApiClient({ sendPeerMessage: mockSendPeerMessage });
+      state.chatSender = createMockChatSender({ sendPeerMessage: mockSendPeerMessage });
 
       // Step 1: Receive inbound message
       const inboundMessage = createMessage({ sender: 'bob', message: 'Hello from Bob!' });
@@ -250,7 +252,7 @@ describe('Integration: Complete Message Flow', () => {
 
       // Setup mock API client
       const mockSendGroupMessage = mockSuccess(true);
-      state.apiClient = createMockApiClient({ sendGroupMessage: mockSendGroupMessage });
+      state.chatSender = createMockChatSender({ sendGroupMessage: mockSendGroupMessage });
 
       // Step 1: Receive inbound group message
       const groupInfo = { creator: 'group-admin', group: 'test-group' };
@@ -551,7 +553,7 @@ describe('Integration: Complete Message Flow', () => {
 
       // Setup mock API
       const mockSendPeerMessage = mockSuccess(true);
-      state.apiClient = createMockApiClient({ sendPeerMessage: mockSendPeerMessage });
+      state.chatSender = createMockChatSender({ sendPeerMessage: mockSendPeerMessage });
 
       // Track message flow
       const receivedMessages: ZTMChatMessage[] = [];

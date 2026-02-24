@@ -209,7 +209,9 @@ function createAccountState(accountId: string, config: typeof testConfig): Accou
   return {
     accountId: accountId,
     config: config,
-    apiClient: null,
+    chatReader: null,
+    chatSender: null,
+    discovery: null,
     started: true,
     lastError: null,
     lastStartAt: new Date(),
