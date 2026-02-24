@@ -427,7 +427,7 @@ describe('Polling Watcher', () => {
       expect(mockGetAllowFrom).toHaveBeenCalled();
     });
 
-    it('should handle store read failures gracefully', async () => {
+    it('should use empty array fallback when allowFrom returns null', async () => {
       const now = Date.now();
       const mockChats = [createMockChat('alice', 'Hello', now)];
       mockState.chatReader!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
@@ -440,7 +440,7 @@ describe('Polling Watcher', () => {
           flush: vi.fn(),
         },
         allowFromRepo: {
-          // Return null to simulate store read failure - this should cause the cycle to skip
+          // Return null to simulate store read failure - should use empty array fallback
           getAllowFrom: vi.fn(() => Promise.resolve(null)),
           clearCache: vi.fn(),
         },
@@ -449,14 +449,12 @@ describe('Polling Watcher', () => {
       await startPollingWatcher(mockState, mockContext);
 
       if (setIntervalCallback) {
-        // When getAllowFrom returns null, the cycle returns early
-        // So we don't expect getChats to be called when store read fails
+        // When getAllowFrom returns null, the cycle uses empty array fallback
         await setIntervalCallback();
       }
 
-      // When store read fails (returns null), getChats should NOT be called to avoid bypassing DM policy
-      // This is a security measure: skip the entire cycle rather than process with empty allowFrom
-      expect(mockState.chatReader!.getChats).not.toHaveBeenCalled();
+      // When store read fails (returns null), should use empty array fallback and continue processing
+      expect(mockState.chatReader!.getChats).toHaveBeenCalled();
     });
 
     it('should handle empty chat list', async () => {

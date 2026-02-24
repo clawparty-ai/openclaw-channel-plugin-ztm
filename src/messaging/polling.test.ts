@@ -168,15 +168,19 @@ describe('polling', () => {
       expect(mockContext.allowFromRepo.getAllowFrom).toHaveBeenCalled();
     }, 10000);
 
-    it('should skip processing when allowFrom is null', async () => {
+    it('should use empty array fallback when allowFrom returns null', async () => {
       (mockContext.allowFromRepo.getAllowFrom as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const chats = [{ peer: 'alice', latest: { time: 1000, message: 'hello' } }];
+      (mockState.chatReader as any).getChats.mockResolvedValue({ ok: true, value: chats });
 
       await startPollingWatcher(mockState, mockContext);
 
       // Wait for first poll cycle to complete
       await new Promise(resolve => setTimeout(resolve, 2100));
 
-      expect(mockState.chatReader?.getChats).not.toHaveBeenCalled();
+      // Should still process chats with empty array fallback
+      expect(mockState.chatReader?.getChats).toHaveBeenCalled();
     }, 10000);
 
     it('should process chats and notify callbacks', async () => {
