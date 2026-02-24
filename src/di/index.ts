@@ -22,6 +22,9 @@ export {
   type IApiClient,
   type IApiClientFactory,
   type IRuntime,
+  type IChatReader,
+  type IChatSender,
+  type IDiscovery,
 } from './container';
 
 export type { IAllowFromRepository, IMessageStateRepository };
