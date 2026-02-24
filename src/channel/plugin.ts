@@ -233,15 +233,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       const config = getZTMChatConfig(account);
       if (!config) return;
       const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
-      const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const runtime = container.get<IRuntime>(DEPENDENCIES.RUNTIME);
+      const sender = container.get<IChatSender>(DEPENDENCIES.API_CLIENT_SENDER);
       const message: ZTMMessage = {
         time: Date.now(),
         message: `Pairing approved! You can now send messages to this bot.`,
         sender: config.username,
       };
-      const result = await apiClient.sendPeerMessage(id, message);
+      const result = await sender.sendPeerMessage(id, message);
       if (!result.ok) {
         logger.warn?.(
           `[ZTM] Failed to send pairing approval message to ${id}: ${result.error?.message}`
