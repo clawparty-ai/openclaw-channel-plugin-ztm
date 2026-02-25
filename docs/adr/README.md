@@ -33,6 +33,13 @@ We follow the [Michael Nygard format](https://cognitect.com/blog/2011/11/15/docu
 | [ADR-011](./ADR-011-dual-timer-persistence.md) | Dual-Timer Persistence Strategy (Debounce + Max-Delay) | Accepted |
 | [ADR-012](./ADR-012-lru-ttl-hybrid-caching.md) | LRU + TTL Hybrid Caching Strategy | Accepted |
 | [ADR-013](./ADR-013-functional-policy-engine.md) | Functional Policy Engine Design | Accepted |
+| [ADR-014](./ADR-014-multi-account-isolation-pattern.md) | Multi-Account Isolation Pattern | Accepted |
+| [ADR-015](./ADR-015-onboarding-pairing-flow.md) | Onboarding & Pairing Flow | Accepted |
+| [ADR-016](./ADR-016-gateway-pipeline-architecture.md) | Gateway Pipeline Architecture | Accepted |
+| [ADR-017](./ADR-017-repository-persistence-layer.md) | Repository & Persistence Layer | Accepted |
+| [ADR-018](./ADR-018-connectivity-recovery-strategy.md) | Connectivity Recovery Strategy | Accepted |
+| [ADR-019](./ADR-019-message-ordering-sequencing.md) | Message Ordering & Sequencing | Accepted |
+| [ADR-020](./ADR-020-configuration-schema-validation.md) | Configuration Schema & Validation | Accepted |
 
 ## Adding New ADRs
 
