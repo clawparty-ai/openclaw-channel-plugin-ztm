@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@sinclair/typebox": "0.34.48",
-    "openclaw": "2026.2.23"
+    "openclaw": "2026.2.24"
   },
   "devDependencies": {
     "@types/node": "24.10.13",
