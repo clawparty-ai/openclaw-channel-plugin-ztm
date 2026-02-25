@@ -2,9 +2,64 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.2.25 - 2026-02-25
+
+[7c23a9d](7c23a9df91f92ee87ce760bb3dbe931f138bbbba)...[b3e1a26](b3e1a26c63f2be85b00ea7b1af74a41e746fb09b)
+
+### 🚨 BREAKING CHANGES
+
+- Add optional watermarkStore injection for testability ([69c3936](69c393635b532fa06d029801c36eadde29a0efc3)) - (Lin Yang)
+- 🐛 fix: use default runtime provider to prevent initialization error ([6603ead](6603ead8d5da52688eb090bede8db668d33f86d7)) - (Eric Lin)
+- 🐛 fix: use latest.sender to detect bot's own messages in polling ([62225cf](62225cfa506703d17fd5382f99ca6ffe853ca967)) - (Eric Lin)
+
+
+
+### 🚀 Features
+
+- Gateway Pipeline with retry mechanism (#11) ([6f15fee](6f15feeb190e94b240cfc50d28b7b1acfb2796b9)) - (Lin Yang)
+- Check username match before joining mesh (#24) ([1e12c9d](1e12c9d5e3d02992670151dcb4af455dd876ada3)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Correct Mermaid syntax in DI Container diagram ([4b1a773](4b1a773641e29d096c088f20513a465c0debb635)) - (Lin Yang)
+- Use getOrDefault fallback for allowFrom to prevent silent failure (#21) ([b384a5e](b384a5e6fd94bc642f9e3e9c99cc7b2d21d7c94c)) - (Lin Yang)
+- Handle null/undefined in storeAllowFrom parameter (#23) ([a8632be](a8632be56a218331c4f5317b8865fdf9611064f6)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Eliminate message processing code duplication with Strategy Pattern (#15) ([8b046ee](8b046eeb91f70acfc18f02ef719eda90af2d87a6)) - (Lin Yang)
+- Use discriminated union for getWatermarkKey (#16) ([0bd14c8](0bd14c8cb88d36431317631766e630cb486b7d2d)) - (Lin Yang)
+- Consolidate duplicate retry logic (#17) ([7c08b0e](7c08b0e5578f8810c84349ae43eaee34a84266d5)) - (Lin Yang)
+- Eliminate service locator from messaging layer (#18) ([267ffbc](267ffbcd1f717c85e1031be8e058e41652622e80)) - (Lin Yang)
+- Unify dependency management with DI pattern (#19) ([8c03bcb](8c03bcbc31a9a100a30c6c5fe1c68b4ebcd4409a)) - (Lin Yang)
+- Implement API client interface segregation (ISP) (#20) ([7965d86](7965d8631f41d1077275417b677616764ce4c2fd)) - (Lin Yang)
+- Clean up debug logs and unused parameters in polling ([ed54169](ed54169b7701810993968784d84f80f3f2c10d8d)) - (Lin Yang)
+
+### ✅ Testing
+
+- Add auth error sanitization test coverage (#22) ([f22097e](f22097ecb6d264c2a6e7e09333db7191457969e9)) - (Lin Yang)
+
+
+
+### 📖 Documentation
+
+- Convert JSDoc to TypeDoc format and add documentation generation ([4654294](4654294f4554e1ad86241e1e93bb9980dd75e5df)) - (Lin Yang)
+- Add enhanced documentation for developers ([f48c7e9](f48c7e925ea63277e9308a8827a6529a6990ee52)) - (Lin Yang)
+- Add source tree analysis and technology stack documentation ([9d247a6](9d247a62ffca2848080887247e3ab186da75eea3)) - (Lin Yang)
+- Enhance existing ADRs and add ADR-006 through ADR-013 ([1f01ffc](1f01ffc39f23069769df422560ac49976e86cca7)) - (Lin Yang)
+- Delete docs/plans directory ([28e99dd](28e99dd4d792ad220b63fff32f7d2b66983bb872)) - (Lin Yang)
+- Add 7 new Architecture Decision Records ([b3e1a26](b3e1a26c63f2be85b00ea7b1af74a41e746fb09b)) - (Lin Yang)
+
+### 🔧 Miscellaneous Tasks
+
+- Update GitHub Actions workflow permissions ([a1b0cbb](a1b0cbb0766083c3571094f6934b2df5016ebd99)) - (Lin Yang)
+- Add lint step to test and release workflows ([e75decf](e75decf01d1408e361935f4221b0704e029aa862)) - (Lin Yang)
+
 ## 2026.2.23 - 2026-02-23
 
-[b5645d1](b5645d13cf1397a320de0ff565f3c609ef7f0223)...[4ff440d](4ff440de6ea9101b972439427c3c758b8d3dfbb4)
+[b5645d1](b5645d13cf1397a320de0ff565f3c609ef7f0223)...[7c23a9d](7c23a9df91f92ee87ce760bb3dbe931f138bbbba)
 
 
 
