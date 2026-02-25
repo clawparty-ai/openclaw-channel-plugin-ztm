@@ -157,7 +157,7 @@ describe('resolveZTMChatConfig', () => {
     const result = resolveZTMChatConfig({});
 
     expect(result.agentUrl).toBe('http://localhost:7777');
-    expect(result.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+    expect(result.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
     expect(result.meshName).toBe('openclaw-mesh');
     expect(result.username).toBe('openclaw-bot');
     expect(result.enableGroups).toBe(false);
@@ -210,7 +210,7 @@ describe('permitSource validation', () => {
   it('should fail when permitSource is missing', () => {
     const config = {
       agentUrl: 'http://localhost:7777',
-      permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+      permitUrl: 'https://clawparty.flomesh.io:7779/permit',
       meshName: 'test-mesh',
       username: 'test-bot',
     };

@@ -28,7 +28,7 @@ class MockPrompts {
       return (
         (this.prompts.permitUrl as string) ||
         defaultValue ||
-        'https://ztm-portal.flomesh.io:7779/permit'
+        'https://clawparty.flomesh.io:7779/permit'
       );
     }
     if (question.includes('Bot username') || question.includes('username')) {
@@ -916,7 +916,7 @@ describe('ZTMChatWizard', () => {
       const mockPrompts = new MockPrompts({
         agentUrl: 'http://localhost:7777',
         permitSource: 'server',
-        permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+        permitUrl: 'https://clawparty.flomesh.io:7779/permit',
         username: 'test-bot',
         dmPolicy: 'pairing',
         enableGroups: false,
@@ -928,7 +928,7 @@ describe('ZTMChatWizard', () => {
 
       expect(result).toBeDefined();
       expect(result!.config.permitSource).toBe('server');
-      expect(result!.config.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+      expect(result!.config.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
     });
 
     it('should ask permitSource first then permitFilePath for file mode', async () => {
@@ -1316,7 +1316,11 @@ describe('ZTMChatWizard', () => {
           return false;
         },
         async select<T>(question: string): Promise<T> {
-          if (question.includes('permit') || question.includes('Permit') || question.includes('obtain')) {
+          if (
+            question.includes('permit') ||
+            question.includes('Permit') ||
+            question.includes('obtain')
+          ) {
             return 'server' as T;
           }
           if (question.includes('Policy') || question.includes('DM')) {
@@ -1523,7 +1527,9 @@ describe('ZTMChatWizard', () => {
             loadConfig: vi.fn(() => ({
               channels: {},
             })),
-            writeConfigFile: vi.fn().mockRejectedValue(new Error('ENOSPC: no space left on device')),
+            writeConfigFile: vi
+              .fn()
+              .mockRejectedValue(new Error('ENOSPC: no space left on device')),
           },
         })),
       }));
@@ -1677,7 +1683,7 @@ describe('ZTMChatWizard', () => {
               channels: {
                 'ztm-chat': {
                   accounts: {
-                    'test': {
+                    test: {
                       agentUrl: 'https://found.example.com',
                       meshName: 'found-mesh',
                       username: 'found-user',
@@ -1742,7 +1748,9 @@ describe('ZTMChatWizard', () => {
     it('should handle empty accounts', async () => {
       // This tests when accounts is empty object
       const accounts: Record<string, unknown> = {};
-      const firstAccount = accounts ? (Object.values(accounts)[0] as Record<string, unknown>) : null;
+      const firstAccount = accounts
+        ? (Object.values(accounts)[0] as Record<string, unknown>)
+        : null;
       // Object.values({}) returns [], so [0] is undefined, not null
       expect(firstAccount).toBeUndefined();
     });
@@ -1785,13 +1793,22 @@ describe('ZTMChatWizard', () => {
 
     it('should handle allowFrom wildcard', async () => {
       const allowFromInput: string = '*';
-      const parsedAllowFrom = allowFromInput === '*' ? undefined : allowFromInput.split(',').map(s => s.trim()).filter(Boolean);
+      const parsedAllowFrom =
+        allowFromInput === '*'
+          ? undefined
+          : allowFromInput
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean);
       expect(parsedAllowFrom).toBeUndefined();
     });
 
     it('should handle allowFrom with specific users', async () => {
       const allowFromInput = 'alice, bob, charlie';
-      const parsedAllowFrom = allowFromInput.split(',').map(s => s.trim()).filter(Boolean);
+      const parsedAllowFrom = allowFromInput
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
       expect(parsedAllowFrom).toEqual(['alice', 'bob', 'charlie']);
     });
 

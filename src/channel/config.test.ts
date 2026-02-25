@@ -13,7 +13,7 @@ import {
 vi.mock('../config/index.js', () => ({
   resolveZTMChatConfig: vi.fn(input => ({
     agentUrl: (input?.agentUrl as string) || 'http://localhost:7777',
-    permitUrl: (input?.permitUrl as string) || 'https://ztm-portal.flomesh.io:7779/permit',
+    permitUrl: (input?.permitUrl as string) || 'https://clawparty.flomesh.io:7779/permit',
     meshName: (input?.meshName as string) || 'openclaw-mesh',
     username: (input?.username as string) || 'openclaw-bot',
     enableGroups: (input?.enableGroups as boolean) ?? false,
@@ -22,7 +22,7 @@ vi.mock('../config/index.js', () => ({
   })),
   getDefaultConfig: vi.fn(() => ({
     agentUrl: 'http://localhost:7777',
-    permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+    permitUrl: 'https://clawparty.flomesh.io:7779/permit',
     meshName: 'openclaw-mesh',
     username: 'openclaw-bot',
     enableGroups: false,

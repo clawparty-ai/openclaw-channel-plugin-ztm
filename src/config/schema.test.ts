@@ -131,7 +131,7 @@ describe('ZTMChatConfigSchema', () => {
       const config = {
         ...testConfig,
         agentUrl: 'http://localhost:7777',
-        permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+        permitUrl: 'https://clawparty.flomesh.io:7779/permit',
         meshName: 'test-mesh',
         username: 'test-bot',
         permitSource: 'server',
@@ -144,7 +144,7 @@ describe('ZTMChatConfigSchema', () => {
       const config = {
         ...testConfig,
         agentUrl: 'http://localhost:7777',
-        permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+        permitUrl: 'https://clawparty.flomesh.io:7779/permit',
         meshName: 'test-mesh',
         username: 'test-bot',
         permitSource: 'file',

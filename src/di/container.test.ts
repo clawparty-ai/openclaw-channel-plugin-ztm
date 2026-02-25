@@ -357,7 +357,7 @@ describe('DI Container', () => {
       const config: IConfig = {
         get: () => ({
           agentUrl: 'http://localhost:7777',
-          permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+          permitUrl: 'https://clawparty.flomesh.io:7779/permit',
           permitSource: 'server',
           meshName: 'test-mesh',
           username: 'test-bot',

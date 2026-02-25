@@ -281,7 +281,7 @@ export class ZTMChatWizard {
       allowFrom: undefined,
       dmPolicy: 'pairing',
       permitSource: 'server',
-      permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+      permitUrl: 'https://clawparty.flomesh.io:7779/permit',
     };
   }
 
@@ -385,7 +385,7 @@ export class ZTMChatWizard {
   private async stepPermitUrl(): Promise<void> {
     const permitUrl = await this.prompts.ask(
       'Permit Server URL',
-      'https://ztm-portal.flomesh.io:7779/permit'
+      'https://clawparty.flomesh.io:7779/permit'
     );
 
     if (!isValidUrl(permitUrl)) {

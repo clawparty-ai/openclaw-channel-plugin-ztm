@@ -54,7 +54,7 @@ export const ZTMChatConfigSchema = Type.Object(
       title: 'Permit Server URL',
       description: 'Permit server URL for mesh authentication and authorization',
       format: 'uri',
-      examples: ['https://ztm-portal.flomesh.io:7779/permit'],
+      examples: ['https://clawparty.flomesh.io:7779/permit'],
     }),
     permitSource: Type.Union([Type.Literal('server'), Type.Literal('file')], {
       title: 'Permit Source',

@@ -42,7 +42,7 @@ describe('validation utilities', () => {
 
     it('should return true for valid https URLs', () => {
       expect(isValidUrl('https://example.com')).toBe(true);
-      expect(isValidUrl('https://ztm-portal.flomesh.io:7779')).toBe(true);
+      expect(isValidUrl('https://clawparty.flomesh.io:7779')).toBe(true);
     });
 
     it('should return false for invalid URLs', () => {

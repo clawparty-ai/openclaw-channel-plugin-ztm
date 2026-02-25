@@ -30,7 +30,7 @@ class MockPrompts implements WizardPrompts {
       return (
         (this.prompts.permitUrl as string) ||
         defaultValue ||
-        'https://ztm-portal.flomesh.io:7779/permit'
+        'https://clawparty.flomesh.io:7779/permit'
       );
     }
     if (question.includes('Bot username') || question.includes('username')) {
@@ -132,7 +132,7 @@ describe('Onboarding Wizard Integration', () => {
       agentUrl: 'http://localhost:7777',
       username: 'test-bot',
       permitSource: 'server',
-      permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+      permitUrl: 'https://clawparty.flomesh.io:7779/permit',
       dmPolicy: 'pairing',
       groupPolicy: 'allowlist',
       enableGroups: true,

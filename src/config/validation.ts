@@ -220,7 +220,7 @@ function validatePermitUrlConditional(
           'permitUrl',
           'invalid_format',
           value,
-          'permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)'
+          'permitUrl must be a valid HTTP/HTTPS URL (e.g., https://clawparty.flomesh.io:7779/permit)'
         )
       );
     }

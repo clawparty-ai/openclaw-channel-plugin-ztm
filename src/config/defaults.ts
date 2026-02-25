@@ -14,7 +14,7 @@ import type { DMPolicy } from './schema.js';
 export function getDefaultConfig(): ZTMChatConfig {
   return {
     agentUrl: 'http://localhost:7777',
-    permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+    permitUrl: 'https://clawparty.flomesh.io:7779/permit',
     permitSource: 'server',
     meshName: 'openclaw-mesh',
     username: 'openclaw-bot',
@@ -45,7 +45,7 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
     permitUrl:
       typeof config.permitUrl === 'string' && config.permitUrl.trim()
         ? config.permitUrl.trim()
-        : 'https://ztm-portal.flomesh.io:7779/permit',
+        : 'https://clawparty.flomesh.io:7779/permit',
     permitSource:
       config.permitSource === 'server' || config.permitSource === 'file'
         ? config.permitSource
@@ -83,7 +83,7 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
 export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig {
   return {
     agentUrl: config.agentUrl ?? 'http://localhost:7777',
-    permitUrl: config.permitUrl ?? 'https://ztm-portal.flomesh.io:7779/permit',
+    permitUrl: config.permitUrl ?? 'https://clawparty.flomesh.io:7779/permit',
     permitSource: config.permitSource ?? 'server',
     meshName: config.meshName ?? 'openclaw-mesh',
     username: config.username ?? 'probe',

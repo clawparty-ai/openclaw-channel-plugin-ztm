@@ -124,7 +124,7 @@ openclaw ztm-chat-wizard
 
 The wizard will guide you through:
 1. **ZTM Agent URL** (default: `http://localhost:7777`)
-2. **Permit Server URL** (default: `https://ztm-portal.flomesh.io:7779/permit`)
+2. **Permit Server URL** (default: `https://clawparty.flomesh.io:7779/permit`)
 3. **Bot Username** (default: `openclaw-bot`)
 4. **Security Settings**
    - DM Policy: `pairing` (recommended), `allow`, or `deny`
@@ -389,7 +389,7 @@ channels:
       my-bot:
         agentUrl: "http://localhost:7777"
         permitSource: "server"
-        permitUrl: "https://ztm-portal.flomesh.io:7779/permit"
+        permitUrl: "https://clawparty.flomesh.io:7779/permit"
         meshName: "production-mesh"
         username: "my-bot"
         enableGroups: true

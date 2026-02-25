@@ -14,7 +14,7 @@ describe('getDefaultConfig', () => {
     const result = getDefaultConfig();
 
     expect(result.agentUrl).toBe('http://localhost:7777');
-    expect(result.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+    expect(result.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
     expect(result.meshName).toBe('openclaw-mesh');
     expect(result.username).toBe('openclaw-bot');
     expect(result.enableGroups).toBe(true);
@@ -62,7 +62,7 @@ describe('createProbeConfig', () => {
     });
 
     expect(result.agentUrl).toBe('https://example.com:7777');
-    expect(result.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+    expect(result.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
     expect(result.meshName).toBe('openclaw-mesh');
     expect(result.username).toBe('probe');
   });
@@ -71,7 +71,7 @@ describe('createProbeConfig', () => {
     const result = createProbeConfig({});
 
     expect(result.agentUrl).toBe('http://localhost:7777');
-    expect(result.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+    expect(result.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
     expect(result.meshName).toBe('openclaw-mesh');
     expect(result.username).toBe('probe');
     expect(result.dmPolicy).toBe('pairing');

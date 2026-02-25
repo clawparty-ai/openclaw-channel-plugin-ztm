@@ -24,7 +24,7 @@ const { mockResolveZTMChatConfig, mockValidateZTMChatConfig, mockGetDefaultConfi
     mockValidateZTMChatConfig: vi.fn(() => ({ valid: true, errors: [] })),
     mockGetDefaultConfig: vi.fn(() => ({
       agentUrl: 'http://localhost:7777',
-      permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+      permitUrl: 'https://clawparty.flomesh.io:7779/permit',
       meshName: 'openclaw-mesh',
       username: 'openclaw-bot',
       enableGroups: false,

@@ -36,7 +36,7 @@ describe('Config Resolution Integration', () => {
 
       expect(defaults).toEqual({
         agentUrl: 'http://localhost:7777',
-        permitUrl: 'https://ztm-portal.flomesh.io:7779/permit',
+        permitUrl: 'https://clawparty.flomesh.io:7779/permit',
         permitSource: 'server',
         meshName: 'openclaw-mesh',
         username: 'openclaw-bot',
@@ -70,7 +70,7 @@ describe('Config Resolution Integration', () => {
 
       expect(resolved.agentUrl).toBe('http://custom-agent:8888');
       expect(resolved.username).toBe('custom-bot');
-      expect(resolved.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+      expect(resolved.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
       expect(resolved.meshName).toBe('openclaw-mesh');
     });
 
@@ -84,7 +84,7 @@ describe('Config Resolution Integration', () => {
 
       expect(resolved.username).toBe('partial-bot');
       expect(resolved.agentUrl).toBe('http://localhost:7777');
-      expect(resolved.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+      expect(resolved.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
       expect(resolved.dmPolicy).toBe('pairing');
     });
 
@@ -303,7 +303,7 @@ describe('Config Resolution Integration', () => {
 
       expect(probe.agentUrl).toBe('http://localhost:7777');
       expect(probe.username).toBe('probe');
-      expect(probe.permitUrl).toBe('https://ztm-portal.flomesh.io:7779/permit');
+      expect(probe.permitUrl).toBe('https://clawparty.flomesh.io:7779/permit');
     });
   });
 
