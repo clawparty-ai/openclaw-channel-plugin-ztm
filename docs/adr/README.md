@@ -40,6 +40,9 @@ We follow the [Michael Nygard format](https://cognitect.com/blog/2011/11/15/docu
 | [ADR-018](./ADR-018-connectivity-recovery-strategy.md) | Connectivity Recovery Strategy | Accepted |
 | [ADR-019](./ADR-019-message-ordering-sequencing.md) | Message Ordering & Sequencing | Accepted |
 | [ADR-020](./ADR-020-configuration-schema-validation.md) | Configuration Schema & Validation | Accepted |
+| [ADR-021](./ADR-021-username-validation-mesh-join.md) | Username Validation Before Mesh Join | Accepted |
+| [ADR-022](./ADR-022-api-client-interface-segregation.md) | API Client Interface Segregation | Accepted |
+| [ADR-023](./ADR-023-message-retry-timer-cleanup.md) | Message Retry Timer Cleanup | Accepted |
 
 ## Adding New ADRs
 
