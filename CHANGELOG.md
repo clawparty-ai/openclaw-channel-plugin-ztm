@@ -2,9 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.2.26 - 2026-02-26
+
+[f30219f](f30219ff957a7db983d544b5f2265b8288e2ccff)...[e582047](e5820473be6c0a75ed44956c1bc6b40ddcf27bdf)
+
+### 🚨 BREAKING CHANGES
+
+- Add comprehensive documentation coverage ([89c129c](89c129c753ac6b7ede3cb813906cb0d1dbc4bf95)) - (Lin Yang)
+- 2026.2.26 ([e582047](e5820473be6c0a75ed44956c1bc6b40ddcf27bdf)) - (Lin Yang)
+
+
+
+
+### 🐛 Bug Fixes
+
+- Track and cleanup message retry timers to prevent memory leak (#26) ([b938e38](b938e38e6db413d50878c968457937032e7fa135)) - (Lin Yang)
+
+
+
+
+### ✅ Testing
+
+- Enhance test coverage for gateway and plugin modules ([825a765](825a765e76a37ba445c4ba54f1071442488ed3f2)) - (Lin Yang)
+
+
+### 🔨 Build
+
+- Bump openclaw from 2026.2.23 to 2026.2.24 (#25) ([f5e232a](f5e232ade60ac7fdb28b3ab07cc1747861dbaf71)) - (dependabot[bot])
+
+### 📖 Documentation
+
+- Update ADR index with new records ([c32c361](c32c3614481f7a6a09f9dc4b3c44dc8fc7dd0060)) - (Lin Yang)
+
+
 ## 2026.2.25 - 2026-02-25
 
-[7c23a9d](7c23a9df91f92ee87ce760bb3dbe931f138bbbba)...[b3e1a26](b3e1a26c63f2be85b00ea7b1af74a41e746fb09b)
+[7c23a9d](7c23a9df91f92ee87ce760bb3dbe931f138bbbba)...[f30219f](f30219ff957a7db983d544b5f2265b8288e2ccff)
 
 ### 🚨 BREAKING CHANGES
 
