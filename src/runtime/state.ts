@@ -120,7 +120,25 @@ export class AccountStateManager {
         MAX_GROUP_PERMISSION_CACHE_SIZE,
         GROUP_PERMISSION_CACHE_TTL_MS
       ),
+      messageRetries: new Map(),
     };
+  }
+
+  /**
+   * Clear all timers from account state
+   * Extracted to reduce duplication between remove() and stopRuntime()
+   */
+  private clearTimers(state: AccountRuntimeState): void {
+    if (state.cleanupInterval) {
+      clearInterval(state.cleanupInterval);
+      state.cleanupInterval = undefined;
+    }
+    if (state.messageRetries) {
+      for (const timerId of state.messageRetries.values()) {
+        clearTimeout(timerId);
+      }
+      state.messageRetries.clear();
+    }
   }
 
   /**
@@ -141,6 +159,8 @@ export class AccountStateManager {
       state.pendingPairings.clear();
       state.allowFromCache = null;
       state.groupPermissionCache?.clear();
+      // Clear all timers
+      this.clearTimers(state);
       this.states.delete(accountId);
     }
   }
@@ -416,6 +436,8 @@ export class AccountStateManager {
     state.pendingPairings.clear();
     state.allowFromCache = null;
     state.groupPermissionCache?.clear();
+    // Clear all timers
+    this.clearTimers(state);
     state.chatReader = null;
     state.chatSender = null;
     state.discovery = null;
