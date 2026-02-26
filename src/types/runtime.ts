@@ -96,4 +96,8 @@ export interface AccountRuntimeState {
   // Accepts Map for test compatibility, runtime always uses LRU cache
   // Not required in test fixtures - initialized in getOrCreateAccountState
   groupPermissionCache?: Map<string, GroupPermissions> | IGroupPermissionCache;
+  /** Track message retry timers for cleanup */
+  messageRetries?: Map<string, NodeJS.Timeout>;
+  /** Track pairing cleanup interval */
+  cleanupInterval?: NodeJS.Timeout;
 }

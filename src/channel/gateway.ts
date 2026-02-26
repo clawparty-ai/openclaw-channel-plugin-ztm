@@ -211,6 +211,9 @@ export async function setupAccountCallbacks(
     cleanupExpiredPairings();
   }, PAIRING_CLEANUP_INTERVAL_MS);
 
+  // Store in state for cleanup on logout
+  state.cleanupInterval = cleanupInterval;
+
   return { messageCallback, cleanupInterval };
 }
 
@@ -338,11 +341,26 @@ async function retryMessageLater(
   msg: ZTMChatMessage,
   attempt: number
 ): Promise<void> {
+  // CRITICAL: Don't schedule retry if account is shutting down
+  if (state.watchAbortController?.signal.aborted || state.started === false) {
+    logger.debug(`[${state.accountId}] Skipping retry - account is stopping`);
+    return;
+  }
+
+  const timerKey = msg.id;
+
   if (attempt >= MESSAGE_RETRY_MAX_ATTEMPTS) {
     logger.error(
       `[${state.accountId}] Message from ${msg.sender} failed after ${MESSAGE_RETRY_MAX_ATTEMPTS} attempts, giving up`
     );
+    // Clean up timer reference
+    state.messageRetries?.delete(timerKey);
     return;
+  }
+
+  // Initialize map if needed
+  if (!state.messageRetries) {
+    state.messageRetries = new Map();
   }
 
   // Exponential backoff: 2s, 4s, 8s...
@@ -351,8 +369,12 @@ async function retryMessageLater(
     `[${state.accountId}] Scheduling retry ${attempt + 1}/${MESSAGE_RETRY_MAX_ATTEMPTS} for message from ${msg.sender} in ${delay}ms`
   );
 
-  setTimeout(async () => {
+  // Store timer ID BEFORE setTimeout to prevent race condition
+  const timerId = setTimeout(async () => {
     try {
+      // Clean up this timer
+      state.messageRetries?.delete(timerKey);
+
       const rt = container.get(DEPENDENCIES.RUNTIME).get();
       await dispatchInboundMessage(state, state.accountId, state.config!, msg, rt);
       logger.info(`[${state.accountId}] Retry succeeded for message from ${msg.sender}`);
@@ -366,6 +388,8 @@ async function retryMessageLater(
       }
     }
   }, delay);
+
+  state.messageRetries.set(timerKey, timerId);
 }
 
 /**

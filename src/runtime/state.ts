@@ -120,6 +120,7 @@ export class AccountStateManager {
         MAX_GROUP_PERMISSION_CACHE_SIZE,
         GROUP_PERMISSION_CACHE_TTL_MS
       ),
+      messageRetries: new Map(),
     };
   }
 
@@ -141,6 +142,18 @@ export class AccountStateManager {
       state.pendingPairings.clear();
       state.allowFromCache = null;
       state.groupPermissionCache?.clear();
+      // Clear message retry timers
+      if (state.messageRetries) {
+        for (const timerId of state.messageRetries.values()) {
+          clearTimeout(timerId);
+        }
+        state.messageRetries.clear();
+      }
+      // Clear cleanup interval
+      if (state.cleanupInterval) {
+        clearInterval(state.cleanupInterval);
+        state.cleanupInterval = undefined;
+      }
       this.states.delete(accountId);
     }
   }
@@ -416,6 +429,18 @@ export class AccountStateManager {
     state.pendingPairings.clear();
     state.allowFromCache = null;
     state.groupPermissionCache?.clear();
+    // Clear cleanupInterval
+    if (state.cleanupInterval) {
+      clearInterval(state.cleanupInterval);
+      state.cleanupInterval = undefined;
+    }
+    // Clear message retry timers (they survive stop but not remove)
+    if (state.messageRetries) {
+      for (const timerId of state.messageRetries.values()) {
+        clearTimeout(timerId);
+      }
+      state.messageRetries.clear();
+    }
     state.chatReader = null;
     state.chatSender = null;
     state.discovery = null;
