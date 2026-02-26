@@ -369,7 +369,7 @@ async function retryMessageLater(
     `[${state.accountId}] Scheduling retry ${attempt + 1}/${MESSAGE_RETRY_MAX_ATTEMPTS} for message from ${msg.sender} in ${delay}ms`
   );
 
-  // Store timer ID BEFORE setTimeout to prevent race condition
+  // Create timer and track it - map entry set before callback runs
   const timerId = setTimeout(async () => {
     try {
       // Clean up this timer
@@ -389,6 +389,7 @@ async function retryMessageLater(
     }
   }, delay);
 
+  // Track timer for cleanup on account stop/remove
   state.messageRetries.set(timerKey, timerId);
 }
 

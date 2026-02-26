@@ -125,6 +125,23 @@ export class AccountStateManager {
   }
 
   /**
+   * Clear all timers from account state
+   * Extracted to reduce duplication between remove() and stopRuntime()
+   */
+  private clearTimers(state: AccountRuntimeState): void {
+    if (state.cleanupInterval) {
+      clearInterval(state.cleanupInterval);
+      state.cleanupInterval = undefined;
+    }
+    if (state.messageRetries) {
+      for (const timerId of state.messageRetries.values()) {
+        clearTimeout(timerId);
+      }
+      state.messageRetries.clear();
+    }
+  }
+
+  /**
    * Remove account state and clean up resources
    */
   remove(accountId: string): void {
@@ -142,18 +159,8 @@ export class AccountStateManager {
       state.pendingPairings.clear();
       state.allowFromCache = null;
       state.groupPermissionCache?.clear();
-      // Clear message retry timers
-      if (state.messageRetries) {
-        for (const timerId of state.messageRetries.values()) {
-          clearTimeout(timerId);
-        }
-        state.messageRetries.clear();
-      }
-      // Clear cleanup interval
-      if (state.cleanupInterval) {
-        clearInterval(state.cleanupInterval);
-        state.cleanupInterval = undefined;
-      }
+      // Clear all timers
+      this.clearTimers(state);
       this.states.delete(accountId);
     }
   }
@@ -429,18 +436,8 @@ export class AccountStateManager {
     state.pendingPairings.clear();
     state.allowFromCache = null;
     state.groupPermissionCache?.clear();
-    // Clear cleanupInterval
-    if (state.cleanupInterval) {
-      clearInterval(state.cleanupInterval);
-      state.cleanupInterval = undefined;
-    }
-    // Clear message retry timers (they survive stop but not remove)
-    if (state.messageRetries) {
-      for (const timerId of state.messageRetries.values()) {
-        clearTimeout(timerId);
-      }
-      state.messageRetries.clear();
-    }
+    // Clear all timers
+    this.clearTimers(state);
     state.chatReader = null;
     state.chatSender = null;
     state.discovery = null;
