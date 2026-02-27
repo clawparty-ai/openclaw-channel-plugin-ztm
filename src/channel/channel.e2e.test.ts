@@ -86,12 +86,12 @@ vi.mock('../runtime/state.js', () => ({
             accountId: 'test-account',
             config: {},
             apiClient: null,
-                            lastError: mockState.runtimeLastError,
+            lastError: mockState.runtimeLastError,
             lastStartAt: null,
             lastStopAt: null,
             lastInboundAt: null,
             lastOutboundAt: null,
-                    messageCallbacks: new Set(),
+            messageCallbacks: new Set(),
             watchInterval: null,
             watchErrorCount: 0,
             pendingPairings: new Map(),
@@ -428,7 +428,10 @@ describe('startAccount E2E Tests', () => {
       const { getZTMRuntime } = await import('../runtime/index.js');
       const rt = getZTMRuntime();
 
-      const allowFrom = await rt.channel.pairing.readAllowFromStore('test-account');
+      const allowFrom = await rt.channel.pairing.readAllowFromStore({
+        channel: 'ztm-chat',
+        accountId: 'test-account',
+      });
 
       expect(Array.isArray(allowFrom)).toBe(true);
     });

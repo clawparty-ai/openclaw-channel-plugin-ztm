@@ -241,7 +241,7 @@ export class AccountStateManager {
     // If no state, fetch directly without caching
     if (!state) {
       try {
-        return await runtime.channel.pairing.readAllowFromStore('ztm-chat');
+        return await runtime.channel.pairing.readAllowFromStore({ channel: 'ztm-chat', accountId });
       } catch (err) {
         this.deps.logger.error(
           `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
@@ -272,7 +272,10 @@ export class AccountStateManager {
     // Create new fetch promise and store it to coalesce concurrent requests
     const fetchPromise = (async (): Promise<string[] | null> => {
       try {
-        const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore('ztm-chat');
+        const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore({
+          channel: 'ztm-chat',
+          accountId,
+        });
         state.allowFromCache = {
           value: freshAllowFrom,
           timestamp: Date.now(),

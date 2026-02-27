@@ -724,8 +724,8 @@ describe('Permit management functions', () => {
       const stateWithNullClient: AccountRuntimeState = {
         ...mockState,
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
       };
 
       await handlePairingRequest(stateWithNullClient, 'alice', 'Test context', []);
@@ -754,6 +754,7 @@ describe('Permit management functions', () => {
 
       expect(mockUpsertPairingRequest).toHaveBeenCalledWith({
         channel: 'ztm-chat',
+        accountId: 'test-account',
         id: 'testpeer',
         meta: { name: 'TestPeer' },
       });
@@ -806,6 +807,7 @@ describe('Permit management functions', () => {
 
       expect(mockUpsertPairingRequest).toHaveBeenCalledWith({
         channel: 'ztm-chat',
+        accountId: 'test-account',
         id: 'user_123-test.dev',
         meta: { name: specialPeer },
       });
@@ -837,8 +839,8 @@ describe('Permit management functions', () => {
       const noClientState: AccountRuntimeState = {
         ...mockState,
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
       };
 
       await handlePairingRequest(noClientState, 'peer', 'context', []);
