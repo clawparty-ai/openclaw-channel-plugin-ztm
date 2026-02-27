@@ -201,6 +201,7 @@ export async function handlePairingRequest(
     const rt = getZTMRuntime();
     const { code, created } = await rt.channel.pairing.upsertPairingRequest({
       channel: 'ztm-chat',
+      accountId: state.accountId,
       id: normalizedPeer,
       meta: { name: peer },
     });
