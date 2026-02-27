@@ -2,14 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.2.27 - 2026-02-27
+
+[fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)...[5903464](5903464667f76d73c17066b305e94f21733f529c)
+
+
+
+
+
+
+
+
+
+
+### 🔨 Build
+
+- Bump @types/node from 24.10.13 to 24.10.15 (#28) ([fa3aaaa](fa3aaaa163bf48dafe7d4ec8ba2b0d0402484920)) - (dependabot[bot])
+- Bump openclaw from 2026.2.24 to 2026.2.26 (#29) ([c45c911](c45c911de5f071bc70ea02fa3333e1e67c66d076)) - (dependabot[bot])
+
+
+
 ## 2026.2.26 - 2026-02-26
 
-[f30219f](f30219ff957a7db983d544b5f2265b8288e2ccff)...[e582047](e5820473be6c0a75ed44956c1bc6b40ddcf27bdf)
+[f30219f](f30219ff957a7db983d544b5f2265b8288e2ccff)...[fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)
 
 ### 🚨 BREAKING CHANGES
 
 - Add comprehensive documentation coverage ([89c129c](89c129c753ac6b7ede3cb813906cb0d1dbc4bf95)) - (Lin Yang)
-- 2026.2.26 ([e582047](e5820473be6c0a75ed44956c1bc6b40ddcf27bdf)) - (Lin Yang)
+- 2026.2.26 ([fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)) - (Lin Yang)
 
 
 
