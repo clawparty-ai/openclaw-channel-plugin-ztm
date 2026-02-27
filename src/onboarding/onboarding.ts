@@ -577,7 +577,48 @@ export class ZTMChatWizard {
         const channelConfig =
           (currentConfig.channels?.['ztm-chat'] as Record<string, unknown>) || {};
         const accounts = (channelConfig.accounts as Record<string, unknown>) || {};
-        accounts[accountId] = config;
+
+        // 1. Save account config (both default and username keys)
+        const defaultAccountId = 'default';
+        accounts[defaultAccountId] = { ...config }; // Backward compatible
+        // Avoid redundant assignment when accountId === 'default'
+        if (accountId !== defaultAccountId) {
+          accounts[accountId] = { ...config }; // User-specified account
+        }
+
+        // 2. Build/update bindings (required for OpenClaw 2026.2.26+)
+        // Note: agentId defaults to 'main' as the default agent. This assumes single-agent deployment.
+        const existingBindings = (currentConfig.bindings as Record<string, unknown>[]) || [];
+
+        // Separate ztm-chat bindings from other channel bindings
+        const otherBindings = existingBindings.filter((b: unknown) => {
+          const binding = b as Record<string, unknown> | undefined;
+          const match = binding?.match as Record<string, unknown> | undefined;
+          return match?.channel !== 'ztm-chat';
+        });
+        const ztmChatBindings = existingBindings.filter((b: unknown) => {
+          const binding = b as Record<string, unknown> | undefined;
+          const match = binding?.match as Record<string, unknown> | undefined;
+          return match?.channel === 'ztm-chat';
+        });
+
+        // 3. Create new binding (with accountId)
+        const newBinding = {
+          agentId: 'main', // Default agent
+          match: {
+            channel: 'ztm-chat',
+            accountId: accountId, // Explicitly bind to account
+          },
+        };
+
+        // 4. If no ztm-chat binding exists, add new one
+        const updatedBindings = [...otherBindings];
+        if (ztmChatBindings.length === 0) {
+          updatedBindings.push(newBinding);
+        } else {
+          // Keep existing ztm-chat bindings
+          updatedBindings.push(...ztmChatBindings);
+        }
 
         const newConfig = {
           ...currentConfig,
@@ -588,6 +629,10 @@ export class ZTMChatWizard {
               accounts,
             },
           },
+          bindings: updatedBindings as unknown as Array<{
+            agentId: string;
+            match: { channel: string; accountId: string };
+          }>,
         };
 
         await rt.config.writeConfigFile(newConfig);

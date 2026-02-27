@@ -1,6 +1,6 @@
 // Unit tests for ZTM Chat Onboarding Wizard
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // MockPrompts class for testing wizard flows
 class MockPrompts {
@@ -1893,6 +1893,169 @@ describe('ZTMChatWizard', () => {
 
       expect(config.permitFilePath).toBe('/home/user/permit.json');
       expect(config.permitSource).toBe('file');
+    });
+  });
+
+  // Tests for OpenClaw 2026.2.26+ bindings migration
+  describe('bindings generation for OpenClaw 2026.2.26+', () => {
+    // Store spies at describe block scope
+    let loadConfigSpy: ReturnType<typeof vi.spyOn>;
+    let writeConfigFileSpy: ReturnType<typeof vi.spyOn>;
+    let mockRuntime: any;
+    let mockLoadConfigFn: ReturnType<typeof vi.fn>;
+    let mockWriteConfigFn: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+
+      // Create mock functions
+      mockLoadConfigFn = vi.fn().mockReturnValue({ channels: {}, bindings: [] });
+      mockWriteConfigFn = vi.fn().mockResolvedValue(undefined);
+
+      // Create mock runtime object
+      mockRuntime = {
+        config: {
+          loadConfig: mockLoadConfigFn,
+          writeConfigFile: mockWriteConfigFn,
+        },
+      };
+
+      // Import the runtime module and replace its exports
+      const runtimeModule = await import('../runtime/index.js');
+
+      // Set up the runtime mock functions
+      (runtimeModule as any).isRuntimeInitialized = vi.fn(() => true);
+      (runtimeModule as any).getZTMRuntime = vi.fn(() => mockRuntime);
+
+      // Set up spies on the mock runtime's config methods
+      loadConfigSpy = vi.spyOn(mockRuntime.config, 'loadConfig');
+      writeConfigFileSpy = vi.spyOn(mockRuntime.config, 'writeConfigFile');
+    });
+
+    it('should generate accounts.default and bindings with accountId', async () => {
+      // Update mock return value for this specific test
+      mockLoadConfigFn.mockReturnValue({ channels: {}, bindings: [] });
+
+      const { ZTMChatWizard } = await import('./onboarding.js');
+      const wizard = new ZTMChatWizard();
+      (wizard as any).prompts = {
+        ask: vi.fn().mockImplementation((question: string, defaultValue?: string) => {
+          if (question.includes('Agent')) return 'http://localhost:7777';
+          if (question.includes('username')) return 'test-bot';
+          if (question.includes('Permit')) return 'https://example.com/permit';
+          return defaultValue || '';
+        }),
+        confirm: vi.fn().mockResolvedValue(true),
+        select: vi.fn().mockResolvedValue('pairing'),
+        separator: vi.fn(),
+        heading: vi.fn(),
+        success: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        error: vi.fn(),
+        close: vi.fn(),
+      };
+
+      const result = await wizard.run();
+
+      expect(result).not.toBeNull();
+      expect(result?.accountId).toBe('test-bot');
+
+      // Verify writeConfigFile was called
+      expect(writeConfigFileSpy).toHaveBeenCalled();
+      const writeCall = writeConfigFileSpy.mock.calls[0][0];
+
+      // Verify accounts.default exists
+      expect(writeCall.channels['ztm-chat'].accounts.default).toBeDefined();
+
+      // Verify accounts.{username} exists
+      expect(writeCall.channels['ztm-chat'].accounts['test-bot']).toBeDefined();
+
+      // Verify bindings contain accountId
+      const ztmBinding = writeCall.bindings.find((b: any) => b.match?.channel === 'ztm-chat');
+      expect(ztmBinding).toBeDefined();
+      expect(ztmBinding.match.accountId).toBe('test-bot');
+    });
+
+    it('should preserve non-ztm-chat bindings when saving config', async () => {
+      // Update mock return value for this specific test
+      mockLoadConfigFn.mockReturnValue({
+        channels: { 'ztm-chat': { accounts: { 'test-bot': {} } } },
+        bindings: [{ agentId: 'main', match: { channel: 'mattermost', accountId: 'bot' } }],
+      });
+
+      const { ZTMChatWizard } = await import('./onboarding.js');
+      const wizard = new ZTMChatWizard();
+      (wizard as any).prompts = {
+        ask: vi.fn().mockImplementation((question: string, defaultValue?: string) => {
+          if (question.includes('Agent')) return 'http://localhost:7777';
+          if (question.includes('username')) return 'test-bot';
+          if (question.includes('Permit')) return 'https://example.com/permit';
+          return defaultValue || '';
+        }),
+        confirm: vi.fn().mockResolvedValue(true),
+        select: vi.fn().mockResolvedValue('pairing'),
+        separator: vi.fn(),
+        heading: vi.fn(),
+        success: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        error: vi.fn(),
+        close: vi.fn(),
+      };
+
+      await wizard.run();
+
+      // Verify writeConfigFile was called
+      expect(mockWriteConfigFn).toHaveBeenCalled();
+      const writeCall = mockWriteConfigFn.mock.calls[0][0];
+
+      // Verify mattermost binding is preserved
+      const mattermostBinding = writeCall.bindings.find(
+        (b: any) => b.match?.channel === 'mattermost'
+      );
+      expect(mattermostBinding).toBeDefined();
+      expect(mattermostBinding.match.accountId).toBe('bot');
+    });
+
+    it('should preserve existing ztm-chat bindings and not add duplicate', async () => {
+      mockLoadConfigFn.mockReturnValue({
+        channels: { 'ztm-chat': { accounts: { 'existing-bot': {} } } },
+        bindings: [{ agentId: 'main', match: { channel: 'ztm-chat', accountId: 'existing-bot' } }],
+      });
+      mockWriteConfigFn.mockResolvedValue(undefined);
+
+      const { ZTMChatWizard } = await import('./onboarding.js');
+      const wizard = new ZTMChatWizard();
+      (wizard as any).prompts = {
+        ask: vi.fn().mockImplementation((question: string, defaultValue?: string) => {
+          if (question.includes('Agent')) return 'http://localhost:7777';
+          if (question.includes('username')) return 'new-bot';
+          if (question.includes('Permit')) return 'https://example.com/permit';
+          return defaultValue || '';
+        }),
+        confirm: vi.fn().mockResolvedValue(true),
+        select: vi.fn().mockResolvedValue('pairing'),
+        separator: vi.fn(),
+        heading: vi.fn(),
+        success: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        error: vi.fn(),
+        close: vi.fn(),
+      };
+
+      await wizard.run();
+
+      // Verify writeConfigFile was called
+      expect(mockWriteConfigFn).toHaveBeenCalled();
+      const writeCall = mockWriteConfigFn.mock.calls[0][0];
+
+      // Count ztm-chat bindings - should be 1, not 2
+      const ztmBindings = writeCall.bindings.filter((b: any) => b.match?.channel === 'ztm-chat');
+      expect(ztmBindings.length).toBe(1);
+      // Original binding should be preserved
+      expect(ztmBindings[0].match.accountId).toBe('existing-bot');
     });
   });
 });
