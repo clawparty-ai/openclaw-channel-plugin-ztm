@@ -2,12 +2,13 @@
 
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-orange)](https://openclaw.ai)
 [![ZTM](https://img.shields.io/github/v/release/flomesh-io/ztm?logo=github&label=ZTM&color=purple)](https://github.com/flomesh-io/ztm)
-[![npm version](https://img.shields.io/npm/v/@flomesh/ztm-chat.svg?color=cb3837)](https://npmjs.com/package/@flomesh/ztm-chat)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/flomesh-io/openclaw-channel-plugin-ztm/test.yml)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/actions)
+[![npm version](https://img.shields.io/npm/v/@flomesh/ztm-chat.svg?color=cb3837&logo=npm)](https://npmjs.com/package/@flomesh/ztm-chat)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/flomesh-io/openclaw-channel-plugin-ztm/test.yml?logo=githubactions)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/actions)
 [![Test Coverage](https://img.shields.io/codecov/c/github/flomesh-io/openclaw-channel-plugin-ztm?logo=codecov)](https://codecov.io/gh/flomesh-io/openclaw-channel-plugin-ztm)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6?logo=typescript&color=yellow)](https://www.typescriptlang.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-v4.0+-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
 [![Release Version](https://img.shields.io/github/v/release/flomesh-io/openclaw-channel-plugin-ztm?sort=date)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 This plugin integrates OpenClaw with ZTM (Zero Trust Mesh) Chat, enabling decentralized P2P messaging through the ZTM network.
 
