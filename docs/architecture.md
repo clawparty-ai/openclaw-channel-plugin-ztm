@@ -393,12 +393,20 @@ bindings:
 
 ### Progressive Compatibility
 
-The plugin generates both configurations to ensure compatibility across OpenClaw versions:
+The plugin generates configuration compatible with both old and new OpenClaw versions:
 
-- `accounts.default` - For OpenClaw < 2026.2.26
-- `bindings` - For OpenClaw >= 2026.2.26
+| Configuration | Purpose | Status |
+|--------------|---------|--------|
+| `accounts.{accountId}` | Account configuration | ✅ Generated |
+| `bindings[].accountId` | Bindings mechanism | ✅ Generated |
+| `accounts.default` | Legacy default account | ❌ Not generated (causes duplicate messages) |
 
-This approach ensures backward and forward compatibility without requiring user migration.
+This approach ensures:
+- **No duplicate messages**: Removing `accounts.default` prevents duplicate message delivery
+- **New OpenClaw support**: `bindings[].accountId` works with OpenClaw >= 2026.2.26
+- **Backward compatibility**: Account config `accounts.{accountId}` works with older versions
+
+**See also**: [ADR-024 - Bindings Migration](adr/ADR-024-ztm-chat-bindings-migration.md)
 
 ---
 

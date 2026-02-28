@@ -33,7 +33,7 @@ OpenClaw `2026.2.26` introduced a new **bindings** mechanism for routing inbound
 
 ## Decision
 
-Adopt progressive compatibility approach: generate both `accounts.default` and `bindings[].accountId` configuration.
+Generate `accounts.{accountId}` and `bindings[].accountId` configuration. Do NOT add `accounts.default` as it causes duplicate messages when bindings are also present.
 
 ```typescript
 // onboarding.ts - summary() method changes
@@ -41,12 +41,9 @@ const channelConfig =
   (currentConfig.channels?.['ztm-chat'] as Record<string, unknown>) || {};
 const accounts = (channelConfig.accounts as Record<string, unknown>) || {};
 
-// 1. Save account config (both default and username keys)
-const defaultAccountId = 'default';
-accounts[defaultAccountId] = { ...config }; // Backward compatible
-if (accountId !== defaultAccountId) {
-  accounts[accountId] = { ...config }; // User-specified account
-}
+// 1. Save account config (username key only)
+// Note: Do NOT add accounts.default - it causes duplicate messages with bindings
+accounts[accountId] = { ...config };
 
 // 2. Build/update bindings (required for 2026.2.26+)
 const existingBindings = (currentConfig.bindings as Record<string, unknown>[]) || [];
@@ -89,15 +86,15 @@ if (ztmChatBindings.length === 0) {
 
 | Alternative | Pros | Cons | Why Not Chosen |
 |-------------|------|------|----------------|
-| **Only add `accounts.default`** | Simple, backward compatible | Does not meet new version binding requirement | Fails AC2 and AC3 |
-| **Only add `bindings`** | Concise, meets new version requirement | Old version may not recognize bindings | Fails AC4 |
+| **Only add `accounts.default`** | Simple | Does not meet new version binding requirement | Fails AC2 and AC3 |
+| **Only add `bindings`** | Concise | Old version may not recognize bindings | Fails AC4 |
 | **Add both** (chosen) | Compatible with old/new versions | Slightly redundant config | Best balance of all requirements |
 
 ## Key Trade-offs
 
-- **Compatibility vs Simplicity**: Adding both default account and bindings ensures compatibility but increases config redundancy
+- **Compatibility vs Simplicity**: Using `accounts.{accountId}` + `bindings` (without `accounts.default`) avoids duplicate messages
 - **New vs Old**: Must support both OpenClaw < 2026.2.26 and >= 2026.2.26
-- **Migration Path**: Users upgrading will have redundant config but no migration work needed
+- **Duplicate Prevention**: NOT adding `accounts.default` prevents duplicate message delivery when bindings are configured
 
 ## Related Decisions
 
@@ -109,17 +106,16 @@ if (ztmChatBindings.length === 0) {
 
 - Works with both old and new OpenClaw versions
 - No user migration required
-- Follows industry best practice for progressive compatibility
+- No duplicate messages (avoids `accounts.default`)
 
 ### Negative
 
-- Config file contains duplicate account data (default and username point to same config)
-- Slightly larger config file size
+- Config requires both `accounts.{accountId}` and `bindings` entries
 
 ## Follow-ups
 
-- Consider adding config migration tool in future versions to remove redundant default accounts
-- Monitor user feedback to optimize wizard logic
+- Monitor user feedback on duplicate message handling
+- Consider optimizing config structure if OpenClaw version detection becomes available
 
 ## References
 
