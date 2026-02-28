@@ -2,9 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.2.28 - 2026-02-28
+
+[d9a3694](d9a369440c483a38ddc3bdb53ae5a0c1079cef52)...[7e4f74f](7e4f74f21b57e597f4d3e7c7ebb016d35da70137)
+
+
+
+### 🚀 Features
+
+- Migrate to OpenClaw 2026.2.26+ bindings mechanism (#31) ([16e84d8](16e84d8fa3b700662d396ba037521c23950b9af3)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Remove accounts.default to prevent duplicate messages (#32) ([80af540](80af5407a4612360211e2ce1d1d174c06eb58784)) - (Lin Yang)
+
+
+
+
+
+
+### 🔨 Build
+
+- Bump rollup in the npm_and_yarn group across 1 directory (#27) ([83f49c8](83f49c8d9c0e76d9b8de346fc7e9811cf5a68564)) - (dependabot[bot])
+- Bump minimatch (#30) ([540c519](540c51954f3471c5044ed7a93d9239a5c6b5cbde)) - (dependabot[bot])
+
+### 📖 Documentation
+
+- Add OpenClaw badge to README ([e14fcd5](e14fcd5f327791a260bc58347d02662df00243ba)) - (Lin Yang)
+- Enhance README badges with logos ([5d356de](5d356de4c587b5e94abcdefd387a09767309a6c4)) - (Lin Yang)
+
+
 ## 2026.2.27 - 2026-02-27
 
-[fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)...[5903464](5903464667f76d73c17066b305e94f21733f529c)
+[fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)...[d9a3694](d9a369440c483a38ddc3bdb53ae5a0c1079cef52)
 
 
 
