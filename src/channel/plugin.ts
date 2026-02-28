@@ -5,7 +5,6 @@
  */
 
 import type { ChannelPlugin, OpenClawConfig } from 'openclaw/plugin-sdk';
-import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import {
   container,
@@ -28,18 +27,7 @@ import { createMessagingContext } from '../messaging/context.js';
 import type { ResolvedZTMChatAccount } from './config.js';
 import { PROBE_TIMEOUT_MS } from '../constants.js';
 import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
-
-// Type guard to safely extract ZTMChatConfig from unknown
-function isZTMChatConfig(config: unknown): config is ZTMChatConfig {
-  return (
-    typeof config === 'object' && config !== null && 'username' in config && 'agentUrl' in config
-  );
-}
-
-// Safely get config with type guard
-function getZTMChatConfig(account: { config: unknown }): ZTMChatConfig | null {
-  return isZTMChatConfig(account.config) ? account.config : null;
-}
+import { getZTMChatConfig } from '../utils/ztm-config.js';
 
 // Interface for resolveDmPolicy function parameters
 interface DmPolicyContext {
@@ -109,6 +97,9 @@ import {
 } from './gateway.js';
 import { buildAccountSnapshot } from './state.js';
 import { directorySelf, directoryListPeers } from './directory.js';
+import { ztmChatOnboardingAdapter } from './onboarding.js';
+import { ztmChatHeartbeatAdapter } from './heartbeat.js';
+import { createZTMChatAgentTools } from './tools.js';
 import {
   buildChannelSummary,
   getDefaultStatus,
@@ -261,6 +252,21 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Reload Section - Configuration reload handling
   // ---------------------------------------------------------------------------
   reload: { configPrefixes: ['channels.ztm-chat'] },
+
+  // ---------------------------------------------------------------------------
+  // Onboarding Section - Channel onboarding adapter
+  // ---------------------------------------------------------------------------
+  onboarding: ztmChatOnboardingAdapter,
+
+  // ---------------------------------------------------------------------------
+  // Heartbeat Section - Connection health checking
+  // ---------------------------------------------------------------------------
+  heartbeat: ztmChatHeartbeatAdapter,
+
+  // ---------------------------------------------------------------------------
+  // Agent Tools Section - Custom AI agent tools
+  // ---------------------------------------------------------------------------
+  agentTools: createZTMChatAgentTools,
 
   // ---------------------------------------------------------------------------
   // Config Schema Section - Configuration validation
