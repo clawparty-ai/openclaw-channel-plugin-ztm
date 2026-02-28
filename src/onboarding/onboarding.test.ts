@@ -1932,7 +1932,7 @@ describe('ZTMChatWizard', () => {
       writeConfigFileSpy = vi.spyOn(mockRuntime.config, 'writeConfigFile');
     });
 
-    it('should generate accounts.default and bindings with accountId', async () => {
+    it('should generate bindings with accountId (not accounts.default)', async () => {
       // Update mock return value for this specific test
       mockLoadConfigFn.mockReturnValue({ channels: {}, bindings: [] });
 
@@ -1965,8 +1965,8 @@ describe('ZTMChatWizard', () => {
       expect(writeConfigFileSpy).toHaveBeenCalled();
       const writeCall = writeConfigFileSpy.mock.calls[0][0];
 
-      // Verify accounts.default exists
-      expect(writeCall.channels['ztm-chat'].accounts.default).toBeDefined();
+      // Verify accounts.default does NOT exist (causes duplicate messages)
+      expect(writeCall.channels['ztm-chat'].accounts.default).toBeUndefined();
 
       // Verify accounts.{username} exists
       expect(writeCall.channels['ztm-chat'].accounts['test-bot']).toBeDefined();
