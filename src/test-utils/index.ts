@@ -18,3 +18,6 @@ export * from './fs-helpers.js';
 
 // Re-export stress testing utilities
 export * from './stress-helpers.js';
+
+// Re-export E2E test utilities
+export * from './e2e-fixtures.js';

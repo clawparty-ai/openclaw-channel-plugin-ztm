@@ -12,31 +12,25 @@
 
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { processIncomingMessage } from '../messaging/processor.js';
-import {
-  getOrCreateAccountState,
-  removeAccountState,
-  resetDefaultProvider,
-  disposeMessageStateStore,
-} from '../runtime/index.js';
-import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
+import {
+  testConfigOpenDM,
+  testAccountId,
+  NOW,
+  e2eBeforeEach,
+  e2eAfterEach,
+} from '../test-utils/index.js';
 
 describe('E2E: Stress Messaging', () => {
   // Unique sender prefix to avoid watermark collisions between test files
   const SENDER_PREFIX = 'sm-';
 
   beforeEach(() => {
-    // Setup fresh account state for each test
-    // Use open DM policy to allow all messages for testing
-    disposeMessageStateStore();
-    resetDefaultProvider();
-    getOrCreateAccountState(testAccountId);
+    e2eBeforeEach();
   });
 
   afterEach(async () => {
-    // Cleanup
-    removeAccountState(testAccountId);
-    resetDefaultProvider();
+    await e2eAfterEach();
   });
 
   describe('High-Frequency Message Handling', () => {
@@ -219,12 +213,14 @@ describe('E2E: Stress Messaging', () => {
       const { getAccountMessageStateStore } = await import('../runtime/store.js');
       const store = getAccountMessageStateStore(testAccountId);
 
-      // Verify store has some watermarks tracked
-      // (The actual implementation stores watermarks per sender)
+      // Verify store is functional by checking global watermark is accessible
       expect(store).toBeDefined();
+      // The global watermark should be set for at least one peer (the last sender)
+      const globalWatermark = store.getGlobalWatermark(testAccountId);
+      expect(globalWatermark).toBeGreaterThan(0);
 
       console.log(
-        `Watermark test: ${uniqueSenders} senders x ${messagesPerSender} messages tracked`
+        `Watermark test: ${uniqueSenders} senders x ${messagesPerSender} messages, global watermark: ${globalWatermark}`
       );
     });
   });
@@ -271,6 +267,8 @@ describe('E2E: Stress Messaging', () => {
         processingTimes.push(batchTime);
 
         // Wait for next batch interval
+        // If processing exceeds interval (batchTime > batchInterval), skip wait (waitTime <= 0)
+        // This intentionally allows burst processing without artificial delays
         const waitTime = batchInterval - batchTime;
         if (waitTime > 0) {
           await new Promise(resolve => setTimeout(resolve, waitTime));

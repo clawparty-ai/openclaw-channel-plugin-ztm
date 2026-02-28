@@ -11,29 +11,27 @@
  */
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import {
-  getOrCreateAccountState,
-  removeAccountState,
-  resetDefaultProvider,
-  disposeMessageStateStore,
-} from '../runtime/index.js';
 import { processIncomingMessage } from '../messaging/processor.js';
-import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
+import {
+  testConfigOpenDM,
+  testAccountId,
+  NOW,
+  e2eBeforeEach,
+  e2eAfterEach,
+  getOrCreateAccountState,
+} from '../test-utils/index.js';
 
 describe('E2E: Network Resilience', () => {
   // Unique sender prefix to avoid watermark collisions between test files
   const SENDER_PREFIX = 'nr-';
 
   beforeEach(() => {
-    disposeMessageStateStore();
-    resetDefaultProvider();
-    getOrCreateAccountState(testAccountId);
+    e2eBeforeEach();
   });
 
   afterEach(async () => {
-    removeAccountState(testAccountId);
-    resetDefaultProvider();
+    await e2eAfterEach();
     vi.restoreAllMocks();
   });
 
@@ -286,15 +284,18 @@ describe('E2E: Network Resilience', () => {
       };
 
       const totalRequests = 40;
-      const failureRate = 0.5;
+      // Use deterministic failure pattern: fail at indices 1,3,5,7,... (odd indices = ~50% failure rate)
+      const failureIndices = new Set([
+        1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39,
+      ]);
 
       let successCount = 0;
       let failureCount = 0;
       const results: { index: number; success: boolean; message: string }[] = [];
 
       for (let i = 0; i < totalRequests; i++) {
-        // Determine if this request should fail
-        const shouldFail = Math.random() < failureRate;
+        // Determine if this request should fail using deterministic pattern
+        const shouldFail = failureIndices.has(i);
 
         if (shouldFail) {
           failureCount++;
@@ -332,10 +333,10 @@ describe('E2E: Network Resilience', () => {
       // Verify system handled all requests without crashing
       expect(results.length).toBe(totalRequests);
 
-      // Success rate should be approximately 50%
+      // Success rate should be exactly 50% (20 out of 40 requests)
+      // Using deterministic failure pattern ensures reproducibility
       const actualSuccessRate = successCount / totalRequests;
-      expect(actualSuccessRate).toBeGreaterThan(0.3); // Allow some variance
-      expect(actualSuccessRate).toBeLessThan(0.7);
+      expect(actualSuccessRate).toBe(0.5); // Exactly 50% with deterministic pattern
 
       console.log(
         `Partial failure test: ${successCount}/${totalRequests} succeeded, ` +

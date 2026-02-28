@@ -13,30 +13,27 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { processIncomingMessage } from '../messaging/processor.js';
 import { notifyMessageCallbacks } from '../messaging/dispatcher.js';
+import type { ZTMChatMessage } from '../types/messaging.js';
 import {
+  testConfigOpenDM,
+  testAccountId,
+  NOW,
+  e2eBeforeEach,
+  e2eAfterEach,
   getOrCreateAccountState,
   removeAccountState,
-  resetDefaultProvider,
-  disposeMessageStateStore,
-} from '../runtime/index.js';
-import { testConfigOpenDM, testAccountId, NOW } from '../test-utils/fixtures.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
+} from '../test-utils/index.js';
 
 describe('E2E: Message Storm', () => {
   // Unique sender prefix to avoid watermark collisions between test files
   const SENDER_PREFIX = 'ms-';
 
   beforeEach(() => {
-    // Setup fresh account state for each test
-    disposeMessageStateStore();
-    resetDefaultProvider();
-    getOrCreateAccountState(testAccountId);
+    e2eBeforeEach();
   });
 
   afterEach(async () => {
-    // Cleanup
-    removeAccountState(testAccountId);
-    resetDefaultProvider();
+    await e2eAfterEach();
   });
 
   describe('Burst Message Peak - 500 Messages Simultaneously', () => {
@@ -295,8 +292,9 @@ describe('E2E: Message Storm', () => {
       const totalStart = Date.now();
 
       // Produce and process messages with delays between them
+      // Note: Using 1-second intervals to ensure each message has unique timestamp
+      // This prevents watermark deduplication from filtering messages during backpressure test
       for (let i = 0; i < totalMessages; i++) {
-        // Use unique time to avoid watermark filtering
         const uniqueTime = Date.now() + i * 1000;
         const rawMsg = {
           time: uniqueTime,
