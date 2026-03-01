@@ -127,8 +127,8 @@ graph TB
 
 This architecture document provides a high-level overview. For detailed information, see:
 
-| Topic | Detailed In |
-|-------|-------------|
+| Topic | Document |
+|-------|----------|
 | **Component API** | [docs/modules/](modules/) - Per-module API documentation |
 | **Architecture Decisions** | [docs/adr/](adr/) - 24 ADRs covering key design choices |
 | **Configuration** | [docs/configuration/reference.md](configuration/reference.md) |
@@ -136,6 +136,7 @@ This architecture document provides a high-level overview. For detailed informat
 | **Testing** | [docs/testing/](testing/) - Test strategies and fixtures |
 | **API Reference** | [docs/api/](api/) - Complete API documentation |
 | **Developer Guide** | [docs/developer-quickstart.md](developer-quickstart.md) |
+| **Onboarding Adapter** | [docs/channel/onboarding-adapter.md](channel/onboarding-adapter.md) - Channel configuration guide |
 
 ## Component Layers
 
@@ -168,6 +169,59 @@ The Channel Layer serves as the entry point for OpenClaw integration, handling p
 | `initialize_runtime` | Creates API client and initializes state | No | Blocks startup - initialization failure |
 | `preload_message_state` | Loads watermarks from persistent storage | No | Non-blocking - starts fresh if missing |
 | `setup_callbacks` | Registers message callbacks and starts watch | No | Delays message reception - can be recovered |
+
+#### Onboarding Adapter
+
+The Onboarding Adapter (`onboarding.ts`) implements OpenClaw's `ChannelOnboardingAdapter` interface for standardized channel configuration and management.
+
+| Method | Purpose | Key Operations |
+|--------|---------|----------------|
+| `getStatus()` | Query configuration status | Returns configured state, status lines (Agent URL, Username, Mesh) |
+| `configure()` | Non-interactive validation | Validates existing config, returns accountId if valid |
+| `configureInteractive()` | Interactive wizard flow | 6-step ZTMChatWizard, username validation, config building |
+| `configureWhenConfigured()` | Manage existing config | Test connection, update, or remove configuration |
+| `onAccountRecorded()` | Account lifecycle hook | Initialize runtime state, audit logging |
+| `disable()` | Remove channel config | Clears ztmChat from channels config |
+
+**Onboarding Flow**:
+
+```mermaid
+flowchart TD
+    A[User runs openclaw onboard] --> B{Channel configured?}
+    B -->|No| C[Run ZTMChatWizard]
+    B -->|Yes| D{User action?}
+    D -->|Keep| E[Skip - return existing]
+    D -->|Update| C
+    D -->|Manage| F[configureWhenConfigured]
+
+    C --> G[6-Step Wizard]
+    G --> H[Validate Username]
+    H --> I{Valid?}
+    I -->|No| E
+    I -->|Yes| J[Build Config]
+    J --> K[Return {cfg, accountId}]
+
+    F --> L{Management Option}
+    L -->|Test| M[Test Connection]
+    L -->|Update| C
+    L -->|Remove| N[Show remove instructions]
+
+    M --> O{Connected?}
+    O -->|Yes| P[Show success]
+    O -->|No| Q[Show sanitized error]
+
+    K --> R[onAccountRecorded hook]
+    R --> S[Initialize runtime state]
+    R --> T[Audit log]
+```
+
+**Security Features**:
+- Username validation via `validateUsername()` for defense-in-depth
+- Error message sanitization prevents internal details leakage
+- Audit logging for all account recordings
+- Noop logger fallback ensures no crashes when DI unavailable
+
+For detailed Onboarding Adapter documentation, see [docs/channel/onboarding-adapter.md](channel/onboarding-adapter.md).
 
 ### 2. Messaging Pipeline
 

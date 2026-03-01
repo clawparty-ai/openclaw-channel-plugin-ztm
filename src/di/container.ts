@@ -103,7 +103,12 @@ export interface IConfig {
 export interface IChatReader {
   getChats(): AsyncResult<unknown, Error>;
   getPeerMessages(peer: string, since?: number, before?: number): AsyncResult<unknown, Error>;
-  getGroupMessages(creator: string, group: string, since?: number, before?: number): AsyncResult<unknown, Error>;
+  getGroupMessages(
+    creator: string,
+    group: string,
+    since?: number,
+    before?: number
+  ): AsyncResult<unknown, Error>;
   watchChanges(prefix: string): AsyncResult<unknown, Error>;
 }
 
@@ -233,6 +238,14 @@ export class DIContainer {
     const entry = this.services.get(key);
     if (!entry) {
       const keyStr = String(key);
+
+      // In production, avoid leaking internal service structure
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (isProduction) {
+        throw new Error(`Service ${keyStr} not available`);
+      }
+
+      // Development: include helpful debug info
       const availableKeys = Array.from(this.services.keys())
         .map(k => String(k))
         .join(', ');
