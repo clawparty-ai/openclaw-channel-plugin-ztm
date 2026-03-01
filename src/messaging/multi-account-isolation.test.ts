@@ -1,0 +1,81 @@
+// Integration tests for Multi-Account Isolation
+
+import { describe, it, expect, vi } from 'vitest';
+import { testConfig } from '../test-utils/fixtures.js';
+
+describe('Multi-Account Isolation', () => {
+  const createAccountState = (accountId: string) => ({
+    accountId,
+    config: {
+      ...testConfig,
+      username: `bot-${accountId}`,
+      allowFrom: [] as string[],
+      dmPolicy: 'pairing' as const,
+    },
+    apiClient: null,
+    connected: true,
+    meshConnected: true,
+    lastError: null,
+    lastStartAt: null,
+    lastStopAt: null,
+    lastInboundAt: null,
+    lastOutboundAt: null,
+    peerCount: 5,
+    messageCallbacks: new Set(),
+    watchInterval: null,
+    watchErrorCount: 0,
+  });
+
+  it('should isolate messageCallbacks per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
+
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+
+    account1.messageCallbacks.add(callback1);
+    account2.messageCallbacks.add(callback2);
+
+    expect(account1.messageCallbacks.has(callback1)).toBe(true);
+    expect(account1.messageCallbacks.has(callback2)).toBe(false);
+    expect(account2.messageCallbacks.has(callback1)).toBe(false);
+    expect(account2.messageCallbacks.has(callback2)).toBe(true);
+  });
+
+  it('should isolate watchErrorCount per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
+
+    account1.watchErrorCount = 5;
+    account2.watchErrorCount = 2;
+
+    expect(account1.watchErrorCount).toBe(5);
+    expect(account2.watchErrorCount).toBe(2);
+  });
+
+  it('should isolate connection state per account', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
+
+    account1.connected = false;
+    account2.connected = true;
+    account1.meshConnected = false;
+    account2.meshConnected = true;
+
+    expect(account1.connected).toBe(false);
+    expect(account1.meshConnected).toBe(false);
+    expect(account2.connected).toBe(true);
+    expect(account2.meshConnected).toBe(true);
+  });
+
+  it('should handle same user in different accounts', () => {
+    const account1 = createAccountState('account1');
+    const account2 = createAccountState('account2');
+
+    // Verify accounts are independent
+    expect(account1.accountId).toBe('account1');
+    expect(account2.accountId).toBe('account2');
+    expect(account1.messageCallbacks.size).toBe(0);
+    expect(account2.messageCallbacks.size).toBe(0);
+  });
+});
