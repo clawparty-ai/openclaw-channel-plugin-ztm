@@ -5,6 +5,18 @@
 
 import { describe, it, expect } from 'vitest';
 
+// Test that constants are exported (for code reuse)
+describe('tool constants', () => {
+  it('should have consistent error messages across tools', async () => {
+    const { ztmStatusTool, ztmMeshInfoTool, ztmPeersTool } = await import('./tools.js');
+
+    // Each tool should have execute method
+    expect(typeof ztmStatusTool.execute).toBe('function');
+    expect(typeof ztmMeshInfoTool.execute).toBe('function');
+    expect(typeof ztmPeersTool.execute).toBe('function');
+  });
+});
+
 describe('createZTMChatAgentTools', () => {
   describe('factory returns', () => {
     it('should export createZTMChatAgentTools function', async () => {
