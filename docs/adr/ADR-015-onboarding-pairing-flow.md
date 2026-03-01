@@ -22,8 +22,8 @@ Additionally, the plugin implements a **pairing mode** where users must explicit
 
 - `src/onboarding/onboarding.ts` - Interactive CLI wizard (650+ lines)
 - `src/connectivity/permit.ts` - Permit request/loading/saving
-- `src/runtime/pairing-store.ts` - Pairing approval storage
 - `src/channel/connectivity-manager.ts` - Connectivity validation
+- **Note:** Pairing state is now managed by OpenClaw's pairing store (delegated)
 
 ## Decision
 
@@ -154,5 +154,5 @@ sequenceDiagram
 
 - `src/onboarding/onboarding.ts` - Full wizard implementation
 - `src/connectivity/permit.ts` - Permit management
-- `src/runtime/pairing-store.ts` - Pairing storage
 - `src/channel/connectivity-manager.ts` - Connectivity validation
+- **Note:** Pairing state is now managed by OpenClaw's pairing store

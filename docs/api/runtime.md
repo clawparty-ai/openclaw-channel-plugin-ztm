@@ -170,20 +170,6 @@ manager.getAll(): Map<string, AccountRuntimeState>
 
 **Returns:** Map of accountId to AccountRuntimeState
 
-##### cleanupExpiredPairings
-
-Clean up expired pending pairings from all accounts.
-
-```typescript
-manager.cleanupExpiredPairings(): number
-```
-
-**Returns:** Total number of expired pairings removed
-
-**Enforces:**
-- Time-based expiry (PAIRING_MAX_AGE_MS = 1 hour)
-- Size-based limit (MAX_PAIRINGS_PER_ACCOUNT)
-
 ##### getAllowFromCache
 
 Get cached allowFrom store or refresh if expired.
@@ -412,18 +398,6 @@ import { clearAllowFromCache } from './runtime/state.js';
 
 function clearAllowFromCache(accountId: string): void
 ```
-
-### cleanupExpiredPairings
-
-Clean up expired pending pairings from all accounts.
-
-```typescript
-import { cleanupExpiredPairings } from './runtime/state.js';
-
-function cleanupExpiredPairings(): number
-```
-
-**Returns:** Total number of expired pairings removed
 
 ---
 

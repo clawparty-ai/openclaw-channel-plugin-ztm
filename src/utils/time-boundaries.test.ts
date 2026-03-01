@@ -11,7 +11,6 @@ import {
   RETRY_INITIAL_DELAY_MS,
   RETRY_MAX_DELAY_MS,
   RETRY_TIMEOUT_MS,
-  PAIRING_MAX_AGE_MS,
   ALLOW_FROM_CACHE_TTL_MS,
   STATE_FLUSH_DEBOUNCE_MS,
   STATE_FLUSH_MAX_DELAY_MS,
@@ -64,10 +63,6 @@ describe('Time-based constants', () => {
     it('should have positive allowFrom cache TTL', () => {
       expect(ALLOW_FROM_CACHE_TTL_MS).toBeGreaterThan(0);
     });
-
-    it('should have allowFrom cache TTL less than pairing max age', () => {
-      expect(ALLOW_FROM_CACHE_TTL_MS).toBeLessThan(PAIRING_MAX_AGE_MS);
-    });
   });
 
   describe('State flush timing boundaries', () => {
@@ -82,16 +77,6 @@ describe('Time-based constants', () => {
     it('should have reasonable timing (debounce 1s, max 5s)', () => {
       expect(STATE_FLUSH_DEBOUNCE_MS).toBe(1000);
       expect(STATE_FLUSH_MAX_DELAY_MS).toBe(5000);
-    });
-  });
-
-  describe('Pairing age boundaries', () => {
-    it('should have positive max age for pairings', () => {
-      expect(PAIRING_MAX_AGE_MS).toBeGreaterThan(0);
-    });
-
-    it('should have pairing max age as 1 hour in milliseconds', () => {
-      expect(PAIRING_MAX_AGE_MS).toBe(60 * 60 * 1000);
     });
   });
 });

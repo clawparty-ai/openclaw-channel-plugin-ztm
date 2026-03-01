@@ -181,26 +181,6 @@ export function createMockMessageStateStore() {
   };
 }
 
-/**
- * Create a mock pairing store
- */
-export function createMockPairingStore() {
-  const pairings = new Map<string, { code: string; created: number }>();
-
-  return {
-    loadPendingPairings: vi.fn(() => new Map()),
-    savePendingPairing: vi.fn((id: string, code: string) => {
-      pairings.set(id, { code, created: Date.now() });
-    }),
-    deletePendingPairing: vi.fn((id: string) => pairings.delete(id)),
-    cleanupExpiredPairings: vi.fn(() => 0),
-    flush: vi.fn(),
-    flushAsync: vi.fn().mockResolvedValue(undefined),
-    dispose: vi.fn(),
-    _pairings: pairings,
-  };
-}
-
 // ============================================================================
 // Runtime State Mocks
 // ============================================================================
