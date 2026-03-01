@@ -128,52 +128,6 @@ describe('ZTM Chat Channel Plugin', () => {
     });
   });
 
-  describe('Pairing State Management', () => {
-    describe('Pending Pairings Map', () => {
-      it('should track pending pairings', () => {
-        const pendingPairings = new Map<string, Date>();
-
-        pendingPairings.set('alice', new Date());
-        pendingPairings.set('bob', new Date());
-
-        expect(pendingPairings.has('alice')).toBe(true);
-        expect(pendingPairings.has('bob')).toBe(true);
-        expect(pendingPairings.size).toBe(2);
-      });
-
-      it('should delete pending pairings', () => {
-        const pendingPairings = new Map<string, Date>();
-        pendingPairings.set('alice', new Date());
-
-        pendingPairings.delete('alice');
-
-        expect(pendingPairings.has('alice')).toBe(false);
-        expect(pendingPairings.size).toBe(0);
-      });
-
-      it('should clear all pending pairings', () => {
-        const pendingPairings = new Map<string, Date>();
-        pendingPairings.set('alice', new Date());
-        pendingPairings.set('bob', new Date());
-        pendingPairings.set('charlie', new Date());
-
-        pendingPairings.clear();
-
-        expect(pendingPairings.size).toBe(0);
-      });
-
-      it('should store timestamps', () => {
-        const pendingPairings = new Map<string, Date>();
-        const now = new Date();
-        pendingPairings.set('alice', now);
-
-        const stored = pendingPairings.get('alice');
-        expect(stored).toBeInstanceOf(Date);
-        expect(stored?.getTime()).toBe(now.getTime());
-      });
-    });
-  });
-
   describe('Pairing Request Message', () => {
     it('should generate pairing request with correct format', () => {
       const peer = 'alice';
@@ -328,13 +282,11 @@ describe('ZTM Chat Channel Plugin', () => {
         messageCallbacks: new Set<(msg: any) => void>(),
         watchInterval: null as any,
         watchErrorCount: 0,
-        pendingPairings: new Map<string, Date>(),
       };
 
       expect(state.accountId).toBe('default');
       expect(state.config.dmPolicy).toBe('pairing');
       expect(state.config.allowFrom).toEqual(['alice']);
-      expect(state.pendingPairings).toBeInstanceOf(Map);
       expect(state.messageCallbacks).toBeInstanceOf(Set);
     });
 

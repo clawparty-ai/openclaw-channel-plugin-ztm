@@ -49,17 +49,12 @@ const { resolveZTMChatAccountMock } = vi.hoisted(() => ({
   })),
 }));
 
-const {
-  initializeRuntimeMock,
-  getOrCreateAccountStateMock,
-  cleanupExpiredPairingsMock,
-  getGroupPermissionCachedMock,
-} = vi.hoisted(() => ({
-  initializeRuntimeMock: vi.fn().mockResolvedValue(true),
-  getOrCreateAccountStateMock: vi.fn(),
-  cleanupExpiredPairingsMock: vi.fn(),
-  getGroupPermissionCachedMock: vi.fn(() => ({})),
-}));
+const { initializeRuntimeMock, getOrCreateAccountStateMock, getGroupPermissionCachedMock } =
+  vi.hoisted(() => ({
+    initializeRuntimeMock: vi.fn().mockResolvedValue(true),
+    getOrCreateAccountStateMock: vi.fn(),
+    getGroupPermissionCachedMock: vi.fn(() => ({})),
+  }));
 
 const { startMessageWatcherMock } = vi.hoisted(() => ({
   startMessageWatcherMock: vi.fn().mockResolvedValue(undefined),
@@ -138,7 +133,6 @@ vi.mock('../runtime/state.js', () => ({
   initializeRuntime: initializeRuntimeMock,
   stopRuntime: stopRuntimeMock,
   removeAccountState: removeAccountStateMock,
-  cleanupExpiredPairings: cleanupExpiredPairingsMock,
   getOrCreateAccountState: getOrCreateAccountStateMock,
   getGroupPermissionCached: getGroupPermissionCachedMock,
 }));
