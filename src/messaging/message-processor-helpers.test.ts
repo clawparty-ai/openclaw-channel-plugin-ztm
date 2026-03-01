@@ -309,8 +309,8 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
         lastError: null,
         lastStartAt: null,
         lastStopAt: null,
@@ -319,7 +319,6 @@ describe('message-processor-helpers', () => {
         watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
-        pendingPairings: new Map(),
       };
     });
 
@@ -361,8 +360,8 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
         lastError: null,
         lastStartAt: null,
         lastStopAt: null,
@@ -371,7 +370,6 @@ describe('message-processor-helpers', () => {
         watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
-        pendingPairings: new Map(),
       };
     });
 
@@ -425,8 +423,8 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
         lastError: null,
         lastStartAt: null,
         lastStopAt: null,
@@ -435,7 +433,6 @@ describe('message-processor-helpers', () => {
         watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
-        pendingPairings: new Map(),
       };
     });
 
@@ -486,8 +483,8 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
         lastError: null,
         lastStartAt: null,
         lastStopAt: null,
@@ -496,7 +493,6 @@ describe('message-processor-helpers', () => {
         watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
-        pendingPairings: new Map(),
       };
     });
 
@@ -541,8 +537,8 @@ describe('message-processor-helpers', () => {
         accountId: testAccountId,
         config: { ...testConfig, username: 'mybot' },
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
         lastError: null,
         lastStartAt: null,
         lastStopAt: null,
@@ -551,7 +547,6 @@ describe('message-processor-helpers', () => {
         watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
-        pendingPairings: new Map(),
       };
     });
 

@@ -221,7 +221,6 @@ function createAccountState(accountId: string, config: typeof testConfig): Accou
     messageCallbacks: new Set(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
     groupPermissionCache: new Map(),
   };
 }

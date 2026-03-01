@@ -86,8 +86,6 @@ export interface AccountRuntimeState {
   watchInterval: ReturnType<typeof setInterval> | null;
   watchAbortController?: AbortController;
   watchErrorCount: number;
-  // Kept for test compatibility - not actively used in simplified flow
-  pendingPairings: Map<string, Date>;
   // Cached allowFrom store to avoid redundant async calls every poll/watch cycle
   // Not required in test fixtures - initialized in getOrCreateAccountState
   allowFromCache?: CacheEntry<string[]> | null;
@@ -98,6 +96,4 @@ export interface AccountRuntimeState {
   groupPermissionCache?: Map<string, GroupPermissions> | IGroupPermissionCache;
   /** Track message retry timers for cleanup */
   messageRetries?: Map<string, NodeJS.Timeout>;
-  /** Track pairing cleanup interval */
-  cleanupInterval?: NodeJS.Timeout;
 }

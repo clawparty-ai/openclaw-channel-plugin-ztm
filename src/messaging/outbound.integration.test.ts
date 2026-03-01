@@ -59,7 +59,6 @@ describe('Outbound Message Sending Integration', () => {
     lastInboundAt: null,
     lastOutboundAt: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
     ...overrides,
   });
 
@@ -103,8 +102,8 @@ describe('Outbound Message Sending Integration', () => {
       const uninitializedState = createMockState({
         config: null as any,
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
       });
 
       const result = await sendZTMMessage(uninitializedState, 'alice', 'Hello');

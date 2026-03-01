@@ -55,7 +55,6 @@ export interface StepContext {
   permitData?: PermitData;
   state?: AccountRuntimeState;
   messageCallback?: (msg: ZTMChatMessage) => Promise<void>;
-  cleanupInterval?: NodeJS.Timeout;
   log?: GatewayLogger;
   setStatus?: StatusSetter;
   cfg?: Record<string, unknown>;
@@ -103,7 +102,6 @@ export interface GatewayError extends Error {
  * Function type for cleanup on account shutdown
  * @remarks
  * Called when the account is stopped to release all resources:
- * - Clears cleanup interval
  * - Removes message callback
  * - Aborts watch controller
  * - Stops runtime

@@ -185,16 +185,8 @@ export async function handlePairingRequest(
     return;
   }
 
-  // Check if already in pending pairings (prevents duplicate requests in same session)
-  const existingTimestamp = state.pendingPairings.get(normalizedPeer);
-  if (existingTimestamp) {
-    logger.debug(
-      `[${state.accountId}] ${peer} already has pending pairing request (created at ${existingTimestamp.toISOString()})`
-    );
-    return;
-  }
-
   // Register pairing request with openclaw's pairing store
+  // OpenClaw handles deduplication and expiration internally
   let pairingCode = '';
   let pairingCreated = false;
   try {
@@ -208,8 +200,6 @@ export async function handlePairingRequest(
     pairingCode = code;
     pairingCreated = created;
     if (pairingCreated) {
-      // Track pending pairing in memory for deduplication and expiration
-      state.pendingPairings.set(normalizedPeer, new Date());
       logger.info(`[${state.accountId}] Registered new pairing request for ${peer} (code=${code})`);
     }
   } catch (error) {

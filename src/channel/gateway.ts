@@ -15,13 +15,7 @@ import { isConfigMinimallyValid } from '../config/validation.js';
 import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { isRetryableError } from '../utils/retry.js';
-import {
-  getAllAccountStates,
-  stopRuntime,
-  removeAccountState,
-  cleanupExpiredPairings,
-} from '../runtime/state.js';
-import { PAIRING_CLEANUP_INTERVAL_MS } from '../constants.js';
+import { getAllAccountStates, stopRuntime, removeAccountState } from '../runtime/state.js';
 import { startMessageWatcher } from '../messaging/watcher.js';
 import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
 import { container, DEPENDENCIES } from '../di/index.js';
@@ -183,7 +177,6 @@ export async function setupAccountCallbacks(
   }
 ): Promise<{
   messageCallback: (msg: ZTMChatMessage) => Promise<void>;
-  cleanupInterval: NodeJS.Timeout;
 }> {
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
   const cfg = ctx.cfg;
@@ -207,14 +200,9 @@ export async function setupAccountCallbacks(
   await startMessageWatcher(state, messagingContext, watchAbortController.signal);
 
   // Setup periodic cleanup to prevent unbounded growth of pending pairings
-  const cleanupInterval = setInterval(() => {
-    cleanupExpiredPairings();
-  }, PAIRING_CLEANUP_INTERVAL_MS);
+  // REMOVED: Pairing cleanup now handled by OpenClaw's pairing store
 
-  // Store in state for cleanup on logout
-  state.cleanupInterval = cleanupInterval;
-
-  return { messageCallback, cleanupInterval };
+  return { messageCallback };
 }
 
 /**

@@ -34,14 +34,12 @@ import type { GroupPermissions } from '../types/group-policy.js';
 import { isSuccess } from '../types/common.js';
 import { Semaphore } from '../utils/concurrency.js';
 import {
-  PAIRING_MAX_AGE_MS,
   ALLOW_FROM_CACHE_TTL_MS,
   MAX_GROUP_PERMISSION_CACHE_SIZE,
   GROUP_PERMISSION_CACHE_TTL_MS,
   MESH_CONNECT_MAX_RETRIES,
   RETRY_DELAY_MS,
   CALLBACK_SEMAPHORE_PERMITS,
-  MAX_PAIRINGS_PER_ACCOUNT,
 } from '../constants.js';
 
 // Dependencies interface for AccountStateManager
@@ -114,7 +112,6 @@ export class AccountStateManager {
       callbackSemaphore: new Semaphore(CALLBACK_SEMAPHORE_PERMITS),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       allowFromCache: null,
       groupPermissionCache: new GroupPermissionLRUCache(
         MAX_GROUP_PERMISSION_CACHE_SIZE,
@@ -129,10 +126,6 @@ export class AccountStateManager {
    * Extracted to reduce duplication between remove() and stopRuntime()
    */
   private clearTimers(state: AccountRuntimeState): void {
-    if (state.cleanupInterval) {
-      clearInterval(state.cleanupInterval);
-      state.cleanupInterval = undefined;
-    }
     if (state.messageRetries) {
       for (const timerId of state.messageRetries.values()) {
         clearTimeout(timerId);
@@ -156,7 +149,6 @@ export class AccountStateManager {
         state.watchAbortController = undefined;
       }
       state.messageCallbacks.clear();
-      state.pendingPairings.clear();
       state.allowFromCache = null;
       state.groupPermissionCache?.clear();
       // Clear all timers
@@ -170,52 +162,6 @@ export class AccountStateManager {
    */
   getAll(): Map<string, AccountRuntimeState> {
     return this.states;
-  }
-
-  /**
-   * Clean up expired pending pairings from all accounts
-   * Enforces both time-based (expiration) and size-based (max count) limits
-   */
-  cleanupExpiredPairings(): number {
-    const now = Date.now();
-    let totalRemoved = 0;
-
-    for (const [accountId, state] of this.states) {
-      if (state.pendingPairings.size === 0) continue;
-
-      let removed = 0;
-      // Step 1: Remove expired pairings based on time
-      for (const [peer, timestamp] of state.pendingPairings) {
-        if (now - timestamp.getTime() > PAIRING_MAX_AGE_MS) {
-          state.pendingPairings.delete(peer);
-          removed++;
-        }
-      }
-      if (removed > 0) {
-        this.deps.logger.debug(`[${accountId}] Cleaned up ${removed} expired pairing(s)`);
-        totalRemoved += removed;
-      }
-
-      // Step 2: Enforce size limit - keep most recent pairings
-      if (state.pendingPairings.size > MAX_PAIRINGS_PER_ACCOUNT) {
-        const entries = Array.from(state.pendingPairings.entries());
-        // Sort by timestamp descending (most recent first)
-        entries.sort(([, a], [, b]) => b.getTime() - a.getTime());
-        // Keep only the most recent entries
-        const toKeep = entries.slice(0, MAX_PAIRINGS_PER_ACCOUNT);
-        state.pendingPairings.clear();
-        for (const [peer, timestamp] of toKeep) {
-          state.pendingPairings.set(peer, timestamp);
-        }
-        const excess = entries.length - MAX_PAIRINGS_PER_ACCOUNT;
-        this.deps.logger.warn(
-          `[${accountId}] Pairing limit exceeded (${entries.length}), removed ${excess} oldest entries`
-        );
-        totalRemoved += excess;
-      }
-    }
-
-    return totalRemoved;
   }
 
   /**
@@ -436,7 +382,6 @@ export class AccountStateManager {
     }
 
     state.messageCallbacks.clear();
-    state.pendingPairings.clear();
     state.allowFromCache = null;
     state.groupPermissionCache?.clear();
     // Clear all timers
@@ -522,17 +467,6 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
  */
 export function removeAccountState(accountId: string): void {
   accountStateManager.remove(accountId);
-}
-
-/**
- * Clean up expired pending pairings from all accounts.
- * Removes entries older than PAIRING_MAX_AGE_MS (1 hour).
- * Should be called periodically to prevent unbounded memory growth.
- *
- * @returns Total number of expired pairings removed
- */
-export function cleanupExpiredPairings(): number {
-  return accountStateManager.cleanupExpiredPairings();
 }
 
 /**

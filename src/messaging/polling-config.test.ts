@@ -89,7 +89,6 @@ describe('Configuration Edge Cases', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
     };
   }
 

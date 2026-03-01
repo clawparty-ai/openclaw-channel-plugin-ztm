@@ -36,7 +36,6 @@ openclaw-channel-plugin-ztm/
 │   │   ├── state.ts             # Account runtime state
 │   │   ├── store.ts             # Persistent state (watermarks)
 │   │   ├── cache.ts             # In-memory caching
-│   │   ├── pairing-store.ts     # Pairing request persistence
 │   │   └── repository.ts        # Repository interfaces
 │   │
 │   ├── core/                     # 🎯 Business logic

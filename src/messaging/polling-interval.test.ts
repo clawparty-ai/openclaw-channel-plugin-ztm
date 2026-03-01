@@ -93,7 +93,6 @@ describe('Interval Management', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
     };
   }
 
@@ -180,7 +179,6 @@ describe('Watch → Polling Transition', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
     };
   }
 
@@ -207,18 +205,6 @@ describe('Watch → Polling Transition', () => {
     }
     createdIntervals = [];
     global.setInterval = originalSetInterval;
-  });
-
-  it('should preserve pendingPairings during transition', async () => {
-    mockState.pendingPairings.set('alice', new Date());
-    mockState.pendingPairings.set('bob', new Date());
-
-    const mockContext = createMockMessagingContext();
-    await startPollingWatcher(mockState, mockContext);
-
-    expect(mockState.pendingPairings.size).toBe(2);
-    expect(mockState.pendingPairings.has('alice')).toBe(true);
-    expect(mockState.pendingPairings.has('bob')).toBe(true);
   });
 
   it('should preserve messageCallbacks during transition', async () => {

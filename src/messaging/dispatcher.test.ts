@@ -62,8 +62,8 @@ describe('Message Dispatcher', () => {
       accountId: testAccountId,
       config: {} as any,
       chatReader: null,
-    chatSender: null,
-    discovery: null,
+      chatSender: null,
+      discovery: null,
       lastError: null,
       lastStartAt: null,
       lastStopAt: null,
@@ -72,7 +72,6 @@ describe('Message Dispatcher', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
     };
   }
 
