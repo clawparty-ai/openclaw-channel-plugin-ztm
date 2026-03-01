@@ -103,6 +103,7 @@ sequenceDiagram
     participant Z as ZTM Agent
     participant P as Pairing Store
 
+    Note over U,P: Pairing only triggered on new messages
     U->>B: Send message
     B->>Z: Check if paired
     Z-->>B: Not paired
@@ -115,6 +116,8 @@ sequenceDiagram
     B->>Z: Check if paired
     Z-->>B: Paired ✓
 ```
+
+> **Note**: Pairing requests are only triggered when users send new messages in the watch/polling loop, not during initial sync or plugin startup. This prevents duplicate pairing requests and aligns with the principle that pairing should only happen when there's an actual message intent.
 
 ## Alternatives Considered
 

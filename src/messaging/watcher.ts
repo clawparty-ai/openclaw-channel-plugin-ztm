@@ -12,7 +12,6 @@ import type { PluginRuntime } from 'openclaw/plugin-sdk';
 import { startPollingWatcher } from './polling.js';
 import { processAndNotify } from './strategies/message-strategies.js';
 import type { MessagingContext } from './context.js';
-import { handlePeerPolicyCheck } from './message-processor-helpers.js';
 import { Semaphore } from '../utils/concurrency.js';
 import { getMessageSyncStart } from '../utils/sync-time.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
@@ -59,13 +58,10 @@ export async function startMessageWatcher(
   const initAllowFrom = getOrDefault(storeAllowFrom, []);
 
   // Step 4: Initial sync - read all existing messages
-  // Get chats once and reuse for pairing requests (avoid duplicate API call)
-  const chats = await performInitialSync(state, initAllowFrom);
+  await performInitialSync(state, initAllowFrom);
 
-  // Step 5: Handle pairing requests from initial sync (reuses chats from initialSync)
-  await handleInitialPairingRequests(state, initAllowFrom, chats);
-
-  // Step 6: Start watch loop
+  // Step 5: Start watch loop
+  // Note: pairing requests are only triggered when users send new messages in watch loop
   startWatchLoop(state, rt, messagePath, context, abortSignal);
 }
 
@@ -73,7 +69,7 @@ export async function startMessageWatcher(
 
 /**
  * Perform initial sync of all existing messages
- * Returns the chats for reuse by handleInitialPairingRequests
+ * @returns Array of chats for message processing
  */
 async function performInitialSync(
   state: AccountRuntimeState,
@@ -102,23 +98,6 @@ async function performInitialSync(
 
   return chats;
 }
-
-/**
- * Handle pairing requests from initial sync
- * Reuses chats from performInitialSync to avoid duplicate API call
- */
-async function handleInitialPairingRequests(
-  state: AccountRuntimeState,
-  storeAllowFrom: string[],
-  chats: ZTMChat[]
-): Promise<void> {
-  for (const chat of chats) {
-    if (chat.peer && chat.peer !== state.config.username) {
-      await handlePeerPolicyCheck(chat.peer, state, storeAllowFrom, 'Initial chat request');
-    }
-  }
-}
-
 /**
  * Controller for managing the watch loop lifecycle
  * Breaks down complex watch logic into smaller, testable methods
@@ -456,10 +435,7 @@ async function processChangedPeer(
 
   // Get watermark and calculate sync start (limit to recent messages on first sync)
   const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
-  const watermark = store.getWatermark(
-    state.accountId,
-    peer
-  );
+  const watermark = store.getWatermark(state.accountId, peer);
   const since = getMessageSyncStart(watermark);
   const messagesResult = await state.chatReader.getPeerMessages(peer, since);
 
@@ -479,13 +455,11 @@ async function processChangedPeer(
   );
 
   // Use unified message processing logic
+  // Note: handlePeerPolicyCheck is already called inside processAndNotify for peer messages
   for (const msg of messages as ZTMMessage[]) {
     const chat = { peer, time: msg.time, updated: msg.time, latest: msg };
     await processAndNotify(chat, state, storeAllowFrom);
   }
-
-  // Handle DM policy check for pairing
-  await handlePeerPolicyCheck(peer, state, storeAllowFrom, 'New message');
 }
 
 /**
@@ -504,10 +478,7 @@ async function processChangedGroup(
 
   const groupKey = `group:${creator}/${group}`;
   const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
-  const watermark = store.getWatermark(
-    state.accountId,
-    groupKey
-  );
+  const watermark = store.getWatermark(state.accountId, groupKey);
   const since = getMessageSyncStart(watermark);
   const safeGroupKey = sanitizeForLog(`${creator}/${group}`);
   const hasNoHistory = watermark === 0;
