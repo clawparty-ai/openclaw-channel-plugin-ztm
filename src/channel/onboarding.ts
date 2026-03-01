@@ -6,15 +6,92 @@
 
 import type { ChannelOnboardingAdapter, DmPolicy } from 'openclaw/plugin-sdk';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { WizardPrompter } from 'openclaw/plugin-sdk';
+
+import { ZTMChatWizard } from '../onboarding/onboarding.js';
+import type { WizardPrompts } from '../onboarding/onboarding.js';
+import { validateUsername } from '../utils/validation.js';
+import type { ZTMChatConfig } from '../config/schema.js';
+import { getOrCreateAccountState } from '../runtime/state.js';
+import { container, DEPENDENCIES, type IApiClientFactory, type ILogger } from '../di/index.js';
+
+/**
+ * Adapt OpenClaw's WizardPrompter to ZTMChatWizard's WizardPrompts interface
+ */
+function createWizardPrompterAdapter(prompter: WizardPrompter): WizardPrompts {
+  return {
+    async ask(question: string, defaultValue?: string): Promise<string> {
+      const result = await prompter.text({
+        message: question,
+        initialValue: defaultValue,
+        validate: v => (v?.trim() ? undefined : 'Required'),
+      });
+      return result || defaultValue || '';
+    },
+
+    async select<T>(question: string, options: readonly T[], labels: string[]): Promise<T> {
+      const selectOptions: Array<{ value: T; label: string }> = options.map((opt, i) => ({
+        value: opt,
+        label: labels[i] ?? String(opt),
+      }));
+      return prompter.select({
+        message: question,
+        options: selectOptions,
+      }) as Promise<T>;
+    },
+
+    async confirm(question: string, defaultYes?: boolean): Promise<boolean> {
+      return prompter.confirm({
+        message: question,
+        initialValue: defaultYes,
+      });
+    },
+
+    async password(_question: string): Promise<string> {
+      throw new Error('Not supported');
+    },
+
+    separator(): void {
+      // Visual separator
+    },
+
+    heading(_text: string): void {
+      // OpenClaw doesn't have heading
+    },
+
+    success(_text: string): void {
+      // OpenClaw doesn't have success
+    },
+
+    warning(_text: string): void {
+      // OpenClaw doesn't have warning
+    },
+
+    error(_text: string): void {
+      // OpenClaw doesn't have error
+    },
+
+    info(_text: string): void {
+      // OpenClaw doesn't have info
+    },
+
+    close(): void {
+      // No-op for OpenClaw prompter
+    },
+  };
+}
 
 /**
  * Get ZTM Chat account from config
+ *
+ * @param cfg - OpenClaw configuration object
+ * @returns Account with ID and config, or null if not found/invalid
  */
 function getZTMChatAccount(
   cfg: OpenClawConfig
-): { accountId: string; config: Record<string, unknown> } | null {
+): { accountId: string; config: ZTMChatConfig } | null {
   const channels = cfg.channels as
-    | Record<string, { accounts?: Record<string, unknown> }>
+    | Record<string, { accounts?: Record<string, ZTMChatConfig> }>
     | undefined;
   const ztmChat = channels?.ztmChat;
 
@@ -24,7 +101,7 @@ function getZTMChatAccount(
   if (!accounts || Object.keys(accounts).length === 0) return null;
 
   const accountId = Object.keys(accounts)[0];
-  const config = accounts[accountId] as Record<string, unknown> | undefined;
+  const config = accounts[accountId];
 
   if (!config || !config.agentUrl || !config.username) return null;
 
@@ -32,7 +109,65 @@ function getZTMChatAccount(
 }
 
 /**
- * Onboarding adapter for ZTM Chat channel
+ * Sanitize error messages to prevent internal details from leaking to users
+ */
+function sanitizeErrorMessage(error: unknown, logger?: ILogger): string {
+  if (error instanceof Error) {
+    // Log error details server-side for debugging (without stack trace for security)
+    logger?.error('Connection failed', {
+      name: error.name,
+      message: error.message,
+    });
+    // Return generic message to user
+    return 'Connection failed. Please check your configuration and try again.';
+  }
+  return 'An unexpected error occurred. Please try again.';
+}
+
+/**
+ * Create a no-op logger fallback when DI container fails
+ */
+function createNoopLogger(): ILogger {
+  return {
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    debug: () => {},
+  };
+}
+
+/**
+ * ZTM Chat onboarding adapter for OpenClaw integration.
+ *
+ * Provides standardized onboarding flow including:
+ * - Interactive configuration wizard via `configureInteractive()`
+ * - Non-interactive configuration validation via `configure()`
+ * - Connection testing and management via `configureWhenConfigured()`
+ * - DM policy management for direct message access control
+ * - Runtime state initialization via `onAccountRecorded()`
+ *
+ * @example
+ * ```typescript
+ * import { ztmChatOnboardingAdapter } from './channel/onboarding.js';
+ *
+ * // Check channel status
+ * const status = await ztmChatOnboardingAdapter.getStatus({ cfg });
+ * if (status.configured) {
+ *   console.log('ZTM Chat is ready');
+ *   console.log('Agent:', status.statusLines[0]);
+ * }
+ *
+ * // Interactive configuration
+ * const result = await ztmChatOnboardingAdapter.configureInteractive({
+ *   cfg,
+ *   runtime,
+ *   prompter,
+ *   label: 'ZTM Chat',
+ *   configured: false,
+ * });
+ * ```
+ *
+ * @see {@link https://openclaw.dev/docs/adapters | Adapter Documentation}
  */
 export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
   channel: 'ztm-chat',
@@ -65,12 +200,109 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
 
   /**
    * Configure ZTM Chat channel (non-interactive)
-   * For now, just return the current config - full configuration happens via wizard
+   * Validates existing configuration and returns accountId if valid
    */
   configure: async ({ cfg }) => {
-    // Non-interactive configuration is not fully supported yet
-    // Full configuration should happen via the existing wizard flow
-    return { cfg };
+    // Validate existing config
+    const account = getZTMChatAccount(cfg);
+    if (!account) {
+      // No valid account - return as-is (user needs to configure via wizard)
+      return { cfg };
+    }
+
+    // Validate required fields
+    const { config } = account;
+    if (!config.agentUrl || !config.username) {
+      // Invalid config - return as-is (log for debugging)
+      return { cfg };
+    }
+
+    return { cfg, accountId: account.accountId };
+  },
+
+  /**
+   * Configure ZTM Chat channel (interactive)
+   * Runs wizard for new configuration or updates existing
+   */
+  configureInteractive: async (ctx: {
+    cfg: OpenClawConfig;
+    prompter: WizardPrompter;
+    label: string;
+    configured: boolean;
+  }): Promise<{ cfg: OpenClawConfig; accountId?: string } | 'skip'> => {
+    const { cfg, prompter, label, configured } = ctx;
+
+    // If already configured, prompt user for action
+    if (configured) {
+      const choice = await prompter.select({
+        message: `${label} is already configured. What would you like to do?`,
+        options: [
+          { value: 'keep', label: 'Keep current configuration' },
+          { value: 'update', label: 'Update configuration' },
+        ],
+        initialValue: 'keep',
+      });
+
+      if (choice === 'keep') {
+        return 'skip';
+      }
+    }
+
+    // Run ZTMChatWizard with adapted prompter to ensure consistent logic
+    let wizardResult;
+    try {
+      const wizardPrompts = createWizardPrompterAdapter(prompter);
+      const wizard = new ZTMChatWizard(wizardPrompts);
+      wizardResult = await wizard.run();
+    } catch (error) {
+      // Log details for debugging (server-side only)
+      let logger: ILogger | null = null;
+      try {
+        logger = container.get<ILogger>(DEPENDENCIES.LOGGER) ?? null;
+      } catch {
+        logger = null;
+      }
+      const finalLogger = logger ?? createNoopLogger();
+      finalLogger.error('Wizard failed', {
+        error: error instanceof Error ? { name: error.name, message: error.message } : error,
+      });
+
+      // Show user-friendly message
+      await prompter.note('Configuration failed. Please try again.');
+      return 'skip';
+    }
+
+    // Validate wizard result
+    if (!wizardResult || !wizardResult.config || !wizardResult.accountId) {
+      await prompter.note('Configuration incomplete or cancelled.');
+      return 'skip';
+    }
+
+    // Validate username for security (defense in depth)
+    const usernameValidation = validateUsername(wizardResult.accountId);
+    if (!usernameValidation.valid) {
+      await prompter.note('Invalid username configuration.');
+      return 'skip';
+    }
+
+    // Use username as accountId for semantic naming
+    const accountId = wizardResult.accountId;
+
+    // Build new config
+    const newCfg: OpenClawConfig = {
+      ...cfg,
+      channels: {
+        ...cfg.channels,
+        ztmChat: {
+          enabled: true,
+          accounts: {
+            [accountId]: wizardResult.config as ZTMChatConfig,
+          },
+        },
+      },
+    };
+
+    return { cfg: newCfg, accountId };
   },
 
   /**
@@ -114,5 +346,109 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
     const channels = newCfg.channels as Record<string, unknown>;
     delete channels.ztmChat;
     return newCfg;
+  },
+
+  /**
+   * Configure when already configured
+   * Provides options to test connection, update, or remove configuration
+   */
+  configureWhenConfigured: async (ctx: {
+    cfg: OpenClawConfig;
+    prompter: WizardPrompter;
+    label: string;
+  }): Promise<{ cfg: OpenClawConfig; accountId?: string } | 'skip'> => {
+    const { cfg, prompter, label } = ctx;
+
+    // Show current config status
+    const account = getZTMChatAccount(cfg);
+    if (!account) {
+      return 'skip';
+    }
+
+    // Prompt user for action
+    const choice = await prompter.select({
+      message: `${label} is configured. Manage?`,
+      options: [
+        { value: 'test', label: 'Test connection' },
+        { value: 'update', label: 'Update configuration' },
+        { value: 'remove', label: 'Remove configuration' },
+      ],
+      initialValue: 'test',
+    });
+
+    switch (choice) {
+      case 'test':
+        try {
+          // Get dependencies with null checks
+          const apiClientFactory = container.get<IApiClientFactory>(
+            DEPENDENCIES.API_CLIENT_FACTORY
+          );
+          const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+
+          // Validate dependencies are available
+          if (!apiClientFactory || !logger) {
+            logger?.error('Required dependencies not available', {
+              apiClientFactory: !!apiClientFactory,
+              logger: !!logger,
+            });
+            await prompter.note('Service not initialized. Please restart the application.');
+            return { cfg, accountId: account.accountId };
+          }
+
+          const apiClient = apiClientFactory(account.config as ZTMChatConfig, { logger });
+          const meshResult = await apiClient.getMeshInfo();
+
+          if (meshResult.ok && meshResult.value?.connected) {
+            await prompter.note('Connection successful!');
+          } else {
+            // Use sanitized error message
+            await prompter.note(sanitizeErrorMessage(meshResult.error, logger));
+          }
+        } catch (error) {
+          // Use sanitized error message
+          await prompter.note(sanitizeErrorMessage(error));
+        }
+        return { cfg, accountId: account.accountId };
+
+      case 'update':
+        // Delegate to configureInteractive - return skip so caller invokes it
+        return 'skip';
+
+      case 'remove':
+        // Return skip with reason - caller should invoke disable
+        await prompter.note('To remove configuration, use: openclaw channels remove ztm-chat');
+        return 'skip';
+
+      default:
+        // Exhaustive check - should never happen
+        return 'skip';
+    }
+  },
+
+  /**
+   * Called when account is recorded
+   * Initializes runtime state and logs audit
+   */
+  onAccountRecorded: (accountId: string, options?: unknown): void => {
+    // Check if DI container is ready
+    let logger: ILogger | null = null;
+    try {
+      logger = container.get<ILogger>(DEPENDENCIES.LOGGER) ?? null;
+    } catch {
+      // Container not ready, use noop logger
+      logger = null;
+    }
+
+    const finalLogger = logger ?? createNoopLogger();
+
+    // Initialize runtime state using existing AccountStateManager
+    // This has the side effect of creating the state if it doesn't exist
+    void getOrCreateAccountState(accountId);
+
+    // AccountStateManager.getOrCreate() already initializes the state properly
+    // The state object has all required properties with default values
+
+    // Log for audit (always succeeds due to no-op fallback)
+    finalLogger.info('ZTM Chat account recorded', { accountId, options });
   },
 };

@@ -123,8 +123,10 @@ After installation, the plugin will be available as `ztm-chat` (or `ztm` as alia
 ### 4. Run Configuration Wizard
 
 ```bash
-openclaw ztm-chat-wizard
+openclaw onboard
 ```
+
+Select **"ZTM Chat (P2P)"** from the channel list.
 
 The wizard will guide you through:
 1. **ZTM Agent URL** (default: `http://localhost:7777`)
@@ -334,14 +336,21 @@ openclaw pairing approve ztm-chat <code>
 
 ## CLI Commands
 
-### Plugin Commands
+### Onboarding Commands
 
 ```bash
-# Setup wizard
-openclaw ztm-chat-wizard
+# Interactive setup wizard (recommended)
+openclaw onboard
 
-# Auto-discover existing configuration
-openclaw ztm-chat-discover
+# Select "ZTM Chat" from the channel list
+# Follow the 6-step configuration wizard
+
+# Manage existing configuration
+openclaw onboard
+# Select "ZTM Chat" -> "Manage" -> Choose option:
+#   - Test Connection: Verify ZTM Agent connectivity
+#   - Update Configuration: Re-run the wizard
+#   - Remove: Display removal instructions
 ```
 
 ### Channel Commands
