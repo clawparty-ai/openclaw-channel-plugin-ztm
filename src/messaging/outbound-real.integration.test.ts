@@ -107,7 +107,6 @@ describe('Outbound Message Real HTTP Integration', () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
     };
   };
 
@@ -458,7 +457,6 @@ describe('Outbound Message Real HTTP Integration', () => {
         lastInboundAt: null,
         lastOutboundAt: null,
         watchErrorCount: 0,
-        pendingPairings: new Map(),
       };
 
       const startTime = Date.now();

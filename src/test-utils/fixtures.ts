@@ -320,6 +320,5 @@ export function createMockState(
     callbackSemaphore: new Semaphore(10),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
   };
 }

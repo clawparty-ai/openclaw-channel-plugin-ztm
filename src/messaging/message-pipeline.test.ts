@@ -63,7 +63,6 @@ describe('Inbound message processing', () => {
     messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
   };
 
   beforeEach(async () => {

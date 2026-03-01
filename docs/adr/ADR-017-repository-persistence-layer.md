@@ -27,8 +27,8 @@ The system must ensure:
 - `src/runtime/repository.ts` - Repository interfaces
 - `src/runtime/repository-impl.ts` - Repository implementations
 - `src/runtime/store.ts` - MessageStateStore with file persistence
-- `src/runtime/pairing-store.ts` - Pairing storage
 - `src/runtime/persistence.integration.test.ts` - Persistence tests
+- **Note:** Pairing state is now managed by OpenClaw's pairing store (delegated)
 
 ## Decision
 
@@ -158,4 +158,4 @@ export function getAccountMessageStateStore(accountId: string): MessageStateStor
 - `src/runtime/repository.ts` - Repository interfaces
 - `src/runtime/repository-impl.ts` - Implementations
 - `src/runtime/store.ts` - MessageStateStore
-- `src/runtime/pairing-store.ts` - PairingStore
+- **Note:** Pairing state is now managed by OpenClaw's pairing store

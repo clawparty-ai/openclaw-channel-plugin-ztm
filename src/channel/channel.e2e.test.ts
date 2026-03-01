@@ -74,7 +74,6 @@ vi.mock('../runtime/state.js', () => ({
     messageCallbacks: new Set(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
   })),
   removeAccountState: vi.fn(),
   getAllAccountStates: vi.fn(
@@ -94,7 +93,6 @@ vi.mock('../runtime/state.js', () => ({
             messageCallbacks: new Set(),
             watchInterval: null,
             watchErrorCount: 0,
-            pendingPairings: new Map(),
           },
         ],
       ])

@@ -32,10 +32,6 @@ export const RETRY_TIMEOUT_MS = 30000; // 30 seconds - total retry timeout
 // Mesh connectivity
 export const MESH_CONNECT_MAX_RETRIES = 3; // Maximum retry attempts for mesh connection
 
-// Pairing cleanup
-export const PAIRING_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes - periodic cleanup interval
-export const PAIRING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour - max age for pending pairings
-
 // Cache TTL
 export const ALLOW_FROM_CACHE_TTL_MS = 30000; // 30 seconds - cache TTL for allowFrom store
 export const GROUP_PERMISSION_CACHE_TTL_MS = 60000; // 60 seconds - cache TTL for group permissions
@@ -58,7 +54,6 @@ export const CALLBACK_SEMAPHORE_PERMITS = 10; // Maximum concurrent callback exe
 // ============================================================================
 
 export const MAX_PEERS_PER_ACCOUNT = 1000; // Maximum number of peers per account
-export const MAX_PAIRINGS_PER_ACCOUNT = 100; // Maximum number of pending pairings
 export const MAX_GROUP_PERMISSION_CACHE_SIZE = 500; // Maximum cached group permissions per account
 export const MAX_MESSAGE_LENGTH = 10000; // Maximum message content length in bytes (10KB) - prevents memory exhaustion
 

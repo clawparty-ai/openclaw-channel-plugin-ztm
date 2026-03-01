@@ -25,7 +25,6 @@ function createMockState(): AccountRuntimeState {
     messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
   };
 }
 

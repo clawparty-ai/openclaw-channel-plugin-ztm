@@ -181,8 +181,8 @@ describe('processAndNotify', () => {
       accountId: testAccountId,
       config: { ...testConfig, dmPolicy: 'allow', username: 'testuser' },
       chatReader: null,
-    chatSender: null,
-    discovery: null,
+      chatSender: null,
+      discovery: null,
       lastError: null,
       lastStartAt: new Date(),
       lastStopAt: null,
@@ -191,7 +191,6 @@ describe('processAndNotify', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   });

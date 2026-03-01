@@ -345,7 +345,6 @@ describe('Channel Gateway', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     } as any;
 
     // Set default mock for getAllAccountStates
@@ -1589,7 +1588,6 @@ describe('Multi-account concurrent startup', () => {
         meshConnected: true,
         lastError: null,
         messageCallbacks: new Set(),
-        pendingPairings: new Map(),
         watchAbortController: undefined,
       });
     });
@@ -1637,7 +1635,6 @@ describe('Multi-account concurrent startup', () => {
         meshConnected: true,
         lastError: null,
         messageCallbacks: new Set(),
-        pendingPairings: new Map(),
         watchAbortController: undefined,
       });
     });
@@ -1677,7 +1674,6 @@ describe('Multi-account concurrent startup', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     });
     states.set('account-2', {
@@ -1688,7 +1684,6 @@ describe('Multi-account concurrent startup', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     });
     mockGetAllAccountStates.mockReturnValue(states);
@@ -1747,7 +1742,6 @@ describe('Fast start-stop race', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     };
     mockGetAllAccountStates.mockReturnValue(new Map([['race-test', mockState]]));
@@ -1777,7 +1771,6 @@ describe('Fast start-stop race', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     };
     mockGetAllAccountStates.mockReturnValue(new Map([['sequence-test', mockState]]));
@@ -1824,7 +1817,6 @@ describe('Fast start-stop race', () => {
         meshConnected: true,
         lastError: null,
         messageCallbacks: new Set(),
-        pendingPairings: new Map(),
         watchAbortController: undefined,
       });
     });
@@ -1879,7 +1871,6 @@ describe('Config hot reload', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     };
     mockGetAllAccountStates.mockReturnValue(new Map([['config-test', mockState]]));
@@ -1916,7 +1907,6 @@ describe('Config hot reload', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     };
     mockGetAllAccountStates.mockReturnValue(new Map([['config-test-2', mockState2]]));
@@ -1937,7 +1927,6 @@ describe('Config hot reload', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     };
     mockGetAllAccountStates.mockReturnValue(new Map([['validation-test', mockState]]));
@@ -1977,7 +1966,6 @@ describe('Config hot reload', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback1 = buildMessageCallback(mockState1 as any, 'callback-config-1', config1);
@@ -1993,7 +1981,6 @@ describe('Config hot reload', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback2 = buildMessageCallback(mockState2 as any, 'callback-config-2', config2);
@@ -2035,7 +2022,6 @@ describe('Exception account isolation', () => {
         meshConnected: true,
         lastError: null,
         messageCallbacks: new Set(),
-        pendingPairings: new Map(),
         watchAbortController: undefined,
       });
     });
@@ -2089,7 +2075,6 @@ describe('Exception account isolation', () => {
       meshConnected: true,
       lastError: 'Initialization failed',
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
       watchAbortController: undefined,
     });
     mockGetAllAccountStates.mockReturnValue(states);
@@ -2117,7 +2102,6 @@ describe('Exception account isolation', () => {
         meshConnected: true,
         lastError: null,
         messageCallbacks: new Set(),
-        pendingPairings: new Map(),
         watchAbortController: undefined,
       });
     });
@@ -2169,7 +2153,6 @@ describe('Exception account isolation', () => {
       connected: true,
       meshConnected: true,
       lastError: null,
-      pendingPairings: new Map(),
     });
     mockGetAllAccountStates.mockReturnValue(newStates);
 
@@ -2199,7 +2182,6 @@ describe('Exception account isolation', () => {
         meshConnected: true,
         lastError: null,
         messageCallbacks: new Set(),
-        pendingPairings: new Map(),
         watchAbortController: undefined,
         lastStartAt: undefined,
       });
@@ -2360,7 +2342,6 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback = buildMessageCallback(mockState as any, 'deliver-test', mockConfig);
@@ -2418,7 +2399,6 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback = buildMessageCallback(mockState as any, 'group-test', mockConfig);
@@ -2498,7 +2478,6 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback = buildMessageCallback(mockState as any, 'error-test', mockConfig);
@@ -2564,7 +2543,6 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback = buildMessageCallback(mockState as any, 'retry-fail-test', mockConfig);
@@ -2625,7 +2603,6 @@ describe('createReplyDispatcherOptions uncovered paths', () => {
       meshConnected: true,
       lastError: null,
       messageCallbacks: new Set(),
-      pendingPairings: new Map(),
     };
 
     const callback = buildMessageCallback(mockState as any, 'options-test', mockConfig);

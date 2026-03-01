@@ -96,7 +96,6 @@ describe('polling', () => {
         watchErrorCount: 0,
         messageCallbacks: new Set(),
         watchInterval: null,
-        pendingPairings: new Map(),
       };
 
       // Set up container mock with nested .get() structure
@@ -119,8 +118,8 @@ describe('polling', () => {
       const stateWithoutApi = {
         ...mockState,
         chatReader: null,
-    chatSender: null,
-    discovery: null,
+        chatSender: null,
+        discovery: null,
       };
 
       await startPollingWatcher(stateWithoutApi, mockContext);

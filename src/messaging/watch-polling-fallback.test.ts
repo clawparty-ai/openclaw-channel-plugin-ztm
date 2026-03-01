@@ -61,7 +61,6 @@ describe('Watch → Polling Fallback', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
     };
   }
 
@@ -176,26 +175,5 @@ describe('Watch → Polling Fallback', () => {
       expect(mode).toBe('polling');
       expect(errorCount).toBe(0);
     });
-  });
-});
-
-describe('Integration: Watch Error with Pending Pairings', () => {
-  it('should preserve pending pairings during fallback', () => {
-    const pendingPairings = new Map<string, Date>();
-    pendingPairings.set('alice', new Date());
-    pendingPairings.set('bob', new Date());
-
-    expect(pendingPairings.size).toBe(2);
-    expect(pendingPairings.has('alice')).toBe(true);
-    expect(pendingPairings.has('bob')).toBe(true);
-  });
-
-  it('should continue processing messages from approved users during fallback', () => {
-    const allowFrom = ['alice', 'bob'];
-    const sender = 'alice';
-
-    const isAllowed = allowFrom.some(allowed => allowed.toLowerCase() === sender.toLowerCase());
-
-    expect(isAllowed).toBe(true);
   });
 });

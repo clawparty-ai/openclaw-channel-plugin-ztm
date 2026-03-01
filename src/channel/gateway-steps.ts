@@ -156,7 +156,6 @@ export function createGatewaySteps(_ctx: StepContext): PipelineStep[] {
 
         stepCtx.state = state;
         stepCtx.messageCallback = result.messageCallback;
-        stepCtx.cleanupInterval = result.cleanupInterval;
 
         stepCtx.setStatus?.({
           accountId: stepCtx.account.accountId,

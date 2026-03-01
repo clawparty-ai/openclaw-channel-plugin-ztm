@@ -18,7 +18,9 @@ import {
 import { getAccountMessageStateStore } from '../runtime/store.js';
 
 // Create mock watch result
-function createMockWatchResult(items: Array<{ type: 'peer' | 'group'; peer?: string; creator?: string; group?: string }> = []) {
+function createMockWatchResult(
+  items: Array<{ type: 'peer' | 'group'; peer?: string; creator?: string; group?: string }> = []
+) {
   return {
     ok: true as const,
     value: items,
@@ -69,7 +71,6 @@ function createMockState(): AccountRuntimeState {
     messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
   };
 }
 
@@ -337,13 +338,13 @@ describe('Watch → Polling Fallback Integration', () => {
 
       // Set watermarks for all peers
       peers.forEach((peer, index) => {
-        mockWatermarks.set(`${accountId}:${peer}`, NOW - (index * 1000));
+        mockWatermarks.set(`${accountId}:${peer}`, NOW - index * 1000);
       });
 
       // Verify all watermarks preserved
       peers.forEach((peer, index) => {
         const watermark = mockStore.getWatermark(accountId, peer);
-        expect(watermark).toBe(NOW - (index * 1000));
+        expect(watermark).toBe(NOW - index * 1000);
       });
     });
 
@@ -381,7 +382,14 @@ describe('Watch → Polling Fallback Integration', () => {
     it('should handle switch from watch to polling while messages in flight', () => {
       const state = createMockState();
       const messagesInFlight: ZTMChatMessage[] = [
-        { id: 'msg-pending', sender: 'alice', senderId: 'alice', peer: 'alice', content: 'In flight', timestamp: new Date(NOW) }
+        {
+          id: 'msg-pending',
+          sender: 'alice',
+          senderId: 'alice',
+          peer: 'alice',
+          content: 'In flight',
+          timestamp: new Date(NOW),
+        },
       ];
 
       // Switch to polling

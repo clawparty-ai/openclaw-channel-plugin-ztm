@@ -18,7 +18,6 @@ vi.mock('../runtime/state.js', () => ({
   initializeRuntime: vi.fn().mockResolvedValue(true),
   stopRuntime: vi.fn().mockResolvedValue(undefined),
   removeAccountState: vi.fn(),
-  cleanupExpiredPairings: vi.fn(),
   getOrCreateAccountState: vi.fn(),
 }));
 

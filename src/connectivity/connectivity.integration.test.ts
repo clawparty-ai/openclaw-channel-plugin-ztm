@@ -194,7 +194,6 @@ describe('Connectivity Integration', () => {
         apiClient: {
           sendPeerMessage: mockSendPeerMessage,
         },
-        pendingPairings: new Map(),
       } as any;
 
       await handlePairingRequest(mockState, 'alice', 'test-context');
@@ -216,7 +215,6 @@ describe('Connectivity Integration', () => {
         apiClient: {
           sendPeerMessage: mockSendPeerMessage,
         },
-        pendingPairings: new Map(),
       } as any;
 
       await handlePairingRequest(mockState, 'alice', 'test-context', ['alice']);
@@ -234,7 +232,6 @@ describe('Connectivity Integration', () => {
           allowFrom: [],
         },
         apiClient: null,
-        pendingPairings: new Map(),
       } as any;
 
       // Should not throw when apiClient is null

@@ -7,7 +7,6 @@ import {
   getAllAccountStates,
   initializeRuntime,
   stopRuntime,
-  cleanupExpiredPairings,
   clearAllowFromCache,
   getAllowFromCache,
   getGroupPermissionCached,
@@ -77,21 +76,6 @@ vi.mock('./store.js', () => ({
     dispose: vi.fn(),
   })),
   disposeMessageStateStore: vi.fn(),
-  FileSystem: {},
-  nodeFs: {},
-}));
-
-vi.mock('./pairing-store.js', () => ({
-  getPairingStateStore: vi.fn(() => ({
-    loadPendingPairings: vi.fn(() => new Map()),
-    savePendingPairing: vi.fn(),
-    deletePendingPairing: vi.fn(),
-    cleanupExpiredPairings: vi.fn(() => 0),
-    flush: vi.fn(),
-    flushAsync: vi.fn().mockResolvedValue(undefined),
-    dispose: vi.fn(),
-  })),
-  disposePairingStateStore: vi.fn(),
   FileSystem: {},
   nodeFs: {},
 }));
@@ -183,14 +167,12 @@ describe('Account Runtime State Management', () => {
       expect(state.messageCallbacks).toBeInstanceOf(Set);
       expect(state.watchInterval).toBeNull();
       expect(state.watchErrorCount).toBe(0);
-      expect(state.pendingPairings).toBeInstanceOf(Map);
     });
 
     it('should initialize empty collections', () => {
       const state = getOrCreateAccountState(testAccountId);
 
       expect(state.messageCallbacks.size).toBe(0);
-      expect(state.pendingPairings.size).toBe(0);
     });
   });
 
@@ -219,19 +201,6 @@ describe('Account Runtime State Management', () => {
       const state = getOrCreateAccountState(testAccountId);
       const mockCallback = vi.fn();
       state.messageCallbacks.add(mockCallback);
-
-      removeAccountState(testAccountId);
-
-      // State should be removed
-      const allStates = getAllAccountStates();
-      expect(allStates.has(testAccountId)).toBe(false);
-    });
-
-    it('should clear pendingPairings', () => {
-      const state = getOrCreateAccountState(testAccountId);
-      state.pendingPairings.set('alice', new Date());
-      state.pendingPairings.set('bob', new Date());
-      expect(state.pendingPairings.size).toBe(2);
 
       removeAccountState(testAccountId);
 
@@ -379,18 +348,6 @@ describe('Account Runtime State Management', () => {
       expect(state!.messageCallbacks.size).toBe(0);
     });
 
-    it('should clear pendingPairings', async () => {
-      await initializeRuntime(testConfig, testAccountId);
-      const state = getAllAccountStates().get(testAccountId);
-      state!.pendingPairings.set('alice', new Date());
-      state!.pendingPairings.set('bob', new Date());
-      expect(state!.pendingPairings.size).toBe(2);
-
-      await stopRuntime(testAccountId);
-
-      expect(state!.pendingPairings.size).toBe(0);
-    });
-
     it('should set lastStopAt', async () => {
       await initializeRuntime(testConfig, testAccountId);
 
@@ -457,7 +414,6 @@ describe('Account Runtime State Management', () => {
       expect(state).toHaveProperty('messageCallbacks');
       expect(state).toHaveProperty('watchInterval');
       expect(state).toHaveProperty('watchErrorCount');
-      expect(state).toHaveProperty('pendingPairings');
     });
 
     it('should allow modification of state properties', () => {
@@ -602,25 +558,6 @@ describe('Account Runtime State Management', () => {
       clearInterval(state.watchInterval);
     });
 
-    it('should handle removal while pending pairings exist', async () => {
-      const accountId = 'remove-during-pairing';
-
-      // Create account with pending pairings
-      const state = getOrCreateAccountState(accountId);
-      state.pendingPairings.set('alice', new Date());
-      state.pendingPairings.set('bob', new Date());
-      state.pendingPairings.set('charlie', new Date());
-
-      // Verify pairings exist
-      expect(state.pendingPairings.size).toBe(3);
-
-      // Remove account
-      removeAccountState(accountId);
-
-      // Account should be removed and pairings cleared
-      expect(getAllAccountStates().has(accountId)).toBe(false);
-    });
-
     it('should handle removal while message callbacks are registered', async () => {
       const accountId = 'remove-during-callback';
 
@@ -738,23 +675,6 @@ describe('Account Runtime State Management', () => {
       removeAccountState('concurrent-mod-test');
     });
 
-    it('should handle concurrent pendingPairings modifications', async () => {
-      const state = getOrCreateAccountState('concurrent-mod-test');
-
-      // Simulate concurrent adds to pendingPairings
-      const addPromises = Array(20)
-        .fill(null)
-        .map((_, i) => {
-          state.pendingPairings.set(`peer${i}`, new Date());
-          return Promise.resolve();
-        });
-
-      await Promise.all(addPromises);
-
-      // All additions should be reflected
-      expect(state.pendingPairings.size).toBe(20);
-    });
-
     it('should handle concurrent messageCallbacks modifications', () => {
       const state = getOrCreateAccountState('concurrent-mod-test');
 
@@ -792,36 +712,6 @@ describe('Account Runtime State Management', () => {
       expect(state.groupPermissionCache?.get('creator0/group0')).toBeDefined();
     });
 
-    it('should handle interleaved add and delete operations', async () => {
-      const state = getOrCreateAccountState('concurrent-mod-test');
-
-      // Add some pairings first
-      for (let i = 0; i < 10; i++) {
-        state.pendingPairings.set(`peer${i}`, new Date());
-      }
-
-      // Concurrently add and delete
-      const operations = [
-        ...Array(5)
-          .fill(null)
-          .map((_, i) => {
-            state.pendingPairings.set(`newPeer${i}`, new Date());
-            return Promise.resolve();
-          }),
-        ...Array(5)
-          .fill(null)
-          .map((_, i) => {
-            state.pendingPairings.delete(`peer${i}`);
-            return Promise.resolve();
-          }),
-      ];
-
-      await Promise.all(operations);
-
-      // Should have 10 (original 10 - 5 deleted + 5 new = 10)
-      expect(state.pendingPairings.size).toBe(10);
-    });
-
     it('should handle rapid config updates', async () => {
       const accountId = 'concurrent-mod-test';
 
@@ -840,87 +730,6 @@ describe('Account Runtime State Management', () => {
       const state = getOrCreateAccountState(accountId);
       expect(state.config.username).toMatch(/^bot\d+$/);
     });
-  });
-});
-
-describe('cleanupExpiredPairings', () => {
-  beforeEach(() => {
-    removeAccountState('cleanup-test');
-  });
-
-  afterEach(() => {
-    removeAccountState('cleanup-test');
-  });
-
-  it('should return 0 when no accounts exist', () => {
-    const result = cleanupExpiredPairings();
-    expect(result).toBe(0);
-  });
-
-  it('should not remove fresh pairings', () => {
-    const state = getOrCreateAccountState('cleanup-test');
-    state.pendingPairings.set('alice', new Date());
-
-    const result = cleanupExpiredPairings();
-    expect(result).toBe(0);
-    expect(state.pendingPairings.size).toBe(1);
-  });
-
-  it('should remove expired pairings', () => {
-    const state = getOrCreateAccountState('cleanup-test');
-    // Add expired pairing (older than 1 hour)
-    const expiredTime = new Date(Date.now() - 2 * 60 * 60 * 1000);
-    state.pendingPairings.set('alice', expiredTime);
-
-    const result = cleanupExpiredPairings();
-    expect(result).toBe(1);
-    expect(state.pendingPairings.size).toBe(0);
-  });
-
-  it('should only remove expired pairings from each account', () => {
-    const state = getOrCreateAccountState('cleanup-test');
-    // Add both fresh and expired
-    state.pendingPairings.set('alice', new Date());
-    state.pendingPairings.set('bob', new Date(Date.now() - 2 * 60 * 60 * 1000));
-
-    const result = cleanupExpiredPairings();
-    expect(result).toBe(1);
-    expect(state.pendingPairings.size).toBe(1);
-    expect(state.pendingPairings.has('alice')).toBe(true);
-    expect(state.pendingPairings.has('bob')).toBe(false);
-  });
-
-  it('should enforce MAX_PAIRINGS_PER_ACCOUNT limit', () => {
-    const state = getOrCreateAccountState('cleanup-test');
-
-    // Add more than MAX_PAIRINGS_PER_ACCOUNT pairings (100)
-    for (let i = 0; i < 150; i++) {
-      state.pendingPairings.set(`peer${i}`, new Date());
-    }
-
-    // Cleanup should enforce the limit
-    const beforeSize = state.pendingPairings.size;
-    cleanupExpiredPairings();
-
-    // Size should be limited to MAX_PAIRINGS_PER_ACCOUNT (100)
-    expect(state.pendingPairings.size).toBeLessThanOrEqual(100);
-    expect(beforeSize).toBe(150);
-  });
-
-  it('should remove oldest pairings when limit exceeded', () => {
-    const state = getOrCreateAccountState('cleanup-test');
-
-    // Add pairings with decreasing ages - all fresh (within 1 hour)
-    for (let i = 0; i < 150; i++) {
-      // All timestamps within last 30 minutes - none expired
-      const age = i * 1000; // Each 1 second older, max 25 minutes
-      state.pendingPairings.set(`peer${i}`, new Date(Date.now() - age));
-    }
-
-    cleanupExpiredPairings();
-
-    // Should keep the newest up to MAX_PAIRINGS_PER_ACCOUNT (100)
-    expect(state.pendingPairings.size).toBeLessThanOrEqual(100);
   });
 });
 

@@ -180,7 +180,6 @@ describe('startMessageWatcher', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -396,7 +395,6 @@ describe('watch error count behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -425,7 +423,6 @@ describe('watch error count behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 5,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -461,7 +458,6 @@ describe('full sync behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 6, // Above threshold
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -501,7 +497,6 @@ describe('watch loop timing', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -597,7 +592,6 @@ describe('performInitialSync edge cases', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -667,7 +661,6 @@ describe('processChangedPaths scenarios', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -754,7 +747,6 @@ describe('error threshold and polling fallback', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -838,7 +830,6 @@ describe('watch error handling edge cases', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -908,7 +899,6 @@ describe('multiple iteration scenarios', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -971,7 +961,6 @@ describe('initial sync scenarios', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -1055,7 +1044,6 @@ describe('initial sync scenarios', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1094,7 +1082,6 @@ describe('WatchLoopController scenarios', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -1193,7 +1180,6 @@ describe('WatchLoopController scenarios', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1241,7 +1227,6 @@ describe('handleInitialPairingRequests edge cases', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1279,7 +1264,6 @@ describe('getOrDefault fallback scenarios', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1308,7 +1292,6 @@ describe('executeWatch edge cases', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1339,7 +1322,6 @@ describe('executeWatch edge cases', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1392,7 +1374,6 @@ describe('processChangedPeer error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1449,7 +1430,6 @@ describe('processChangedGroup error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1483,7 +1463,6 @@ describe('performFullSync edge cases', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1525,7 +1504,6 @@ describe('performFullSync edge cases', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1563,7 +1541,6 @@ describe('processChangedPaths empty items', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1592,7 +1569,6 @@ describe('pending iteration flag behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1619,7 +1595,6 @@ describe('watch error threshold behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1650,7 +1625,6 @@ describe('watch error threshold behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 5, // Already at threshold
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1705,7 +1679,6 @@ describe('processChangedPaths empty items', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1753,7 +1726,6 @@ describe('processChangedPeer error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1791,7 +1763,6 @@ describe('processChangedGroup error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1827,7 +1798,6 @@ describe('performFullSync error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1854,7 +1824,6 @@ describe('performFullSync error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1883,7 +1852,6 @@ describe('executeWatch error handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -1931,7 +1899,6 @@ describe('WatchLoopController behavior', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2149,7 +2116,6 @@ describe('abortSignal support', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2204,7 +2170,6 @@ describe('abortSignal support', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2252,7 +2217,6 @@ describe('executeWatchCycle network timeout handling', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -2360,7 +2324,6 @@ describe('executeWatchCycle concurrent error recovery', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -2488,7 +2451,6 @@ describe('startMessageWatcher idempotency', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2536,7 +2498,6 @@ describe('startMessageWatcher idempotency', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2587,7 +2548,6 @@ describe('message batch processing boundary', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -2703,7 +2663,6 @@ describe('Watch to Polling degradation complete flow', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -2787,7 +2746,6 @@ describe('Watch to Polling degradation complete flow', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2871,7 +2829,6 @@ describe('signal interrupt resource cleanup', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2922,7 +2879,6 @@ describe('signal interrupt resource cleanup', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -2996,7 +2952,6 @@ describe('watermark persistence failure handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3055,7 +3010,6 @@ describe('watermark persistence failure handling', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3106,7 +3060,6 @@ describe('concurrent message processing order', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -3255,7 +3208,6 @@ describe('processChangedPaths full sync trigger', () => {
       messageCallbacks: new Set<MessageCallback>(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
   }
@@ -3380,7 +3332,6 @@ describe('handleInitialPairingRequests with different peers', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3468,7 +3419,6 @@ describe('processChangedPeer success path', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3517,7 +3467,6 @@ describe('processChangedPeer success path', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3609,7 +3558,6 @@ describe('processChangedGroup success path', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3666,7 +3614,6 @@ describe('processChangedGroup success path', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3756,7 +3703,6 @@ describe('performFullSync success path', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3821,7 +3767,6 @@ describe('performFullSync success path', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 
@@ -3916,7 +3861,6 @@ describe('WatchLoopController additional coverage', () => {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
       groupPermissionCache: new Map(),
     };
 

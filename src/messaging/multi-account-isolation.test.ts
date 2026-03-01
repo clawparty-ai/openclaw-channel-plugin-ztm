@@ -24,20 +24,6 @@ describe('Multi-Account Isolation', () => {
     messageCallbacks: new Set(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
-  });
-
-  it('should isolate pendingPairings per account', () => {
-    const account1 = createAccountState('account1');
-    const account2 = createAccountState('account2');
-
-    account1.pendingPairings.set('alice', new Date());
-    account2.pendingPairings.set('bob', new Date());
-
-    expect(account1.pendingPairings.has('alice')).toBe(true);
-    expect(account1.pendingPairings.has('bob')).toBe(false);
-    expect(account2.pendingPairings.has('alice')).toBe(false);
-    expect(account2.pendingPairings.has('bob')).toBe(true);
   });
 
   it('should isolate messageCallbacks per account', () => {
@@ -86,10 +72,10 @@ describe('Multi-Account Isolation', () => {
     const account1 = createAccountState('account1');
     const account2 = createAccountState('account2');
 
-    const sender = 'alice';
-    account1.pendingPairings.set(sender, new Date());
-
-    expect(account1.pendingPairings.has(sender)).toBe(true);
-    expect(account2.pendingPairings.has(sender)).toBe(false);
+    // Verify accounts are independent
+    expect(account1.accountId).toBe('account1');
+    expect(account2.accountId).toBe('account2');
+    expect(account1.messageCallbacks.size).toBe(0);
+    expect(account2.messageCallbacks.size).toBe(0);
   });
 });

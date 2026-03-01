@@ -379,7 +379,6 @@ Each account maintains a comprehensive state object:
 | `watchInterval` | Interval | Watch loop timer | Cleared on stop |
 | `watchAbortController` | AbortController | Signals watch shutdown | Created per start |
 | `watchErrorCount` | number | Consecutive watch errors | Reset on success, triggers polling |
-| `pendingPairings` | Map | Pending pairing approvals | Cleaned every 5 minutes |
 | `allowFromCache` | Cached value | Approved users cache | 30s TTL, request coalescing |
 | `groupPermissionCache` | LRU Cache | Group permissions cache | 60s TTL, max 500 entries |
 | `messageRetries` | Map | Scheduled retry timers | Cleared on stop |
@@ -799,7 +798,6 @@ The State Management layer provides persistent storage, in-memory caching, and a
 |-------|---------|-----|----------|
 | **allowFromCache** | Approved users | 30s | N/A (request coalescing) |
 | **groupPermissionCache** | Group permissions | 60s | 500 entries (LRU) |
-| **pendingPairings** | Pairing requests | 1 hour | 100 entries |
 
 **See also**:
 - [ADR-017 - Repository Persistence Layer](adr/ADR-017-repository-persistence-layer.md)

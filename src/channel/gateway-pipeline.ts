@@ -107,10 +107,6 @@ export class GatewayPipeline {
     return async () => {
       this.ctx.log?.info(`[${this.ctx.account.accountId}] Cleaning up gateway resources`);
 
-      if (this.ctx.cleanupInterval) {
-        clearInterval(this.ctx.cleanupInterval);
-      }
-
       if (this.ctx.messageCallback && this.ctx.state) {
         this.ctx.state.messageCallbacks.delete(this.ctx.messageCallback);
       }

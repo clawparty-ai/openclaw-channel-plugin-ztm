@@ -56,22 +56,6 @@ vi.mock('../api/ztm-api.js', () => ({
 }));
 
 // Mock pairing store
-vi.mock('../runtime/pairing-store.js', () => {
-  const mockPairingStore = {
-    loadPendingPairings: vi.fn(() => new Map()),
-    savePendingPairing: vi.fn(),
-    deletePendingPairing: vi.fn(),
-    cleanupExpiredPairings: vi.fn(() => 0),
-    flush: vi.fn(),
-    flushAsync: vi.fn().mockResolvedValue(undefined),
-    dispose: vi.fn(),
-  };
-  return {
-    createPairingStateStore: vi.fn(() => mockPairingStore),
-    getPairingStateStore: vi.fn(() => mockPairingStore),
-    disposePairingStateStore: vi.fn(),
-  };
-});
 
 // Helper to create base config
 function createBaseConfig(overrides?: Partial<typeof testConfig>): typeof testConfig {
@@ -97,7 +81,6 @@ function createMockState(accountId: string, config?: typeof testConfig): Account
     messageCallbacks: new Set<MessageCallback>(),
     watchInterval: null,
     watchErrorCount: 0,
-    pendingPairings: new Map(),
   };
 }
 
@@ -123,31 +106,7 @@ function createMessage(overrides?: Partial<{ time: number; message: string; send
 }
 
 describe('Integration: Complete Message Flow', () => {
-  // Get the mocked pairing store functions - typed as Mock to have .mockReturnValue
-  let mockLoadPendingPairings: any;
-  let mockSavePendingPairing: any;
-  let mockDeletePendingPairing: any;
-  let mockCleanupExpiredPairings: any;
-
-  beforeEach(async () => {
-    // Get mock functions from the mocked module
-    const pairingModule = await import('../runtime/pairing-store.js');
-    mockLoadPendingPairings = vi.fn((_accountId: string) => new Map<string, Date>());
-    mockSavePendingPairing = vi.fn((_accountId: string, _peer: string, _date?: Date) => {});
-    mockDeletePendingPairing = vi.fn((_accountId: string, _peer: string) => {});
-    mockCleanupExpiredPairings = vi.fn((_accountId: string, _maxAgeMs?: number) => 0);
-
-    // Reset and configure mocks - cast to any to avoid type issues with mocked module
-    (pairingModule.getPairingStateStore as ReturnType<typeof vi.fn>).mockReturnValue({
-      loadPendingPairings: mockLoadPendingPairings,
-      savePendingPairing: mockSavePendingPairing,
-      deletePendingPairing: mockDeletePendingPairing,
-      cleanupExpiredPairings: mockCleanupExpiredPairings,
-      flush: vi.fn(),
-      flushAsync: vi.fn().mockResolvedValue(undefined),
-      dispose: vi.fn(),
-    });
-
+  beforeEach(() => {
     // Clean up all account states
     const allStates = getAllAccountStates();
     for (const [accountId] of allStates) {
@@ -431,117 +390,6 @@ describe('Integration: Complete Message Flow', () => {
         accountId: account2Id,
       });
       expect(result2).toBeNull();
-    });
-  });
-
-  describe('5. Complete Pairing Flow', () => {
-    it('should handle new user pairing request flow', () => {
-      const accountId = 'test-pairing-account';
-      const config = createBaseConfig({ dmPolicy: 'pairing' });
-      const newUser = 'new-user';
-
-      // Step 1: New user sends message - should be blocked
-      const message = createMessage({ sender: newUser });
-      const result = processIncomingMessage(message, { config, storeAllowFrom: [], accountId });
-
-      expect(result).toBeNull(); // Not processed - needs pairing
-
-      // Step 2: Check policy - should request pairing
-      const policyResult = checkDmPolicy(newUser, config, []);
-      expect(policyResult.action).toBe('request_pairing');
-
-      // Step 3: Save pairing request via mock
-      mockSavePendingPairing(accountId, newUser);
-
-      // Verify pairing saved
-      expect(mockSavePendingPairing).toHaveBeenCalledWith(accountId, newUser);
-    });
-
-    it('should allow message after pairing approval', () => {
-      const accountId = 'test-pairing-approval';
-      const config = createBaseConfig({ dmPolicy: 'pairing' });
-      const approvedUser = 'approved-user';
-
-      // Pre-approve the user via store
-      const storeAllowFrom = [approvedUser];
-
-      // Step 1: Now the user should be allowed
-      const message = createMessage({ sender: approvedUser });
-      const result = processIncomingMessage(message, { config, storeAllowFrom, accountId });
-
-      expect(result).not.toBeNull();
-      expect(result?.sender).toBe(approvedUser);
-    });
-
-    it('should cleanup expired pairing requests', () => {
-      const accountId = 'test-pairing-expiry';
-
-      // Setup mock to return 2 pairings
-      mockLoadPendingPairings.mockReturnValue(
-        new Map([
-          ['user-1', new Date()],
-          ['user-2', new Date()],
-        ])
-      );
-
-      // Verify we can check pairings
-      const pairings = mockLoadPendingPairings(accountId);
-      expect(pairings.size).toBe(2);
-
-      // Cleanup expired
-      const expiredCount = mockCleanupExpiredPairings(accountId, 0);
-      expect(expiredCount).toBe(0); // Mock always returns 0
-    });
-
-    it('should handle pairing request timeout', () => {
-      const accountId = 'test-pairing-timeout';
-      const config = createBaseConfig({ dmPolicy: 'pairing' });
-      const user = 'timeout-user';
-
-      // User sends message initially
-      const message1 = createMessage({ sender: user, time: Date.now() });
-      const result1 = processIncomingMessage(message1, { config, storeAllowFrom: [], accountId });
-      expect(result1).toBeNull();
-
-      // Setup mock to return the user as pending
-      mockLoadPendingPairings.mockReturnValue(new Map([[user, new Date()]]));
-
-      // Save pairing request
-      mockSavePendingPairing(accountId, user);
-
-      // After some time, check if still pending
-      const pending = mockLoadPendingPairings(accountId);
-      expect(pending.has(user)).toBe(true);
-
-      // Simulate cleanup of old pairings
-      mockCleanupExpiredPairings(accountId, 60 * 60 * 1000); // 1 hour
-
-      // This should not remove the pairing if it was just created (mock behavior)
-      const stillPending = mockLoadPendingPairings(accountId);
-      expect(stillPending.has(user)).toBe(true);
-    });
-
-    it('should remove pairing after approval', () => {
-      const accountId = 'test-pairing-remove';
-      const user = 'approved-and-remove';
-
-      // Setup mock to return the user as pending
-      mockLoadPendingPairings.mockReturnValue(new Map([[user, new Date()]]));
-
-      // Save pairing request
-      mockSavePendingPairing(accountId, user);
-
-      let pending = mockLoadPendingPairings(accountId);
-      expect(pending.has(user)).toBe(true);
-
-      // Simulate approval - remove the pairing
-      mockDeletePendingPairing(accountId, user);
-
-      // Setup mock to return empty
-      mockLoadPendingPairings.mockReturnValue(new Map());
-
-      pending = mockLoadPendingPairings(accountId);
-      expect(pending.has(user)).toBe(false);
     });
   });
 
