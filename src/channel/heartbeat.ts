@@ -9,6 +9,7 @@ import { container, DEPENDENCIES } from '../di/index.js';
 import type { IApiClientFactory, ILogger } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
 import { getZTMChatConfig } from '../utils/ztm-config.js';
+import { ZTMTimeoutError, ZTMApiError } from '../types/errors.js';
 
 /**
  * Heartbeat adapter for ZTM Chat channel
@@ -44,10 +45,21 @@ export const ztmChatHeartbeatAdapter: ChannelHeartbeatAdapter = {
       const meshResult = await apiClient.getMeshInfo();
 
       if (!meshResult.ok) {
-        return {
-          ok: false,
-          reason: `Failed to get mesh info: ${meshResult.error?.message}`,
-        };
+        // Classify error type for more meaningful error messages
+        const error = meshResult.error;
+        if (error instanceof ZTMTimeoutError) {
+          return { ok: false, reason: 'Network timeout' };
+        }
+        if (error instanceof ZTMApiError) {
+          const statusCode = error.context.statusCode as number | undefined;
+          if (statusCode && statusCode >= 500) {
+            return { ok: false, reason: `Server error: ${statusCode}` };
+          }
+          if (statusCode === 401 || statusCode === 403) {
+            return { ok: false, reason: 'Authentication failed' };
+          }
+        }
+        return { ok: false, reason: `Failed to get mesh info: ${error?.message}` };
       }
 
       const meshInfo = meshResult.value;
