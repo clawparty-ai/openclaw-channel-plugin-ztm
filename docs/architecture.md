@@ -408,6 +408,74 @@ This approach ensures:
 
 **See also**: [ADR-024 - Bindings Migration](adr/ADR-024-ztm-chat-bindings-migration.md)
 
+### ChannelPlugin Adapters (OpenClaw 2026.2.26+)
+
+OpenClaw 2026.2.27 introduced adapter interfaces that extend channel plugin capabilities. The ZTM Chat plugin implements three adapters:
+
+| Adapter | Interface | Purpose |
+|---------|-----------|---------|
+| **Onboarding** | `ChannelOnboardingAdapter` | Standardized onboarding flow and configuration |
+| **Heartbeat** | `ChannelHeartbeatAdapter` | Connection health checking and recipient resolution |
+| **AgentTools** | `ChannelAgentToolFactory` | Custom AI agent tools for ZTM status queries |
+
+#### Onboarding Adapter
+
+The onboarding adapter provides standardized configuration management:
+
+```typescript
+import { ztmChatOnboardingAdapter } from './channel/onboarding.js';
+
+export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
+  // ... other properties
+  onboarding: ztmChatOnboardingAdapter,
+};
+```
+
+**Features**:
+- `getStatus()` - Query current onboarding status
+- `configure()` - Update channel configuration
+- `dmPolicy` - DM policy getter/setter
+- `disable()` - Disable channel account
+
+#### Heartbeat Adapter
+
+The heartbeat adapter enables connection health monitoring:
+
+```typescript
+import { ztmChatHeartbeatAdapter } from './channel/heartbeat.js';
+
+export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
+  // ... other properties
+  heartbeat: ztmChatHeartbeatAdapter,
+};
+```
+
+**Features**:
+- `checkReady()` - Verify ZTM Agent connectivity to mesh network
+- `resolveRecipients()` - Resolve heartbeat notification recipients
+
+#### Agent Tools Factory
+
+The agent tools factory provides custom tools for AI agents:
+
+```typescript
+import { createZTMChatAgentTools } from './channel/tools.js';
+
+export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
+  // ... other properties
+  agentTools: createZTMChatAgentTools,
+};
+```
+
+**Available Tools**:
+- `ztm_status` - Get ZTM connection status
+- `ztm_mesh_info` - Get detailed mesh network information
+- `ztm_peers` - List all peers in the mesh
+
+**See also**:
+- [Heartbeat Adapter](channel/heartbeat.md)
+- [Agent Tools](channel/tools.md)
+
 ---
 
 ## Gateway Pipeline

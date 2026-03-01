@@ -5,8 +5,15 @@
  */
 
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import { container, DEPENDENCIES, type ILogger, type IApiClientFactory, type IDiscovery } from '../di/index.js';
+import {
+  container,
+  DEPENDENCIES,
+  type ILogger,
+  type IApiClientFactory,
+  type IDiscovery,
+} from '../di/index.js';
 import { getOrDefault } from '../utils/guards.js';
+import { getZTMChatConfig } from '../utils/ztm-config.js';
 import { resolveZTMChatAccount } from './config.js';
 
 /**
@@ -22,24 +29,6 @@ export interface DirectoryUser {
         meshName?: string;
       }
     | { username: string; endpoint?: string };
-}
-
-/**
- * Type guard to safely extract ZTMChatConfig from unknown
- */
-function isZTMChatConfig(config: unknown): config is import('../types/config.js').ZTMChatConfig {
-  return (
-    typeof config === 'object' && config !== null && 'username' in config && 'agentUrl' in config
-  );
-}
-
-/**
- * Safely get config with type guard
- */
-function getZTMChatConfig(account: {
-  config: unknown;
-}): import('../types/config.js').ZTMChatConfig | null {
-  return isZTMChatConfig(account.config) ? account.config : null;
 }
 
 /**
