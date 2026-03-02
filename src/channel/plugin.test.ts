@@ -167,6 +167,14 @@ describe('plugin', () => {
       expect(p.pairing.normalizeAllowEntry('  User123  ')).toBe('user123');
     });
 
+    it('should return empty string for null allow entry', () => {
+      expect(p.pairing.normalizeAllowEntry(null as unknown as string)).toBe('');
+    });
+
+    it('should return empty string for undefined allow entry', () => {
+      expect(p.pairing.normalizeAllowEntry(undefined as unknown as string)).toBe('');
+    });
+
     it('should have notifyApproval function', () => {
       expect(typeof p.pairing.notifyApproval).toBe('function');
     });

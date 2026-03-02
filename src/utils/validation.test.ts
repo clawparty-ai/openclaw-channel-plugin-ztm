@@ -182,6 +182,20 @@ describe('validation utilities', () => {
       expect(normalizeUsername('user_123')).toBe('user_123');
       expect(normalizeUsername('test-user')).toBe('test-user');
     });
+
+    it('should return empty string for null input', () => {
+      expect(normalizeUsername(null as unknown as string)).toBe('');
+    });
+
+    it('should return empty string for undefined input', () => {
+      expect(normalizeUsername(undefined as unknown as string)).toBe('');
+    });
+
+    it('should return empty string for non-string input', () => {
+      expect(normalizeUsername(123 as unknown as string)).toBe('');
+      expect(normalizeUsername({} as unknown as string)).toBe('');
+      expect(normalizeUsername([] as unknown as string)).toBe('');
+    });
   });
 
   describe('Security - URL validation edge cases', () => {
