@@ -2,9 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.2 - 2026-03-02
+
+[6ed2eaf](6ed2eaffb264507f9de452b3a7c653d7d60f9f09)...[be1f0c8](be1f0c8314b520be1728c1aa1f00a7dca3efa2aa)
+
+
+
+### 🚀 Features
+
+- Implement OpenClaw ChannelPlugin adapters (#33) ([f0bda74](f0bda74a239c5e3521616fa44a2aeb910f47ee15)) - (Lin Yang)
+- Implement complete ChannelOnboardingAdapter (#34) ([7a37d1b](7a37d1b4a68deed68bec7bb257c9bb1b3a633a40)) - (Lin Yang)
+- Add TypeBox parameters and documentation (#35) ([d4b857c](d4b857cb4361a1b89d439bfd1ea5d3e3d67e21c6)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Correct progressive compatibility documentation ([057ca58](057ca580faa7b417d4945f29044b5a0e69d76dc8)) - (Lin Yang)
+- Patch fast-xml-parser stack overflow vulnerability ([8dd2e1b](8dd2e1b355756dcc7f0322539d2081fad8fdda46)) - (Lin Yang)
+- Remove duplicate pairing state, delegate to OpenClaw (#36) ([d5e71d8](d5e71d80856d844cff606e55c54a5a4fa1a0492d)) - (Lin Yang)
+
+
+
+
+### ✅ Testing
+
+- Unify E2E test management with shared fixtures ([a598aff](a598aff40ffc9686220bd6c8ba5e741dae6a4eab)) - (Lin Yang)
+
+
+### 🔨 Build
+
+- Bump lint-staged from 16.2.7 to 16.3.1 (#38) ([e142861](e142861d2bbb65fb47684945e8e2831b62c32da0)) - (dependabot[bot])
+- Bump @types/node from 24.10.15 to 24.11.0 (#37) ([5d5e98c](5d5e98c591396147debf92fd8905d52a87f6cd9c)) - (dependabot[bot])
+
+### 📖 Documentation
+
+- Comprehensive architecture.md documentation ([4528209](452820985289e07247c2fddf56c32ef9d0c42974)) - (Lin Yang)
+- Optimize and reorganize architecture documentation ([828640c](828640c834c890913ec381002c0576ba26d51a36)) - (Lin Yang)
+
+
 ## 2026.2.28 - 2026-02-28
 
-[d9a3694](d9a369440c483a38ddc3bdb53ae5a0c1079cef52)...[7e4f74f](7e4f74f21b57e597f4d3e7c7ebb016d35da70137)
+[d9a3694](d9a369440c483a38ddc3bdb53ae5a0c1079cef52)...[6ed2eaf](6ed2eaffb264507f9de452b3a7c653d7d60f9f09)
 
 
 
