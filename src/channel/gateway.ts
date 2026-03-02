@@ -21,8 +21,10 @@ import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
 import { probeAccount as probeAccountConnectivity } from './connectivity-manager.js';
-import { createInboundContext, createMessageCallback } from './message-dispatcher.js';
+import { createMessageCallback } from './message-dispatcher.js';
 import type { StepContext } from './gateway-pipeline.types.js';
+import { dispatchInboundMessage } from './gateway-message-handler.js';
+import { retryMessageLater } from './gateway-message-retry.js';
 
 // ============================================================================
 // Local Types
@@ -302,164 +304,13 @@ export async function logoutAccountGateway({
   return { cleared: true };
 }
 
-// ============================================================================
-// Message Callback Builder (legacy - delegates to message-dispatcher)
-// ============================================================================
-
-// Retry configuration
-const MESSAGE_RETRY_MAX_ATTEMPTS = 3;
-const MESSAGE_RETRY_DELAY_MS = 2000;
-
-/**
- * Check if an error is retryable
- *
- * Errors that can be retried include:
- * - Network timeouts
- * - API errors with 5xx status codes
-/**
- * Retry a message later with exponential backoff
- *
- * @param state - Account runtime state
- * @param msg - The message to retry
- * @param attempt - Current attempt number (1-based)
- * @returns Promise that resolves when retry is scheduled
- */
-async function retryMessageLater(
-  state: AccountRuntimeState,
-  msg: ZTMChatMessage,
-  attempt: number
-): Promise<void> {
-  // CRITICAL: Don't schedule retry if account is shutting down
-  if (state.watchAbortController?.signal.aborted || state.started === false) {
-    logger.debug(`[${state.accountId}] Skipping retry - account is stopping`);
-    return;
-  }
-
-  const timerKey = msg.id;
-
-  if (attempt >= MESSAGE_RETRY_MAX_ATTEMPTS) {
-    logger.error(
-      `[${state.accountId}] Message from ${msg.sender} failed after ${MESSAGE_RETRY_MAX_ATTEMPTS} attempts, giving up`
-    );
-    // Clean up timer reference
-    state.messageRetries?.delete(timerKey);
-    return;
-  }
-
-  // Initialize map if needed
-  if (!state.messageRetries) {
-    state.messageRetries = new Map();
-  }
-
-  // Exponential backoff: 2s, 4s, 8s...
-  const delay = MESSAGE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-  logger.warn(
-    `[${state.accountId}] Scheduling retry ${attempt + 1}/${MESSAGE_RETRY_MAX_ATTEMPTS} for message from ${msg.sender} in ${delay}ms`
-  );
-
-  // Create timer and track it - map entry set before callback runs
-  const timerId = setTimeout(async () => {
-    try {
-      // Clean up this timer
-      state.messageRetries?.delete(timerKey);
-
-      const rt = container.get(DEPENDENCIES.RUNTIME).get();
-      await dispatchInboundMessage(state, state.accountId, state.config!, msg, rt);
-      logger.info(`[${state.accountId}] Retry succeeded for message from ${msg.sender}`);
-    } catch (error) {
-      const errorMsg = extractErrorMessage(error);
-      logger.error(
-        `[${state.accountId}] Retry ${attempt + 1} failed for message from ${msg.sender}: ${errorMsg}`
-      );
-      if (isRetryableError(error)) {
-        await retryMessageLater(state, msg, attempt + 1);
-      }
-    }
-  }, delay);
-
-  // Track timer for cleanup on account stop/remove
-  state.messageRetries.set(timerKey, timerId);
-}
-
-/**
- * Create dispatcher options for reply delivery
- * Extracted to reduce nesting in buildMessageCallback
- *
- * @param state - Account runtime state
- * @param msg - The incoming message to reply to
- * @param accountId - The account identifier
- * @param agentId - The AI agent identifier
- * @param rt - ZTM runtime instance
- * @returns Dispatcher options object with deliver and onError callbacks
- */
-function createReplyDispatcherOptions(
-  state: AccountRuntimeState,
-  msg: ZTMChatMessage,
-  accountId: string,
-  agentId: string,
-  rt: ReturnType<typeof import('../runtime/index.js').getZTMRuntime>
-) {
-  return {
-    humanDelay: rt.channel.reply.resolveHumanDelayConfig({}, agentId),
-    deliver: async (payload: { text?: string; mediaUrl?: string }) => {
-      const replyText = payload.text ?? '';
-      if (!replyText) return;
-      const groupInfo =
-        msg.isGroup && msg.groupId && msg.groupCreator
-          ? { creator: msg.groupCreator, group: msg.groupId }
-          : undefined;
-      await sendZTMMessage(state, msg.sender, replyText, groupInfo);
-    },
-    onError: (err: unknown) => {
-      logger.error?.(`[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`);
-    },
-  };
-}
-
-/**
- * Dispatch inbound message to AI agent
- * Extracted to reduce nesting in buildMessageCallback
- *
- * @param state - Account runtime state
- * @param accountId - The account identifier
- * @param config - ZTM Chat configuration
- * @param msg - The incoming message to dispatch
- * @param rt - ZTM runtime instance
- * @returns Promise that resolves when dispatch completes
- */
-async function dispatchInboundMessage(
-  state: AccountRuntimeState,
-  accountId: string,
-  config: ZTMChatConfig,
-  msg: ZTMChatMessage,
-  rt: ReturnType<typeof import('../runtime/index.js').getZTMRuntime>
-): Promise<void> {
-  const { ctxPayload, matchedBy, agentId } = createInboundContext({
-    rt,
-    msg,
-    config,
-    accountId,
-  });
-
-  logger.info?.(
-    `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`
-  );
-
-  const dispatcherOptions = createReplyDispatcherOptions(state, msg, accountId, agentId, rt);
-
-  const { queuedFinal } = await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-    ctx: ctxPayload,
-    cfg: {},
-    dispatcherOptions,
-  });
-
-  if (!queuedFinal) {
-    logger.info?.(`[${accountId}] No response generated for message from ${msg.sender}`);
-  }
-}
-
 /**
  * Build message callback for account startup
+ * @remarks
+ * This function creates a callback that handles incoming messages.
+ * Message dispatch and retry logic has been extracted to separate modules:
+ * - gateway-message-handler.ts: Message dispatching
+ * - gateway-message-retry.ts: Retry logic with exponential backoff
  */
 export function buildMessageCallback(
   state: AccountRuntimeState,
