@@ -215,7 +215,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // ---------------------------------------------------------------------------
   pairing: {
     idLabel: 'username',
-    normalizeAllowEntry: entry => entry.trim().toLowerCase(),
+    normalizeAllowEntry: entry => entry?.trim()?.toLowerCase() ?? '',
     notifyApproval: async ({ cfg, id }) => {
       const account = resolveZTMChatAccount({ cfg });
       const config = getZTMChatConfig(account);

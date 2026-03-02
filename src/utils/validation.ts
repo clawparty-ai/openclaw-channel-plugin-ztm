@@ -67,6 +67,7 @@ export type ValidationResult<T = void> =
  * Trims whitespace and converts to lowercase
  */
 export function normalizeUsername(username: string): string {
+  if (typeof username !== 'string') return '';
   return username.trim().toLowerCase();
 }
 
