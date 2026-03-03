@@ -93,7 +93,7 @@ function getZTMChatAccount(
   const channels = cfg.channels as
     | Record<string, { accounts?: Record<string, ZTMChatConfig> }>
     | undefined;
-  const ztmChat = channels?.ztmChat;
+  const ztmChat = channels?.['ztm-chat'];
 
   if (!ztmChat) return null;
 
@@ -293,7 +293,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       ...cfg,
       channels: {
         ...cfg.channels,
-        ztmChat: {
+        'ztm-chat': {
           enabled: true,
           accounts: {
             [accountId]: wizardResult.config as ZTMChatConfig,
@@ -311,11 +311,11 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
   dmPolicy: {
     label: 'ZTM Chat',
     channel: 'ztm-chat',
-    policyKey: 'channels.ztmChat.dmPolicy',
-    allowFromKey: 'channels.ztmChat.allowFrom',
+    policyKey: 'channels.ztm-chat.dmPolicy',
+    allowFromKey: 'channels.ztm-chat.allowFrom',
     getCurrent: (cfg: OpenClawConfig): DmPolicy => {
       const channels = cfg.channels as Record<string, { dmPolicy?: DmPolicy }> | undefined;
-      return channels?.ztmChat?.dmPolicy ?? 'pairing';
+      return channels?.['ztm-chat']?.dmPolicy ?? 'pairing';
     },
     setPolicy: (cfg: OpenClawConfig, policy: DmPolicy): OpenClawConfig => {
       const newCfg = { ...cfg };
@@ -324,10 +324,10 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       }
       const channels = newCfg.channels as Record<string, unknown>;
 
-      if (!channels.ztmChat) {
-        channels.ztmChat = {};
+      if (!channels['ztm-chat']) {
+        channels['ztm-chat'] = {};
       }
-      const ztmChat = channels.ztmChat as Record<string, unknown>;
+      const ztmChat = channels['ztm-chat'] as Record<string, unknown>;
 
       ztmChat.dmPolicy = policy;
 
@@ -344,7 +344,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       return newCfg;
     }
     const channels = newCfg.channels as Record<string, unknown>;
-    delete channels.ztmChat;
+    delete channels['ztm-chat'];
     return newCfg;
   },
 
