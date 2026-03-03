@@ -884,7 +884,20 @@ describe('Channel Gateway', () => {
       const { validateZTMChatConfig } = await import('../config/index.js');
       (validateZTMChatConfig as any).mockReturnValue({
         valid: false,
-        errors: ['agentUrl is required', 'username is required'],
+        errors: [
+          {
+            field: 'agentUrl',
+            reason: 'missing',
+            value: undefined,
+            message: 'agentUrl is required',
+          },
+          {
+            field: 'username',
+            reason: 'missing',
+            value: undefined,
+            message: 'username is required',
+          },
+        ],
       });
 
       const ctx = {
@@ -893,7 +906,7 @@ describe('Channel Gateway', () => {
       };
 
       await expect(startAccountGateway(ctx)).rejects.toThrow(
-        'agentUrl is required; username is required'
+        'agentUrl: agentUrl is required; username: username is required'
       );
     });
 

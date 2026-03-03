@@ -313,7 +313,8 @@ export async function processChangedPaths(
             MESSAGE_PROCESS_TIMEOUT_MS
           )
           .catch((err: unknown) => {
-            logger.error(`[${state.accountId}] Timeout processing peer message: ${err}`);
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            logger.error(`[${state.accountId}] Timeout processing peer message: ${errorMsg}`);
             throw err; // Re-throw to propagate error to caller
           })
       );
@@ -337,7 +338,8 @@ export async function processChangedPaths(
             MESSAGE_PROCESS_TIMEOUT_MS
           )
           .catch((err: unknown) => {
-            logger.error(`[${state.accountId}] Timeout processing group message: ${err}`);
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            logger.error(`[${state.accountId}] Timeout processing group message: ${errorMsg}`);
             throw err; // Re-throw to propagate error to caller
           })
       );

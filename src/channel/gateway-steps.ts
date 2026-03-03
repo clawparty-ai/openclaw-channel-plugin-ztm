@@ -183,7 +183,7 @@ function resolveAndValidateConfig(
   const validation = validateZTMChatConfig(config);
 
   if (!validation.valid) {
-    throw new Error(validation.errors.join('; '));
+    throw new Error(validation.errors.map(e => `${e.field}: ${e.message}`).join('; '));
   }
 
   const permitPath = resolveAccountPermitPath(accountId);
@@ -204,6 +204,7 @@ async function preloadMessageState(accountId: string, log?: GatewayLogger): Prom
   const { getAccountMessageStateStore } = await import('../runtime/store.js');
   const messageStateStore = getAccountMessageStateStore(accountId);
   messageStateStore.ensureLoaded().catch(err => {
-    log?.error?.(`[${accountId}] Failed to pre-load message state: ${err}`);
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    log?.error?.(`[${accountId}] Failed to pre-load message state: ${errorMsg}`);
   });
 }
