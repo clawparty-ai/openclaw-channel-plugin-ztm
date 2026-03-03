@@ -52,16 +52,3 @@ export async function startMessageWatcher(
   // Note: pairing requests are only triggered when users send new messages in watch loop
   startWatchLoop(state, rt, messagePath, context, abortSignal);
 }
-
-// Re-export from watcher-loop.ts for backward compatibility
-export {
-  WatchLoopController,
-  startWatchLoop,
-  processChangedPaths,
-  processChangedPeer,
-  processChangedGroup,
-} from './watcher-loop.js';
-export type { WatchContext, WatchResult } from './watcher-loop.js';
-
-// Re-export from watcher-sync.ts for backward compatibility
-export { performInitialSync, performFullSync } from './watcher-sync.js';
