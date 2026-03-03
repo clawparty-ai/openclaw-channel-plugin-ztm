@@ -27,6 +27,7 @@ export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAcco
   lastError: string | null;
   lastInboundAt: number | null;
   lastOutboundAt: number | null;
+  lastEventAt: number | null;
 } {
   const accountStates = getAllAccountStates();
   const state = accountStates.get(account.accountId);
@@ -45,5 +46,12 @@ export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAcco
     lastError: state?.lastError ?? null,
     lastInboundAt: state?.lastInboundAt ? Number(state.lastInboundAt) : null,
     lastOutboundAt: state?.lastOutboundAt ? Number(state.lastOutboundAt) : null,
+    // lastEventAt: 取 lastInboundAt 和 lastOutboundAt 中更近的时间，表示最后有活动的时间
+    lastEventAt: (() => {
+      const inbound = state?.lastInboundAt ? Number(state.lastInboundAt) : 0;
+      const outbound = state?.lastOutboundAt ? Number(state.lastOutboundAt) : 0;
+      const max = Math.max(inbound, outbound);
+      return max > 0 ? max : null;
+    })(),
   };
 }
