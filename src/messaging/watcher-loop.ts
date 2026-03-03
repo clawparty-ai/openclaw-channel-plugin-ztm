@@ -34,7 +34,6 @@ export type WatchResult =
 export interface WatchContext {
   state: AccountRuntimeState;
   rt: PluginRuntime;
-  messagePath: string;
   messageSemaphore: Semaphore;
   abortSignal?: AbortSignal;
 }
@@ -53,7 +52,6 @@ export class WatchLoopController {
   constructor(
     private readonly state: AccountRuntimeState,
     private readonly rt: PluginRuntime,
-    private readonly messagePath: string,
     private readonly context: MessagingContext,
     private readonly abortSignal?: AbortSignal
   ) {
@@ -106,7 +104,7 @@ export class WatchLoopController {
       }
 
       // Process changed paths
-      this.messagesReceivedInCycle = await this.processChangedPaths(
+      this.messagesReceivedInCycle = await this.processWatchChanges(
         result.items,
         this.messagesReceivedInCycle
       );
@@ -141,7 +139,7 @@ export class WatchLoopController {
       return { success: false, errorMessage: 'API client or config not available' };
     }
 
-    const changedResult = await this.state.chatReader.watchChanges(this.messagePath);
+    const changedResult = await this.state.chatReader.watchChanges();
 
     if (!changedResult.ok) {
       return { success: false, errorMessage: changedResult.error?.message ?? 'Watch failed' };
@@ -188,7 +186,7 @@ export class WatchLoopController {
   /**
    * Process changed paths from watch result
    */
-  private async processChangedPaths(
+  private async processWatchChanges(
     items: WatchChangeItem[],
     previousMessagesReceived: boolean
   ): Promise<boolean> {
@@ -200,11 +198,10 @@ export class WatchLoopController {
       );
     }
 
-    return processChangedPaths(
+    return processWatchChanges(
       {
         state: this.state,
         rt: this.rt,
-        messagePath: this.messagePath,
         messageSemaphore: this.messageSemaphore,
         abortSignal: this.abortSignal,
       },
@@ -245,11 +242,10 @@ export class WatchLoopController {
 export function startWatchLoop(
   state: AccountRuntimeState,
   rt: PluginRuntime,
-  messagePath: string,
   context: MessagingContext,
   abortSignal?: AbortSignal
 ): void {
-  const controller = new WatchLoopController(state, rt, messagePath, context, abortSignal);
+  const controller = new WatchLoopController(state, rt, context, abortSignal);
   controller.start();
 }
 
@@ -258,7 +254,7 @@ export function startWatchLoop(
  *
  * @returns true if any messages were actually processed
  */
-export async function processChangedPaths(
+export async function processWatchChanges(
   ctx: WatchContext,
   changedItems: WatchChangeItem[],
   messagesReceivedInCycle: boolean,

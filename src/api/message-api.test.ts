@@ -406,7 +406,7 @@ describe('createMessageApi', () => {
       // Set initial poll time to older than the message
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -442,7 +442,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -476,7 +476,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -509,7 +509,7 @@ describe('createMessageApi', () => {
       const initialTime = now - 10000;
       messageApi.setLastPollTime(initialTime);
 
-      await messageApi.watchChanges('prefix');
+      await messageApi.watchChanges();
 
       const lastPollTime = messageApi.getLastPollTime();
       expect(lastPollTime).toBe(now);
@@ -539,7 +539,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -577,7 +577,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -624,7 +624,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -679,7 +679,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -726,7 +726,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -766,7 +766,7 @@ describe('createMessageApi', () => {
 
       messageApi.setLastPollTime(now - 10000);
 
-      const result = await messageApi.watchChanges('prefix');
+      const result = await messageApi.watchChanges();
 
       expect(result.ok).toBe(true);
       if (result.ok) {
