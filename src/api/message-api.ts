@@ -345,12 +345,10 @@ export function createMessageApi(
     /**
      * Watch for changes in chats
      *
-     * @param prefix - Filter prefix for chats to watch
      * @returns Promise resolving to a Result containing array of WatchChangeItem objects, or failure with ZTMReadError
      */
-    async watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>> {
-      const safePrefix = sanitizeForLog(prefix);
-      logger.debug?.(`[ZTM API] Watching for changes with prefix="${safePrefix}"`);
+    async watchChanges(): Promise<Result<WatchChangeItem[], ZTMReadError>> {
+      logger.debug?.(`[ZTM API] Watching for changes`);
 
       const chatsResult = await getChats();
       if (!chatsResult.ok) {
@@ -359,7 +357,7 @@ export function createMessageApi(
           operation: 'list',
           cause: chatsResult.error ?? new Error('Unknown error'),
         });
-        logger.error?.(`[ZTM API] Watch failed for ${safePrefix}: ${error.message}`);
+        logger.error?.(`[ZTM API] Watch failed: ${error.message}`);
         return failure(error);
       }
 

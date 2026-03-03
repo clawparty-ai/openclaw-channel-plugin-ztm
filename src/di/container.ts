@@ -109,7 +109,7 @@ export interface IChatReader {
     since?: number,
     before?: number
   ): AsyncResult<unknown, Error>;
-  watchChanges(prefix: string): AsyncResult<unknown, Error>;
+  watchChanges(): AsyncResult<unknown, Error>;
 }
 
 /**

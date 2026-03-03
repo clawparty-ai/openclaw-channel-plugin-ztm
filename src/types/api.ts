@@ -165,8 +165,8 @@ export interface ZTMApiClient {
   // File Operations - Return Result types with appropriate errors
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /** Watch for changes in storage with given prefix. Returns Result with changed items or error. */
-  watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZTMReadError>>;
+  /** Watch for changes in storage. Returns Result with changed items or error. */
+  watchChanges(): Promise<Result<WatchChangeItem[], ZTMReadError>>;
 
   /** Discover active peers by scanning shared storage. Returns Result with users or discovery error. */
   listUsers(): Promise<Result<ZTMUserInfo[], ZTMDiscoveryError>>;

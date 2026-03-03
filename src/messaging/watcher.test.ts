@@ -600,7 +600,7 @@ describe('performInitialSync edge cases', () => {
   });
 });
 
-describe('processChangedPaths scenarios', () => {
+describe('processWatchChanges scenarios', () => {
   let mockState: AccountRuntimeState;
   let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
   const originalSetTimeout = global.setTimeout;
@@ -1516,7 +1516,7 @@ describe('performFullSync edge cases', () => {
   });
 });
 
-describe('processChangedPaths empty items', () => {
+describe('processWatchChanges empty items', () => {
   it('should return early when watch returns empty items', async () => {
     // Test that empty watch results are handled gracefully
     const mockApiClient = {
@@ -1651,7 +1651,7 @@ describe('constants verification', () => {
 });
 
 // Additional error handling tests for uncovered paths
-describe('processChangedPaths empty items', () => {
+describe('processWatchChanges empty items', () => {
   let mockState: AccountRuntimeState;
   let mockContext: MessagingContext;
   let mockApiClient: any;
@@ -1696,11 +1696,11 @@ describe('processChangedPaths empty items', () => {
   });
 
   it('should return false when changedItems is empty', async () => {
-    // Import the function that handles processChangedPaths
+    // Import the function that handles processWatchChanges
     const { startMessageWatcher } = await import('./watcher.js');
 
     // When items array is empty, should return false (no messages processed)
-    // This tests the early return in processChangedPaths
+    // This tests the early return in processWatchChanges
     await startMessageWatcher(mockState, mockContext);
     // Should complete without error
   });
@@ -2057,7 +2057,7 @@ describe('WatchLoopController behavior', () => {
 
       // Note: Actual concurrent processing verification is complex due to
       // async timing. The semaphore is created in WatchLoopController constructor
-      // and used in messageSemaphore.execute() calls within processChangedPaths.
+      // and used in messageSemaphore.execute() calls within processWatchChanges.
       // This test verifies the constant is defined correctly.
     });
   });
@@ -3133,9 +3133,9 @@ describe('concurrent message processing order', () => {
   });
 });
 
-// Tests for uncovered lines in processChangedPaths (lines 366-379)
+// Tests for uncovered lines in processWatchChanges (lines 366-379)
 // This tests the scenario where changedItems is empty but messages were received in a previous cycle
-describe('processChangedPaths full sync trigger', () => {
+describe('processWatchChanges full sync trigger', () => {
   let mockState: AccountRuntimeState;
   let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
   const originalSetTimeout = global.setTimeout;

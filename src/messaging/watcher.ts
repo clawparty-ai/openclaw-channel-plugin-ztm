@@ -37,8 +37,6 @@ export async function startMessageWatcher(
   const { chatReader } = state;
   if (!chatReader) return;
 
-  const messagePath = '/apps/ztm/chat/shared/';
-
   // Step 1: Get initial allowFrom store (uses cache)
   const rt = container.get(DEPENDENCIES.RUNTIME).get();
   const storeAllowFrom = await context.allowFromRepo.getAllowFrom(state.accountId, rt);
@@ -50,5 +48,5 @@ export async function startMessageWatcher(
 
   // Step 3: Start watch loop
   // Note: pairing requests are only triggered when users send new messages in watch loop
-  startWatchLoop(state, rt, messagePath, context, abortSignal);
+  startWatchLoop(state, rt, context, abortSignal);
 }
