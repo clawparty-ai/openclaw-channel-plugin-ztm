@@ -116,7 +116,7 @@ export class Semaphore {
 
 | Level | Constant | Permits | Purpose | Location |
 |-------|----------|---------|---------|----------|
-| 1 | `MESSAGE_SEMAPHORE_PERMITS` | 5-10 | Message processing | `watcher.ts`, `polling.ts` |
+| 1 | `MESSAGE_SEMAPHORE_PERMITS` | 5-10 | Message processing | `watcher.ts` |
 | 2 | `CALLBACK_SEMAPHORE_PERMITS` | 10 | AI callbacks | `state.callbackSemaphore` |
 | 3 | Binary (1) | 1 | Watermark updates | `store.ts` per-account |
 

@@ -171,7 +171,7 @@ Loads persisted watermarks:
 Completes initialization:
 - Creates message callback function
 - Registers callback with messageCallbacks Set
-- Starts message watcher (watch or polling mode)
+- Starts message watcher (watch mode)
 - Sets up periodic cleanup interval (5 minutes)
 - Returns cleanup function for shutdown
 

@@ -14,13 +14,10 @@ export const API_TIMEOUT_MIN_MS = 1000; // 1 second - minimum allowed timeout
 export const API_TIMEOUT_MAX_MS = 300000; // 5 minutes - maximum allowed timeout
 
 // Polling intervals
-export const POLLING_INTERVAL_DEFAULT_MS = 2000; // 2 seconds - default polling interval
-export const POLLING_INTERVAL_MIN_MS = 1000; // 1 second - minimum polling interval
 export const PROBE_TIMEOUT_MS = 10000; // 10 seconds - account probe timeout
 
 // Watch intervals
 export const WATCH_INTERVAL_MS = 1000; // 1 second - watch loop interval
-export const WATCH_ERROR_THRESHOLD = 5; // 5 consecutive errors before polling fallback
 export const FULL_SYNC_DELAY_MS = 30000; // 30 seconds - delay before full sync
 
 // Retry delays
@@ -44,7 +41,7 @@ export const STATE_FLUSH_MAX_DELAY_MS = 5000; // 5 seconds - max delay before fo
 export const INITIAL_SYNC_MAX_HISTORY_MS = 5 * 60 * 1000; // 5 minutes - limit historical messages on first sync
 
 // Chat processing limits
-export const MAX_CHATS_PER_POLL = 100; // Maximum chats to process per polling cycle
+export const MAX_CHATS_PER_SYNC = 100; // Maximum chats to process per sync cycle
 export const MESSAGE_SEMAPHORE_PERMITS = 5; // Maximum concurrent message processing operations
 export const MESSAGE_PROCESS_TIMEOUT_MS = 10000; // 10 seconds - timeout for individual message processing
 export const CALLBACK_SEMAPHORE_PERMITS = 10; // Maximum concurrent callback executions

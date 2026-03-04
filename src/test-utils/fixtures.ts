@@ -237,7 +237,7 @@ export function createMessages(count: number, sender = 'alice'): ZTMMessage[] {
 }
 
 // ============================================================================
-// Mock Chat Factory (for polling-watcher tests)
+// Mock Chat Factory (for watcher tests)
 // ============================================================================
 
 export interface MockChatOptions {
@@ -248,7 +248,7 @@ export interface MockChatOptions {
 }
 
 /**
- * Create a mock ZTMChat for polling watcher tests
+ * Create a mock ZTMChat for watcher tests
  * Supports both positional args and options object for compatibility
  */
 export function createMockChat(

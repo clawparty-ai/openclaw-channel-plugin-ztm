@@ -1,7 +1,7 @@
 /**
- * Message Watching and Polling
+ * Message Watching
  * @module messaging/watcher
- * Monitors for new messages via Watch mechanism with fallback to polling
+ * Monitors for new messages via Watch mechanism
  *
  * This file serves as the entry point and re-exports from specialized modules:
  * - watcher-loop.ts: Watch loop lifecycle, error recovery
@@ -21,8 +21,8 @@ import { performInitialSync } from './watcher-sync.js';
  * The watcher:
  * 1. Seeds API client with persisted file timestamps
  * 2. Performs initial sync of all existing messages
- * 3. Starts a watch loop that polls for changes every 1 second
- * 4. Falls back to polling if watch errors accumulate
+ * 3. Starts a watch loop that checks for changes every 1 second
+ * 4. Uses Fibonacci backoff for error resilience (1s, 1s, 2s, 3s, 5s... max 30s)
  *
  * @param state - Account runtime state with config and API client
  * @param context - Messaging context with repository dependencies

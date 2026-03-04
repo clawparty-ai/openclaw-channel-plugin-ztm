@@ -19,7 +19,7 @@ The ZTM Chat Channel Plugin is a TypeScript-based integration between OpenClaw (
 | Principle | Description | Implementation |
 |-----------|-------------|----------------|
 | **Account Isolation** | Each account maintains completely isolated state | Separate AccountRuntimeState per account with isolated API clients, callbacks, and watermarks |
-| **Fault Tolerance** | System continues operating despite partial failures | Exponential backoff retry, watch/polling fallback, graceful degradation |
+| **Fault Tolerance** | System continues operating despite partial failures | Fibonacci backoff retry, graceful degradation |
 | **Message Ordering** | Prevents duplicate processing across restarts | Persistent watermark tracking with atomic updates |
 | **Concurrency Control** | Prevents resource exhaustion under load | Semaphore-based limiting for message processing and callbacks |
 | **Progressive Enhancement** | Works across OpenClaw versions | Dual configuration format (accounts + bindings) for compatibility |
@@ -41,8 +41,7 @@ graph TB
         end
 
         subgraph "Messaging Pipeline"
-            Watcher["watcher.ts<br/>Long-polling Watcher"]
-            Poller["polling.ts<br/>Polling Fallback"]
+            Watcher["watcher.ts<br/>Message Watcher"]
             ChatProc["chat-processor.ts<br/>Chat Orchestration"]
             Processor["strategies/message-strategies.ts<br/>Message Processing"]
             Dispatcher["dispatcher.ts<br/>Message Dispatch"]
@@ -117,7 +116,7 @@ graph TB
 
 1. **Account-Based Multi-Tenancy**: The system supports multiple ZTM accounts simultaneously, each with isolated configuration, state, and message processing pipelines. This enables a single OpenClaw instance to manage multiple bot identities across different meshes.
 
-2. **Watch + Polling Hybrid**: The primary message reception mechanism uses ZTM's Watch API for real-time notifications. When watch errors accumulate beyond a threshold (configurable, default 5), the system automatically falls back to polling mode for reliability.
+2. **Watch with Fibonacci Backoff**: The primary message reception mechanism uses ZTM's Watch API for real-time notifications. When watch errors occur, the system uses Fibonacci backoff for recovery (1s, 1s, 2s, 3s, 5s... capped at 30s).
 
 3. **Watermark-Based Deduplication**: Each message source (peer or group) maintains a watermark timestamp of the last processed message. This prevents reprocessing messages after restarts and handles ZTM's append-only message storage model.
 
@@ -225,14 +224,14 @@ For detailed Onboarding Adapter documentation, see [docs/channel/onboarding-adap
 
 ### 2. Messaging Pipeline
 
-The Messaging Pipeline handles message reception, processing, policy enforcement, and dispatch to AI agents. It uses a hybrid watch/polling mechanism for reliable message delivery.
+The Messaging Pipeline handles message reception, processing, policy enforcement, and dispatch to AI agents. It uses Watch API with Fibonacci backoff for reliable message delivery.
 
 #### Pipeline Stages
 
 ```mermaid
 flowchart LR
     subgraph "Receive Stage"
-        A[Watcher/Poller] --> B[ChatProcessor]
+        A[Watcher] --> B[ChatProcessor]
         B --> C[Processor]
     end
 
@@ -269,11 +268,10 @@ flowchart LR
 
 | Component | File Location | Responsibility | Configuration |
 |-----------|---------------|----------------|---------------|
-| **Watcher** | `src/messaging/watcher.ts` | Long-poll for new messages via Watch API | 1s interval, 5 error threshold → polling fallback |
-| **Poller** | `src/messaging/polling.ts` | Fallback polling when watch fails | 2s interval (configurable) |
+| **Watcher** | `src/messaging/watcher.ts` | Watch for new messages via Watch API | 1s interval, Fibonacci backoff on error |
 | **Processor** | `src/messaging/strategies/message-strategies.ts` | Strategy pattern for message processing (helpers in `message-processor-helpers.ts`) | Peer/Group strategies with unified entry point |
 | **Dispatcher** | `src/messaging/dispatcher.ts` | Execute callbacks with semaphore control | 10 concurrent callbacks |
-| **Outbound** | `src/messaging/outbound.ts` | Send messages to peers/groups | Retry with exponential backoff |
+| **Outbound** | `src/messaging/outbound.ts` | Send messages to peers/groups | Retry with Fibonacci backoff |
 
 #### Message Processing Details
 
@@ -378,7 +376,7 @@ Each account maintains a comprehensive state object:
 | `callbackSemaphore` | Semaphore | Controls callback concurrency | 10 permits, prevents overload |
 | `watchInterval` | Interval | Watch loop timer | Cleared on stop |
 | `watchAbortController` | AbortController | Signals watch shutdown | Created per start |
-| `watchErrorCount` | number | Consecutive watch errors | Reset on success, triggers polling |
+| `watchErrorCount` | number | Consecutive watch errors | Reset on success, triggers backoff |
 | `allowFromCache` | Cached value | Approved users cache | 30s TTL, request coalescing |
 | `groupPermissionCache` | LRU Cache | Group permissions cache | 60s TTL, max 500 entries |
 | `messageRetries` | Map | Scheduled retry timers | Cleared on stop |
@@ -680,28 +678,21 @@ sequenceDiagram
     end
 ```
 
-### Watch + Polling Mode Switching
+### Watch Mode with Fibonacci Backoff
 
 ```mermaid
 stateDiagram-v2
     [*] --> Idle: Start
     Idle --> WatchMode: Begin watching
-    WatchMode --> WatchMode: Normal polling
-    WatchMode --> PollingMode: Consecutive failures > threshold
-    PollingMode --> WatchMode: Recovery success
+    WatchMode --> WatchMode: Normal operation
+    WatchMode --> WatchMode: Error - increase backoff
     WatchMode --> [*]: Stop
-    PollingMode --> [*]: Stop
 
     note right of WatchMode
-        Long-polling mode
+        Watch API mode
         High real-time
-        Interval: 1s
-    end note
-
-    note right of PollingMode
-        Polling fallback mode
-        High reliability
-        Interval: 2s (configurable)
+        Fibonacci backoff on error
+        (1s, 1s, 2s, 3s, 5s... capped at 30s)
     end note
 ```
 
@@ -742,7 +733,7 @@ graph LR
 
 | Stage | Purpose | Key Mechanism |
 |-------|---------|---------------|
-| **Fetch** | Receive messages | Long-poll watcher + polling fallback |
+| **Fetch** | Receive messages | Watch API with Fibonacci backoff |
 | **Process** | Validate & normalize | Strategy pattern for peer/group messages |
 | **Dispatch** | Policy check & notify | DM policy + Group policy + Semaphore control |
 
@@ -766,7 +757,7 @@ graph LR
 
 **See also**:
 - [ADR-010 - Multi-layer Message Pipeline](adr/ADR-010-multi-layer-message-pipeline.md)
-- [ADR-002 - Watch/Polling Dual-Mode](adr/ADR-002-watch-polling-dual-mode.md)
+- [ADR-002 - Watch Mode with Fibonacci Backoff](adr/ADR-002-watch-mode-fibonacci-backoff.md)
 - [modules/messaging.md](modules/messaging.md)
 
 

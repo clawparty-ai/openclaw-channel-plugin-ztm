@@ -6,8 +6,7 @@ import {
   API_TIMEOUT_MS,
   API_TIMEOUT_MIN_MS,
   API_TIMEOUT_MAX_MS,
-  POLLING_INTERVAL_DEFAULT_MS,
-  POLLING_INTERVAL_MIN_MS,
+  WATCH_INTERVAL_MS,
   RETRY_INITIAL_DELAY_MS,
   RETRY_MAX_DELAY_MS,
   RETRY_TIMEOUT_MS,
@@ -33,14 +32,9 @@ describe('Time-based constants', () => {
     });
   });
 
-  describe('Polling interval boundaries', () => {
-    it('should have valid default polling interval', () => {
-      expect(POLLING_INTERVAL_DEFAULT_MS).toBeGreaterThan(0);
-      expect(POLLING_INTERVAL_DEFAULT_MS).toBeGreaterThanOrEqual(POLLING_INTERVAL_MIN_MS);
-    });
-
-    it('should have minimum polling interval at least 1 second', () => {
-      expect(POLLING_INTERVAL_MIN_MS).toBeGreaterThanOrEqual(1000);
+  describe('Watch interval boundaries', () => {
+    it('should have valid watch interval', () => {
+      expect(WATCH_INTERVAL_MS).toBe(1000);
     });
   });
 

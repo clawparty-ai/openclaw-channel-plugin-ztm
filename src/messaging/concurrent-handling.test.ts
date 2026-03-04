@@ -60,11 +60,11 @@ describe('Concurrent Message Handling', () => {
   });
 
   it('should handle rapid state transitions', () => {
-    type State = 'idle' | 'watching' | 'polling' | 'stopped';
+    type State = 'idle' | 'watching' | 'stopped';
     let state: State = 'idle';
     let transitionCount = 0;
 
-    const transitions: State[] = ['watching', 'polling', 'watching', 'polling', 'stopped'];
+    const transitions: State[] = ['watching', 'watching', 'watching', 'stopped'];
 
     for (const nextState of transitions) {
       if (state !== nextState) {

@@ -1,8 +1,7 @@
 /**
  * Message Processor Helpers
  * @module messaging/message-processor-helpers
- * Shared message processing logic for watcher and polling
- * Eliminates code duplication between long-polling and watch modes
+ * Shared message processing logic for watch mode
  */
 
 import { logger } from '../utils/logger.js';
