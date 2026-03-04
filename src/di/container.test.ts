@@ -65,7 +65,6 @@ describe('DI Container', () => {
       expect(DEPENDENCIES.PERMIT_HANDLER).toBeDefined();
       expect(DEPENDENCIES.INBOUND_PROCESSOR).toBeDefined();
       expect(DEPENDENCIES.WATCHER).toBeDefined();
-      expect(DEPENDENCIES.POLLING_WATCHER).toBeDefined();
       expect(DEPENDENCIES.MESSAGE_DISPATCHER).toBeDefined();
     });
 

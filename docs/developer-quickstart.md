@@ -92,7 +92,7 @@ sequenceDiagram
 | Pattern | Use Case | Location |
 |---------|----------|----------|
 | **Dependency Injection** | Service decoupling, testability | `src/di/` |
-| **Watch + Polling Dual Mode** | Message fetching fault tolerance | `src/messaging/watcher.ts`, `src/messaging/polling.ts` |
+| **Watch with Fibonacci Backoff** | Message fetching with error recovery | `src/messaging/watcher.ts` |
 | **Watermark Deduplication** | Message idempotency | `src/runtime/store.ts` |
 | **Result Type** | Error handling | `src/utils/result.ts` |
 | **Singleton Pattern** | Runtime state management | `src/runtime/runtime.ts` |
@@ -245,7 +245,7 @@ src/
 │   ├── plugin.ts     # Plugin definition
 │   └── gateway.ts    # Account lifecycle management
 ├── messaging/        # Message processing pipeline
-│   ├── watcher.ts    # Long-polling watcher
+│   ├── watcher.ts    # Message watcher with backoff
 │   ├── processor.ts  # Message processing
 │   └── dispatcher.ts # Message dispatch
 ├── runtime/          # Runtime state

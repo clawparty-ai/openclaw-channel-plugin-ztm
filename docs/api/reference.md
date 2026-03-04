@@ -464,8 +464,6 @@ interface ZTMChatConfig {
   autoReply?: string;
   /** Message storage path */
   messagePath?: string;
-  /** Custom polling interval (ms) */
-  pollingInterval?: number;
   /** API request timeout (ms) */
   apiTimeout?: number;
 }
@@ -547,8 +545,8 @@ All constants are defined in `src/constants.ts`:
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `API_TIMEOUT_MS` | 30000 | API request timeout (30s) |
-| `POLLING_INTERVAL_DEFAULT_MS` | 2000 | Default polling interval (2s) |
 | `WATCH_INTERVAL_MS` | 1000 | Watch mode interval (1s) |
+| `WATCH_BACKOFF_MAX_MS` | 30000 | Watch backoff max (30s) |
 | `PAIRING_MAX_AGE_MS` | 3600000 | Pairing request expiry (1 hour) |
 | `RETRY_INITIAL_DELAY_MS` | 1000 | Retry initial delay (1s) |
 | `RETRY_MAX_DELAY_MS` | 10000 | Retry max delay (10s) |

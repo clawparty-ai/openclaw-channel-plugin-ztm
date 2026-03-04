@@ -19,7 +19,7 @@ flowchart LR
     subgraph "Phase 2: Runtime Initialization"
         E[Join Mesh] --> F[Initialize Runtime]
         F --> G[Setup Message Callbacks]
-        G --> H[Start Watch/Polling]
+        G --> H[Start Watch]
     end
 
     style A fill:#e3f2fd
@@ -116,11 +116,11 @@ const cleanup = setupMessageCallbacks(accountId, {
 });
 ```
 
-### Step 8: Start Watch/Polling
+### Step 8: Start Watch
 
 Begins message monitoring:
-- **Watch Mode** (primary): Real-time change notifications
-- **Polling Mode** (fallback): Periodic API polling
+- **Watch Mode**: Real-time change notifications using the ZTM Watch API
+- Uses Fibonacci backoff for error recovery (1s, 1s, 2s, 3s, 5s... capped at 30s)
 
 ## Interactive Wizard
 

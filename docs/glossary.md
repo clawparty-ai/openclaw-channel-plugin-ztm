@@ -214,13 +214,13 @@ Client for communicating with ZTM Agent. Created with `createZTMApiClient()`.
 
 API call to verify ZTM Agent connectivity. Returns agent status and version.
 
-### Long Poll
+### Watch API
 
-A polling method where the server holds the request until new data is available, reducing request frequency.
+The ZTM Watch API provides real-time message delivery. The server holds the request until new data is available, reducing request frequency.
 
 ### Watch Mode
 
-Real-time message delivery using server-sent events or long polling. Preferred over simple polling.
+Real-time message delivery using the ZTM Watch API for push notifications.
 
 ---
 

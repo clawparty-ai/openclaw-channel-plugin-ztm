@@ -21,7 +21,7 @@ We follow the [Michael Nygard format](https://cognitect.com/blog/2011/11/15/docu
 | ADR | Title | Status |
 |-----|-------|--------|
 | [ADR-001](./ADR-001-dependency-injection-container.md) | Custom Symbol-based Dependency Injection Container | Accepted |
-| [ADR-002](./ADR-002-watch-polling-dual-mode.md) | Watch + Polling Dual-Mode Message Fetching | Accepted |
+| [ADR-002](./ADR-002-watch-mode-fibonacci-backoff.md) | Watch Mode with Fibonacci Backoff | Accepted |
 | [ADR-003](./ADR-003-watermark-lru-cache.md) | Watermark + LRU Cache Hybrid State Management | Accepted |
 | [ADR-004](./ADR-004-result-error-handling.md) | Result Type + Categorized Errors + Exponential Backoff | Accepted |
 | [ADR-005](./ADR-005-type-safety-patterns.md) | Result Type Utilities + Interface Segregation + Generics | Accepted |

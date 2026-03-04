@@ -279,7 +279,6 @@ Invalid ZTM configuration for agentUrl: must be a valid URL (got: invalid-url)
 |-------|--------------|----------------|
 | `agentUrl` | Not a valid URL | `http://localhost:3000` |
 | `dmPolicy` | Not a valid value | `allow` \| `deny` \| `pairing` |
-| `pollingInterval` | Less than 1000 | `>= 1000` |
 | `apiTimeout` | Less than 1000 | `>= 1000` |
 
 ---

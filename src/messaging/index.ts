@@ -10,10 +10,10 @@ export * from './context.js';
 // Message processing
 export * from './processor.js';
 
-// Shared message processing helpers (DRY: used by watcher and polling)
+// Shared message processing helpers
 export * from './message-processor-helpers.js';
 
-// Message watching and polling
+// Message watching
 export * from './watcher.js';
 
 // Message callback dispatching
@@ -21,9 +21,6 @@ export * from './dispatcher.js';
 
 // Outbound messaging
 export * from './outbound.js';
-
-// Polling watcher (fallback mechanism)
-export * from './polling.js';
 
 // Type exports
 export type { ZTMChatMessage, MessageCheckResult, RawZTMMessage } from '../types/messaging.js';

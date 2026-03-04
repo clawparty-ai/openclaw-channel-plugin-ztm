@@ -48,7 +48,6 @@ openclaw ztm-chat-discover
 | `enableGroups` | boolean | `true` | Enable group chats |
 | `autoReply` | string | - | Auto-reply message |
 | `messagePath` | string | - | Message storage path |
-| `pollingInterval` | number | `2000` | Polling interval (ms) |
 | `apiTimeout` | number | `30000` | API timeout (ms) |
 
 ### Configuration Example
@@ -58,7 +57,6 @@ const config = {
   agentUrl: 'http://localhost:7777',
   dmPolicy: 'allow',
   enableGroups: true,
-  pollingInterval: 3000,
   apiTimeout: 60000,
 };
 ```

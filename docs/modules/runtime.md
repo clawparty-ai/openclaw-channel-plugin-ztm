@@ -94,7 +94,7 @@ Each account maintains a comprehensive state object:
 | `callbackSemaphore` | Semaphore | Controls callback concurrency | 10 permits, prevents overload |
 | `watchInterval` | Interval | Watch loop timer | Cleared on stop |
 | `watchAbortController` | AbortController | Signals watch shutdown | Created per start |
-| `watchErrorCount` | number | Consecutive watch errors | Reset on success, triggers polling |
+| `watchErrorCount` | number | Consecutive watch errors | Reset on success, triggers backoff |
 | `allowFromCache` | Cached value | Approved users cache | 30s TTL, request coalescing |
 | `groupPermissionCache` | LRU Cache | Group permissions cache | 60s TTL, max 500 entries |
 | `messageRetries` | Map | Scheduled retry timers | Cleared on stop |
@@ -109,7 +109,7 @@ Each account maintains completely isolated state:
 | **API Clients** | Isolated HTTP clients | Separate connections, auth tokens |
 | **Callbacks** | Independent callback Sets | Different AI agents per account |
 | **Watermarks** | Per-account storage | Prevents cross-account message replay |
-| **Watch State** | Separate abort controllers | Independent watch/polling control |
+| **Watch State** | Separate abort controllers | Independent watch control |
 | **Cache** | Isolated LRU caches | Separate permission caching |
 
 ---

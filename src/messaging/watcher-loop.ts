@@ -8,7 +8,6 @@ import { logger } from '../utils/logger.js';
 import { sanitizeForLog } from '../utils/log-sanitize.js';
 import { getOrDefault } from '../utils/guards.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
-import { startPollingWatcher } from './polling.js';
 import { processAndNotify } from './strategies/message-strategies.js';
 import type { MessagingContext } from './context.js';
 import { Semaphore } from '../utils/concurrency.js';
@@ -20,7 +19,6 @@ import type { MessageStateStore } from '../runtime/store.js';
 import {
   FULL_SYNC_DELAY_MS,
   WATCH_INTERVAL_MS,
-  WATCH_ERROR_THRESHOLD,
   MESSAGE_SEMAPHORE_PERMITS,
   MESSAGE_PROCESS_TIMEOUT_MS,
 } from '../constants.js';
@@ -44,10 +42,10 @@ export interface WatchContext {
  */
 export class WatchLoopController {
   private pendingIteration = false;
-  private lastMessageTime = Date.now();
   private fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
   private messagesReceivedInCycle = false;
   private messageSemaphore: Semaphore;
+  private retryCount = 0;
 
   constructor(
     private readonly state: AccountRuntimeState,
@@ -109,8 +107,8 @@ export class WatchLoopController {
         this.messagesReceivedInCycle
       );
 
-      // Success - reset error count
-      this.state.watchErrorCount = 0;
+      // Success - reset retry count
+      this.retryCount = 0;
       const elapsed = Date.now() - loopStart;
       this.clearPendingFlag();
 
@@ -156,20 +154,34 @@ export class WatchLoopController {
   }
 
   /**
-   * Handle watch iteration errors with polling fallback
+   * Handle watch iteration errors with Fibonacci backoff
    */
   private handleWatchError(errorMessage: string): void {
-    this.state.watchErrorCount++;
+    this.retryCount++;
+    // Fibonacci backoff: 1s, 1s, 2s, 3s, 5s, 8s... max 30s
+    const delayMs = this.getFibonacciDelay(this.retryCount);
     logger.warn(
-      `[${this.state.accountId}] Watch error (${this.state.watchErrorCount}): ${errorMessage}`
+      `[${this.state.accountId}] Watch error (${this.retryCount}): ${errorMessage}. ` +
+        `Retrying in ${delayMs}ms`
     );
+    this.scheduleNextIteration(delayMs);
+  }
 
-    // Fallback to polling after too many errors
-    if (this.state.watchErrorCount > WATCH_ERROR_THRESHOLD) {
-      logger.warn(`[${this.state.accountId}] Too many watch errors, falling back to polling`);
-      this.state.watchErrorCount = 0;
-      startPollingWatcher(this.state, this.context, this.abortSignal);
+  /**
+   * Calculate Fibonacci-based delay
+   * Sequence: 1s, 1s, 2s, 3s, 5s, 8s... capped at 30s
+   */
+  private getFibonacciDelay(count: number): number {
+    if (count <= 0) return WATCH_INTERVAL_MS;
+    if (count === 1) return WATCH_INTERVAL_MS;
+    // Fibonacci: 1, 1, 2, 3, 5, 8...
+    let prev = 1,
+      curr = 1;
+    for (let i = 2; i < count; i++) {
+      [prev, curr] = [curr, prev + curr];
     }
+    // Cap at 30 seconds for watch error recovery
+    return Math.min(curr * WATCH_INTERVAL_MS, 30000);
   }
 
   /**

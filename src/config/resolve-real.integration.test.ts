@@ -376,7 +376,6 @@ describe('Config Resolution Real File System Integration', () => {
           dmPolicy: 'pairing' as const,
           allowFrom: ['trusted-user-1', 'trusted-user-2', 'admin-bot'],
           apiTimeout: 45000,
-          pollingInterval: 3000,
         };
 
         const configPath = await createTestConfigFile(dir, productionConfig);

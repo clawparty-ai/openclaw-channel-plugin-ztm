@@ -252,7 +252,6 @@ const config = {
   autoReply: false,
 
   // Timing settings
-  pollingInterval: 2000,  // milliseconds
   apiTimeout: 30000,      // milliseconds
 
   // Logging

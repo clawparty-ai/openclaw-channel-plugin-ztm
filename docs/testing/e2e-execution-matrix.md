@@ -15,7 +15,7 @@ This document provides a detailed execution matrix for all E2E tests, including 
 | 7 | `src/connectivity/e2e/pairing.e2e.test.ts` | Flow | Connectivity | Mock server | ~10s | Yes | @smoke |
 | 8 | `src/messaging/e2e/group-messages.e2e.test.ts` | Flow | Messaging | Mock server | ~15s | Yes | @smoke |
 | 9 | `src/messaging/e2e/message-flow.e2e.test.ts` | Flow | Messaging | Mock server | ~20s | Yes | @smoke |
-| 10 | `src/messaging/e2e/watch-polling.e2e.test.ts` | Flow | Messaging | None | ~15s | Yes | @regression |
+| 10 | `src/messaging/e2e/watch-backoff.e2e.test.ts` | Flow | Messaging | None | ~15s | Yes | @regression |
 
 ## Column Definitions
 

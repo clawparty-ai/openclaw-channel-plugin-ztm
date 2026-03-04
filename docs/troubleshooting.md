@@ -112,11 +112,11 @@ const config = {
 };
 ```
 
-### Issue: Watch Mode Fails, Falls Back to Polling
+### Issue: Watch Mode Fails with Backoff
 
 **Symptoms:**
-- "Switching to polling mode" messages
-- Degraded message delivery latency
+- "Watch error, increasing backoff" messages
+- Increasing message delivery latency due to backoff
 - Watch error count increased
 
 **Diagnosis:**

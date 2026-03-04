@@ -46,8 +46,7 @@ flowchart TD
 
     subgraph Consumers["Messaging Modules"]
         D1["watcher.ts"]
-        D2["polling.ts"]
-        D3["processor.ts"]
+        D2["processor.ts"]
     end
 
     A1 --> B1
@@ -98,7 +97,7 @@ export function createMessagingContext(
 const context = createMessagingContext(runtime);
 await startMessageWatcher(state, context);
 
-// In watcher.ts or polling.ts
+// In watcher.ts
 async function startMessageWatcher(
   state: AccountRuntimeState,
   context: MessagingContext

@@ -13,7 +13,7 @@ The Messaging module handles the complete message processing pipeline for ZTM Ch
 
 | Export | Description |
 |--------|-------------|
-| `watchMessages` | Start long-polling for messages |
+| `watchMessages` | Start watching for messages via Watch API |
 | `processMessage` | Process a single message |
 | `dispatchMessage` | Dispatch message to callbacks |
 | `sendOutboundMessage` | Send outbound message to ZTM |
@@ -38,7 +38,7 @@ watcher.ts → processor.ts → dispatcher.ts → callbacks (AI Agent)
 - `src/messaging/processor.ts` - Message validation/deduplication
 - `src/messaging/dispatcher.ts` - Callback notification
 - `src/messaging/outbound.ts` - Send replies
-- `src/messaging/polling.ts` - Fallback polling mechanism
+- `src/messaging/watcher.ts` - Message watcher with Fibonacci backoff
 - `src/messaging/context.ts` - Dependency injection context
 - `src/messaging/chat-processor.ts` - Chat orchestration
 - `src/messaging/strategies/message-strategies.ts` - Strategy pattern implementation
@@ -86,16 +86,11 @@ graph LR
 
 ### Stage 1: Message Fetch
 
-**Watch Mode (Primary)**
+**Watch Mode**
 - Uses ZTM's Watch API for real-time change notifications
 - Polls `/apps/ztm/chat/shared/` every 1 second
 - Returns list of changed peers/groups since last check
-- Falls back to polling after 5 consecutive errors
-
-**Polling Mode (Fallback)**
-- Queries all chats periodically every 2 seconds (configurable)
-- Higher reliability but higher latency
-- Automatically switches back to watch mode on recovery
+- Uses Fibonacci backoff for error recovery (1s, 1s, 2s, 3s, 5s... capped at 30s)
 
 **Initial Sync**
 - Fetches all existing messages from all chats on first start
@@ -246,6 +241,6 @@ const stopWatch = await watchMessages(accountId, {
 
 - [Architecture - Message Pipeline](../architecture.md#message-processing-pipeline)
 - [ADR-010 - Multi-layer Message Pipeline](../adr/ADR-010-multi-layer-message-pipeline.md)
-- [ADR-002 - Watch/Polling Dual-Mode](../adr/ADR-002-watch-polling-dual-mode.md)
+- [ADR-002 - Watch Mode with Fibonacci Backoff](../adr/ADR-002-watch-mode-fibonacci-backoff.md)
 - [ADR-007 - Dual Semaphore Concurrency](../adr/ADR-007-dual-semaphore-concurrency.md)
 - [ADR-019 - Message Ordering & Sequencing](../adr/ADR-019-message-ordering-sequencing.md)

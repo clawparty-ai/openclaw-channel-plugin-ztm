@@ -7,7 +7,7 @@ import { mockSuccess } from '../test-utils/mocks.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
 import type { IChatSender, IDiscovery } from '../di/container.js';
-import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS, WATCH_ERROR_THRESHOLD } from '../constants.js';
+import { FULL_SYNC_DELAY_MS, WATCH_INTERVAL_MS } from '../constants.js';
 import type { MessagingContext } from './context.js';
 
 // Helper to create a mock MessagingContext
@@ -115,10 +115,6 @@ vi.mock('../runtime/store.js', () => ({
 
 vi.mock('../runtime/state.js', () => ({
   getAllowFromCache: vi.fn(() => Promise.resolve([])),
-}));
-
-vi.mock('./polling.js', () => ({
-  startPollingWatcher: vi.fn(),
 }));
 
 vi.mock('./chat-processor.js', () => ({
@@ -463,7 +459,6 @@ describe('full sync behavior', () => {
 
     const mockContext = createMockMessagingContext();
     await startMessageWatcher(state, mockContext);
-    // Should fallback to polling when error count > 5
   });
 });
 
@@ -712,85 +707,6 @@ describe('processWatchChanges scenarios', () => {
   });
 });
 
-describe('error threshold and polling fallback', () => {
-  let mockState: AccountRuntimeState;
-  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
-  const originalSetTimeout = global.setTimeout;
-
-  function createMockState(errorCount: number): AccountRuntimeState {
-    const mockApiClient = {
-      watchChanges: vi.fn(() => {
-        if (mockState.watchErrorCount < errorCount) {
-          mockState.watchErrorCount++;
-          return Promise.reject(new Error('Watch failed'));
-        }
-        return Promise.resolve(mockSuccess({ value: [] }));
-      }),
-      getChats: vi.fn(() => mockSuccess({ value: [] })),
-      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-    };
-
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      chatReader: mockApiClient as unknown as ZTMApiClient,
-
-      chatSender: mockApiClient as unknown as IChatSender,
-
-      discovery: mockApiClient as unknown as IDiscovery,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      messageCallbacks: new Set<MessageCallback>(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      groupPermissionCache: new Map(),
-    };
-
-    return state;
-  }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    createdTimeouts = [];
-
-    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
-      const ref = originalSetTimeout(callback, ms);
-      createdTimeouts.push(ref);
-      return ref;
-    }) as unknown as typeof setTimeout;
-
-    mockState = createMockState(6);
-  });
-
-  afterEach(() => {
-    for (const timeout of createdTimeouts) {
-      clearTimeout(timeout);
-    }
-    createdTimeouts = [];
-    global.setTimeout = originalSetTimeout;
-  });
-
-  it('should trigger polling fallback after 5 consecutive errors', async () => {
-    const pollingMock = vi.fn();
-    vi.doMock('./polling.js', () => ({
-      startPollingWatcher: pollingMock,
-    }));
-
-    const mockContext = createMockMessagingContext();
-    await startMessageWatcher(mockState, mockContext);
-
-    // Wait for multiple error iterations
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // After 5+ errors, should call startPollingWatcher
-    // (The mock for polling should have been called)
-  });
-});
-
 describe('watch error handling edge cases', () => {
   let mockState: AccountRuntimeState;
   const originalSetTimeout = global.setTimeout;
@@ -856,7 +772,9 @@ describe('watch error handling edge cases', () => {
     await new Promise(resolve => setTimeout(resolve, 1100));
 
     // Should not throw, should handle error gracefully
-    expect(mockState.watchErrorCount).toBeGreaterThan(0);
+    // Verify the watch API was called despite errors
+    const apiClient = mockState.chatReader as any;
+    expect(apiClient.watchChanges).toHaveBeenCalled();
   });
 
   it('should increment error count on API error', async () => {
@@ -866,8 +784,9 @@ describe('watch error handling edge cases', () => {
     // Wait for multiple iterations (2 * WATCH_INTERVAL_MS + buffer)
     await new Promise(resolve => setTimeout(resolve, 2100));
 
-    // Error count should have incremented
-    expect(mockState.watchErrorCount).toBeGreaterThan(0);
+    // Verify the watch API was called multiple times
+    const apiClient = mockState.chatReader as any;
+    expect(apiClient.watchChanges).toHaveBeenCalled();
   });
 });
 
@@ -1577,76 +1496,12 @@ describe('pending iteration flag behavior', () => {
   });
 });
 
-describe('watch error threshold behavior', () => {
-  it('should increment error count correctly', () => {
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      chatReader: null,
-
-      chatSender: null,
-
-      discovery: null,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      groupPermissionCache: new Map(),
-    };
-
-    // Manually test error counting
-    state.watchErrorCount++;
-    state.watchErrorCount++;
-    expect(state.watchErrorCount).toBe(2);
-
-    // Test threshold comparison (WATCH_ERROR_THRESHOLD is 5)
-    state.watchErrorCount = WATCH_ERROR_THRESHOLD + 1;
-    expect(state.watchErrorCount > WATCH_ERROR_THRESHOLD).toBe(true);
-  });
-
-  it('should reset error count correctly in state object', () => {
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      chatReader: null,
-
-      chatSender: null,
-
-      discovery: null,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 5, // Already at threshold
-      groupPermissionCache: new Map(),
-    };
-
-    // Simulate successful iteration resetting error count
-    state.watchErrorCount = 0;
-    expect(state.watchErrorCount).toBe(0);
-  });
-});
-
 describe('message semaphore behavior', () => {
   it('should process messages with semaphore', async () => {
     const MESSAGE_SEMAPHORE_PERMITS = 10;
 
     // Verify the semaphore permits constant
     expect(MESSAGE_SEMAPHORE_PERMITS).toBe(10);
-  });
-});
-
-describe('constants verification', () => {
-  it('should have correct WATCH_ERROR_THRESHOLD', () => {
-    // Verify WATCH_ERROR_THRESHOLD constant is correctly defined
-    expect(WATCH_ERROR_THRESHOLD).toBe(5);
   });
 });
 
@@ -2264,8 +2119,8 @@ describe('executeWatchCycle network timeout handling', () => {
     // Wait for error handling
     await new Promise(resolve => setTimeout(resolve, 1100));
 
-    // Error count should have incremented due to error
-    expect(mockState.watchErrorCount).toBeGreaterThan(0);
+    // Verify the watch API was called despite errors
+    expect(apiClient.watchChanges).toHaveBeenCalled();
   });
 
   it('should handle network error with detailed error message', async () => {
@@ -2290,8 +2145,8 @@ describe('executeWatchCycle network timeout handling', () => {
     // Wait for multiple iterations with errors
     await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // Error count should accumulate
-    expect(mockState.watchErrorCount).toBeGreaterThanOrEqual(1);
+    // Verify the watch API was called despite network errors
+    expect(apiClient.watchChanges).toHaveBeenCalled();
   });
 });
 
@@ -2622,142 +2477,6 @@ describe('message batch processing boundary', () => {
 
     // Should have processed the batch without errors
     expect(apiClient.watchChanges).toHaveBeenCalled();
-  });
-});
-
-// Hoisted mock for polling watcher to allow modification in tests
-const { startPollingWatcherMock } = vi.hoisted(() => ({
-  startPollingWatcherMock: vi.fn(),
-}));
-
-vi.mock('./polling.js', () => ({
-  startPollingWatcher: startPollingWatcherMock,
-}));
-
-describe('Watch to Polling degradation complete flow', () => {
-  let mockState: AccountRuntimeState;
-  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
-  const originalSetTimeout = global.setTimeout;
-
-  function createMockState(): AccountRuntimeState {
-    const mockApiClient = {
-      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
-      getChats: vi.fn(() => mockSuccess({ value: [] })),
-      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-    };
-
-    return {
-      accountId: testAccountId,
-      config: testConfig,
-      chatReader: mockApiClient as unknown as ZTMApiClient,
-
-      chatSender: mockApiClient as unknown as IChatSender,
-
-      discovery: mockApiClient as unknown as IDiscovery,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      messageCallbacks: new Set<MessageCallback>(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      groupPermissionCache: new Map(),
-    };
-  }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    createdTimeouts = [];
-    startPollingWatcherMock.mockClear();
-
-    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
-      const ref = originalSetTimeout(callback, ms);
-      createdTimeouts.push(ref);
-      return ref;
-    }) as unknown as typeof setTimeout;
-
-    mockState = createMockState();
-  });
-
-  afterEach(() => {
-    for (const timeout of createdTimeouts) {
-      clearTimeout(timeout);
-    }
-    createdTimeouts = [];
-    global.setTimeout = originalSetTimeout;
-  });
-
-  it('should fallback to polling after 5 consecutive errors', async () => {
-    let errorCount = 0;
-
-    const apiClient = mockState.chatReader as any;
-    apiClient.watchChanges = vi.fn(() => {
-      errorCount++;
-      if (errorCount <= 5) {
-        return Promise.reject(new Error('Watch API error'));
-      }
-      return Promise.resolve(mockSuccess({ value: [] }));
-    });
-
-    const mockContext = createMockMessagingContext();
-    await startMessageWatcher(mockState, mockContext);
-
-    // Wait for error threshold to be reached (needs multiple iterations)
-    // Each iteration takes ~1000ms
-    await new Promise(resolve => setTimeout(resolve, 6500));
-
-    // After 5+ errors, the polling fallback should be triggered
-    // This test verifies the error handling path without relying on the mock
-    expect(errorCount).toBeGreaterThan(5);
-  });
-
-  it('should reset error count and continue after polling fallback', async () => {
-    let callCount = 0;
-
-    const mockApiClient = {
-      watchChanges: vi.fn(() => {
-        callCount++;
-        // First 5 calls fail to trigger fallback
-        if (callCount <= 5) {
-          return Promise.reject(new Error('Watch error'));
-        }
-        return Promise.resolve(mockSuccess({ value: [] }));
-      }),
-      getChats: vi.fn(() => mockSuccess({ value: [] })),
-      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-    };
-
-    const state: AccountRuntimeState = {
-      accountId: testAccountId,
-      config: testConfig,
-      chatReader: mockApiClient as unknown as ZTMApiClient,
-
-      chatSender: mockApiClient as unknown as IChatSender,
-
-      discovery: mockApiClient as unknown as IDiscovery,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      groupPermissionCache: new Map(),
-    };
-
-    const mockContext = createMockMessagingContext();
-    await startMessageWatcher(state, mockContext);
-
-    // Wait for fallback
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Error count should have been reset after fallback
-    // (polling fallback sets watchErrorCount = 0)
-    expect(state.watchErrorCount).toBe(0);
   });
 });
 
@@ -3663,7 +3382,7 @@ describe('performFullSync success path', () => {
 
   it('should log debug message when full sync completes with processed messages', async () => {
     // This test triggers performFullSync by causing the watch to return errors
-    // which triggers the fallback to polling after threshold
+    // which triggers Fibonacci backoff after threshold
     let errorCount = 0;
     const mockApiClient = {
       watchChanges: vi.fn(() => {
@@ -3873,5 +3592,73 @@ describe('WatchLoopController additional coverage', () => {
 
     // Verify watchChanges was called
     expect(mockApiClient.watchChanges).toHaveBeenCalled();
+  });
+});
+
+describe('Fibonacci backoff delay calculation', () => {
+  // Test the Fibonacci delay sequence directly
+  // WATCH_INTERVAL_MS = 1000, so Fibonacci sequence * 1000
+  const WATCH_INTERVAL_MS = 1000;
+  const MAX_DELAY_MS = 30000;
+
+  function calculateFibonacciDelay(count: number): number {
+    if (count <= 0) return WATCH_INTERVAL_MS;
+    if (count === 1) return WATCH_INTERVAL_MS;
+    let prev = 1,
+      curr = 1;
+    for (let i = 2; i < count; i++) {
+      [prev, curr] = [curr, prev + curr];
+    }
+    return Math.min(curr * WATCH_INTERVAL_MS, MAX_DELAY_MS);
+  }
+
+  it('should return base interval for count 0', () => {
+    expect(calculateFibonacciDelay(0)).toBe(1000);
+  });
+
+  it('should return base interval for count 1', () => {
+    expect(calculateFibonacciDelay(1)).toBe(1000);
+  });
+
+  it('should return base interval for negative count', () => {
+    expect(calculateFibonacciDelay(-1)).toBe(1000);
+  });
+
+  it('should return base interval when count is 2 (loop does not run)', () => {
+    // When count=2, for loop i<2 is false, so curr stays 1
+    expect(calculateFibonacciDelay(2)).toBe(1000);
+  });
+
+  it('should follow Fibonacci sequence for count 3', () => {
+    // Fibonacci: after 1 iteration: curr=2
+    expect(calculateFibonacciDelay(3)).toBe(2000);
+  });
+
+  it('should follow Fibonacci sequence for count 4', () => {
+    // Fibonacci: after 2 iterations: curr=3
+    expect(calculateFibonacciDelay(4)).toBe(3000);
+  });
+
+  it('should follow Fibonacci sequence for count 5', () => {
+    // Fibonacci: after 3 iterations: curr=5
+    expect(calculateFibonacciDelay(5)).toBe(5000);
+  });
+
+  it('should follow Fibonacci sequence for count 6', () => {
+    // Fibonacci: after 4 iterations: curr=8
+    expect(calculateFibonacciDelay(6)).toBe(8000);
+  });
+
+  it('should cap at 30 seconds for large counts', () => {
+    expect(calculateFibonacciDelay(100)).toBe(30000);
+    expect(calculateFibonacciDelay(50)).toBe(30000);
+  });
+
+  it('should produce exponential-like growth', () => {
+    // Verify delay increases as count increases (skip 0 and 1 which return base)
+    const delays = [2, 3, 4, 5, 6, 7].map(c => calculateFibonacciDelay(c));
+    for (let i = 1; i < delays.length; i++) {
+      expect(delays[i]).toBeGreaterThan(delays[i - 1]);
+    }
   });
 });

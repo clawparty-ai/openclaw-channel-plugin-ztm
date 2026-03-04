@@ -21,7 +21,7 @@ watcher.ts → processor.ts → dispatcher.ts → callbacks (AI Agent)
 
 ### startMessageWatcher
 
-Start message watcher using ZTM's Watch mechanism with polling fallback.
+Start message watcher using ZTM's Watch mechanism with Fibonacci backoff for error recovery.
 
 ```typescript
 import { startMessageWatcher } from './messaging/watcher.js';
@@ -44,7 +44,7 @@ async function startMessageWatcher(
 1. Seeds API client with persisted file timestamps
 2. Performs initial sync of all existing messages
 3. Starts a watch loop that polls for changes every 1 second
-4. Falls back to polling if watch errors accumulate
+4. Uses Fibonacci backoff if watch errors occur (1s, 1s, 2s, 3s, 5s... capped at 30s)
 
 **Example:**
 

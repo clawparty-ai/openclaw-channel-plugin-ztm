@@ -266,8 +266,6 @@ interface ZTMChatConfig {
   autoReply?: boolean;
   /** Message storage path */
   messagePath?: string;
-  /** Custom polling interval (ms) */
-  pollingInterval?: number;
   /** API request timeout (ms) */
   apiTimeout?: number;
 }
@@ -300,7 +298,6 @@ interface ExtendedZTMChatConfig extends ZTMChatConfig {
     enableGroups: boolean;
     autoReply: boolean;
     messagePath: string;
-    pollingInterval: number;
     apiTimeout: number;
   };
 }
@@ -542,8 +539,6 @@ interface AccountRuntimeState {
   messageCallbacks: Set<(message: ZTMChatMessage) => void | Promise<void>>;
   /** Watch mode interval ID */
   watchInterval: NodeJS.Timeout | null;
-  /** Polling interval ID */
-  pollingInterval: NodeJS.Timeout | null;
   /** List of allowed message sources */
   allowFrom: string[];
   /** Group info cache */

@@ -460,8 +460,6 @@ interface ZTMChatConfig {
   autoReply?: string;
   /** Message storage path */
   messagePath?: string;
-  /** Custom polling interval (ms) */
-  pollingInterval?: number;
   /** API request timeout (ms) */
   apiTimeout?: number;
 }
