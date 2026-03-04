@@ -10,7 +10,7 @@
 
 ZTM is a peer-to-peer network where messages may arrive out of order due to:
 - Network latency variations
-- Multiple message sources (Watch API + Polling fallback)
+- Multiple message sources (Watch API + error recovery)
 - Concurrent message processing
 - Distributed network topology
 

@@ -126,7 +126,7 @@ import { getOrCreateAccountState } from "@flomesh/ztm-chat/runtime";
 
 const state = getOrCreateAccountState("my-account");
 console.log("Watch errors:", state.watchErrorCount);
-console.log("Mode:", state.watchInterval ? "Watch" : "Polling");
+console.log("Mode:", state.watchInterval ? "Watch" : "Error");
 ```
 
 **Solutions:**

@@ -13,7 +13,7 @@ Accepted
 The ZTM Chat plugin requires configuration for:
 - **Connection**: Agent URL, mesh name, username
 - **Security**: DM policy, group policy, allowlist
-- **Behavior**: Polling intervals, timeouts, feature flags
+- **Behavior**: API timeout, feature flags (group messaging)
 
 Configuration comes from multiple sources:
 - `openclaw.yaml` file

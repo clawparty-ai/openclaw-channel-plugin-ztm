@@ -20,7 +20,7 @@ Incoming messages from ZTM Agent need multiple processing steps:
 The challenge is organizing this complexity while maintaining:
 - **Separation of concerns**: Each step has a single responsibility
 - **Testability**: Each layer can be tested independently
-- **Reusability**: Both Watch and Polling modes use the same pipeline
+- **Reusability**: Watch mode uses a single pipeline
 
 ## Decision
 
@@ -183,7 +183,7 @@ export async function notifyMessageCallbacks(
 
 ## Related Decisions
 
-- **ADR-002**: Watch + Polling Dual Mode - Both use the same pipeline
+- **ADR-002**: Watch Mode with Fibonacci Backoff
 - **ADR-003**: Watermark + LRU Cache - Layer 2 and Layer 5 use watermarks
 - **ADR-007**: Dual Semaphore Concurrency Control - Layer 4 uses callback semaphore
 
@@ -193,7 +193,7 @@ export async function notifyMessageCallbacks(
 
 - **Separation of concerns**: Each layer has a single, clear responsibility
 - **Testability**: Each layer can be unit tested independently
-- **Reusability**: Both Watch and Polling share the same pipeline
+- **Reusability**: Watch mode uses a single pipeline
 - **Maintainability**: Changes to one layer don't affect others
 
 ### Negative

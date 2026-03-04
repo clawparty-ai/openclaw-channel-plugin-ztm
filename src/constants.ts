@@ -13,7 +13,7 @@ export const API_TIMEOUT_MS = 30000; // 30 seconds - default API request timeout
 export const API_TIMEOUT_MIN_MS = 1000; // 1 second - minimum allowed timeout
 export const API_TIMEOUT_MAX_MS = 300000; // 5 minutes - maximum allowed timeout
 
-// Polling intervals
+// Timeouts
 export const PROBE_TIMEOUT_MS = 10000; // 10 seconds - account probe timeout
 
 // Watch intervals

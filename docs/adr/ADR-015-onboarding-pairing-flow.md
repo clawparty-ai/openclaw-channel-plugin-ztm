@@ -40,7 +40,7 @@ flowchart LR
     subgraph "Phase 2: Runtime Initialization"
         E[Join Mesh] --> F[Initialize Runtime]
         F --> G[Setup Message Callbacks]
-        G --> H[Start Watch/Polling]
+        G --> H[Start Watch with Fibonacci Backoff]
     end
 ```
 
@@ -136,7 +136,7 @@ sequenceDiagram
 ## Related Decisions
 
 - **ADR-013**: Functional Policy Engine - Pairing policy implementation
-- **ADR-002**: Watch + Polling - Message source initialization
+- **ADR-002**: Watch Mode with Fibonacci Backoff - Message source initialization
 
 ## Consequences
 
