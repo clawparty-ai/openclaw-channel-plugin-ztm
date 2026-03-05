@@ -700,6 +700,8 @@ flowchart TD
     H --> K
 ```
 
+> **Note**: This diagram shows the **functional behavior** of policy checks from a user perspective. The internal implementation uses a unified policy checking architecture (ADR-010 Layer 3) where all policy decisions happen before message normalization. See [ADR-010: Multi-Layer Message Processing Pipeline](docs/adr/ADR-010-multi-layer-message-pipeline.md) for implementation details.
+
 ### Policy Decision Matrix
 
 **DM Policy Check Order:**
