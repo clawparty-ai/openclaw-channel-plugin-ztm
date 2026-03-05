@@ -54,8 +54,6 @@ jobs:
             # Stable versions publish to 'latest' tag
             npm publish --tag latest
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Determine previous tag for changelog
         id: determine-tag
