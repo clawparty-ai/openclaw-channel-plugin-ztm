@@ -3,11 +3,11 @@
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-orange)](https://openclaw.ai)
 [![ZTM](https://img.shields.io/github/v/release/flomesh-io/ztm?logo=github&label=ZTM&color=purple)](https://github.com/flomesh-io/ztm)
 [![npm version](https://img.shields.io/npm/v/@flomesh/ztm-chat.svg?color=cb3837&logo=npm)](https://npmjs.com/package/@flomesh/ztm-chat)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/flomesh-io/openclaw-channel-plugin-ztm/test.yml?logo=githubactions)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/actions)
-[![Test Coverage](https://img.shields.io/codecov/c/github/flomesh-io/openclaw-channel-plugin-ztm?logo=codecov)](https://codecov.io/gh/flomesh-io/openclaw-channel-plugin-ztm)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/clawparty-ai/openclaw-channel-plugin-ztm/test.yml?logo=githubactions)](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/actions)
+[![Test Coverage](https://img.shields.io/codecov/c/github/clawparty-ai/openclaw-channel-plugin-ztm?logo=codecov)](https://codecov.io/gh/clawparty-ai/openclaw-channel-plugin-ztm)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6?logo=typescript&color=yellow)](https://www.typescriptlang.org/)
 [![Vitest](https://img.shields.io/badge/Vitest-v4.0+-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
-[![Release Version](https://img.shields.io/github/v/release/flomesh-io/openclaw-channel-plugin-ztm?sort=date)](https://github.com/flomesh-io/openclaw-channel-plugin-ztm/releases/latest)
+[![Release Version](https://img.shields.io/github/v/release/clawparty-ai/openclaw-channel-plugin-ztm?sort=date)](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 This plugin integrates OpenClaw with ZTM (Zero Trust Mesh) Chat, enabling decentralized P2P messaging through the ZTM network.
@@ -75,8 +75,8 @@ flowchart TB
 Download ZTM from GitHub releases and install to `/usr/local/bin`:
 
 ```bash
-# Download (example: v1.0.4 for Linux x86_64)
-curl -L "https://github.com/flomesh-io/ztm/releases/download/v1.0.4/ztm-aio-v1.0.4-generic_linux-x86_64.tar.gz" -o /tmp/ztm.tar.gz
+# Download (example: v2.0.0 for Linux x86_64)
+curl -L "https://github.com/flomesh-io/ztm/releases/download/v2.0.0/ztm-aio-v2.0.0-generic_linux-x86_64.tar.gz" -o /tmp/ztm.tar.gz
 
 # Extract
 tar -xzf /tmp/ztm.tar.gz -C /tmp
