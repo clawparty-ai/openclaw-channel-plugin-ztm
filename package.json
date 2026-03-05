@@ -1,6 +1,6 @@
 {
   "name": "@flomesh/ztm-chat",
-  "version": "2026.3.2",
+  "version": "2026.3.5",
   "description": "ZTM Chat channel plugin for OpenClaw",
   "type": "module",
   "main": "./dist/index.js",
@@ -77,6 +77,10 @@
       "localPath": "extensions/ztm-chat",
       "defaultChoice": "npm"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clawparty-ai/openclaw-channel-plugin-ztm"
   },
   "publishConfig": {
     "access": "public"

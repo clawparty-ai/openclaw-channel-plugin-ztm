@@ -2,9 +2,60 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.5 - 2026-03-05
+
+[690a5c5](690a5c51f7d533e7d43dd53651a444ac34f69942)...[e786a31](e786a31f60b2845c3dab16624b371c7b67066d69)
+
+### 🚨 BREAKING CHANGES
+
+- Extract watch loop and sync logic from watcher.ts ([5d206e5](5d206e5cc55c6bd1c0b45e1ccdc6f38f8adc77f8)) - (Lin Yang)
+- Remove unused messagePath parameter and rename processChangedPaths (#42) ([75a6264](75a6264e3a201d432de715eaec42288b518465a5)) - (Lin Yang)
+- Remove polling mode, add Fibonacci backoff error recovery (#44) ([363b16a](363b16a2140b3255330fcacfc7cdd7b897181d8f)) - (Lin Yang)
+- Merge pull request #1 from clawparty-ai/dependabot/npm_and_yarn/npm_and_yarn-d33697b252 ([e4812d3](e4812d30271de4ae89a235fa23f9b3ea5bc7e830)) - (Lin Yang)
+
+
+
+### 🚀 Features
+
+- Add lastEventAt to account snapshot ([cb95356](cb953560870d000bb2269712932ad8dfbde3864b)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Add null safety to normalizeUsername and normalizeAllowEntry (#39) ([b44863b](b44863b6e8e4b9e37e20378b482e009d5bef82a0)) - (CaiShu)
+- Use ztm-chat (hyphen) as channel ID for OpenClaw config consistency ([46dd30b](46dd30b94e528c75d4b5a93e391be53d589a861b)) - (Lin Yang)
+- Prevent [object Object] in error messages ([3dd69bb](3dd69bbe1483005e44c17080ffdfbe4a980ee47f)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Extract message handling and retry logic from gateway.ts ([9342abd](9342abd083619d9f7a5880c3cbe09af2bc93197f)) - (Lin Yang)
+- Remove backward compatibility re-exports from watcher.ts ([4de6e08](4de6e08df2171fc8b5bd92d4210cb16dee50a3e0)) - (Lin Yang)
+
+### ✅ Testing
+
+- Add null safety tests for normalizeUsername and normalizeAllowEntry ([fd9094b](fd9094b6f2adf1a15aee4db65c871092a8dbf303)) - (Lin Yang)
+- Add comprehensive E2E test coverage for ZTM Chat plugin (#40) ([b0e135e](b0e135e73efa1481544b9f2499166c3ce4ae3f1b)) - (Lin Yang)
+- Improve coverage for tools.ts and watcher-sync.ts ([024ba0f](024ba0f8af7477e59b5e5c82563268c007405671)) - (Lin Yang)
+
+
+### 🔨 Build
+
+- Bump openclaw from 2026.3.1 to 2026.3.2 (#41) ([4d8021c](4d8021c83f9181f1d6771fe3bc216ea53eec5b81)) - (dependabot[bot])
+- Bump lint-staged from 16.3.1 to 16.3.2 (#43) ([b1f4288](b1f4288bc2cb95db888bae45079da9b75a1a2b0f)) - (dependabot[bot])
+- Bump hono in the npm_and_yarn group across 1 directory ([081185e](081185eabbd895dd443c4fbce826d9a5a5f3c7e1)) - (dependabot[bot])
+
+### 📖 Documentation
+
+- Remove obsolete polling mode references from documentation ([69ef4b4](69ef4b4f76994387d50fcd89cef9d5563b17e68e)) - (Lin Yang)
+
+### 🔧 Miscellaneous Tasks
+
+- Remove NODE_AUTH_TOKEN from npm publish step ([3065211](306521163e9e39c6822753e62f1805b1b436fd21)) - (Lin Yang)
+
 ## 2026.3.2 - 2026-03-02
 
-[6ed2eaf](6ed2eaffb264507f9de452b3a7c653d7d60f9f09)...[be1f0c8](be1f0c8314b520be1728c1aa1f00a7dca3efa2aa)
+[6ed2eaf](6ed2eaffb264507f9de452b3a7c653d7d60f9f09)...[690a5c5](690a5c51f7d533e7d43dd53651a444ac34f69942)
 
 
 
