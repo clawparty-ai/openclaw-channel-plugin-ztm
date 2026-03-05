@@ -202,8 +202,8 @@ describe('configureInteractive bindings handling (ADR-024)', () => {
     expect(typeof binding.match).toBe('object');
     expect(binding.match).toHaveProperty('channel');
     expect(binding.match).toHaveProperty('accountId');
-    expect(binding.match?.channel).toBe('ztm-chat');
-    expect(binding.match?.accountId).toBe('test-bot');
+    expect((binding.match as Record<string, unknown>).channel).toBe('ztm-chat');
+    expect((binding.match as Record<string, unknown>).accountId).toBe('test-bot');
   });
 
   it('should handle empty bindings array', () => {
@@ -236,6 +236,6 @@ describe('configureInteractive bindings handling (ADR-024)', () => {
     const bindings = (result as Record<string, unknown>).bindings as Array<
       Record<string, unknown>
     >;
-    expect(bindings[0]?.match?.accountId).toBe(customAccountId);
+    expect((bindings[0]?.match as Record<string, unknown> | undefined)?.accountId).toBe(customAccountId);
   });
 });
