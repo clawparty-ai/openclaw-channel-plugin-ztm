@@ -38,18 +38,6 @@ vi.mock('../runtime/index.js', () => ({
   })),
 }));
 
-vi.mock('../runtime/state.js', () => ({
-  getGroupPermissionCached: vi.fn(() => ({})),
-}));
-
-vi.mock('../core/group-policy.js', () => ({
-  checkGroupPolicy: vi.fn(() => ({
-    allowed: true,
-    reason: 'allowed' as const,
-    action: 'process' as const,
-  })),
-}));
-
 vi.mock('../utils/error.js', () => ({
   extractErrorMessage: vi.fn((err: unknown) => String(err)),
 }));
@@ -322,6 +310,40 @@ describe('handleInboundMessage', () => {
 
     expect(mockLog.error).toHaveBeenCalled();
   });
+
+  it('should dispatch group messages (policy already checked earlier)', async () => {
+    const msg: ZTMChatMessage = {
+      id: 'msg-group',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'test-group',
+      groupCreator: 'bob',
+      groupName: 'Test Group',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    await handleInboundMessage(
+      mockState,
+      createMockRt(),
+      {},
+      config,
+      testAccountId,
+      { log: mockLog },
+      msg
+    );
+
+    expect(mockLog.info).toHaveBeenCalledWith(
+      expect.stringContaining('Dispatching message from alice')
+    );
+  });
 });
 
 describe('createMessageCallback', () => {
@@ -501,206 +523,5 @@ describe('createMessageCallback', () => {
     callback(msg);
 
     expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining('...'));
-  });
-});
-
-describe('checkGroupMessagePolicy', () => {
-  let mockState: AccountRuntimeState;
-  let mockLog: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void };
-
-  function createMockRt() {
-    return {
-      channel: {
-        routing: {
-          resolveAgentRoute: vi.fn(() => ({
-            sessionKey: 'test-session',
-            accountId: testAccountId,
-            matchedBy: 'default',
-            agentId: 'test-agent',
-          })),
-        },
-        reply: {
-          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
-          dispatchReplyWithBufferedBlockDispatcher: vi.fn(() =>
-            Promise.resolve({ queuedFinal: true })
-          ),
-          resolveHumanDelayConfig: vi.fn(() => ({ enabled: false })),
-        },
-      },
-    } as any;
-  }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    mockLog = {
-      info: vi.fn(),
-      error: vi.fn(),
-    };
-
-    mockState = {
-      accountId: testAccountId,
-      config: testConfig,
-      chatReader: null,
-      chatSender: null,
-      discovery: null,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      groupPermissionCache: new Map(),
-    };
-  });
-
-  it('should allow non-group messages', async () => {
-    const msg: ZTMChatMessage = {
-      id: 'msg-dm',
-      sender: 'alice',
-      senderId: 'alice-id',
-      content: 'Hello',
-      timestamp: new Date(),
-      peer: 'alice',
-      isGroup: false,
-    };
-
-    const config: ZTMChatConfig = {
-      ...testConfig,
-      username: 'testuser',
-    };
-
-    await handleInboundMessage(
-      mockState,
-      createMockRt(),
-      {},
-      config,
-      testAccountId,
-      { log: mockLog },
-      msg
-    );
-
-    // Should not be blocked by policy
-    expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining('Dispatching message'));
-  });
-
-  it('should block group message when policy denies', async () => {
-    const { checkGroupPolicy } = await import('../core/group-policy.js');
-    vi.mocked(checkGroupPolicy).mockReturnValueOnce({
-      allowed: false,
-      reason: 'denied',
-      action: 'ignore',
-    });
-
-    const mockRtInstance = {
-      channel: {
-        routing: {
-          resolveAgentRoute: vi.fn(() => ({
-            sessionKey: 'test-session',
-            accountId: testAccountId,
-            matchedBy: 'default',
-            agentId: 'test-agent',
-          })),
-        },
-        reply: {
-          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
-          dispatchReplyWithBufferedBlockDispatcher: vi.fn(() =>
-            Promise.resolve({ queuedFinal: true })
-          ),
-          resolveHumanDelayConfig: vi.fn(() => ({ enabled: false })),
-        },
-      },
-    } as any;
-
-    const msg: ZTMChatMessage = {
-      id: 'msg-blocked',
-      sender: 'alice',
-      senderId: 'alice-id',
-      content: 'Blocked message',
-      timestamp: new Date(),
-      peer: 'alice',
-      isGroup: true,
-      groupId: 'group-999',
-      groupCreator: 'owner',
-    };
-
-    const config: ZTMChatConfig = {
-      ...testConfig,
-      username: 'testuser',
-    };
-
-    await handleInboundMessage(
-      mockState,
-      mockRtInstance,
-      {},
-      config,
-      testAccountId,
-      { log: mockLog },
-      msg
-    );
-
-    // Should be blocked
-    expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining('blocked'));
-  });
-
-  it('should allow group message when policy permits', async () => {
-    const { checkGroupPolicy } = await import('../core/group-policy.js');
-    vi.mocked(checkGroupPolicy).mockReturnValueOnce({
-      allowed: true,
-      reason: 'allowed',
-      action: 'process',
-    });
-
-    const mockRtInstance = {
-      channel: {
-        routing: {
-          resolveAgentRoute: vi.fn(() => ({
-            sessionKey: 'test-session',
-            accountId: testAccountId,
-            matchedBy: 'default',
-            agentId: 'test-agent',
-          })),
-        },
-        reply: {
-          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
-          dispatchReplyWithBufferedBlockDispatcher: vi.fn(() =>
-            Promise.resolve({ queuedFinal: true })
-          ),
-          resolveHumanDelayConfig: vi.fn(() => ({ enabled: false })),
-        },
-      },
-    } as any;
-
-    const msg: ZTMChatMessage = {
-      id: 'msg-allowed',
-      sender: 'alice',
-      senderId: 'alice-id',
-      content: 'Allowed message',
-      timestamp: new Date(),
-      peer: 'alice',
-      isGroup: true,
-      groupId: 'group-888',
-      groupCreator: 'owner',
-    };
-
-    const config: ZTMChatConfig = {
-      ...testConfig,
-      username: 'testuser',
-    };
-
-    await handleInboundMessage(
-      mockState,
-      mockRtInstance,
-      {},
-      config,
-      testAccountId,
-      { log: mockLog },
-      msg
-    );
-
-    // Should be allowed
-    expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining('allowed'));
   });
 });

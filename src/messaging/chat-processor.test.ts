@@ -179,7 +179,21 @@ describe('processAndNotify', () => {
 
     mockState = {
       accountId: testAccountId,
-      config: { ...testConfig, dmPolicy: 'allow', username: 'testuser' },
+      config: {
+        ...testConfig,
+        dmPolicy: 'allow',
+        username: 'testuser',
+        // Add group permissions for tests
+        groupPermissions: {
+          'alice/test-group': {
+            creator: 'alice',
+            group: 'test-group',
+            groupPolicy: 'open',
+            requireMention: false,
+            allowFrom: [],
+          },
+        },
+      },
       chatReader: null,
       chatSender: null,
       discovery: null,

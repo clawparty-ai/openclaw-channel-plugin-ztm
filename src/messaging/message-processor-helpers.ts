@@ -9,6 +9,7 @@ import { sanitizeForLog } from '../utils/log-sanitize.js';
 import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
+import { checkMessagePolicy } from '../core/policy-checker.js';
 import { handlePairingRequest } from '../connectivity/permit.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChat } from '../types/api.js';
@@ -158,6 +159,15 @@ export function validateChatMessage(
  * Process a single peer message through the validation and policy pipeline.
  * Returns null if message should be skipped (self-message, policy rejection, etc.)
  *
+ * **ADR-010 Compliance**: This function performs Layer 3 (Policy Enforcement) BEFORE
+ * calling `processIncomingMessage` (Layer 2), ensuring policy decisions happen
+ * before watermark updates.
+ *
+ * Processing order:
+ * 1. Self-message detection (sender = bot username)
+ * 2. **DM policy check** (via checkMessagePolicy - Layer 3)
+ * 3. Message normalization (via processIncomingMessage - Layer 2)
+ *
  * @param msg - Raw message object
  * @param state - Account runtime state
  * @param storeAllowFrom - Persisted allowFrom list for pairing mode
@@ -179,11 +189,28 @@ export function processPeerMessage(
     return null;
   }
 
-  // Process through policy pipeline
+  // **ADR-010 Layer 3**: Check DM policy BEFORE normalization
+  const policyResult = checkMessagePolicy({
+    sender: msg.sender,
+    content: msg.message,
+    config: state.config,
+    accountId: state.accountId,
+    storeAllowFrom,
+  });
+
+  if (!policyResult.allowed) {
+    logger.debug(
+      `[${state.accountId}] DM message from ${safeSender} blocked: ${policyResult.reason}`
+    );
+    return null;
+  }
+
+  // **ADR-010 Layer 2**: Message normalization (skipPolicyCheck=true)
   return processIncomingMessage(msg, {
     config: state.config,
     storeAllowFrom,
     accountId: state.accountId,
+    skipPolicyCheck: true, // Already checked DM policy above
   });
 }
 
@@ -191,9 +218,18 @@ export function processPeerMessage(
  * Process a single group message through the validation and policy pipeline.
  * Returns null if message should be skipped (self-message, policy rejection, etc.)
  *
+ * **ADR-010 Compliance**: This function performs Layer 3 (Policy Enforcement) BEFORE
+ * calling `processIncomingMessage` (Layer 2), ensuring policy decisions happen
+ * before watermark updates.
+ *
+ * Processing order:
+ * 1. Self-message detection (sender = bot username)
+ * 2. **Group policy check** (via checkMessagePolicy - Layer 3)
+ * 3. Message normalization (via processIncomingMessage - Layer 2)
+ *
  * @param msg - Raw message object
  * @param state - Account runtime state
- * @param storeAllowFrom - Persisted allowFrom list for pairing mode
+ * @param storeAllowFrom - Persisted allowFrom list (currently unused for groups)
  * @param groupInfo - Group metadata (creator, group)
  * @param groupName - Optional display name for the group
  * @returns Processed message with group metadata or null if skipped
@@ -212,12 +248,33 @@ export function processGroupMessage(
     return null;
   }
 
-  // Process through policy pipeline
+  // **ADR-010 Layer 3**: Check group policy BEFORE normalization
+  // This ensures DM policy is NOT applied to group messages
+  const policyResult = checkMessagePolicy({
+    sender: msg.sender,
+    content: msg.message,
+    config: state.config,
+    accountId: state.accountId,
+    storeAllowFrom,
+    groupInfo,
+  });
+
+  if (!policyResult.allowed) {
+    const safeGroupKey = sanitizeForLog(`${groupInfo.creator}/${groupInfo.group}`);
+    const safeSender = sanitizeForLog(msg.sender);
+    logger.debug(
+      `[${state.accountId}] Group message from ${safeSender} blocked: ${policyResult.reason} (group: ${safeGroupKey})`
+    );
+    return null;
+  }
+
+  // **ADR-010 Layer 2**: Message normalization (skipPolicyCheck=true)
   const normalized = processIncomingMessage(msg, {
     config: state.config,
     storeAllowFrom,
     accountId: state.accountId,
     groupInfo,
+    skipPolicyCheck: true, // Already checked group policy above
   });
 
   if (!normalized) return null;

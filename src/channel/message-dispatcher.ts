@@ -7,8 +7,6 @@
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
-import { checkGroupPolicy } from '../core/group-policy.js';
-import { getGroupPermissionCached } from '../runtime/state.js';
 import { sendZTMMessage } from '../messaging/outbound.js';
 import { getZTMRuntime } from '../runtime/index.js';
 import { extractErrorMessage } from '../utils/error.js';
@@ -59,34 +57,15 @@ export function createInboundContext(params: {
 }
 
 /**
- * Check group policy for incoming group messages
- */
-function checkGroupMessagePolicy(
-  msg: ZTMChatMessage,
-  config: ZTMChatConfig,
-  accountId: string,
-  ctx: { log?: { info: (...args: unknown[]) => void } }
-): boolean {
-  if (!msg.isGroup || !msg.groupId || !msg.groupCreator) {
-    return true; // Not a group message, allow
-  }
-
-  const permissions = getGroupPermissionCached(accountId, msg.groupCreator, msg.groupId, config);
-  const policyResult = checkGroupPolicy(msg.sender, msg.content, permissions, config.username);
-
-  if (!policyResult.allowed) {
-    ctx.log?.info(
-      `[DM] Group message from ${msg.sender} blocked: ${policyResult.reason} (group: ${msg.groupCreator}/${msg.groupId})`
-    );
-    return false;
-  }
-
-  ctx.log?.info(`[DM] Group message from ${msg.sender} allowed: ${policyResult.reason}`);
-  return true;
-}
-
-/**
  * Handle inbound message dispatch to AI agent
+ *
+ * **ADR-010 Layer 4**: Dispatch layer.
+ *
+ * Note: Policy checks (ADR-010 Layer 3) are now performed BEFORE this function:
+ * - DM messages: checkMessagePolicy in processPeerMessage
+ * - Group messages: checkMessagePolicy in processGroupMessage
+ *
+ * This function only handles routing to the AI agent (Layer 4 responsibility).
  */
 export async function handleInboundMessage(
   state: AccountRuntimeState,
@@ -98,10 +77,7 @@ export async function handleInboundMessage(
   msg: ZTMChatMessage
 ): Promise<void> {
   try {
-    // Check group policy for group messages
-    if (!checkGroupMessagePolicy(msg, config, accountId, ctx)) {
-      return; // Don't process the message
-    }
+    // Policy check removed - already done earlier in pipeline (ADR-010 Layer 3)
 
     const { ctxPayload, matchedBy, agentId } = createInboundContext({
       rt,
