@@ -61,7 +61,7 @@ flowchart TB
 - **Decentralized**: Messages flow through the ZTM P2P network
 - **Multi-Account**: Support for multiple ZTM bot accounts with isolated state
 - **User Discovery**: Browse and discover other users in your ZTM mesh
-- **Real-Time Updates**: Watch mechanism with polling fallback
+- **Real-Time Updates**: Watch mechanism for message monitoring (1-second polling interval)
 - **Message Deduplication**: Prevents duplicate message processing
 - **Structured Logging**: Context-aware logger with sensitive data filtering
 - **Interactive Wizard**: CLI-guided configuration setup
@@ -110,6 +110,9 @@ openclaw plugins install @flomesh/ztm-chat
 #### Option B: Local development installation
 
 ```bash
+# Install dependencies first
+npm install
+
 # Install from local path
 openclaw plugins install -l .
 
@@ -130,7 +133,10 @@ Select **"ZTM Chat (P2P)"** from the channel list.
 
 The wizard will guide you through:
 1. **ZTM Agent URL** (default: `http://localhost:7777`)
-2. **Permit Server URL** (default: `https://clawparty.flomesh.io:7779/permit`)
+2. **Permit Source Selection**
+   - Permit Source: `server` (from permit server) or `file` (from local file)
+   - Permit Server URL (when server): `https://clawparty.flomesh.io:7779/permit`
+   - Permit File Path (when file): path to local permit.json
 3. **Bot Username** (default: `openclaw-bot`)
 4. **Security Settings**
    - DM Policy: `pairing` (recommended), `allow`, or `deny`
@@ -186,8 +192,8 @@ flowchart LR
 
 ```bash
 # Enable via wizard
-openclaw ztm-chat-wizard
-# Select "Enable Groups" when prompted
+openclaw onboard
+# Select "ZTM Chat (P2P)" and "Enable Groups" when prompted
 
 # Or manually in openclaw.yaml
 ```
@@ -406,7 +412,6 @@ channels:
         meshName: "production-mesh"
         username: "my-bot"
         enableGroups: true
-        autoReply: true
         dmPolicy: "pairing"
         allowFrom:
           - alice
@@ -437,7 +442,6 @@ channels:
         meshName: "production-mesh"
         username: "my-bot"
         enableGroups: true
-        autoReply: true
         dmPolicy: "pairing"
         allowFrom:
           - alice
@@ -479,11 +483,11 @@ channels:
 |--------|------|-------------|
 | `permitUrl` | string | Permit Server URL |
 
-**Required (when permitSource is "file"):**
+**Optional (when permitSource is "file"):**
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `permitFilePath` | string | Path to local permit.json file |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `permitFilePath` | string | - | Path to local permit.json file |
 
 **Optional - Basic:**
 
@@ -491,10 +495,9 @@ channels:
 |--------|------|---------|-------------|
 | `enabled` | boolean | `true` | Enable/disable account |
 | `enableGroups` | boolean | `false` | Enable group chat support |
-| `autoReply` | boolean | `true` | Automatically reply to messages |
 | `dmPolicy` | string | `"pairing"` | DM policy: `allow`, `deny`, `pairing` |
 | `allowFrom` | string[] | `[]` | List of approved usernames |
-| `permitFilePath` | string | - | Path to permit.json file (when permitSource is `"file"`) |
+| `apiTimeout` | number | `30000` | API timeout in milliseconds (1000-300000) |
 
 **Optional - Group:**
 
@@ -758,133 +761,9 @@ npm test:watch     # Watch mode
 npm run test:coverage  # Run tests with coverage
 ```
 
-### Test Coverage
-
-```
-Test Files  59 passed (59)
-Tests  1354 passed (1354)
-
-Coverage: ~70% Statements | ~60% Branches | ~65% Functions | ~70% Lines
-
-Coverage Areas:
-- Group Policy: Creator bypass, requireMention, allowlist, open/disabled modes
-- DM Policy: allow/deny/pairing modes, pairing flow
-- Configuration: Schema validation, defaults, helpers
-- Onboarding: Wizard flow, buildConfig
-- Messaging: Processing, dispatch, deduplication, polling, watcher
-- Runtime: State management, pairing store, persistence, caching
-- API: ZTM client, mesh connectivity, permit
-- Utils: Logger, retry, validation, result handling, concurrency
-- Channel: Gateway, plugin, config
-- DI: Container, dependency resolution
-- Types: Result, common utilities, errors
-```
 
 ### Debug Logging
 
 ```bash
 ZTM_CHAT_LOG_LEVEL=debug openclaw restart
-```
-
-## Project Structure
-
-```
-.
-├── index.ts              # Plugin entry point
-├── index.test.ts         # Plugin tests
-├── package.json          # NPM package config
-├── openclaw.plugin.json  # OpenClaw plugin manifest
-├── tsconfig.json         # TypeScript config
-├── vitest.config.ts     # Test config
-├── eslint.config.js     # ESLint config
-├── prettier.config.js   # Prettier config
-└── src/
-    ├── api/              # ZTM API client
-    │   ├── ztm-api.ts           # Main API client factory
-    │   ├── chat-api.ts          # Send/receive messages
-    │   ├── message-api.ts        # Message operations (list, read, delete)
-    │   ├── mesh-api.ts          # Mesh network operations
-    │   ├── file-api.ts          # File transfers
-    │   ├── request.ts           # HTTP request utilities with retry
-    │   ├── test-utils.ts        # Test utilities for API
-    │   └── index.ts             # Barrel exports
-    ├── channel/          # OpenClaw channel adapter
-    │   ├── plugin.ts            # Main plugin definition
-    │   ├── gateway.ts           # Account lifecycle
-    │   ├── config.ts            # Account configuration resolution
-    │   ├── state.ts             # Account state management
-    │   ├── connectivity-manager.ts # Mesh connectivity monitoring
-    │   ├── message-dispatcher.ts # Message dispatch to callbacks
-    │   └── index.ts             # Barrel exports
-    ├── config/           # Configuration
-    │   ├── schema.ts            # TypeBox schema definitions
-    │   ├── defaults.ts          # Default values
-    │   ├── validation.ts        # Config validation
-    │   ├── helpers.ts          # Config helpers
-    │   └── index.ts            # Barrel exports
-    ├── connectivity/    # Network connectivity
-    │   ├── mesh.ts             # Mesh operations
-    │   ├── permit.ts           # Permit management
-    │   └── index.ts            # Barrel exports
-    ├── core/            # Core business logic
-    │   ├── group-policy.ts      # Group permissions
-    │   ├── dm-policy.ts         # DM policy
-    │   └── index.ts            # Barrel exports
-    ├── di/              # Dependency injection
-    │   ├── container.ts         # DI container
-    │   ├── index.ts            # Service factories & barrel exports
-    │   └── example-usage.ts   # Usage examples
-    ├── messaging/       # Message processing
-    │   ├── processor.ts         # Message validation & normalization
-    │   ├── chat-processor.ts    # High-level chat processing
-    │   ├── message-processor-helpers.ts # Shared utilities
-    │   ├── dispatcher.ts        # Policy checking & dispatch
-    │   ├── outbound.ts         # Send messages
-    │   ├── watcher.ts          # Watch mechanism
-    │   ├── polling.ts          # Polling fallback
-    │   ├── index.ts            # Barrel exports
-    │   └── *.test.ts          # Test files
-    ├── onboarding/      # Setup wizard
-    │   ├── onboarding.ts       # CLI wizard implementation
-    │   └── index.ts           # Barrel exports
-    ├── runtime/         # Runtime management
-    │   ├── runtime.ts          # Runtime provider interface
-    │   ├── state.ts           # Account runtime state
-    │   ├── store.ts           # Message state persistence
-    │   ├── pairing-store.ts   # Pairing request persistence
-    │   ├── cache.ts           # LRU cache for group permissions
-    │   ├── repository.ts      # Repository interfaces
-    │   ├── repository-impl.ts  # Repository implementations
-    │   └── index.ts           # Barrel exports
-    ├── types/           # TypeScript types
-    │   ├── api.ts             # ZTM API types
-    │   ├── config.ts          # Configuration types
-    │   ├── common.ts          # Common types (Result, etc)
-    │   ├── errors.ts          # Custom error classes
-    │   ├── group-policy.ts    # Group policy types
-    │   ├── messaging.ts       # Message types
-    │   ├── runtime.ts         # Runtime types
-    │   ├── connectivity.ts     # Connectivity types
-    │   └── index.ts          # Barrel exports
-    ├── utils/           # Utilities
-    │   ├── logger.ts          # Context-aware logger
-    │   ├── validation.ts      # Input validation
-    │   ├── retry.ts          # Retry utilities
-    │   ├── result.ts          # Result/Either type
-    │   ├── error.ts          # Error handling
-    │   ├── guards.ts         # Type guards
-    │   ├── concurrency.ts     # Concurrency utilities
-    │   ├── log-sanitize.ts   # Log sanitization
-    │   ├── paths.ts          # Path utilities
-    │   ├── time-boundaries.ts # Time utilities
-    │   └── index.ts          # Barrel exports
-    ├── mocks/           # Test mocks
-    │   ├── ztm-client.ts     # Mock ZTM client
-    │   └── index.ts          # Barrel exports
-    └── test-utils/      # Test utilities
-        ├── fixtures.ts        # Test fixtures
-        ├── mocks.ts          # Test mocks
-        ├── helpers.ts        # Test helpers
-        ├── vitest-setup.ts   # Vitest setup
-        └── index.ts         # Barrel exports
 ```
