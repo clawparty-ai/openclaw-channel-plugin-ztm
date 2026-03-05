@@ -288,6 +288,43 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
     // Use username as accountId for semantic naming
     const accountId = wizardResult.accountId;
 
+    // Build/update bindings (required for OpenClaw 2026.2.26+)
+    // Ref: ADR-024 - ZTM Chat Bindings Migration
+    const rawBindings = (cfg as Record<string, unknown>).bindings as
+      | Array<Record<string, unknown>>
+      | undefined;
+    const existingBindings = Array.isArray(rawBindings) ? rawBindings : [];
+
+    // Separate ztm-chat bindings from other channel bindings
+    const otherBindings = existingBindings.filter((b: unknown) => {
+      const binding = b as Record<string, unknown> | undefined;
+      const match = binding?.match as Record<string, unknown> | undefined;
+      return match?.channel !== 'ztm-chat';
+    });
+    const ztmChatBindings = existingBindings.filter((b: unknown) => {
+      const binding = b as Record<string, unknown> | undefined;
+      const match = binding?.match as Record<string, unknown> | undefined;
+      return match?.channel === 'ztm-chat';
+    });
+
+    // Create new binding (with accountId)
+    const newBinding = {
+      agentId: 'main', // Default agent
+      match: {
+        channel: 'ztm-chat',
+        accountId: accountId, // Explicitly bind to account
+      },
+    };
+
+    // If no ztm-chat binding exists, add new one
+    const updatedBindings = [...otherBindings];
+    if (ztmChatBindings.length === 0) {
+      updatedBindings.push(newBinding);
+    } else {
+      // Keep existing ztm-chat bindings
+      updatedBindings.push(...ztmChatBindings);
+    }
+
     // Build new config
     const newCfg: OpenClawConfig = {
       ...cfg,
@@ -300,6 +337,10 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
           },
         },
       },
+      bindings: updatedBindings as unknown as Array<{
+        agentId: string;
+        match: { channel: string; accountId: string };
+      }>
     };
 
     return { cfg: newCfg, accountId };
