@@ -37,6 +37,22 @@ vi.mock('../runtime/state.js', () => ({
   })),
 }));
 
+// Mock ZTMChatWizard and validateUsername using hoisted variables
+const { mockWizardRun } = vi.hoisted(() => {
+  const mockWizardRun = vi.fn();
+  return { mockWizardRun };
+});
+
+vi.mock('../onboarding/onboarding.js', () => ({
+  ZTMChatWizard: vi.fn().mockImplementation(() => ({
+    run: mockWizardRun,
+  })),
+}));
+
+vi.mock('../utils/validation.js', () => ({
+  validateUsername: vi.fn().mockReturnValue({ valid: true, value: 'test-bot' }),
+}));
+
 describe('ztmChatOnboardingAdapter', () => {
   let adapter: ChannelOnboardingAdapter;
 
@@ -247,18 +263,18 @@ describe('ztmChatOnboardingAdapter', () => {
       note: vi.fn(),
     };
 
-    // Mock ZTMChatWizard - must be hoisted
-    const mockWizardRun = vi.fn();
-    vi.mock('../onboarding/onboarding.js', () => ({
-      ZTMChatWizard: vi.fn().mockImplementation(() => ({
-        run: mockWizardRun,
-      })),
-    }));
-
     // Mock validateUsername
     vi.mock('../utils/validation.js', () => ({
       validateUsername: vi.fn().mockReturnValue({ valid: true, value: 'test-bot' }),
     }));
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      // Set default return values for prompter methods
+      mockPrompter.text.mockResolvedValue('test-bot');
+      mockPrompter.confirm.mockResolvedValue(true);
+      mockPrompter.note.mockResolvedValue(undefined);
+    });
 
     it('should return skip when user chooses to keep existing config', async () => {
       mockPrompter.select.mockResolvedValue('keep');
@@ -294,6 +310,7 @@ describe('ztmChatOnboardingAdapter', () => {
       expect(result).toBe('skip');
       expect(mockPrompter.select).toHaveBeenCalled();
     });
+
   });
 
   describe('configureWhenConfigured', () => {
