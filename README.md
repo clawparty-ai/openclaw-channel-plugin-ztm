@@ -1,7 +1,7 @@
 # ZTM Chat Channel Plugin for OpenClaw
 
-[![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-orange)](https://openclaw.ai)
-[![ZTM](https://img.shields.io/github/v/release/flomesh-io/ztm?logo=github&label=ZTM&color=purple)](https://github.com/flomesh-io/ztm)
+[![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-orange?logo=github)](https://openclaw.ai)
+[![ZTM](https://img.shields.io/badge/ZTM-Extension-purple?logo=github)](https://github.com/flomesh-io/ztm)
 [![npm version](https://img.shields.io/npm/v/@flomesh/ztm-chat.svg?color=cb3837&logo=npm)](https://npmjs.com/package/@flomesh/ztm-chat)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/clawparty-ai/openclaw-channel-plugin-ztm/test.yml?logo=githubactions)](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/actions)
 [![Test Coverage](https://img.shields.io/codecov/c/github/clawparty-ai/openclaw-channel-plugin-ztm?logo=codecov)](https://codecov.io/gh/clawparty-ai/openclaw-channel-plugin-ztm)
