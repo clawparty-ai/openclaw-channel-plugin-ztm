@@ -236,8 +236,6 @@ flowchart TB
     RemotePlugin -->|"Display"| User2
     RemotePlugin -->|"Display"| User3
 ```
-| `allowlist` | Only allow whitelisted senders |
-| `disabled` | Block all group messages |
 
 ### Mention Gating
 
@@ -557,6 +555,54 @@ channels:
 |----------|-------------|
 | `ZTM_CHAT_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` |
 
+
+## Message Processing Pipeline (ADR-010 Compliant)
+
+This plugin follows **ADR-010: Multi-Layer Message Processing Pipeline** for consistent message handling:
+
+### Architecture Layers
+
+| Layer | Module | Responsibility |
+|-------|--------|----------------|
+| **Layer 1** | `watcher.ts` | Chat Processing (orchestration) |
+| **Layer 2** | `processor.ts` | Message Processing (validation, watermark, normalization) |
+| **Layer 3** | `policy-checker.ts` | **Policy Enforcement** (unified DM/Group checking) |
+| **Layer 4** | `message-dispatcher.ts` | Dispatch (callback execution) |
+| **Layer 5** | `dispatcher.ts` | Persistence (watermark updates) |
+
+### Key Design Principle
+
+**Unified Policy Checking (ADR-010 Layer 3):**
+
+- **DM messages**: Check DM policy (pairing/allowlist/deny modes)
+- **Group messages**: Check **ONLY** Group policy (DM policy is **NOT** applied)
+- **Timing**: Policy checks happen **before** watermark updates
+
+This fixes the critical bug where `dmPolicy:deny` was incorrectly rejecting group messages.
+
+### DM Message Flow
+
+```
+1. Message arrives from ZTM
+2. processPeerMessage() validates self-message check
+3. checkMessagePolicy() applies DM policy (Layer 3)
+4. processIncomingMessage() normalizes (Layer 2, skipPolicyCheck=true)
+5. notifyMessageCallbacks() updates watermark (Layer 5)
+6. handleInboundMessage() dispatches to AI agent (Layer 4)
+```
+
+### Group Message Flow
+
+```
+1. Message arrives from ZTM
+2. processGroupMessage() validates self-message check
+3. checkMessagePolicy() applies Group policy (Layer 3) - NOT DM policy
+4. processIncomingMessage() normalizes (Layer 2, skipPolicyCheck=true)
+5. notifyMessageCallbacks() updates watermark (Layer 5)
+6. handleInboundMessage() dispatches to AI agent (Layer 4)
+```
+
+
 ## Message Flow
 
 ### Direct Message (DM)
@@ -653,6 +699,8 @@ flowchart TD
     F --> K[Log and Ignore]
     H --> K
 ```
+
+> **Note**: This diagram shows the **functional behavior** of policy checks from a user perspective. The internal implementation uses a unified policy checking architecture (ADR-010 Layer 3) where all policy decisions happen before message normalization. See [ADR-010: Multi-Layer Message Processing Pipeline](docs/adr/ADR-010-multi-layer-message-pipeline.md) for implementation details.
 
 ### Policy Decision Matrix
 

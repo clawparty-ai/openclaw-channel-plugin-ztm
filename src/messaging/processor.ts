@@ -35,33 +35,52 @@ export interface ProcessMessageContext {
   groupInfo?: { creator: string; group: string };
   /** Optional watermark store for testing (falls back to singleton) */
   watermarkStore?: MessageStateStore;
+  /**
+   * Skip policy check (for unified policy checking).
+   *
+   * When true, this function performs ADR-010 Layer 2 (Message Processing) only:
+   * - Empty check
+   * - Self-message check
+   * - Watermark check
+   * - Normalization
+   *
+   * Policy checking (ADR-010 Layer 3) should be done BEFORE calling this function
+   * via `checkMessagePolicy()` from `src/core/policy-checker.ts`.
+   */
+  skipPolicyCheck?: boolean;
 }
 
 /**
  * Process an incoming message through the validation and policy pipeline.
  *
- * This function performs several processing steps:
+ * **ADR-010 Layer 2**: Message Processing layer.
+ *
+ * This function performs validation and normalization steps:
  * 1. Skips empty or whitespace-only messages
  * 2. Skips messages from the bot itself (self-messages)
  * 3. Uses watermark to skip already-processed messages
- * 4. Applies DM policy to determine if message should be accepted
+ * 4. Applies DM policy to determine if message should be accepted (unless skipPolicyCheck=true)
+ * 5. Normalizes message content (HTML escaping)
+ *
+ * **Note**: For unified policy checking, set `skipPolicyCheck=true` and call
+ * `checkMessagePolicy()` from `src/core/policy-checker.ts` BEFORE calling this function.
  *
  * @param msg - Raw message object with time, message, and sender
  * @param context - Processing context with config and optional parameters
  * @returns Processed ZTMChatMessage or null if message should be skipped
- *
- * @example
- * const result = processIncomingMessage(
- *   { time: 1234567890, message: "Hello", sender: "alice" },
- *   { config: { dmPolicy: "pairing", allowFrom: [], username: "bot" } }
- * );
- * // result: { id: "1234567890-alice", content: "Hello", sender: "alice", ... }
  */
 export function processIncomingMessage(
   msg: { time: number; message: string; sender: string },
   context: ProcessMessageContext
 ): ZTMChatMessage | null {
-  const { config, storeAllowFrom = [], accountId = 'default', groupInfo } = context;
+  const {
+    config,
+    storeAllowFrom = [],
+    accountId = 'default',
+    groupInfo,
+    skipPolicyCheck = false,
+    watermarkStore,
+  } = context;
 
   const watermarkKey = getWatermarkKey(
     groupInfo ? { type: 'group', data: groupInfo } : { type: 'peer', data: msg.sender }
@@ -88,8 +107,8 @@ export function processIncomingMessage(
   }
 
   // Step 3: Check watermark (skip already-processed messages)
-  const watermarkStore = context.watermarkStore ?? getAccountMessageStateStore(accountId);
-  const watermark = watermarkStore.getWatermark(accountId, watermarkKey);
+  const actualWatermarkStore = watermarkStore ?? getAccountMessageStateStore(accountId);
+  const watermark = actualWatermarkStore.getWatermark(accountId, watermarkKey);
   if (msg.time <= watermark) {
     logger.debug(
       `Skipping already-processed message from ${watermarkKey} (time=${msg.time} <= watermark=${watermark})`
@@ -97,15 +116,20 @@ export function processIncomingMessage(
     return null;
   }
 
-  const check = checkDmPolicy(msg.sender, config, storeAllowFrom);
+  // Step 4: Apply DM policy (only when not skipping)
+  // Note: When skipPolicyCheck=true, policy should be checked BEFORE calling this function
+  // via checkMessagePolicy() from src/core/policy-checker.ts
+  if (!skipPolicyCheck) {
+    const check = checkDmPolicy(msg.sender, config, storeAllowFrom);
 
-  if (!check.allowed) {
-    if (check.action === 'request_pairing') {
-      logger.debug(`[DM Policy] Pairing request from ${msg.sender}`);
-    } else if (check.action === 'ignore') {
-      logger.debug(`[DM Policy] Ignoring message from ${msg.sender} (${check.reason})`);
+    if (!check.allowed) {
+      if (check.action === 'request_pairing') {
+        logger.debug(`[DM Policy] Pairing request from ${msg.sender}`);
+      } else if (check.action === 'ignore') {
+        logger.debug(`[DM Policy] Ignoring message from ${msg.sender} (${check.reason})`);
+      }
+      return null;
     }
-    return null;
   }
 
   // Return normalized message with sanitized fields
