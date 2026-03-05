@@ -167,42 +167,75 @@ ZTM Chat supports group conversations with fine-grained permission control. When
 ### How It Works
 
 ```mermaid
-flowchart LR
-    subgraph Group["Group Chat"]
+flowchart TB
+    subgraph Remote["Remote User Environment"]
         User1["Member 1"]
         User2["Member 2"]
         User3["Member 3"]
+        RemotePlugin["ZTM Chat Plugin<br/>(HTTP API Client)"]
+        RemoteAgent["ZTM Agent<br/>(Remote)"]
+        RemoteFiles["Message Files<br/>(Remote)"]
     end
 
-    subgraph ZTM["ZTM Agent"]
-        Agent[("Chat API")]
+    subgraph P2P["ZTM P2P Network"]
+        Hub["Mesh Hub<br/>(Coordinates Sync)"]
     end
 
-    User1 -.->|"@mention"| Agent
-    User2 -.->|"@mention"| Agent
-    User3 -.->|"@mention"| Agent
+    subgraph Local["Local Bot Environment"]
+        LocalAgent["ZTM Agent<br/>(Local)"]
+        LocalFiles["Message Files<br/>(Local)"]
+        LocalPlugin["ZTM Chat Plugin<br/>(HTTP API Client)"]
 
-    Agent -->|"Poll messages"| Plugin
-    Plugin -->|"Check policy"| Plugin
-    Plugin -->|"AI Response"| Agent
-    Agent -->|"Deliver"| Group
+        subgraph PluginFlow["Bot Message Processing"]
+            Watch["Watch Loop<br/>(1s interval)"]
+            Classify["Classify Changes<br/>(peer/group)"]
+            Fetch["Fetch Messages<br/>(HTTP API)"]
+            Policy["Policy Check"]
+            Dispatch["Dispatch Callbacks"]
+            AI["AI Agent"]
+            Send["Send Response<br/>(HTTP API)"]
+        end
+    end
+
+    User1 -->|"@mention"| RemotePlugin
+    User2 -->|"@mention"| RemotePlugin
+    User3 -->|"@mention"| RemotePlugin
+
+    RemotePlugin -->|"HTTP Request"| RemoteAgent
+    RemoteAgent -->|"HTTP Response"| RemotePlugin
+    RemoteAgent -->|"Read/Write"| RemoteFiles
+
+    RemoteFiles -->|"P2P Sync"| Hub
+    Hub -->|"P2P Sync"| LocalFiles
+    LocalAgent -->|"Read/Write"| LocalFiles
+
+    LocalPlugin -->|"HTTP Request"| LocalAgent
+    LocalAgent -->|"HTTP Response"| LocalPlugin
+
+    LocalPlugin -->|"1. watchChanges"| Watch
+    Watch -->|"2. Changed Items"| Classify
+    Classify -->|"3. Peer/Group"| Fetch
+    Fetch -->|"4. getMessages"| LocalPlugin
+    LocalPlugin -->|"Messages"| Fetch
+
+    Fetch -->|"5. Messages"| Policy
+    Policy -->|"Allow"| Dispatch
+    Policy -->|"Deny"| Ignore[Ignore Message]
+
+    Dispatch -->|"6. Notify Callbacks"| AI
+    AI -->|"7. Response"| Send
+    Send -->|"8. sendGroupMessage"| LocalPlugin
+
+    LocalPlugin -->|"9. HTTP POST"| LocalAgent
+    LocalAgent -->|"Write to Files"| LocalFiles
+    LocalFiles -->|"P2P Sync"| Hub
+    Hub -->|"P2P Sync"| RemoteFiles
+    RemoteAgent -->|"Write to Files"| RemoteFiles
+
+    RemotePlugin -->|"Display"| User1
+    RemotePlugin -->|"Display"| User2
+    RemotePlugin -->|"Display"| User3
 ```
-
-### Enabling Group Chat
-
-```bash
-# Enable via wizard
-openclaw onboard
-# Select "ZTM Chat (P2P)" and "Enable Groups" when prompted
-
-# Or manually in openclaw.yaml
-```
-
-### Group Policy Modes
-
-| Policy | Behavior |
-|--------|----------|
-| `open` | Allow all group messages (with optional mention requirement) |
 | `allowlist` | Only allow whitelisted senders |
 | `disabled` | Block all group messages |
 
