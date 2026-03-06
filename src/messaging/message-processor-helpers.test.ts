@@ -40,12 +40,14 @@ import {
   extractSender,
   isSelfMessage,
   validateChatMessage,
-  processPeerMessage,
-  processGroupMessage,
-  handlePeerPolicyCheck,
   processAndNotifyPeerMessages,
   processAndNotifyGroupMessages,
 } from './message-processor-helpers.js';
+import {
+  processPeerMessage,
+  processGroupMessage,
+  handlePeerPolicyCheck,
+} from './strategies/message-strategies.js';
 import { processIncomingMessage } from './processor.js';
 import { notifyMessageCallbacks } from './dispatcher.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
@@ -343,7 +345,11 @@ describe('message-processor-helpers', () => {
         timestamp: new Date(1000),
         peer: 'alice',
       };
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: true,
+        reason: 'allowed',
+        action: 'process',
+      });
       (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMsg);
 
       const msg = { time: 1000, message: 'hello', sender: 'alice' };
@@ -366,7 +372,11 @@ describe('message-processor-helpers', () => {
     });
 
     it('should return null when policy rejects', () => {
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: false, reason: 'denied', action: 'ignore' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: false,
+        reason: 'denied',
+        action: 'ignore',
+      });
 
       const msg = { time: 1000, message: 'hello', sender: 'blocked-user' };
       const result = processPeerMessage(msg, mockState, []);
@@ -407,7 +417,11 @@ describe('message-processor-helpers', () => {
     });
 
     it('should return null when policy rejects', () => {
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: false, reason: 'denied', action: 'ignore' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: false,
+        reason: 'denied',
+        action: 'ignore',
+      });
 
       const msg = { time: 1000, message: 'hello', sender: 'alice' };
       const groupInfo = { creator: 'admin', group: 'testgroup' };
@@ -434,7 +448,11 @@ describe('message-processor-helpers', () => {
         timestamp: new Date(1000),
         peer: 'alice',
       };
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: true,
+        reason: 'allowed',
+        action: 'process',
+      });
       (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMsg);
 
       const msg = { time: 1000, message: 'hello', sender: 'alice' };
@@ -541,7 +559,11 @@ describe('message-processor-helpers', () => {
         timestamp: new Date(1000),
         peer: 'alice',
       };
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: true,
+        reason: 'allowed',
+        action: 'process',
+      });
       (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMsg);
 
       const messages = [
@@ -555,7 +577,11 @@ describe('message-processor-helpers', () => {
     });
 
     it('should skip null messages', async () => {
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: false, reason: 'denied', action: 'ignore' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: false,
+        reason: 'denied',
+        action: 'ignore',
+      });
 
       const messages = [{ time: 1000, message: 'hello', sender: 'mybot' }];
 
@@ -599,7 +625,11 @@ describe('message-processor-helpers', () => {
         groupId: 'testgroup',
         groupCreator: 'admin',
       };
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: true,
+        reason: 'allowed',
+        action: 'process',
+      });
       (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMsg);
 
       const messages = [{ time: 1000, message: 'hello', sender: 'alice' }];
@@ -622,7 +652,11 @@ describe('message-processor-helpers', () => {
         groupId: 'testgroup',
         groupCreator: 'admin',
       };
-      vi.mocked(checkMessagePolicy).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+      vi.mocked(checkMessagePolicy).mockReturnValue({
+        allowed: true,
+        reason: 'allowed',
+        action: 'process',
+      });
       (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMsg);
 
       const messages = [{ time: 1000, message: 'hello', sender: 'alice' }];

@@ -19,7 +19,7 @@
 // External dependencies - these will use DI
 import { createZTMApiClient } from '../api/ztm-api.js';
 import { logger, type Logger } from '../utils/logger.js';
-import type { IChatReader, IChatSender, IDiscovery } from '../di/container.js';
+import { asChatReader, asChatSender, asDiscovery } from './type-conversion.js';
 
 // Pure functions - keep as direct imports (deterministic, no side effects)
 import { getGroupPermission } from '../core/group-policy.js';
@@ -353,9 +353,10 @@ export class AccountStateManager {
       return false;
     }
 
-    state.chatReader = apiClient as unknown as IChatReader;
-    state.chatSender = apiClient as unknown as IChatSender;
-    state.discovery = apiClient as unknown as IDiscovery;
+    // Use type conversion functions - see type-conversion.ts for invariant documentation
+    state.chatReader = asChatReader(apiClient);
+    state.chatSender = asChatSender(apiClient);
+    state.discovery = asDiscovery(apiClient);
     state.started = true;
     state.lastError = meshInfo.connected ? null : 'Not connected to ZTM mesh';
 

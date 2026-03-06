@@ -17,7 +17,7 @@ import type { MessageStateStore } from '../runtime/store.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
 import { escapeHtml } from '../utils/validation.js';
 import { MAX_MESSAGE_LENGTH } from '../constants.js';
-import { getWatermarkKey } from './message-processor-helpers.js';
+import { getWatermarkKey } from './watermark.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 

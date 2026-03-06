@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { processGroupMessage, processPeerMessage } from './message-processor-helpers.js';
+import { processGroupMessage, processPeerMessage } from './strategies/message-strategies.js';
 import { getOrCreateAccountState, removeAccountState } from '../runtime/state.js';
 
 describe('DM Deny Mode Integration Tests', () => {

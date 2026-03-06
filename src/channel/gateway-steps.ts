@@ -24,7 +24,7 @@ import {
   joinMeshIfNeeded,
   resolveAccountPermitPath,
 } from './connectivity-manager.js';
-import { setupAccountCallbacks } from './gateway.js';
+import { setupAccountCallbacks } from './gateway-callbacks.js';
 
 /**
  * Throws an error with account state error details when runtime initialization fails

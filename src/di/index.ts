@@ -54,6 +54,7 @@ import { createZTMApiClient } from '../api/ztm-api.js';
 import { getAllowFromRepository, getMessageStateRepository } from '../runtime/repository-impl.js';
 import { getDefaultRuntimeProvider } from '../runtime/runtime.js';
 import { getAccountStateManager } from '../runtime/state.js';
+import { asChatReader, asChatSender, asDiscovery } from '../runtime/type-conversion.js';
 
 /**
  * Logger factory
@@ -123,7 +124,7 @@ export function createApiReaderService(): () => IChatReader {
       dmPolicy: 'pairing',
       enableGroups: false,
     });
-    return client as unknown as IChatReader;
+    return asChatReader(client);
   };
 }
 
@@ -144,7 +145,7 @@ export function createApiSenderService(): () => IChatSender {
       dmPolicy: 'pairing',
       enableGroups: false,
     });
-    return client as unknown as IChatSender;
+    return asChatSender(client);
   };
 }
 
@@ -165,7 +166,7 @@ export function createApiDiscoveryService(): () => IDiscovery {
       dmPolicy: 'pairing',
       enableGroups: false,
     });
-    return client as unknown as IDiscovery;
+    return asDiscovery(client);
   };
 }
 
