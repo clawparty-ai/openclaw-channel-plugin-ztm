@@ -2,9 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.6 - 2026-03-06
+
+[e0a8738](e0a87388a032f546d9a5eb48beea9ee7c6e4525b)...[c3b037d](c3b037d716685791000916c44a29481992b4ce63)
+
+
+
+
+### 🐛 Bug Fixes
+
+- Override @hono/node-server to v1.19.11 (#3) ([6d291fc](6d291fcb817355c30aca12b3abaf0f9bbd38c434)) - (Lin Yang)
+- Upgrade tar to 7.5.10 to fix GHSA-qffp-2rhf-9h96 (#4) ([951bd62](951bd62c72d250b21160c246c02248e81eb0d644)) - (Lin Yang)
+- Add bindings configuration for OpenClaw 2026.2.26+ (#5) ([cf5b674](cf5b674fd11de008e7f46f216023acabe98161d1)) - (Lin Yang)
+- Add input validation at policy check entry point ([6162e49](6162e495ae7c416a58e6694856d182b77e8390b3)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Implement unified policy checking architecture (ADR-010) (#6) ([ba0aa6d](ba0aa6d0c606b1966f8d338fe1b741d8f0942c75)) - (Lin Yang)
+- Replace require() with ESM static imports ([9b4dbfc](9b4dbfcde77ebc5698d311648a1fad3e03aa6219)) - (Lin Yang)
+
+
+
+
+### 📖 Documentation
+
+- Update README.md with new repository links and version ([018d3f9](018d3f90c0433e740f4f20ff267229c86a3bb1c8)) - (Lin Yang)
+- Update badge links and labels in README.md ([4629ed3](4629ed3e026dc65b387ea71ce068e27ba5bc966c)) - (Lin Yang)
+- Fix README inconsistencies with code implementation ([4501e75](4501e75ade61620a20986b7db98f12633fe30329)) - (Lin Yang)
+- Update How It Works diagram with correct ZTM P2P architecture ([b801bcb](b801bcb5a96c170d63c3e1cd55ef80fab0e412c3)) - (Lin Yang)
+
+
 ## 2026.3.5 - 2026-03-05
 
-[690a5c5](690a5c51f7d533e7d43dd53651a444ac34f69942)...[e786a31](e786a31f60b2845c3dab16624b371c7b67066d69)
+[690a5c5](690a5c51f7d533e7d43dd53651a444ac34f69942)...[e0a8738](e0a87388a032f546d9a5eb48beea9ee7c6e4525b)
 
 ### 🚨 BREAKING CHANGES
 
