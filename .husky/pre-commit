@@ -17,6 +17,10 @@ npx eslint src/
 echo "Running typecheck..."
 npx tsc --noEmit
 
+# Check for circular dependencies
+echo "Checking for circular dependencies..."
+npm run check:circular
+
 # Run tests
 echo "Running tests..."
 npm test
