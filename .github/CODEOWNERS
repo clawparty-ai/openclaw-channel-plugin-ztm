@@ -1,0 +1,98 @@
+# CODEOWNERS
+#
+# This file controls who is auto-assigned to review pull requests.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Format: <pattern> <@username>...
+# - Patterns use gitignore-style glob matching
+# - Approvers are listed with @username
+# - Use # for comments
+# - Sections are evaluated from top to bottom; first match wins
+
+# === Core Maintainers (All Files) ===
+# These people review all changes
+* @reaver-flomesh
+
+# === Module-Specific Owners ===
+
+# Channel & Plugin Layer (account lifecycle, gateway)
+# Core integration with OpenClaw
+src/channel/** @reaver-flomesh
+
+# Messaging Pipeline (watcher, processor, dispatcher, outbound)
+# Message flow, strategies, context
+src/messaging/** @reaver-flomesh
+
+# API Clients (chat, mesh, ztm)
+# External API integration
+src/api/** @reaver-flomesh
+
+# Connectivity & Mesh Networking
+# P2P connection, recovery, pairing
+src/connectivity/** @reaver-flomesh
+
+# Runtime & State Management
+# Cache, repository, store
+src/runtime/** @reaver-flomesh
+
+# Dependency Injection
+# Service container, wiring
+src/di/** @reaver-flomesh
+
+# Business Logic (policies)
+# DM policy, group policy
+src/core/** @reaver-flomesh
+
+# Configuration (schema, defaults, validation)
+src/config/** @reaver-flomesh
+
+# Security (sanitization, injection protection)
+src/security/** @reaver-flomesh
+
+# Onboarding & Pairing Flow
+src/onboarding/** @reaver-flomesh
+
+# Type Definitions
+src/types/** @reaver-flomesh
+
+# Utilities
+src/utils/** @reaver-flomesh
+
+# Test Infrastructure
+# Test utilities, mocks, fixtures
+src/test-utils/** @reaver-flomesh
+src/mocks/** @reaver-flomesh
+
+# === Configuration & Build ===
+
+# CI/CD Workflows
+.github/workflows/** @reaver-flomesh
+
+# Package & Build Configuration
+package.json package-lock.json tsconfig.json @reaver-flomesh
+esbuild.config.js vitest.config.* @reaver-flomesh
+
+# Linting & Formatting
+.prettierrc* .eslintrc* @reaver-flomesh
+
+# === Documentation ===
+
+# README & Project Docs
+README.md CONTRIBUTING.md @reaver-flomesh
+
+# Architecture & API Docs
+.claude/docs/** @reaver-flomesh
+
+# === Project Rules ===
+
+# CLAUDE.md & Team Guidelines
+CLAUDE.md .claude/rules/** @reaver-flomesh
+
+# === Release Management ===
+
+# Version & Changelog
+CHANGELOG.md @reaver-flomesh
+
+# === Emergencies ===
+# For critical security fixes or hotfixes, urgent review
+src/security/** @reaver-flomesh @caishu97
