@@ -142,7 +142,7 @@ describe('policy-checker', () => {
       });
 
       checkMessagePolicy({
-        sender: 'unknown-user',  // Not in DM allowFrom
+        sender: 'unknown-user', // Not in DM allowFrom
         content: '@bot help',
         config: mockConfig,
         accountId: mockAccountId,
@@ -186,7 +186,7 @@ describe('policy-checker', () => {
 
       const result = checkMessagePolicy({
         sender: 'bob',
-        content: 'hello',  // No @mention
+        content: 'hello', // No @mention
         config: mockConfig,
         accountId: mockAccountId,
         groupInfo: { creator: 'alice', group: 'team' },
@@ -205,7 +205,7 @@ describe('policy-checker', () => {
       });
 
       const result = checkMessagePolicy({
-        sender: 'alice',  // Creator
+        sender: 'alice', // Creator
         content: '@bot help',
         config: mockConfig,
         accountId: mockAccountId,
@@ -233,6 +233,183 @@ describe('policy-checker', () => {
 
       const result = isGroupPolicyEnabled('alice', 'team', mockConfig, mockAccountId);
       expect(result).toBe(false);
+    });
+  });
+
+  describe('checkMessagePolicy - edge cases and input validation', () => {
+    describe('sender validation', () => {
+      it('should reject empty string sender', () => {
+        const result = checkMessagePolicy({
+          sender: '',
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        expect(result.action).toBe('ignore');
+        // Should not call into sub-modules
+        expect(checkDmPolicy).not.toHaveBeenCalled();
+        expect(checkGroupPolicy).not.toHaveBeenCalled();
+      });
+
+      it('should reject whitespace-only sender', () => {
+        const result = checkMessagePolicy({
+          sender: '   ',
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        expect(checkDmPolicy).not.toHaveBeenCalled();
+      });
+
+      it('should reject null sender', () => {
+        const result = checkMessagePolicy({
+          sender: null as unknown as string,
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        expect(checkDmPolicy).not.toHaveBeenCalled();
+      });
+
+      it('should reject undefined sender', () => {
+        const result = checkMessagePolicy({
+          sender: undefined as unknown as string,
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        expect(checkDmPolicy).not.toHaveBeenCalled();
+      });
+
+      it('should reject non-string sender (number)', () => {
+        const result = checkMessagePolicy({
+          sender: 123 as unknown as string,
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        expect(checkDmPolicy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('content validation', () => {
+      it('should reject null content for group messages', () => {
+        const result = checkMessagePolicy({
+          sender: 'alice',
+          content: null as unknown as string,
+          config: mockConfig,
+          accountId: mockAccountId,
+          groupInfo: { creator: 'bob', group: 'test' },
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        // Should not call getGroupPermissionCached
+        expect(getGroupPermissionCached).not.toHaveBeenCalled();
+      });
+
+      it('should reject non-string content', () => {
+        const result = checkMessagePolicy({
+          sender: 'alice',
+          content: { text: 'test' } as unknown as string,
+          config: mockConfig,
+          accountId: mockAccountId,
+          groupInfo: { creator: 'bob', group: 'test' },
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe('denied');
+        expect(getGroupPermissionCached).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('required parameters validation', () => {
+      it('should throw ZTMConfigError on missing config', () => {
+        expect(() => {
+          checkMessagePolicy({
+            sender: 'alice',
+            content: 'test',
+            config: null as unknown as typeof mockConfig,
+            accountId: mockAccountId,
+          });
+        }).toThrow('config is required for policy check');
+      });
+
+      it('should throw ZTMConfigError on undefined config', () => {
+        expect(() => {
+          checkMessagePolicy({
+            sender: 'alice',
+            content: 'test',
+            config: undefined as unknown as typeof mockConfig,
+            accountId: mockAccountId,
+          });
+        }).toThrow('config is required for policy check');
+      });
+
+      it('should throw ZTMConfigError on empty accountId', () => {
+        expect(() => {
+          checkMessagePolicy({
+            sender: 'alice',
+            content: 'test',
+            config: mockConfig,
+            accountId: '',
+          });
+        }).toThrow('accountId is required for policy check');
+      });
+
+      it('should throw ZTMConfigError on null accountId', () => {
+        expect(() => {
+          checkMessagePolicy({
+            sender: 'alice',
+            content: 'test',
+            config: mockConfig,
+            accountId: null as unknown as string,
+          });
+        }).toThrow('accountId is required for policy check');
+      });
+    });
+
+    describe('validation happens before sub-module calls', () => {
+      it('should reject invalid DM sender before calling checkDmPolicy', () => {
+        const result = checkMessagePolicy({
+          sender: '',
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(checkDmPolicy).not.toHaveBeenCalled();
+      });
+
+      it('should reject invalid group sender before calling getGroupPermissionCached', () => {
+        const result = checkMessagePolicy({
+          sender: '',
+          content: 'test',
+          config: mockConfig,
+          accountId: mockAccountId,
+          groupInfo: { creator: 'bob', group: 'test' },
+        });
+
+        expect(result.allowed).toBe(false);
+        expect(getGroupPermissionCached).not.toHaveBeenCalled();
+        expect(checkGroupPolicy).not.toHaveBeenCalled();
+      });
     });
   });
 });

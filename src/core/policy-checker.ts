@@ -17,6 +17,7 @@
  */
 
 import type { ZTMChatConfig } from '../types/config.js';
+import { ZTMConfigError } from '../types/errors.js';
 import { checkDmPolicy } from './dm-policy.js';
 import { checkGroupPolicy } from './group-policy.js';
 import { getGroupPermissionCached } from '../runtime/state.js';
@@ -49,6 +50,65 @@ export interface PolicyCheckInput {
   storeAllowFrom?: string[];
   /** Group information (required for group messages) */
   groupInfo?: { creator: string; group: string };
+}
+
+/**
+ * Result of input validation
+ * @internal
+ */
+interface ValidationResult {
+  valid: boolean;
+  reason?: string;
+}
+
+/**
+ * Validate policy check input parameters.
+ *
+ * Performs early validation to ensure all required parameters are present and valid.
+ * This prevents invalid inputs from propagating deep into the call stack.
+ *
+ * @param input - The input to validate
+ * @returns Validation result
+ * @throws {ZTMConfigError} If required parameters (config, accountId) are missing
+ * @internal
+ */
+function validatePolicyInput(input: {
+  sender: unknown;
+  content: unknown;
+  config: unknown;
+  accountId: unknown;
+}): ValidationResult {
+  // Validate sender
+  if (typeof input.sender !== 'string') {
+    return { valid: false, reason: 'denied' };
+  }
+
+  if (!input.sender || !input.sender.trim()) {
+    return { valid: false, reason: 'denied' };
+  }
+
+  // Validate content (required for group mentions check)
+  if (typeof input.content !== 'string') {
+    return { valid: false, reason: 'denied' };
+  }
+
+  // Validate required config
+  if (!input.config || typeof input.config !== 'object') {
+    throw new ZTMConfigError({
+      field: 'config',
+      reason: 'config is required for policy check',
+    });
+  }
+
+  // Validate required accountId
+  if (!input.accountId || typeof input.accountId !== 'string') {
+    throw new ZTMConfigError({
+      field: 'accountId',
+      reason: 'accountId is required for policy check',
+    });
+  }
+
+  return { valid: true };
 }
 
 /**
@@ -87,6 +147,16 @@ export interface PolicyCheckInput {
  */
 export function checkMessagePolicy(input: PolicyCheckInput): PolicyCheckResult {
   const { sender, content, config, accountId, storeAllowFrom = [], groupInfo } = input;
+
+  // Early validation: fail fast for invalid inputs
+  const validationResult = validatePolicyInput({ sender, content, config, accountId });
+  if (!validationResult.valid) {
+    return {
+      allowed: false,
+      reason: validationResult.reason ?? 'denied',
+      action: 'ignore',
+    };
+  }
 
   // Group message: Check ONLY group policy (NOT DM policy)
   // This is the key fix for the double-policy-check bug
