@@ -1,0 +1,209 @@
+# ============================================================================
+# Multi-dimensional Labeling System
+# Dimensions: kind (type), area (scope), size (files changed)
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Dimension 1: Kind (from conventional commit type)
+# ----------------------------------------------------------------------------
+
+'kind/feature':
+  - title: 'feat:*'
+  - title: 'feature:*'
+
+'kind/bug':
+  - title: 'fix:*'
+  - title: 'bugfix:*'
+
+'kind/refactor':
+  - title: 'refactor:*'
+
+'kind/docs':
+  - title: 'docs:*'
+  - title: 'documentation:*'
+
+'kind/test':
+  - title: 'test:*'
+  - title: 'tests:*'
+
+'kind/chore':
+  - title: 'chore:*'
+
+'kind/ci':
+  - title: 'ci:*'
+
+'kind/perf':
+  - title: 'perf:*'
+  - title: 'performance:*'
+
+'kind/build':
+  - title: 'build:*'
+
+'kind/release':
+  - title: 'release:*'
+
+'kind/security':
+  - title: 'security:*'
+  - title: 'sec:*'
+
+'kind/breaking':
+  - title: '*!:*'
+
+# ----------------------------------------------------------------------------
+# Dimension 2: Area (from conventional commit scope)
+# ----------------------------------------------------------------------------
+
+# Messaging - message processing pipeline
+'area/messaging':
+  - title: 'feat(messaging)*'
+  - title: 'fix(messaging)*'
+  - title: 'refactor(messaging)*'
+  - title: 'test(messaging)*'
+  - title: 'docs(messaging)*'
+  - changed-files:
+    - any: ['src/messaging/**']
+
+# API - ZTM Agent API clients
+'area/api':
+  - title: 'feat(api)*'
+  - title: 'fix(api)*'
+  - title: 'refactor(api)*'
+  - title: 'test(api)*'
+  - title: 'docs(api)*'
+  - changed-files:
+    - any: ['src/api/**']
+
+# Runtime - runtime state & persistence
+'area/runtime':
+  - title: 'feat(runtime)*'
+  - title: 'fix(runtime)*'
+  - title: 'refactor(runtime)*'
+  - title: 'test(runtime)*'
+  - changed-files:
+    - any: ['src/runtime/**']
+
+# Core - business logic (DM/group policies)
+'area/core':
+  - title: 'feat(core)*'
+  - title: 'fix(core)*'
+  - title: 'refactor(core)*'
+  - title: 'test(core)*'
+  - changed-files:
+    - any: ['src/core/**']
+
+# Channel - OpenClaw plugin entry
+'area/channel':
+  - title: 'feat(channel)*'
+  - title: 'fix(channel)*'
+  - title: 'refactor(channel)*'
+  - changed-files:
+    - any: ['src/channel/**']
+
+# DI - dependency injection
+'area/di':
+  - title: 'feat(di)*'
+  - title: 'fix(di)*'
+  - title: 'refactor(di)*'
+  - changed-files:
+    - any: ['src/di/**']
+
+# Config - configuration schema & validation
+'area/config':
+  - title: 'feat(config)*'
+  - title: 'fix(config)*'
+  - changed-files:
+    - any: ['src/config/**']
+
+# Onboarding - user onboarding & pairing
+'area/onboarding':
+  - title: 'feat(onboarding)*'
+  - title: 'fix(onboarding)*'
+  - changed-files:
+    - any: ['src/onboarding/**']
+
+# Connectivity - connection management
+'area/connectivity':
+  - title: 'feat(connectivity)*'
+  - title: 'fix(connectivity)*'
+  - changed-files:
+    - any: ['src/connectivity/**']
+
+# Security - security utilities
+'area/security':
+  - title: 'feat(security)*'
+  - title: 'fix(security)*'
+  - title: 'security:*'
+  - changed-files:
+    - any: ['src/security/**']
+
+# Types - TypeScript type definitions
+'area/types':
+  - title: 'feat(types)*'
+  - title: 'fix(types)*'
+  - changed-files:
+    - any: ['src/types/**']
+
+# Utils - utility functions
+'area/utils':
+  - title: 'feat(utils)*'
+  - title: 'fix(utils)*'
+  - changed-files:
+    - any: ['src/utils/**']
+
+# Test utilities
+'area/test-utils':
+  - title: 'feat(test-utils)*'
+  - changed-files:
+    - any: ['src/test-utils/**']
+
+# Documentation
+'area/documentation':
+  - title: 'docs*'
+  - changed-files:
+    - any: ['**/*.md', 'docs/**', '.claude/**']
+
+# CI/CD
+'area/ci':
+  - title: 'ci*'
+  - changed-files:
+    - any: ['.github/workflows/**', '.github/actions/**']
+
+# Dependencies
+'area/dependencies':
+  - title: '*dependencies*'
+  - title: '*deps*'
+  - changed-files:
+    - any: ['package.json', 'package-lock.json']
+
+# ----------------------------------------------------------------------------
+# Dimension 3: Size (from files changed count)
+# Note: Using file count as proxy for PR size
+# ----------------------------------------------------------------------------
+
+'size/xs':
+  - changed-files:
+      any: ['**/*.ts', '**/*.md']
+      max-count: 3
+
+'size/s':
+  - changed-files:
+      any: ['**/*.ts', '**/*.md']
+      count-threshold: 4
+      max-count: 10
+
+'size/m':
+  - changed-files:
+      any: ['**/*.ts', '**/*.md']
+      count-threshold: 11
+      max-count: 20
+
+'size/l':
+  - changed-files:
+      any: ['**/*.ts', '**/*.md']
+      count-threshold: 21
+      max-count: 50
+
+'size/xl':
+  - changed-files:
+      any: ['**/*.ts', '**/*.md']
+      count-threshold: 51
