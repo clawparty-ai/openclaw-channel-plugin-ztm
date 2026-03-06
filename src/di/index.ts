@@ -52,6 +52,8 @@ import { logger as loggerInstance } from '../utils/logger.js';
 import { getEffectiveChannelConfig } from '../channel/config.js';
 import { createZTMApiClient } from '../api/ztm-api.js';
 import { getAllowFromRepository, getMessageStateRepository } from '../runtime/repository-impl.js';
+import { getDefaultRuntimeProvider } from '../runtime/runtime.js';
+import { getAccountStateManager } from '../runtime/state.js';
 
 /**
  * Logger factory
@@ -180,7 +182,6 @@ export function createApiDiscoveryService(): () => IDiscovery {
 export function createRuntimeService(): () => IRuntime {
   // Use the default provider to share the same runtime instance
   // that is set by setZTMRuntime() in index.ts
-  const { getDefaultRuntimeProvider } = require('../runtime/runtime.js');
   const provider = getDefaultRuntimeProvider();
 
   return () => ({
@@ -232,7 +233,6 @@ export function createApiClientFactory(): () => IApiClientFactory {
  */
 export function createAccountStateManagerService(): () => unknown {
   // Import getAccountStateManager to use the singleton
-  const { getAccountStateManager } = require('../runtime/state.js');
 
   return () => getAccountStateManager();
 }
