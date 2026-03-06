@@ -2,6 +2,9 @@
  * Message Processing Strategies
  * @module messaging/strategies
  * Strategy Pattern implementation for unified message processing
+ *
+ * **Interface Segregation**: This module uses segregated strategy interfaces
+ * to eliminate non-null assertions and ensure type safety at compile time.
  */
 
 import type { ZTMChat } from '../../types/api.js';
@@ -15,41 +18,16 @@ import { checkDmPolicy } from '../../core/dm-policy.js';
 import { handlePairingRequest } from '../../connectivity/permit.js';
 import { sanitizeForLog } from '../../utils/log-sanitize.js';
 import { logger } from '../../utils/logger.js';
-
-/**
- * Raw message structure before normalization
- */
-interface RawMessage {
-  time: number;
-  message: string;
-  sender: string;
-}
-
-/**
- * Group metadata
- */
-interface GroupInfo {
-  creator: string;
-  group: string;
-}
-
-/**
- * Context for message processing
- */
-interface ProcessingContext {
-  state: AccountRuntimeState;
-  storeAllowFrom: string[];
-  groupInfo?: GroupInfo;
-  groupName?: string;
-}
-
-/**
- * Strategy interface for message processing
- */
-export interface MessageProcessingStrategy {
-  normalize(msg: RawMessage, ctx: ProcessingContext): ZTMChatMessage | null;
-  getGroupInfo(chat: ZTMChat): GroupInfo | null;
-}
+import type {
+  RawMessage,
+  GroupInfo,
+  PeerProcessingContext,
+  GroupProcessingContext,
+  ProcessingContext,
+  PeerMessageProcessingStrategy,
+  GroupMessageProcessingStrategy,
+  MessageProcessingStrategy,
+} from './types.js';
 
 /**
  * Process a single peer message through the validation and policy pipeline.
@@ -198,9 +176,13 @@ export async function handlePeerPolicyCheck(
 
 /**
  * Peer message processing strategy
+ *
+ * Implements PeerMessageProcessingStrategy with type-safe context.
+ * The normalize method accepts PeerProcessingContext which guarantees
+ * that only peer-specific fields are available.
  */
-class PeerMessageStrategy implements MessageProcessingStrategy {
-  normalize(msg: RawMessage, ctx: ProcessingContext): ZTMChatMessage | null {
+class PeerMessageStrategy implements PeerMessageProcessingStrategy {
+  normalize(msg: RawMessage, ctx: PeerProcessingContext): ZTMChatMessage | null {
     return processPeerMessage(msg, ctx.state, ctx.storeAllowFrom);
   }
 
@@ -211,10 +193,15 @@ class PeerMessageStrategy implements MessageProcessingStrategy {
 
 /**
  * Group message processing strategy
+ *
+ * Implements GroupMessageProcessingStrategy with type-safe context.
+ * The normalize method accepts GroupProcessingContext where groupInfo
+ * is REQUIRED, eliminating the need for non-null assertions.
  */
-class GroupMessageStrategy implements MessageProcessingStrategy {
-  normalize(msg: RawMessage, ctx: ProcessingContext): ZTMChatMessage | null {
-    return processGroupMessage(msg, ctx.state, ctx.storeAllowFrom, ctx.groupInfo!, ctx.groupName);
+class GroupMessageStrategy implements GroupMessageProcessingStrategy {
+  normalize(msg: RawMessage, ctx: GroupProcessingContext): ZTMChatMessage | null {
+    // ctx.groupInfo is now REQUIRED - no non-null assertion needed!
+    return processGroupMessage(msg, ctx.state, ctx.storeAllowFrom, ctx.groupInfo, ctx.groupName);
   }
 
   getGroupInfo(chat: ZTMChat): GroupInfo | null {
@@ -227,6 +214,9 @@ class GroupMessageStrategy implements MessageProcessingStrategy {
 
 /**
  * Factory function to get appropriate strategy based on chat type
+ *
+ * @param chat - The ZTM chat to analyze
+ * @returns Strategy instance (PeerMessageProcessingStrategy or GroupMessageProcessingStrategy)
  */
 export function getMessageStrategy(chat: ZTMChat): MessageProcessingStrategy {
   return isGroupChat(chat) ? new GroupMessageStrategy() : new PeerMessageStrategy();
@@ -235,6 +225,9 @@ export function getMessageStrategy(chat: ZTMChat): MessageProcessingStrategy {
 /**
  * Unified message processing and notification.
  * Replaces: processAndNotifyChat, processAndNotifyPeerMessages, processAndNotifyGroupMessages
+ *
+ * **Type Safety**: This function uses discriminated union type narrowing to ensure
+ * the correct context type is passed to each strategy's normalize method.
  *
  * @param chat - The ZTM chat to process
  * @param state - Account runtime state
@@ -260,23 +253,39 @@ export async function processAndNotify(
     sender: extractSender(chat),
   };
 
-  // 4. Build context
-  const ctx: ProcessingContext = {
-    state,
-    storeAllowFrom,
-    groupInfo: strategy.getGroupInfo(chat) ?? undefined,
-    groupName: chat.name,
-  };
+  // 4. Build context using factory function for type safety
+  const ctx: ProcessingContext = (() => {
+    const groupInfo = strategy.getGroupInfo(chat);
+    if (groupInfo) {
+      return {
+        type: 'group' as const,
+        state,
+        storeAllowFrom,
+        groupInfo,
+        groupName: chat.name,
+      };
+    }
+    return {
+      type: 'peer' as const,
+      state,
+      storeAllowFrom,
+    };
+  })();
 
-  // 5. Normalize
-  const normalized = strategy.normalize(rawMsg, ctx);
+  // 5. Normalize using the strategy
+  // The context type is guaranteed to match the strategy type
+  // because we built the context based on strategy.getGroupInfo()
+  const normalized =
+    ctx.type === 'peer'
+      ? (strategy as PeerMessageProcessingStrategy).normalize(rawMsg, ctx)
+      : (strategy as GroupMessageProcessingStrategy).normalize(rawMsg, ctx);
   if (!normalized) return false;
 
   // 6. Notify callbacks
   await notifyMessageCallbacks(state, normalized);
 
   // 7. Handle peer policy (only for peer messages)
-  if (!strategy.getGroupInfo(chat)) {
+  if (ctx.type === 'peer') {
     await handlePeerPolicyCheck(chat.peer!, state, storeAllowFrom, 'New message');
   }
 
