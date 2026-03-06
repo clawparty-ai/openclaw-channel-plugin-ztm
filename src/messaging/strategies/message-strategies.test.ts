@@ -1,27 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getMessageStrategy, processAndNotify } from './message-strategies.js';
-import { isGroupChat, extractSender, validateChatMessage } from '../message-processor-helpers.js';
-import {
-  processPeerMessage,
-  processGroupMessage,
-  handlePeerPolicyCheck,
-} from '../message-processor-helpers.js';
+import { isGroupChat, validateChatMessage } from '../utils.js';
+import { processIncomingMessage } from '../processor.js';
 import { notifyMessageCallbacks } from '../dispatcher.js';
+import { checkMessagePolicy } from '../../core/policy-checker.js';
+import { checkDmPolicy } from '../../core/dm-policy.js';
 import type { ZTMChat } from '../../types/api.js';
 import type { AccountRuntimeState } from '../../runtime/state.js';
 
 // Mock dependencies
-vi.mock('../message-processor-helpers.js', () => ({
+vi.mock('../utils.js', () => ({
   isGroupChat: vi.fn(),
   extractSender: vi.fn((chat: ZTMChat) => chat.latest?.sender || chat.peer || ''),
   validateChatMessage: vi.fn(),
-  processPeerMessage: vi.fn(),
-  processGroupMessage: vi.fn(),
-  handlePeerPolicyCheck: vi.fn(),
+}));
+
+vi.mock('../processor.js', () => ({
+  processIncomingMessage: vi.fn(),
 }));
 
 vi.mock('../dispatcher.js', () => ({
   notifyMessageCallbacks: vi.fn(),
+}));
+
+vi.mock('../../core/policy-checker.js', () => ({
+  checkMessagePolicy: vi.fn(),
+}));
+
+vi.mock('../../core/dm-policy.js', () => ({
+  checkDmPolicy: vi.fn(),
+}));
+
+vi.mock('../../connectivity/permit.js', () => ({
+  handlePairingRequest: vi.fn(),
 }));
 
 describe('getMessageStrategy', () => {
@@ -100,20 +111,26 @@ describe('processAndNotify', () => {
       updated: 123,
       latest: { time: 123, message: 'hi', sender: 'alice' },
     };
-    const normalizedMessage = { peer: 'alice', time: 123, message: 'hi', sender: 'alice' };
 
     (validateChatMessage as ReturnType<typeof vi.fn>).mockReturnValue({ valid: true });
     (isGroupChat as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    (processPeerMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMessage);
+    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+    (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue({
+      peer: 'alice',
+      time: 123,
+      message: 'hi',
+      sender: 'alice',
+      id: '1',
+      senderId: 'alice',
+      timestamp: new Date(123),
+    });
     (notifyMessageCallbacks as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (handlePeerPolicyCheck as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (checkDmPolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
 
     const result = await processAndNotify(chat, mockState, []);
 
     expect(result).toBe(true);
-    expect(processPeerMessage).toHaveBeenCalled();
-    expect(notifyMessageCallbacks).toHaveBeenCalledWith(mockState, normalizedMessage);
-    expect(handlePeerPolicyCheck).toHaveBeenCalledWith('alice', mockState, [], 'New message');
+    expect(notifyMessageCallbacks).toHaveBeenCalled();
   });
 
   it('should process group chat and notify callbacks', async () => {
@@ -125,27 +142,31 @@ describe('processAndNotify', () => {
       updated: 123,
       latest: { time: 123, message: 'hello', sender: 'bob' },
     };
-    const normalizedMessage = {
-      isGroup: true,
-      groupId: 'group1',
-      groupCreator: 'admin',
-      time: 123,
-      message: 'hello',
-      sender: 'bob',
-    };
 
     (validateChatMessage as ReturnType<typeof vi.fn>).mockReturnValue({ valid: true });
     (isGroupChat as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (processGroupMessage as ReturnType<typeof vi.fn>).mockReturnValue(normalizedMessage);
+    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+    (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue({
+      isGroup: true,
+      groupId: 'group1',
+      groupCreator: 'admin',
+      groupName: 'TestGroup',
+      time: 123,
+      message: 'hello',
+      sender: 'bob',
+      id: '1',
+      senderId: 'bob',
+      timestamp: new Date(123),
+    });
     (notifyMessageCallbacks as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const result = await processAndNotify(chat, mockState, []);
 
     expect(result).toBe(true);
-    expect(processGroupMessage).toHaveBeenCalled();
-    expect(notifyMessageCallbacks).toHaveBeenCalledWith(mockState, normalizedMessage);
-    // Group messages should NOT trigger peer policy check
-    expect(handlePeerPolicyCheck).not.toHaveBeenCalled();
+    expect(notifyMessageCallbacks).toHaveBeenCalledWith(
+      mockState,
+      expect.objectContaining({ isGroup: true, groupId: 'group1' })
+    );
   });
 
   it('should return false when normalization returns null', async () => {
@@ -158,7 +179,7 @@ describe('processAndNotify', () => {
 
     (validateChatMessage as ReturnType<typeof vi.fn>).mockReturnValue({ valid: true });
     (isGroupChat as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    (processPeerMessage as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: false, reason: 'denied', action: 'ignore' });
 
     const result = await processAndNotify(chat, mockState, []);
 

@@ -16,12 +16,10 @@ import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { isRetryableError } from '../utils/retry.js';
 import { getAllAccountStates, stopRuntime, removeAccountState } from '../runtime/state.js';
-import { startMessageWatcher } from '../messaging/watcher.js';
 import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
 import { probeAccount as probeAccountConnectivity } from './connectivity-manager.js';
-import { createMessageCallback } from './message-dispatcher.js';
 import type { StepContext } from './gateway-pipeline.types.js';
 import { dispatchInboundMessage } from './gateway-message-handler.js';
 import { retryMessageLater } from './gateway-message-retry.js';
@@ -165,65 +163,7 @@ export async function sendTextGateway({
  * await cleanup(); // stop account
  * ```
  */
-export async function setupAccountCallbacks(
-  accountId: string,
-  config: ZTMChatConfig,
-  state: AccountRuntimeState,
-  ctx: {
-    log?: {
-      info: (...args: unknown[]) => void;
-      warn?: (...args: unknown[]) => void;
-      error?: (...args: unknown[]) => void;
-    };
-    cfg?: Record<string, unknown>;
-  }
-): Promise<{
-  messageCallback: (msg: ZTMChatMessage) => Promise<void>;
-}> {
-  const rt = container.get(DEPENDENCIES.RUNTIME).get();
-  const cfg = ctx.cfg;
 
-  // Setup message callback
-  const messageCallback = createMessageCallback(accountId, config, rt, cfg, state, ctx);
-  state.messageCallbacks.add(messageCallback);
-
-  // Abort any existing watcher before starting a new one
-  if (state.watchAbortController) {
-    state.watchAbortController.abort();
-    state.watchAbortController = undefined;
-  }
-
-  // Create abort controller for the new watcher
-  const watchAbortController = new AbortController();
-  state.watchAbortController = watchAbortController;
-
-  // Create messaging context and start watching for messages
-  const messagingContext = container.get(DEPENDENCIES.MESSAGING_CONTEXT);
-  await startMessageWatcher(state, messagingContext, watchAbortController.signal);
-
-  // Setup periodic cleanup to prevent unbounded growth of pending pairings
-  // REMOVED: Pairing cleanup now handled by OpenClaw's pairing store
-
-  return { messageCallback };
-}
-
-/**
- * Start the ZTM Chat account gateway
- * @param ctx - Context object containing account config, logger, and status setter
- * @returns Promise resolving to a cleanup function to be called on shutdown
- * @remarks
- * This function initiates the account gateway using the Pipeline pattern.
- * It executes 7 sequential steps: validate_config, validate_connectivity,
- * load_permit, join_mesh, initialize_runtime, preload_message_state, and setup_callbacks.
- * Each step has configurable retry policies for fault tolerance.
- *
- * The returned cleanup function should be called when stopping the account:
- * ```typescript
- * const cleanup = await startAccountGateway({ account, log, setStatus });
- * // ... account is running
- * await cleanup(); // stop account
- * ```
- */
 export async function startAccountGateway(ctx: {
   account: { config: ZTMChatConfig; accountId: string };
   log?: {

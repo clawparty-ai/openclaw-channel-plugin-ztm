@@ -28,6 +28,13 @@ vi.mock('./gateway.js', () => ({
   }),
 }));
 
+vi.mock('./gateway-callbacks.js', () => ({
+  setupAccountCallbacks: vi.fn().mockResolvedValue({
+    messageCallback: vi.fn(),
+    cleanupInterval: null,
+  }),
+}));
+
 vi.mock('../runtime/store.js', () => ({
   getAccountMessageStateStore: vi.fn().mockReturnValue({
     ensureLoaded: vi.fn().mockResolvedValue(undefined),

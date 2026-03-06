@@ -8,7 +8,7 @@ import { logger } from '../utils/logger.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
 import type { MessageStateStore } from '../runtime/store.js';
-import { getWatermarkKey } from './message-processor-helpers.js';
+import { getWatermarkKey } from './watermark.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 
