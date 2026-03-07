@@ -1,7 +1,7 @@
 // Unit tests for status operations
 
 import { describe, it, expect } from 'vitest';
-import { buildChannelSummary, getDefaultStatus, type ChannelAccountSnapshot } from './status.js';
+import { buildChannelSummary, defaultRuntime, type ChannelAccountSnapshot } from './status.js';
 
 describe('status', () => {
   describe('buildChannelSummary', () => {
@@ -10,7 +10,7 @@ describe('status', () => {
         accountId: 'test-account',
         configured: true,
         running: true,
-                    lastStartAt: 1704108000000,
+        lastStartAt: 1704108000000,
         lastStopAt: 1704104400000,
         lastError: null,
         lastInboundAt: 1704107700000,
@@ -48,10 +48,9 @@ describe('status', () => {
       const snapshot: ChannelAccountSnapshot = {
         accountId: 'test-account',
         running: true,
-              };
+      };
 
       const result = buildChannelSummary({ snapshot });
-
     });
 
     it('should handle missing meshConnected field', () => {
@@ -61,7 +60,6 @@ describe('status', () => {
       };
 
       const result = buildChannelSummary({ snapshot });
-
     });
 
     it('should handle lastError being a string', () => {
@@ -69,7 +67,7 @@ describe('status', () => {
         accountId: 'test-account',
         lastError: 'Connection failed',
         running: false,
-            configured: true,
+        configured: true,
       };
 
       const result = buildChannelSummary({ snapshot });
@@ -111,36 +109,29 @@ describe('status', () => {
     });
   });
 
-  describe('getDefaultStatus', () => {
-    it('should return default status with all default values', () => {
-      const result = getDefaultStatus();
-
-      expect(result.accountId).toBe('default');
-      expect(result.running).toBe(false);
-      expect(result.lastStartAt).toBeNull();
-      expect(result.lastStopAt).toBeNull();
-      expect(result.lastError).toBeNull();
-      expect(result.lastInboundAt).toBeNull();
-      expect(result.lastOutboundAt).toBeNull();
+  describe('defaultRuntime', () => {
+    it('should have default status with all default values', () => {
+      expect(defaultRuntime.accountId).toBe('default');
+      expect(defaultRuntime.running).toBe(false);
+      expect(defaultRuntime.lastStartAt).toBeNull();
+      expect(defaultRuntime.lastStopAt).toBeNull();
+      expect(defaultRuntime.lastError).toBeNull();
+      expect(defaultRuntime.lastInboundAt).toBeNull();
+      expect(defaultRuntime.lastOutboundAt).toBeNull();
     });
 
-    it('should return consistent default status', () => {
-      const result1 = getDefaultStatus();
-      const result2 = getDefaultStatus();
-
-      expect(result1).toEqual(result2);
+    it('should be a consistent singleton', () => {
+      expect(defaultRuntime).toBe(defaultRuntime);
     });
 
-    it('should return object with expected shape', () => {
-      const result = getDefaultStatus();
-
-      expect(result).toHaveProperty('accountId');
-      expect(result).toHaveProperty('running');
-      expect(result).toHaveProperty('lastStartAt');
-      expect(result).toHaveProperty('lastStopAt');
-      expect(result).toHaveProperty('lastError');
-      expect(result).toHaveProperty('lastInboundAt');
-      expect(result).toHaveProperty('lastOutboundAt');
+    it('should have object with expected shape', () => {
+      expect(defaultRuntime).toHaveProperty('accountId');
+      expect(defaultRuntime).toHaveProperty('running');
+      expect(defaultRuntime).toHaveProperty('lastStartAt');
+      expect(defaultRuntime).toHaveProperty('lastStopAt');
+      expect(defaultRuntime).toHaveProperty('lastError');
+      expect(defaultRuntime).toHaveProperty('lastInboundAt');
+      expect(defaultRuntime).toHaveProperty('lastOutboundAt');
     });
   });
 });

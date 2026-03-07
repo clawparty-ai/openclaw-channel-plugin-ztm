@@ -54,14 +54,12 @@ export function buildChannelSummary({ snapshot }: BuildChannelSummaryContext) {
  *
  * @returns Default channel account snapshot
  */
-export function getDefaultStatus(): ChannelAccountSnapshot {
-  return {
-    accountId: 'default',
-    running: false,
-    lastStartAt: null,
-    lastStopAt: null,
-    lastError: null,
-    lastInboundAt: null,
-    lastOutboundAt: null,
-  };
-}
+export const defaultRuntime: ChannelAccountSnapshot = {
+  accountId: 'default',
+  running: false,
+  lastStartAt: null,
+  lastStopAt: null,
+  lastError: null,
+  lastInboundAt: null,
+  lastOutboundAt: null,
+};

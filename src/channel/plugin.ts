@@ -102,7 +102,7 @@ import { ztmChatHeartbeatAdapter } from './heartbeat.js';
 import { createZTMChatAgentTools } from './tools.js';
 import {
   buildChannelSummary,
-  getDefaultStatus,
+  defaultRuntime,
   type ChannelAccountSnapshot,
   type ChannelStatusIssue,
 } from './status.js';
@@ -351,7 +351,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Status Section - Runtime status and health checks
   // ---------------------------------------------------------------------------
   status: {
-    defaultRuntime: getDefaultStatus(),
+    defaultRuntime,
     collectStatusIssues: (accounts: ChannelAccountSnapshot[]): ChannelStatusIssue[] => {
       return collectStatusIssues(accounts);
     },

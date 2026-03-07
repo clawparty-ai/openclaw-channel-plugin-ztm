@@ -99,7 +99,7 @@ vi.mock('./directory.js', () => ({
 
 vi.mock('./status.js', () => ({
   buildChannelSummary: vi.fn(() => ({})),
-  getDefaultStatus: vi.fn(() => ({ running: false })),
+  defaultRuntime: { running: false },
 }));
 
 vi.mock('../messaging/context.js', () => ({
