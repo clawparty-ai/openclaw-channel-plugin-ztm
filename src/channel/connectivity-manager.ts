@@ -83,6 +83,9 @@ export async function loadOrRequestPermit(
 
     // Step 4: Request permit from permit server
     ctx.log?.info('Requesting permit from permit server...');
+    if (!config.permitUrl) {
+      throw new Error('permitUrl is required when permitSource is server');
+    }
     const permitData = await requestPermit(config.permitUrl, publicKey, config.username);
 
     if (!permitData) {
@@ -155,10 +158,14 @@ export async function joinMeshIfNeeded(
   if (alreadyConnected) {
     // Strict mode: also check username match
     if (meshUsername === config.username) {
-      ctx.log?.info(`Already connected to mesh ${config.meshName} as ${meshUsername}, skipping join`);
+      ctx.log?.info(
+        `Already connected to mesh ${config.meshName} as ${meshUsername}, skipping join`
+      );
       return;
     }
-    ctx.log?.info(`Connected as ${meshUsername}, but config expects ${config.username}, re-joining...`);
+    ctx.log?.info(
+      `Connected as ${meshUsername}, but config expects ${config.username}, re-joining...`
+    );
   }
 
   ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName} via API...`);

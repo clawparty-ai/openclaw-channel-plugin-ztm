@@ -5,7 +5,7 @@
  */
 
 import type { ChannelAgentToolFactory } from 'openclaw/plugin-sdk';
-import { Type } from '@sinclair/typebox';
+import { z } from 'zod';
 import { container, DEPENDENCIES } from '../di/index.js';
 import type { IApiClientFactory, ILogger } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
@@ -18,7 +18,7 @@ const ztmStatusTool = {
   name: 'ztm_status',
   label: 'ZTM Status',
   description: 'Get ZTM connection status for the configured agent',
-  parameters: Type.Object({}),
+  parameters: z.object({}),
   async execute(_toolCallId: string, _params: unknown) {
     try {
       const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
@@ -77,7 +77,7 @@ const ztmMeshInfoTool = {
   name: 'ztm_mesh_info',
   label: 'ZTM Mesh Info',
   description: 'Get detailed ZTM mesh network information',
-  parameters: Type.Object({}),
+  parameters: z.object({}),
   async execute(_toolCallId: string, _params: unknown) {
     try {
       const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
@@ -131,7 +131,7 @@ const ztmPeersTool = {
   name: 'ztm_peers',
   label: 'ZTM Peers',
   description: 'List all peers in the ZTM mesh network',
-  parameters: Type.Object({}),
+  parameters: z.object({}),
   async execute(_toolCallId: string, _params: unknown) {
     try {
       const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);

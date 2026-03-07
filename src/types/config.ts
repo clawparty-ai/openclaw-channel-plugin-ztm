@@ -9,9 +9,9 @@
 export type {
   ZTMChatConfig,
   DMPolicy,
+  GroupPolicy,
+  PermitSource,
   ExtendedZTMChatConfig,
-  Static,
-  ZTMChatConfigSchema,
   ZTMChatConfigValidation,
   ConfigValidationError,
   ValidationErrorReason,
