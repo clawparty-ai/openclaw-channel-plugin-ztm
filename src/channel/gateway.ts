@@ -45,7 +45,23 @@ interface ChannelStatusIssue {
 // ============================================================================
 
 /**
- * Collect status issues for configured accounts
+ * Collect status issues for configured accounts.
+ *
+ * Checks both configuration validity and runtime state to provide
+ * comprehensive status reporting.
+ *
+ * @param accounts - Array of channel account snapshots
+ * @returns Array of status issues with kind (config|runtime) and level (error|warn|info)
+ *
+ * @example
+ * ```typescript
+ * const issues = collectStatusIssues(accounts);
+ * // Returns issues like:
+ * // [
+ * //   { kind: 'config', level: 'error', message: 'Missing required configuration' },
+ * //   { kind: 'runtime', level: 'warn', message: 'Account stopped' }
+ * // ]
+ * ```
  */
 export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): ChannelStatusIssue[] {
   if (!accounts || accounts.length === 0) {
@@ -60,7 +76,7 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   const account = resolveZTMChatAccount({ cfg, accountId });
   const config = account.config as ZTMChatConfig;
 
-  // Check config validity
+  // 1. Configuration check (no early return, continue to collect all issues)
   if (!isConfigMinimallyValid(config)) {
     issues.push({
       channel: 'ztm-chat',
@@ -69,7 +85,58 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
       level: 'error',
       message: 'Missing required configuration (agentUrl or username)',
     });
-    return issues;
+    // Continue to runtime checks
+  }
+
+  // 2. Runtime state checks
+  const runtimeState = getAllAccountStates().get(accountId || 'default');
+
+  // 2a. Check if account is initialized
+  if (!runtimeState) {
+    issues.push({
+      channel: 'ztm-chat',
+      accountId: accountId || 'default',
+      kind: 'runtime',
+      level: 'info',
+      message: 'Account not initialized',
+    });
+  } else {
+    // 2b. Check if account is stopped
+    if (!runtimeState.started) {
+      issues.push({
+        channel: 'ztm-chat',
+        accountId: accountId || 'default',
+        kind: 'runtime',
+        level: 'warn',
+        message: 'Account stopped',
+      });
+    }
+
+    // 2c. Check for runtime errors
+    if (runtimeState.lastError) {
+      issues.push({
+        channel: 'ztm-chat',
+        accountId: accountId || 'default',
+        kind: 'runtime',
+        level: 'error',
+        message: `Runtime error: ${runtimeState.lastError}`,
+      });
+    }
+
+    // 2d. Check start/stop times (account was stopped)
+    if (runtimeState.lastStartAt && runtimeState.lastStopAt) {
+      const startTime = new Date(runtimeState.lastStartAt).getTime();
+      const stopTime = new Date(runtimeState.lastStopAt).getTime();
+      if (stopTime > startTime) {
+        issues.push({
+          channel: 'ztm-chat',
+          accountId: accountId || 'default',
+          kind: 'runtime',
+          level: 'warn',
+          message: 'Account was stopped',
+        });
+      }
+    }
   }
 
   return issues;

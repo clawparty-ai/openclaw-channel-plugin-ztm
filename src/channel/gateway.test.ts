@@ -368,6 +368,10 @@ describe('Channel Gateway', () => {
       mockIsConfigMinimallyValid.mockImplementation((config: any) => {
         return !!(config?.agentUrl && config?.username);
       });
+      // Set mock to return running state for 'test' account
+      mockGetAllAccountStates.mockReturnValue(
+        new Map([['test', { ...mockState, started: true, lastError: null }]])
+      );
     });
 
     it('should return empty array for valid config', () => {
@@ -386,6 +390,7 @@ describe('Channel Gateway', () => {
 
       const result = collectStatusIssues(accounts);
 
+      // With valid config and running state, should return empty (no issues)
       expect(result).toEqual([]);
     });
 
@@ -395,6 +400,7 @@ describe('Channel Gateway', () => {
 
       const result = collectStatusIssues(accounts);
 
+      // Config error + runtime (account running, no issues)
       expect(result).toHaveLength(1);
       expect(result[0].kind).toBe('config');
       expect(result[0].level).toBe('error');
@@ -429,11 +435,114 @@ describe('Channel Gateway', () => {
     });
 
     it('should handle missing accountId', () => {
+      // Use 'default' since accountId is undefined
+      mockGetAllAccountStates.mockReturnValue(
+        new Map([['default', { ...mockState, started: true, lastError: null }]])
+      );
       const accounts = [{} as any];
 
       const result = collectStatusIssues(accounts);
 
       expect(result[0].accountId).toBe('default');
+    });
+
+    // Runtime state checks
+    it('should return info issue when account is not initialized', () => {
+      // Override mock to return empty Map (account not initialized)
+      mockGetAllAccountStates.mockReturnValueOnce(new Map());
+      mockIsConfigMinimallyValid.mockReturnValueOnce(true);
+
+      const accounts = [{ accountId: 'test', config: mockConfig } as any];
+
+      const result = collectStatusIssues(accounts);
+
+      expect(result).toHaveLength(1);
+      const runtimeIssue = result.find((i: any) => i.kind === 'runtime');
+      expect(runtimeIssue).toBeDefined();
+      expect(runtimeIssue!.level).toBe('info');
+      expect(runtimeIssue!.message).toBe('Account not initialized');
+    });
+
+    it('should return warn issue when account is stopped', () => {
+      // Create stopped state
+      const stoppedState = {
+        ...mockState,
+        started: false,
+        lastError: null,
+      };
+      mockGetAllAccountStates.mockReturnValueOnce(new Map([['test', stoppedState]]));
+      mockIsConfigMinimallyValid.mockReturnValueOnce(true);
+
+      const accounts = [{ accountId: 'test', config: mockConfig } as any];
+
+      const result = collectStatusIssues(accounts);
+
+      const runtimeIssue = result.find((i: any) => i.kind === 'runtime');
+      expect(runtimeIssue).toBeDefined();
+      expect(runtimeIssue!.level).toBe('warn');
+      expect(runtimeIssue!.message).toBe('Account stopped');
+    });
+
+    it('should return error issue when account has runtime error', () => {
+      // Create state with error
+      const errorState = {
+        ...mockState,
+        started: true,
+        lastError: 'Connection refused',
+      };
+      mockGetAllAccountStates.mockReturnValueOnce(new Map([['test', errorState]]));
+      mockIsConfigMinimallyValid.mockReturnValueOnce(true);
+
+      const accounts = [{ accountId: 'test', config: mockConfig } as any];
+
+      const result = collectStatusIssues(accounts);
+
+      const runtimeIssue = result.find((i: any) => i.kind === 'runtime' && i.level === 'error');
+      expect(runtimeIssue).toBeDefined();
+      expect(runtimeIssue!.message).toContain('Connection refused');
+    });
+
+    it('should return both config and runtime issues when both are present', () => {
+      // Config is invalid AND runtime state exists but account is stopped
+      const invalidConfig = { ...mockConfig, agentUrl: '' };
+      const stoppedState = {
+        ...mockState,
+        started: false, // Account is stopped - should trigger runtime warn
+        lastError: null,
+      };
+      mockGetAllAccountStates.mockReturnValueOnce(new Map([['test', stoppedState]]));
+      mockIsConfigMinimallyValid.mockReturnValueOnce(false);
+
+      const accounts = [{ accountId: 'test', config: invalidConfig } as any];
+
+      const result = collectStatusIssues(accounts);
+
+      // Should have both config error and runtime warn (account stopped)
+      expect(result).toHaveLength(2);
+      const configIssue = result.find((i: any) => i.kind === 'config');
+      const runtimeIssue = result.find((i: any) => i.kind === 'runtime');
+      expect(configIssue).toBeDefined();
+      expect(runtimeIssue).toBeDefined();
+    });
+
+    it('should return warn when account was stopped (lastStopAt > lastStartAt)', () => {
+      const stoppedState = {
+        ...mockState,
+        started: false,
+        lastError: null,
+        lastStartAt: new Date('2026-01-01T10:00:00Z'),
+        lastStopAt: new Date('2026-01-01T12:00:00Z'),
+      };
+      mockGetAllAccountStates.mockReturnValueOnce(new Map([['test', stoppedState]]));
+      mockIsConfigMinimallyValid.mockReturnValueOnce(true);
+
+      const accounts = [{ accountId: 'test', config: mockConfig } as any];
+
+      const result = collectStatusIssues(accounts);
+
+      const runtimeIssue = result.find((i: any) => i.message === 'Account was stopped');
+      expect(runtimeIssue).toBeDefined();
+      expect(runtimeIssue!.level).toBe('warn');
     });
   });
 
@@ -2254,58 +2363,71 @@ describe('collectStatusIssues additional coverage', () => {
 
     // Force mock to return false to trigger the error path
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: '', username: '' };
     const accounts = [{ accountId: undefined, config: invalidConfig } as any];
 
     const result = collectStatusIssues(accounts);
 
-    expect(result).toHaveLength(1);
+    // Should have config error + runtime info (account not initialized)
+    expect(result).toHaveLength(2);
     expect(result[0].accountId).toBe('default');
-    expect(result[0].kind).toBe('config');
-    expect(result[0].level).toBe('error');
+    const configIssue = result.find((i: any) => i.kind === 'config');
+    expect(configIssue).toBeDefined();
+    expect(configIssue!.level).toBe('error');
   });
 
   it('should return config error when only username is missing', async () => {
     const { collectStatusIssues } = await import('./gateway.js');
 
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: 'http://localhost:8080', username: '' };
     const accounts = [{ accountId: 'test-account', config: invalidConfig } as any];
 
     const result = collectStatusIssues(accounts);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].kind).toBe('config');
+    // Should have config error + runtime info
+    expect(result).toHaveLength(2);
+    const configIssue = result.find((i: any) => i.kind === 'config');
+    expect(configIssue).toBeDefined();
   });
 
   it('should return config error when only agentUrl is missing', async () => {
     const { collectStatusIssues } = await import('./gateway.js');
 
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    // Return empty Map so no runtime state exists for this account
+    mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: '', username: 'testuser' };
     const accounts = [{ accountId: 'test-account', config: invalidConfig } as any];
 
     const result = collectStatusIssues(accounts);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].kind).toBe('config');
+    // Should have config error + runtime info (account not initialized)
+    expect(result).toHaveLength(2);
+    const configIssue = result.find((i: any) => i.kind === 'config');
+    expect(configIssue).toBeDefined();
   });
 
   it('should return config error with specific error message', async () => {
     const { collectStatusIssues } = await import('./gateway.js');
 
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: '', username: 'testuser' };
     const accounts = [{ accountId: 'my-account', config: invalidConfig } as any];
 
     const result = collectStatusIssues(accounts);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].message).toContain('agentUrl');
+    // Should have config error + runtime info
+    expect(result).toHaveLength(2);
+    const configIssue = result.find((i: any) => i.kind === 'config');
+    expect(configIssue!.message).toContain('agentUrl');
   });
 });
 
