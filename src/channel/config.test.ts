@@ -430,81 +430,21 @@ describe('Channel Config', () => {
   });
 
   describe('buildChannelConfigSchemaWithHints', () => {
-    it('should return schema with uiHints', () => {
+    it('should return ChannelConfigSchema with schema property', () => {
       const result = buildChannelConfigSchemaWithHints();
 
       expect(result).toHaveProperty('schema');
-      expect(result).toHaveProperty('parse');
-      expect(result).toHaveProperty('uiHints');
+      expect(result.schema).toBeDefined();
     });
 
-    it('should provide parse function', () => {
+    it('should return non-empty schema from buildChannelConfigSchema', () => {
       const result = buildChannelConfigSchemaWithHints();
 
-      expect(typeof result.parse).toBe('function');
-    });
-
-    it('should parse config through parse function', () => {
-      const result = buildChannelConfigSchemaWithHints();
-      const testConfig = { username: 'test', agentUrl: 'https://test.com' };
-
-      expect(() => result.parse(testConfig)).not.toThrow();
-    });
-
-    it('should include agentUrl in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.agentUrl).toBeDefined();
-      expect(result.uiHints.agentUrl.label).toBe('ZTM Agent URL');
-      expect(result.uiHints.agentUrl.required).toBe(true);
-    });
-
-    it('should include meshName in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.meshName).toBeDefined();
-      expect(result.uiHints.meshName.label).toBe('Mesh Name');
-      expect(result.uiHints.meshName.required).toBe(true);
-    });
-
-    it('should include username in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.username).toBeDefined();
-      expect(result.uiHints.username.label).toBe('Bot Username');
-      expect(result.uiHints.username.required).toBe(true);
-    });
-
-    it('should include enableGroups in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.enableGroups).toBeDefined();
-      expect(result.uiHints.enableGroups.label).toBe('Enable Groups');
-      expect(result.uiHints.enableGroups.advanced).toBe(true);
-    });
-
-    it('should include validation patterns in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.agentUrl.validation).toBeDefined();
-      expect(result.uiHints.meshName.validation).toBeDefined();
-      expect(result.uiHints.username.validation).toBeDefined();
-    });
-
-    it('should include help text in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.agentUrl.help).toBeDefined();
-      expect(result.uiHints.meshName.help).toBeDefined();
-      expect(result.uiHints.username.help).toBeDefined();
-    });
-
-    it('should include placeholder text in uiHints', () => {
-      const result = buildChannelConfigSchemaWithHints();
-
-      expect(result.uiHints.agentUrl.placeholder).toContain('example.com');
-      expect(result.uiHints.meshName.placeholder).toBeDefined();
-      expect(result.uiHints.username.placeholder).toContain('bot');
+      // SDK's buildChannelConfigSchema returns JSON schema
+      expect(result.schema).toBeDefined();
+      // Should have type: 'object' for object schemas
+      const jsonSchema = result.schema as Record<string, unknown>;
+      expect(jsonSchema.type).toBe('object');
     });
   });
 

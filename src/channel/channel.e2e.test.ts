@@ -189,7 +189,7 @@ describe('startAccount E2E Tests', () => {
       expect(publicKey).toBe('test-public-key');
 
       // Step 3: Request permit
-      const permit = await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
+      const permit = await requestPermit(baseConfig.permitUrl!, publicKey!, baseConfig.username);
       expect(permit).toEqual(mockPermitData);
 
       // Step 4: Save permit (permit is guaranteed by mock)
@@ -218,7 +218,7 @@ describe('startAccount E2E Tests', () => {
 
       // These should not be called when permit.json exists
       const publicKey = await getIdentity('http://localhost:7777');
-      await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
+      await requestPermit(baseConfig.permitUrl!, publicKey!, baseConfig.username);
 
       // In a real flow, these wouldn't be called, but our mock still returns values
       // The test verifies the logic would skip these steps
@@ -294,7 +294,7 @@ describe('startAccount E2E Tests', () => {
       mockState.requestPermit = null as unknown as PermitData;
 
       const { requestPermit } = await import('../connectivity/permit.js');
-      const result = await requestPermit(baseConfig.permitUrl, 'key', 'user');
+      const result = await requestPermit(baseConfig.permitUrl!, 'key', 'user');
 
       expect(result).toBeNull();
     });

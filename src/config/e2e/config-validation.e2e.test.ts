@@ -97,10 +97,10 @@ describe('E2E: Configuration Validation', () => {
       expect(result.valid).toBe(true);
 
       if (result.valid && result.config) {
-        // enableGroups defaults to false when not provided (Boolean(undefined) === false)
-        expect(result.config.enableGroups).toBe(false);
-        expect(result.config.dmPolicy).toBe('pairing');
-        expect(result.config.apiTimeout).toBe(30000);
+        // validateZTMChatConfig does NOT apply defaults - use resolveZTMChatConfig for defaults
+        expect(result.config.enableGroups).toBeUndefined();
+        expect(result.config.dmPolicy).toBeUndefined();
+        expect(result.config.apiTimeout).toBeUndefined();
       }
     });
 

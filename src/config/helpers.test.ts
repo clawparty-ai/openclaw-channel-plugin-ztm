@@ -98,15 +98,15 @@ describe('DMPolicy Configuration', () => {
     });
 
     it("should default to 'pairing' when not specified", () => {
-      const result = validateZTMChatConfig({
+      // Use resolveZTMChatConfig for defaults (validateZTMChatConfig doesn't apply defaults)
+      const result = resolveZTMChatConfig({
         agentUrl: testConfig.agentUrl,
         meshName: testConfig.meshName,
         permitUrl: testConfig.permitUrl,
         permitSource: testConfig.permitSource,
         username: testConfig.username,
       });
-      expect(result.valid).toBe(true);
-      expect(result.config?.dmPolicy).toBe('pairing');
+      expect(result.dmPolicy).toBe('pairing');
     });
   });
 

@@ -7,6 +7,8 @@
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
 import type { ZTMChatConfig } from '../types/config.js';
 import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../config/index.js';
+import { buildChannelConfigSchema } from 'openclaw/plugin-sdk';
+import { ztmChatConfigBaseSchema } from '../config/schema.js';
 
 // ============================================================================
 // Types
@@ -137,52 +139,12 @@ export function resolveZTMChatAccount({
 // ============================================================================
 
 /**
- * Build channel config schema with UI hints for the configuration UI
+ * Build channel config schema for OpenClaw plugin
  *
- * @returns Object with schema, parse function, and UI hints
+ * @returns ChannelConfigSchema with JSON schema and UI hints
  */
 export function buildChannelConfigSchemaWithHints() {
-  return {
-    schema: {},
-    parse(value: unknown) {
-      return resolveZTMChatConfig(value);
-    },
-    uiHints: {
-      agentUrl: {
-        label: 'ZTM Agent URL',
-        placeholder: 'https://ztm-agent.example.com:7777',
-        help: 'URL of your ZTM Agent API server',
-        required: true,
-        validation: {
-          pattern: '^https?://',
-          message: 'Must start with http:// or https://',
-        },
-      },
-      meshName: {
-        label: 'Mesh Name',
-        placeholder: 'my-mesh',
-        help: 'Name of your ZTM mesh network',
-        required: true,
-        validation: {
-          pattern: '^[a-zA-Z0-9_-]+$',
-          message: 'Only letters, numbers, hyphens, and underscores',
-        },
-      },
-      username: {
-        label: 'Bot Username',
-        placeholder: 'openclaw-bot',
-        help: 'Username for the bot account in ZTM',
-        required: true,
-        validation: {
-          pattern: '^[a-zA-Z0-9_-]+$',
-          message: 'Only letters, numbers, hyphens, and underscores',
-        },
-      },
-      enableGroups: {
-        label: 'Enable Groups',
-        help: 'Enable group chat support (future feature)',
-        advanced: true,
-      },
-    },
-  };
+  // Build schema using OpenClaw's helper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return buildChannelConfigSchema(ztmChatConfigBaseSchema as any);
 }
