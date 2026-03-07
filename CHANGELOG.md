@@ -2,9 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.7 - 2026-03-07
+
+[a8ae92d](a8ae92d003872581a0c70c2acebf8ff68d626039)...[4c9d37e](4c9d37eb2e7d7b70c0335fcdb1ce4ec36f8b2ece)
+
+### 🚨 BREAKING CHANGES
+
+- Use OpenClaw standard defaultRuntime constant ([5849bf1](5849bf12518e5153e98daf94461e4ec5d5e1913f)) - (Lin Yang)
+
+
+
+### 🚀 Features
+
+- Add multi-dimensional labeler workflow (#7) ([6fc91d5](6fc91d5ad1e7ad2be3790fb11838cf42414cb571)) - (Lin Yang)
+- Add circular dependency detection to pre-commit hooks ([aa890eb](aa890eb7634328c56fada81714521b46393c587f)) - (Lin Yang)
+- Add runtime state checks to collectStatusIssues ([d469d25](d469d25ba0b18e86a81328a3f976ec2bee88cb4a)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Correct labeler.yml syntax for actions/labeler@v5 ([27f12e2](27f12e2031b03a8ef7500cd06a9119deaea5e2e9)) - (Lin Yang)
+- Eliminate 6 circular dependencies (#10) ([bbcc2e7](bbcc2e7a3f026207b1edb902e8edaa1ab8cd9fef)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Apply interface segregation to message strategies (#11) ([c76f58e](c76f58edabe2f8ef60372ca6dc63e2242f0e4535)) - (Lin Yang)
+- Migrate from TypeBox to Zod schemas (#12) ([f2cf8a9](f2cf8a9f3c70ea2bdb02ae0e0aa434892e6332ac)) - (Lin Yang)
+
+### ✅ Testing
+
+- Add unit tests for message retry with 100% coverage ([ef3eb94](ef3eb94d10cd8fbeb32dd9399aa5a8f553924208)) - (Lin Yang)
+- Improve test coverage to 94% ([0e9b838](0e9b83825b1d600e69908a002d0c8c7cb669dd6d)) - (Lin Yang)
+
+
+### 🔨 Build
+
+- Bump @types/node from 24.11.0 to 24.11.2 (#8) ([5cc9cf6](5cc9cf609e8b7b2bb391b2ffb67b56c32e8466af)) - (dependabot[bot])
+
+### 📖 Documentation
+
+- Add CODEOWNERS and OWNERS documentation (#9) ([b7fc943](b7fc9431079bd81cf645b18c297f92a33b337e74)) - (Lin Yang)
+
+
 ## 2026.3.6 - 2026-03-06
 
-[e0a8738](e0a87388a032f546d9a5eb48beea9ee7c6e4525b)...[c3b037d](c3b037d716685791000916c44a29481992b4ce63)
+[e0a8738](e0a87388a032f546d9a5eb48beea9ee7c6e4525b)...[a8ae92d](a8ae92d003872581a0c70c2acebf8ff68d626039)
 
 
 
