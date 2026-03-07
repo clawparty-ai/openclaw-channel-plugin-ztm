@@ -1665,10 +1665,17 @@ describe('ZTMChatWizard', () => {
       expect(typeof runWizard).toBe('function');
     });
 
-    it('should verify runWizard implementation exists', async () => {
-      // Test the implementation logic directly
-      const wizardClassExists = true;
-      expect(wizardClassExists).toBe(true);
+    it('should actually execute runWizard and return result', async () => {
+      vi.mock('../runtime/index.js', () => ({
+        isRuntimeInitialized: vi.fn(() => false),
+        getZTMRuntime: vi.fn(),
+      }));
+
+      vi.resetModules();
+      const { runWizard } = await import('./onboarding.js');
+      const result = await runWizard();
+      // When runtime is not initialized, wizard returns config without savePath
+      expect(result === null || result?.savePath === undefined).toBe(true);
     });
   });
 
