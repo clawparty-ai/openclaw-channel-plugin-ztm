@@ -7,9 +7,15 @@
 import type { ChannelAccountSnapshot as BaseChannelAccountSnapshot } from 'openclaw/plugin-sdk';
 
 /**
- * Extended snapshot type - using base type directly
+ * Extended snapshot type with ZTM custom fields
  */
-export type ChannelAccountSnapshot = BaseChannelAccountSnapshot;
+export type ChannelAccountSnapshot = BaseChannelAccountSnapshot & {
+  credentialSource?: string;
+  meshName?: string;
+  certExpiryDate?: string | null;
+  certDaysUntilExpiry?: number | null;
+  certIsExpired?: boolean;
+};
 
 /**
  * Interface for buildChannelSummary function parameters
@@ -33,12 +39,17 @@ export interface ChannelStatusIssue {
  * Builds channel summary from account snapshot
  *
  * Maps the account snapshot to a summary format with all relevant status fields.
+ * Includes custom credential snapshot fields (credentialSource, meshName, certExpiry*, etc.)
+ * Only certExpiryDate is formatted as local timezone string; other timestamp fields
+ * remain as number | null per ChannelAccountSnapshot definition.
  *
  * @param snapshot - Account snapshot to convert
- * @returns Channel summary object
+ * @returns Channel summary object with all fields
  */
 export function buildChannelSummary({ snapshot }: BuildChannelSummaryContext) {
   return {
+    // Base fields - pass through as-is (number | null)
+    accountId: snapshot.accountId,
     configured: snapshot.configured ?? false,
     running: snapshot.running ?? false,
     lastStartAt: snapshot.lastStartAt ?? null,
@@ -46,6 +57,15 @@ export function buildChannelSummary({ snapshot }: BuildChannelSummaryContext) {
     lastError: snapshot.lastError ?? null,
     lastInboundAt: snapshot.lastInboundAt ?? null,
     lastOutboundAt: snapshot.lastOutboundAt ?? null,
+    // Credential snapshot fields - pass through all custom fields
+    ...(snapshot.credentialSource !== undefined && { credentialSource: snapshot.credentialSource }),
+    ...(snapshot.meshName !== undefined && { meshName: snapshot.meshName }),
+    // Certificate expiry fields - certExpiryDate is already formatted as string
+    ...(snapshot.certExpiryDate !== undefined && { certExpiryDate: snapshot.certExpiryDate }),
+    ...(snapshot.certDaysUntilExpiry !== undefined && {
+      certDaysUntilExpiry: snapshot.certDaysUntilExpiry,
+    }),
+    ...(snapshot.certIsExpired !== undefined && { certIsExpired: snapshot.certIsExpired }),
   };
 }
 

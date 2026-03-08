@@ -263,6 +263,127 @@ describe('buildAccountSnapshot', () => {
     });
   });
 
+  describe('credential snapshot fields', () => {
+    it('should return credentialSource with server format when permitSource is server', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValue(new Map());
+
+      const account = createMockAccount({
+        config: {
+          agentUrl: 'https://example.com:7777',
+          permitUrl: 'https://permit.example.com:7779/permit',
+          permitSource: 'server',
+          meshName: 'test-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
+          enableGroups: false,
+        },
+      });
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot.credentialSource).toBe('server:https://permit.example.com:7779/permit');
+    });
+
+    it('should return credentialSource with file format when permitSource is file', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValue(new Map());
+
+      const account = createMockAccount({
+        config: {
+          agentUrl: 'https://example.com:7777',
+          permitFilePath: '/home/user/ztm/permit.json',
+          permitSource: 'file',
+          meshName: 'test-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
+          enableGroups: false,
+        },
+      });
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot.credentialSource).toBe('file:/home/user/ztm/permit.json');
+    });
+
+    it('should return meshName from config', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValue(new Map());
+
+      const account = createMockAccount({
+        config: {
+          agentUrl: 'https://example.com:7777',
+          permitUrl: 'https://example.com/permit',
+          permitSource: 'server',
+          meshName: 'my-production-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
+          enableGroups: false,
+        },
+      });
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot.meshName).toBe('my-production-mesh');
+    });
+
+    it('should include both credentialSource and meshName in snapshot', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValue(new Map());
+
+      const account = createMockAccount();
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot).toHaveProperty('credentialSource');
+      expect(snapshot).toHaveProperty('meshName');
+      expect(snapshot.credentialSource).toBeDefined();
+      expect(snapshot.meshName).toBe('test-mesh');
+    });
+
+    it('should handle undefined permitUrl in server mode gracefully', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValue(new Map());
+
+      const account = createMockAccount({
+        config: {
+          agentUrl: 'https://example.com:7777',
+          permitUrl: undefined,
+          permitSource: 'server',
+          meshName: 'test-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
+          enableGroups: false,
+        } as any,
+      });
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot.credentialSource).toBe('server:undefined');
+    });
+
+    it('should handle undefined permitFilePath in file mode gracefully', async () => {
+      const { getAllAccountStates } = await import('../runtime/state.js');
+      (getAllAccountStates as any).mockReturnValue(new Map());
+
+      const account = createMockAccount({
+        config: {
+          agentUrl: 'https://example.com:7777',
+          permitFilePath: undefined,
+          permitSource: 'file',
+          meshName: 'test-mesh',
+          username: 'test-bot',
+          dmPolicy: 'pairing',
+          enableGroups: false,
+        } as any,
+      });
+
+      const snapshot = buildAccountSnapshot({ account });
+
+      expect(snapshot.credentialSource).toBe('file:undefined');
+    });
+  });
+
   describe('account-specific state', () => {
     it('should look up state by accountId', async () => {
       const { getAllAccountStates } = await import('../runtime/state.js');
