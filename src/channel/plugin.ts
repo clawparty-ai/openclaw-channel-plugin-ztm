@@ -212,6 +212,11 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   },
 
   // ---------------------------------------------------------------------------
+  // Gateway Methods Section - Account login methods (not applicable for ZTM)
+  // ---------------------------------------------------------------------------
+  gatewayMethods: [],
+
+  // ---------------------------------------------------------------------------
   // Pairing Section - Device pairing configuration
   // ---------------------------------------------------------------------------
   pairing: {
@@ -250,6 +255,93 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   },
 
   // ---------------------------------------------------------------------------
+  // Setup Section - CLI account management
+  // ---------------------------------------------------------------------------
+  setup: {
+    resolveAccountId: ({ accountId }) => accountId?.trim()?.toLowerCase() || 'default',
+    applyAccountName: ({ cfg, accountId, name }) => {
+      const accountKey = accountId || 'default';
+      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
+      const existing = accounts[accountKey] ?? {};
+      return {
+        ...cfg,
+        channels: {
+          ...cfg.channels,
+          ['ztm-chat']: {
+            ...cfg.channels?.['ztm-chat'],
+            accounts: {
+              ...accounts,
+              [accountKey]: {
+                ...existing,
+                ...(name ? { name } : {}),
+              },
+            },
+          },
+        },
+      };
+    },
+    validateInput: ({ accountId: _accountId, input }) => {
+      // Validate ZTM required fields
+      const channelInput = input as Record<string, unknown>;
+      if (!channelInput.agentUrl) {
+        return 'ZTM Chat requires --agent-url.';
+      }
+      if (!channelInput.username) {
+        return 'ZTM Chat requires --username.';
+      }
+      if (!channelInput.meshName) {
+        return 'ZTM Chat requires --mesh-name.';
+      }
+      if (!channelInput.permitSource) {
+        return 'ZTM Chat requires --permit-source (server or file).';
+      }
+      if (channelInput.permitSource === 'server' && !channelInput.permitUrl) {
+        return "ZTM Chat requires --permit-url when permit-source is 'server'.";
+      }
+      if (channelInput.permitSource === 'file' && !channelInput.permitFilePath) {
+        return "ZTM Chat requires --permit-file-path when permit-source is 'file'.";
+      }
+      return null;
+    },
+    applyAccountConfig: ({ cfg, accountId, input }) => {
+      const accountKey = accountId || 'default';
+      const channelInput = input as Record<string, unknown>;
+      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
+      const existing = accounts[accountKey] ?? {};
+
+      // Build config object from input
+      const ztmConfig: Record<string, unknown> = {};
+      if (channelInput.agentUrl) ztmConfig.agentUrl = channelInput.agentUrl;
+      if (channelInput.username) ztmConfig.username = channelInput.username;
+      if (channelInput.meshName) ztmConfig.meshName = channelInput.meshName;
+      if (channelInput.permitSource) ztmConfig.permitSource = channelInput.permitSource;
+      if (channelInput.permitUrl) ztmConfig.permitUrl = channelInput.permitUrl;
+      if (channelInput.permitFilePath) ztmConfig.permitFilePath = channelInput.permitFilePath;
+      if (channelInput.enableGroups !== undefined)
+        ztmConfig.enableGroups = channelInput.enableGroups;
+      if (channelInput.dmPolicy) ztmConfig.dmPolicy = channelInput.dmPolicy;
+      if (channelInput.allowFrom) ztmConfig.allowFrom = channelInput.allowFrom;
+
+      return {
+        ...cfg,
+        channels: {
+          ...cfg.channels,
+          ['ztm-chat']: {
+            ...cfg.channels?.['ztm-chat'],
+            accounts: {
+              ...accounts,
+              [accountKey]: {
+                ...existing,
+                ...ztmConfig,
+              },
+            },
+          },
+        },
+      };
+    },
+  },
+
+  // ---------------------------------------------------------------------------
   // Reload Section - Configuration reload handling
   // ---------------------------------------------------------------------------
   reload: { configPrefixes: ['channels.ztm-chat'] },
@@ -283,6 +375,53 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
     defaultAccountId: cfg => resolveDefaultZTMChatAccountId(cfg ?? undefined),
     isConfigured: account => isConfigMinimallyValid(getZTMChatConfig(account) ?? {}),
+    unconfiguredReason: (account, _cfg) => {
+      const config = getZTMChatConfig(account);
+      if (!config?.agentUrl) return 'not configured';
+      if (!config?.username) return 'not configured';
+      if (!config?.meshName) return 'not configured';
+      if (!config?.permitSource) return 'not configured';
+      if (config.permitSource === 'server' && !config.permitUrl) return 'not configured';
+      if (config.permitSource === 'file' && !config.permitFilePath) return 'not configured';
+      // Return empty string when properly configured (falsy, will be handled by caller)
+      return '';
+    },
+    setAccountEnabled: ({ cfg, accountId, enabled }) => {
+      const accountKey = accountId || 'default';
+      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
+      const existing = accounts[accountKey] ?? {};
+      return {
+        ...cfg,
+        channels: {
+          ...cfg.channels,
+          ['ztm-chat']: {
+            ...cfg.channels?.['ztm-chat'],
+            accounts: {
+              ...accounts,
+              [accountKey]: {
+                ...existing,
+                enabled,
+              },
+            },
+          },
+        },
+      };
+    },
+    deleteAccount: ({ cfg, accountId }) => {
+      const accountKey = accountId || 'default';
+      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
+      delete accounts[accountKey];
+      return {
+        ...cfg,
+        channels: {
+          ...cfg.channels,
+          ['ztm-chat']: {
+            ...cfg.channels?.['ztm-chat'],
+            accounts: Object.keys(accounts).length ? accounts : undefined,
+          },
+        },
+      };
+    },
     describeAccount: account => {
       const config = getZTMChatConfig(account);
       return {
@@ -341,11 +480,56 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // ---------------------------------------------------------------------------
   outbound: {
     deliveryMode: 'direct',
+    chunker: (text: string, limit: number): string[] => {
+      if (text.length <= limit) return [text];
+      const chunks: string[] = [];
+      for (let i = 0; i < text.length; i += limit) {
+        chunks.push(text.slice(i, i + limit));
+      }
+      return chunks;
+    },
+    chunkerMode: 'text' as const,
+    textChunkLimit: 4000,
     sendText: async ({ to, text, accountId }) => {
       const target = to == null ? '' : String(to);
       const accountKey = accountId == null ? undefined : accountId;
       return sendTextGateway({ to: target, text, accountId: accountKey });
     },
+    sendMedia: async ({ to: _to, text: _text, mediaUrl: _mediaUrl, accountId: _accountId }) => {
+      // ZTM doesn't support media sending yet
+      return {
+        channel: 'ztm-chat',
+        ok: false,
+        messageId: '',
+        error: 'Media sending not supported',
+      };
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Actions Section - Message operations (not supported in ZTM)
+  // ---------------------------------------------------------------------------
+  actions: {
+    listActions: () => [],
+    supportsAction: ({ action: _action }) => false,
+    handleAction: async ({ action: _action }) => {
+      throw new Error(`Action ${_action} not supported for ztm-chat`);
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Threading Section - Thread/reply configuration (not supported in ZTM)
+  // ---------------------------------------------------------------------------
+  threading: {
+    resolveReplyToMode: () => 'off' as const,
+  },
+
+  // ---------------------------------------------------------------------------
+  // Commands Section - Command configuration
+  // ---------------------------------------------------------------------------
+  commands: {
+    enforceOwnerForCommands: false,
+    skipWhenConfigEmpty: false,
   },
 
   // ---------------------------------------------------------------------------

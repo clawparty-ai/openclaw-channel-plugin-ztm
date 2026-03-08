@@ -24,21 +24,39 @@ describe('getDefaultConfig', () => {
 });
 
 describe('isConfigMinimallyValid', () => {
-  it('should return true for valid config', () => {
+  // Valid configs
+  it('should return true for valid config with permitSource=server', () => {
     const config = {
-      agentUrl: testConfig.agentUrl,
-      meshName: testConfig.meshName,
-      username: testConfig.username,
+      agentUrl: 'http://localhost:7777',
+      meshName: 'my-mesh',
+      username: 'test-bot',
+      permitSource: 'server' as const,
+      permitUrl: 'https://permit.example.com',
     } as Partial<ZTMChatConfig>;
 
     expect(isConfigMinimallyValid(config)).toBe(true);
   });
 
+  it('should return true for valid config with permitSource=file', () => {
+    const config = {
+      agentUrl: 'http://localhost:7777',
+      meshName: 'my-mesh',
+      username: 'test-bot',
+      permitSource: 'file' as const,
+      permitFilePath: '/path/to/permit.json',
+    } as Partial<ZTMChatConfig>;
+
+    expect(isConfigMinimallyValid(config)).toBe(true);
+  });
+
+  // Missing required fields
   it('should return false for missing agentUrl', () => {
     const config = {
       agentUrl: '',
       meshName: 'my-mesh',
       username: 'test-bot',
+      permitSource: 'server' as const,
+      permitUrl: 'https://permit.example.com',
     } as Partial<ZTMChatConfig>;
 
     expect(isConfigMinimallyValid(config)).toBe(false);
@@ -49,6 +67,53 @@ describe('isConfigMinimallyValid', () => {
       agentUrl: 'https://example.com',
       meshName: 'my-mesh',
       username: '',
+      permitSource: 'server' as const,
+      permitUrl: 'https://permit.example.com',
+    } as Partial<ZTMChatConfig>;
+
+    expect(isConfigMinimallyValid(config)).toBe(false);
+  });
+
+  it('should return false for missing meshName', () => {
+    const config = {
+      agentUrl: 'https://example.com',
+      meshName: '',
+      username: 'test-bot',
+      permitSource: 'server' as const,
+      permitUrl: 'https://permit.example.com',
+    } as Partial<ZTMChatConfig>;
+
+    expect(isConfigMinimallyValid(config)).toBe(false);
+  });
+
+  it('should return false for missing permitSource', () => {
+    const config = {
+      agentUrl: 'https://example.com',
+      meshName: 'my-mesh',
+      username: 'test-bot',
+    } as Partial<ZTMChatConfig>;
+
+    expect(isConfigMinimallyValid(config)).toBe(false);
+  });
+
+  // permitSource-dependent fields
+  it('should return false for permitSource=server without permitUrl', () => {
+    const config = {
+      agentUrl: 'https://example.com',
+      meshName: 'my-mesh',
+      username: 'test-bot',
+      permitSource: 'server' as const,
+    } as Partial<ZTMChatConfig>;
+
+    expect(isConfigMinimallyValid(config)).toBe(false);
+  });
+
+  it('should return false for permitSource=file without permitFilePath', () => {
+    const config = {
+      agentUrl: 'https://example.com',
+      meshName: 'my-mesh',
+      username: 'test-bot',
+      permitSource: 'file' as const,
     } as Partial<ZTMChatConfig>;
 
     expect(isConfigMinimallyValid(config)).toBe(false);
