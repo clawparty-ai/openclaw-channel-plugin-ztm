@@ -32,12 +32,12 @@ describe('ZTM Chat Channel Plugin', () => {
         threads: false,
         media: false,
         nativeCommands: false,
-        blockStreaming: true,
+        blockStreaming: false,
       };
 
       expect(capabilities.chatTypes).toEqual(['direct']);
       expect(capabilities.reactions).toBe(false);
-      expect(capabilities.blockStreaming).toBe(true);
+      expect(capabilities.blockStreaming).toBe(false);
     });
   });
 

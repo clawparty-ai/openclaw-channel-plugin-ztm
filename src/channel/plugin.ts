@@ -245,7 +245,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     threads: false,
     media: false,
     nativeCommands: false,
-    blockStreaming: true,
+    blockStreaming: false,
   },
 
   // ---------------------------------------------------------------------------

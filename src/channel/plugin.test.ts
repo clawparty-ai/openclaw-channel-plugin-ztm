@@ -153,8 +153,8 @@ describe('plugin', () => {
       expect(p.capabilities.threads).toBe(false);
     });
 
-    it('should block streaming', () => {
-      expect(p.capabilities.blockStreaming).toBe(true);
+    it('should not support block streaming', () => {
+      expect(p.capabilities.blockStreaming).toBe(false);
     });
   });
 
