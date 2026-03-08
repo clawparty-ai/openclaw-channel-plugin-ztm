@@ -19,6 +19,9 @@ import { getAllAccountStates, stopRuntime, removeAccountState } from '../runtime
 import { sendZTMMessage, generateMessageId } from '../messaging/outbound.js';
 import { container, DEPENDENCIES } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
+import { resolvePermitPath } from '../utils/paths.js';
+import { loadPermitFromFile } from '../connectivity/permit.js';
+import { getCertificateExpiryStatus } from '../utils/certificate.js';
 import { probeAccount as probeAccountConnectivity } from './connectivity-manager.js';
 import type { StepContext } from './gateway-pipeline.types.js';
 import { dispatchInboundMessage } from './gateway-message-handler.js';
@@ -136,6 +139,38 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
           message: 'Account was stopped',
         });
       }
+    }
+  }
+
+  // Certificate expiry warning threshold (days)
+  const CERT_EXPIRY_WARNING_DAYS = 30;
+
+  // 3. Check certificate expiration
+  const permitPath = resolvePermitPath(accountId || 'default');
+  const permitData = loadPermitFromFile(permitPath);
+
+  if (permitData?.agent?.certificate) {
+    const expiryStatus = getCertificateExpiryStatus(permitData.agent.certificate);
+
+    if (expiryStatus.isExpired) {
+      issues.push({
+        channel: 'ztm-chat',
+        accountId: accountId || 'default',
+        kind: 'auth',
+        level: 'error',
+        message: 'Certificate has expired',
+      });
+    } else if (
+      expiryStatus.daysUntilExpiry !== null &&
+      expiryStatus.daysUntilExpiry < CERT_EXPIRY_WARNING_DAYS
+    ) {
+      issues.push({
+        channel: 'ztm-chat',
+        accountId: accountId || 'default',
+        kind: 'auth',
+        level: 'warn',
+        message: `Certificate expires in ${expiryStatus.daysUntilExpiry} days`,
+      });
     }
   }
 

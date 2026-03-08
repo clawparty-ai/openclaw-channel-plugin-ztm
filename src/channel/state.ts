@@ -8,6 +8,10 @@ import type { ZTMChatConfig } from '../types/config.js';
 import { isConfigMinimallyValid } from '../config/validation.js';
 import { getAllAccountStates } from '../runtime/state.js';
 import type { ResolvedZTMChatAccount } from './config.js';
+import { resolvePermitPath } from '../utils/paths.js';
+import { loadPermitFromFile } from '../connectivity/permit.js';
+import { getCertificateExpiryStatus } from '../utils/certificate.js';
+import { formatTimestampToLocalTz } from '../utils/format.js';
 
 // ============================================================================
 // Build Account Snapshot
@@ -28,19 +32,46 @@ export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAcco
   lastInboundAt: number | null;
   lastOutboundAt: number | null;
   lastEventAt: number | null;
+  // Credential snapshot fields for OpenClaw status display
+  credentialSource?: string;
+  meshName?: string;
+  // Certificate expiry fields
+  certExpiryDate?: string | null;
+  certDaysUntilExpiry?: number | null;
+  certIsExpired?: boolean;
 } {
   const accountStates = getAllAccountStates();
   const state = accountStates.get(account.accountId);
+  const config = account.config;
 
-  // running: process state - watcher is active
-  const running = state?.started ?? false;
+  // Build credentialSource: format as "server:<url>" or "file:<path>"
+  const credentialSource =
+    config.permitSource === 'server'
+      ? `server:${config.permitUrl}`
+      : `file:${config.permitFilePath}`;
+
+  // Get certificate from permit file
+  const permitPath = resolvePermitPath(account.accountId);
+  const permitData = loadPermitFromFile(permitPath);
+
+  let certExpiryDate: string | null = null;
+  let certDaysUntilExpiry: number | null = null;
+  let certIsExpired = false;
+
+  if (permitData?.agent?.certificate) {
+    const expiryStatus = getCertificateExpiryStatus(permitData.agent.certificate);
+    // Only format certExpiryDate as local timezone string
+    certExpiryDate = formatTimestampToLocalTz(expiryStatus.expiryDate);
+    certDaysUntilExpiry = expiryStatus.daysUntilExpiry;
+    certIsExpired = expiryStatus.isExpired;
+  }
 
   return {
     accountId: account.accountId,
     name: account.username,
     enabled: account.enabled,
-    configured: isConfigMinimallyValid(account.config as ZTMChatConfig),
-    running,
+    configured: isConfigMinimallyValid(config as ZTMChatConfig),
+    running: state?.started ?? false,
     lastStartAt: state?.lastStartAt ? Number(state.lastStartAt) : null,
     lastStopAt: state?.lastStopAt ? Number(state.lastStopAt) : null,
     lastError: state?.lastError ?? null,
@@ -53,5 +84,12 @@ export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAcco
       const max = Math.max(inbound, outbound);
       return max > 0 ? max : null;
     })(),
+    // Credential snapshot fields
+    credentialSource,
+    meshName: config.meshName,
+    // Certificate expiry fields
+    certExpiryDate,
+    certDaysUntilExpiry,
+    certIsExpired,
   };
 }
