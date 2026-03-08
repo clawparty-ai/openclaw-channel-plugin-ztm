@@ -82,12 +82,24 @@ export function validateZTMChatConfig(raw: unknown): ZTMChatConfigValidation {
 /**
  * Check if config is minimally valid (has required fields)
  * @param config - Partial configuration to check
- * @returns True if the config has required fields (agentUrl and username)
+ * @returns True if the config has all required fields
  */
 export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean {
-  return Boolean(
-    config.agentUrl && config.agentUrl.trim() && config.username && config.username.trim()
-  );
+  // Check basic required fields
+  if (!config.agentUrl?.trim()) return false;
+  if (!config.username?.trim()) return false;
+  if (!config.meshName?.trim()) return false;
+  if (!config.permitSource) return false;
+
+  // Check permitSource-dependent fields
+  if (config.permitSource === 'server') {
+    if (!config.permitUrl?.trim()) return false;
+  }
+  if (config.permitSource === 'file') {
+    if (!config.permitFilePath?.trim()) return false;
+  }
+
+  return true;
 }
 
 /**
