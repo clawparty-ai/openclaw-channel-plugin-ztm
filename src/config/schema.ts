@@ -94,7 +94,8 @@ const GroupPermissionsSchema = z.object({
 const ztmChatConfigSchemaInner = z.object({
   agentUrl: z
     .string({
-      required_error: 'Agent URL is required',
+      error: issue =>
+        issue.input === undefined ? 'Agent URL is required' : 'Agent URL must be a string',
     })
     .url('Agent URL must be a valid URL')
     .describe('ZTM Agent HTTP endpoint URL for mesh communication'),
@@ -107,7 +108,8 @@ const ztmChatConfigSchemaInner = z.object({
 
   permitSource: z
     .enum(PERMIT_SOURCE_VALUES, {
-      required_error: 'Permit source is required',
+      error: issue =>
+        issue.input === undefined ? 'Permit source is required' : 'Invalid permit source',
     })
     .describe("How to obtain permit.json: 'server' from permit server, or 'file' from local file"),
 
@@ -118,7 +120,8 @@ const ztmChatConfigSchemaInner = z.object({
 
   meshName: z
     .string({
-      required_error: 'Mesh name is required',
+      error: issue =>
+        issue.input === undefined ? 'Mesh name is required' : 'Mesh name must be a string',
     })
     .min(1, 'Mesh name must be at least 1 character')
     .max(64, 'Mesh name must be at most 64 characters')
@@ -130,7 +133,8 @@ const ztmChatConfigSchemaInner = z.object({
 
   username: z
     .string({
-      required_error: 'Bot username is required',
+      error: issue =>
+        issue.input === undefined ? 'Bot username is required' : 'Bot username must be a string',
     })
     .min(1, 'Bot username must be at least 1 character')
     .max(64, 'Bot username must be at most 64 characters')
@@ -142,7 +146,8 @@ const ztmChatConfigSchemaInner = z.object({
 
   enableGroups: z
     .boolean({
-      invalid_type_error: 'Enable groups must be a boolean',
+      error: issue =>
+        issue.input === undefined ? 'Enable groups is required' : 'Enable groups must be a boolean',
     })
     .optional()
     .describe('Enable group messaging features (requires ZTM groups support)'),
@@ -162,7 +167,8 @@ const ztmChatConfigSchemaInner = z.object({
 
   apiTimeout: z
     .number({
-      invalid_type_error: 'API timeout must be a number',
+      error: issue =>
+        issue.input === undefined ? 'API timeout is required' : 'API timeout must be a number',
     })
     .int('API timeout must be an integer')
     .min(1000, 'API timeout must be at least 1000ms')
@@ -179,7 +185,10 @@ const ztmChatConfigSchemaInner = z.object({
 
   requireMention: z
     .boolean({
-      invalid_type_error: 'Require mention must be a boolean',
+      error: issue =>
+        issue.input === undefined
+          ? 'Require mention is required'
+          : 'Require mention must be a boolean',
     })
     .optional()
     .describe('Require @mention to process group messages'),
