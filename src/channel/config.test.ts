@@ -6,6 +6,7 @@ import {
   getEffectiveChannelConfig,
   listZTMChatAccountIds,
   resolveZTMChatAccount,
+  resolveDefaultZTMChatAccountId,
   buildChannelConfigSchemaWithHints,
 } from './config.js';
 
@@ -207,6 +208,83 @@ describe('Channel Config', () => {
       expect(result).toContain('secondary');
       expect(result).toContain('tertiary');
       expect(result).toContain('backup');
+    });
+  });
+
+  describe('resolveDefaultZTMChatAccountId', () => {
+    it('should return "default" when no accounts config', () => {
+      const cfg: OpenClawConfig = {};
+
+      const result = resolveDefaultZTMChatAccountId(cfg);
+
+      expect(result).toBe('default');
+    });
+
+    it('should return first account ID when accounts exist', () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            accounts: {
+              account1: { username: 'bot1' },
+              account2: { username: 'bot2' },
+            },
+          },
+        },
+      };
+
+      const result = resolveDefaultZTMChatAccountId(cfg);
+
+      expect(result).toBe('account1');
+    });
+
+    it('should return single account ID', () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            accounts: {
+              primary: { username: 'bot' },
+            },
+          },
+        },
+      };
+
+      const result = resolveDefaultZTMChatAccountId(cfg);
+
+      expect(result).toBe('primary');
+    });
+
+    it('should return "default" when accounts object is empty', () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            accounts: {},
+          },
+        },
+      };
+
+      const result = resolveDefaultZTMChatAccountId(cfg);
+
+      expect(result).toBe('default');
+    });
+
+    it('should return "default" when accounts is not an object', () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            accounts: 'not-an-object',
+          },
+        },
+      };
+
+      const result = resolveDefaultZTMChatAccountId(cfg);
+
+      expect(result).toBe('default');
+    });
+
+    it('should return "default" when cfg is undefined', () => {
+      const result = resolveDefaultZTMChatAccountId(undefined as any);
+
+      expect(result).toBe('default');
     });
   });
 

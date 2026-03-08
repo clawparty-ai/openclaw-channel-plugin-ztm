@@ -85,6 +85,7 @@ container.register(DEPENDENCIES.MESSAGING_CONTEXT, () => {
 import {
   resolveZTMChatAccount,
   listZTMChatAccountIds,
+  resolveDefaultZTMChatAccountId,
   buildChannelConfigSchemaWithHints,
 } from './config.js';
 import { isConfigMinimallyValid } from '../config/index.js';
@@ -280,7 +281,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     listAccountIds: cfg => listZTMChatAccountIds(cfg ?? undefined),
     resolveAccount: (cfg, accountId) =>
       resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
-    defaultAccountId: cfg => listZTMChatAccountIds(cfg ?? undefined)[0] ?? 'default',
+    defaultAccountId: cfg => resolveDefaultZTMChatAccountId(cfg ?? undefined),
     isConfigured: account => isConfigMinimallyValid(getZTMChatConfig(account) ?? {}),
     describeAccount: account => {
       const config = getZTMChatConfig(account);

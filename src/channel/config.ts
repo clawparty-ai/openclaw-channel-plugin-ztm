@@ -63,6 +63,24 @@ export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
   return ['default'];
 }
 
+/**
+ * Get the default ZTM chat account ID
+ *
+ * Returns the first account ID from the list, or 'default' as fallback.
+ * This is used by OpenClaw core for health checks, UI prompts, and config validation.
+ *
+ * @param cfg - OpenClaw configuration object
+ * @returns Default account ID
+ *
+ * @example
+ * ```typescript
+ * const defaultId = resolveDefaultZTMChatAccountId(cfg);
+ * ```
+ */
+export function resolveDefaultZTMChatAccountId(cfg: OpenClawConfig): string {
+  return listZTMChatAccountIds(cfg)[0] ?? 'default';
+}
+
 // Dangerous property names that could lead to prototype pollution
 const DANGEROUS_PROPERTY_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
 

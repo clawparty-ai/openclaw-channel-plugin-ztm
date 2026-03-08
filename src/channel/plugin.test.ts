@@ -67,6 +67,7 @@ vi.mock('./config.js', () => ({
     },
   })),
   listZTMChatAccountIds: vi.fn((_cfg?: any) => ['default', 'account1']),
+  resolveDefaultZTMChatAccountId: vi.fn((_cfg?: any) => 'default'),
   buildChannelConfigSchemaWithHints: vi.fn(() => ({})),
 }));
 
