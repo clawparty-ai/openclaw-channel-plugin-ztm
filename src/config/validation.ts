@@ -20,18 +20,18 @@ import type { ZodError } from 'zod';
  * @returns Array of ConfigValidationError objects
  */
 function mapZodErrorToReason(error: ZodError): ConfigValidationError[] {
-  return error.errors.map(err => {
+  return error.issues.map(err => {
     const field = err.path.length > 0 ? err.path.join('.') : 'root';
     let reason: ConfigValidationError['reason'] = 'invalid_format';
 
-    // Map Zod error codes to our reason types
-    if (err.code === 'invalid_string' || err.code === 'invalid_type') {
+    // Map Zod error codes to our reason types (Zod v4)
+    if (err.code === 'invalid_format' || err.code === 'invalid_type') {
       reason = 'type_mismatch';
-    } else if (err.code === 'too_small' && err.type === 'string') {
-      reason = 'required';
-    } else if (err.code === 'too_small' || err.code === 'too_big') {
+    } else if (err.code === 'too_small') {
       reason = 'out_of_range';
-    } else if (err.code === 'invalid_enum_value') {
+    } else if (err.code === 'too_big') {
+      reason = 'out_of_range';
+    } else if (err.code === 'invalid_value') {
       reason = 'invalid_format';
     }
 
