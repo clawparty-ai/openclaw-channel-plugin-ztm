@@ -164,8 +164,8 @@ Dependencies are locked to exact versions:
 
 ```json
 {
-  "openclaw": "2026.2.24",
-  "@sinclair/typebox": "0.34.48",
+  "openclaw": "2026.3.7",
+  "zod": "4.3.6",
   "typescript": "5.9.3"
 }
 ```

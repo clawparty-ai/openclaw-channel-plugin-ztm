@@ -30,6 +30,21 @@
 
 // ZTM Chat Plugin Logger
 
+/**
+ * Log level for filtering messages by severity.
+ *
+ * @remarks
+ * Messages are logged only if their level is at least as severe as the configured level.
+ * Levels in order of severity: `debug` < `info` < `warn` < `error`
+ *
+ * @example
+ * ```typescript
+ * import { logger, LogLevel } from './utils/logger.js';
+ *
+ * // Set log level to only show warnings and errors
+ * logger.setLevel('warn' as LogLevel);
+ * ```
+ */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
@@ -147,12 +162,62 @@ class ZTMChatLogger {
 }
 
 // Singleton instance
+/**
+ * Singleton logger instance for ZTM Chat plugin.
+ *
+ * @remarks
+ * This is the default logger that should be used throughout the codebase.
+ * It reads the log level from the `ZTM_CHAT_LOG_LEVEL` environment variable.
+ *
+ * @example
+ * ```typescript
+ * import { logger } from './utils/logger.js';
+ *
+ * logger.info('Operation completed successfully');
+ * logger.error('Operation failed', { errorCode: 500 });
+ * ```
+ */
 export const logger: Logger = ZTMChatLogger.getInstance();
 
 // Default logger for dependency injection
+/**
+ * Default logger instance used for dependency injection.
+ *
+ * @remarks
+ * This is an alias for the singleton {@link logger} instance.
+ * Use this when you need to inject a logger as a dependency.
+ *
+ * @example
+ * ```typescript
+ * import { defaultLogger } from './utils/logger.js';
+ *
+ * class MyService {
+ *   private log = defaultLogger;
+ * }
+ * ```
+ */
 export const defaultLogger: Logger = logger;
 
 // Context-aware logger factory
+/**
+ * Creates a context-aware logger that automatically includes context in every log message.
+ *
+ * @param context - Key-value pairs to include in every log message from this logger
+ * @returns A logger object that automatically includes the provided context
+ *
+ * @remarks
+ * The returned logger has the same interface as {@link Logger} but doesn't accept
+ * context parameters, as the context is fixed at creation time.
+ *
+ * @example
+ * ```typescript
+ * import { createLogger } from './utils/logger.js';
+ *
+ * const chatLogger = createLogger({ component: 'chat-processor', accountId: 'user@example.com' });
+ * chatLogger.info('Processing message'); // Logs with component and accountId context
+ * chatLogger.error('Failed to process'); // Logs with the same context
+ * ```
+ */
 export function createLogger(context: Record<string, string>): {
   debug: (message: string) => void;
   info: (message: string) => void;
@@ -202,8 +267,32 @@ export function getLogger(): Logger {
 let runtimeLogger: Logger | null = null;
 
 /**
- * Set the runtime logger - called by runtime initialization
- * This enables consistent logging via getLogger()
+ * Sets the runtime logger instance for dependency injection.
+ *
+ * @param logger - The logger instance to use as the runtime logger
+ *
+ * @remarks
+ * This function is called by the runtime initialization process to inject
+ * a custom logger that will be used by {@link getLogger} throughout the codebase.
+ * This enables consistent logging with runtime-specific configuration.
+ *
+ * @example
+ * ```typescript
+ * import { setRuntimeLogger } from './utils/logger.js';
+ *
+ * // Custom logger implementation
+ * const customLogger: Logger = {
+ *   debug: (msg, ctx) => console.log('[DEBUG]', msg, ctx),
+ *   info: (msg, ctx) => console.log('[INFO]', msg, ctx),
+ *   warn: (msg, ctx) => console.warn('[WARN]', msg, ctx),
+ *   error: (msg, ctx) => console.error('[ERROR]', msg, ctx),
+ * };
+ *
+ * // Set as runtime logger
+ * setRuntimeLogger(customLogger);
+ * ```
+ *
+ * @see {@link getLogger} for retrieving the runtime logger
  */
 export function setRuntimeLogger(logger: Logger): void {
   runtimeLogger = logger;

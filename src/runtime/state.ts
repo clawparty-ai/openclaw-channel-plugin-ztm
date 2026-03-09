@@ -72,7 +72,19 @@ export class AccountStateManager {
   }
 
   /**
-   * Get or create account state
+   * Get or create account state for the given account ID.
+   *
+   * If an account state already exists for the given accountId, returns it.
+   * Otherwise, creates a new empty state with default values and stores it.
+   *
+   * @param accountId - Unique identifier for the account
+   * @returns The existing or newly created AccountRuntimeState
+   *
+   * @example
+   * ```typescript
+   * const state = manager.getOrCreate('my-account');
+   * // Returns existing state or creates new one
+   * ```
    */
   getOrCreate(accountId: string): AccountRuntimeState {
     let state = this.states.get(accountId);
@@ -122,8 +134,13 @@ export class AccountStateManager {
   }
 
   /**
-   * Clear all timers from account state
-   * Extracted to reduce duplication between remove() and stopRuntime()
+   * Clear all timers from account state.
+   *
+   * Extracted to reduce duplication between remove() and stopRuntime().
+   * Clears all pending message retry timers to prevent memory leaks.
+   *
+   * @param state - The account state to clear timers from
+   * @private
    */
   private clearTimers(state: AccountRuntimeState): void {
     if (state.messageRetries) {
@@ -246,7 +263,15 @@ export class AccountStateManager {
   }
 
   /**
-   * Clear the allowFrom cache for an account
+   * Clear the allowFrom cache for an account.
+   *
+   * Forces the next call to getAllowFromCache() to fetch fresh data
+   * from the pairing store instead of using cached values.
+   *
+   * Useful when the pairing state changes and needs immediate refresh,
+   * such as after a new user is approved or removed.
+   *
+   * @param accountId - The account identifier to clear cache for
    */
   clearAllowFromCache(accountId: string): void {
     const state = this.states.get(accountId);
@@ -305,7 +330,17 @@ export class AccountStateManager {
   }
 
   /**
-   * Clear the group permission cache for an account
+   * Clear the group permission cache for an account.
+   *
+   * Forces the next call to getGroupPermissionCached() to recompute
+   * group permissions instead of using cached values.
+   *
+   * Useful when group permissions configuration changes, such as:
+   * - Adding or removing tools from allow/deny lists
+   * - Changing group policy settings
+   * - Updating requireMention settings
+   *
+   * @param accountId - The account identifier to clear cache for
    */
   clearGroupPermissionCache(accountId: string): void {
     const state = this.states.get(accountId);

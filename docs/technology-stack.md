@@ -6,8 +6,8 @@
 |----------|-----------|---------|---------------|
 | **Language** | TypeScript | 5.9.3 | Type-safe development with ES2022 target |
 | **Runtime** | Node.js | 24.x (types) | Server-side JavaScript runtime |
-| **Framework** | OpenClaw | ^2026.2.22 | Plugin framework for AI agent channels |
-| **Schema Validation** | @sinclair/typebox | ^0.34.48 | Type-safe JSON schema generation and validation |
+| **Framework** | OpenClaw | 2026.3.7 | Plugin framework for AI agent channels |
+| **Schema Validation** | Zod | 4.3.6 | TypeScript-first schema validation with inference |
 | **Build Tool** | esbuild | ^0.27.3 | Fast bundler for production builds |
 | **Test Framework** | Vitest | ^4.0.18 | Fast unit test framework with native ESM support |
 | **Code Coverage** | @vitest/coverage-v8 | ^4.0.18 | Code coverage reporting for Vitest |

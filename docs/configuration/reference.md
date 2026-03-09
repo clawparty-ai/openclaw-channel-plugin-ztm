@@ -12,7 +12,7 @@ Complete configuration reference for the ZTM Chat Channel Plugin.
 
 ## Configuration Schema
 
-The plugin uses [TypeBox](https://github.com/sinclairzx81/typebox) for runtime type validation. The schema is defined in `src/config/schema.ts`.
+The plugin uses [Zod](https://zod.dev/) for runtime type validation. The schema is defined in `src/config/schema.ts`.
 
 ## Configuration Options
 
@@ -322,7 +322,7 @@ const config = {
 
 ## Validation
 
-The plugin validates all configuration using TypeBox schema validation:
+The plugin validates all configuration using Zod schema validation:
 
 ```typescript
 import { validateZTMChatConfig, ZTMChatConfigSchema } from '@flomesh/ztm-chat/config';
@@ -347,7 +347,7 @@ Validation errors include:
 
 ## TypeScript Types
 
-All configuration types are inferred from the TypeBox schema:
+All configuration types are inferred from the Zod schema:
 
 ```typescript
 import type { ZTMChatConfig, DMPolicy, GroupPolicy } from '@flomesh/ztm-chat/config';

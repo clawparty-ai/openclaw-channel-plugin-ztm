@@ -34,12 +34,35 @@ function containsPathTraversal(input: string): boolean {
 // ============================================
 
 const DM_POLICY_VALUES = ['allow', 'deny', 'pairing'] as const;
+
+/**
+ * Direct message policy type
+ *
+ * - `allow` - Allow all direct messages
+ * - `deny` - Deny all direct messages
+ * - `pairing` - Require pairing approval before accepting messages
+ */
 export type DMPolicy = (typeof DM_POLICY_VALUES)[number];
 
 const GROUP_POLICY_VALUES = ['open', 'disabled', 'allowlist'] as const;
+
+/**
+ * Group message policy type
+ *
+ * - `open` - Allow all group messages
+ * - `disabled` - Block all group messages
+ * - `allowlist` - Only allow messages from whitisted users
+ */
 export type GroupPolicy = (typeof GROUP_POLICY_VALUES)[number];
 
 const PERMIT_SOURCE_VALUES = ['server', 'file'] as const;
+
+/**
+ * Permit source type
+ *
+ * - `server` - Fetch permit from permit server
+ * - `file` - Read permit from local file
+ */
 export type PermitSource = (typeof PERMIT_SOURCE_VALUES)[number];
 
 // ============================================
@@ -235,24 +258,66 @@ export type ExtendedZTMChatConfig = ZTMChatConfig;
 // Validation Types
 // ============================================
 
+/**
+ * Validation error reason type
+ *
+ * - `required` - Required field is missing
+ * - `invalid_format` - Field format is invalid (e.g., malformed URL)
+ * - `out_of_range` - Numeric value is outside allowed range
+ * - `type_mismatch` - Value type does not match expected type
+ */
 export type ValidationErrorReason =
   | 'required'
   | 'invalid_format'
   | 'out_of_range'
   | 'type_mismatch';
 
-// Single configuration validation error
+/**
+ * Single configuration validation error
+ *
+ * Represents a validation error for a specific configuration field.
+ *
+ * @example
+ * ```typescript
+ * const error: ConfigValidationError = {
+ *   field: 'agentUrl',
+ *   reason: 'invalid_format',
+ *   value: 'not-a-url',
+ *   message: 'Agent URL must be a valid URL'
+ * };
+ * ```
+ */
 export interface ConfigValidationError {
+  /** Field path that failed validation (e.g., 'agentUrl', 'permitFilePath') */
   field: string;
+  /** Category of validation error */
   reason: ValidationErrorReason;
+  /** The invalid value that was provided */
   value: unknown;
+  /** Human-readable error message */
   message: string;
 }
 
-// Validation result using Result pattern
+/**
+ * Validation result using Result pattern
+ *
+ * Contains the validation status and either errors or valid config.
+ *
+ * @example
+ * ```typescript
+ * const result: ZTMChatConfigValidation = {
+ *   valid: true,
+ *   errors: [],
+ *   config: { agentUrl: 'http://localhost:7777', ... }
+ * };
+ * ```
+ */
 export interface ZTMChatConfigValidation {
+  /** True if validation passed, false otherwise */
   valid: boolean;
+  /** List of validation errors (empty when valid is true) */
   errors: ConfigValidationError[];
+  /** Validated configuration object (present only when valid is true) */
   config?: ZTMChatConfig;
 }
 

@@ -44,6 +44,7 @@ We follow the [Michael Nygard format](https://cognitect.com/blog/2011/11/15/docu
 | [ADR-022](./ADR-022-api-client-interface-segregation.md) | API Client Interface Segregation | Accepted |
 | [ADR-023](./ADR-023-message-retry-timer-cleanup.md) | Message Retry Timer Cleanup | Accepted |
 | [ADR-024](./ADR-024-ztm-chat-bindings-migration.md) | ZTM Chat Bindings Migration for OpenClaw 2026.2.26+ | Accepted |
+| [ADR-025](./ADR-025-migration-typebox-to-zod.md) | Migration from TypeBox to Zod | Accepted |
 
 ## Adding New ADRs
 
