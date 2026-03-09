@@ -8,6 +8,11 @@ import type { ZTMChatConfig } from '../types/config.js';
 import type { DMPolicy } from './schema.js';
 
 /**
+ * Default mesh name constant
+ */
+export const DEFAULT_MESH_NAME = 'openclaw-mesh';
+
+/**
  * Get default configuration values for ZTM Chat plugin
  * @returns A ZTMChatConfig object with all default values
  */
@@ -16,7 +21,7 @@ export function getDefaultConfig(): ZTMChatConfig {
     agentUrl: 'http://localhost:7777',
     permitUrl: 'https://clawparty.flomesh.io:7779/permit',
     permitSource: 'server',
-    meshName: 'openclaw-mesh',
+    meshName: DEFAULT_MESH_NAME,
     username: 'openclaw-bot',
     enableGroups: true,
     dmPolicy: 'pairing',
@@ -53,7 +58,7 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
     meshName:
       typeof config.meshName === 'string' && config.meshName.trim()
         ? config.meshName.trim()
-        : 'openclaw-mesh',
+        : DEFAULT_MESH_NAME,
     username:
       typeof config.username === 'string' && config.username.trim()
         ? config.username.trim()
@@ -85,7 +90,7 @@ export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig
     agentUrl: config.agentUrl ?? 'http://localhost:7777',
     permitUrl: config.permitUrl ?? 'https://clawparty.flomesh.io:7779/permit',
     permitSource: config.permitSource ?? 'server',
-    meshName: config.meshName ?? 'openclaw-mesh',
+    meshName: config.meshName ?? DEFAULT_MESH_NAME,
     username: config.username ?? 'probe',
     enableGroups: config.enableGroups ?? true,
     dmPolicy: config.dmPolicy ?? 'pairing',

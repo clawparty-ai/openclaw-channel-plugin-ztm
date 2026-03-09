@@ -1184,6 +1184,9 @@ describe('ZTMChatWizard', () => {
           if (question.includes('Agent URL')) {
             return 'http://localhost:7777';
           }
+          if (question.includes('Mesh Name')) {
+            return 'test-mesh';
+          }
           return 'test-bot';
         },
         async confirm(): Promise<boolean> {
@@ -1297,6 +1300,9 @@ describe('ZTMChatWizard', () => {
         async ask(question: string): Promise<string> {
           if (question.includes('Agent URL')) {
             return 'http://localhost:7777';
+          }
+          if (question.includes('Mesh Name')) {
+            return 'test-mesh';
           }
           if (question.includes('Permit')) {
             return 'https://portal.example.com/permit';

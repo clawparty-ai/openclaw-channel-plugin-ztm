@@ -7,7 +7,9 @@
 import * as readline from 'readline';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { DMPolicy, GroupPolicy } from '../config/schema.js';
-import { isValidUrl, IDENTIFIER_PATTERN } from '../utils/validation.js';
+import { isValidUrl } from '../utils/validation.js';
+import { isValidUsername, isValidMeshName } from '../config/validation.js';
+import { DEFAULT_MESH_NAME } from '../config/defaults.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getZTMRuntime, isRuntimeInitialized } from '../runtime/index.js';
 
@@ -299,19 +301,22 @@ export class ZTMChatWizard {
       // Step 1: Agent URL
       await this.stepAgentUrl();
 
-      // Step 2: Permit Source
+      // Step 2: Mesh Name
+      await this.stepMeshName();
+
+      // Step 3: Permit Source
       await this.stepPermitSource();
 
-      // Step 3: User Selection
+      // Step 4: User Selection
       await this.stepUserSelection();
 
-      // Step 4: Security Settings
+      // Step 5: Security Settings
       await this.stepSecuritySettings();
 
-      // Step 5: Group Chat Settings
+      // Step 6: Group Chat Settings
       await this.stepGroupSettings();
 
-      // Step 6: Summary
+      // Step 7: Summary
       const result = await this.summary();
 
       this.prompts.close();
@@ -347,12 +352,38 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 2: Permit Source Selection
+   * Step 2: Configure Mesh Name
+   * @returns Promise that resolves when step is complete
+   */
+  private async stepMeshName(): Promise<void> {
+    this.prompts.separator();
+    this.prompts.heading('Step 2: Mesh Name (Required)');
+    this.prompts.separator();
+
+    const defaultMeshName = this.config.meshName || DEFAULT_MESH_NAME;
+    const meshName = await this.prompts.ask(
+      'ZTM Mesh Name (unique identifier for your mesh network)',
+      defaultMeshName
+    );
+
+    // Validate mesh name format using existing validation function
+    if (!isValidMeshName(meshName)) {
+      this.prompts.error(`Invalid mesh name: ${meshName}`);
+      this.prompts.info('Mesh name must be 1-64 characters, alphanumeric with - and _ only');
+      throw new Error('Invalid mesh name');
+    }
+
+    this.config.meshName = meshName;
+    this.prompts.success(`Mesh name set: ${meshName}`);
+  }
+
+  /**
+   * Step 3: Permit Source Selection
    * @returns Promise that resolves when step is complete
    */
   private async stepPermitSource(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading('Step 2: Permit Source (Required)');
+    this.prompts.heading('Step 3: Permit Source (Required)');
     this.prompts.separator();
 
     const sources = ['server', 'file'] as const;
@@ -412,12 +443,12 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 3: Select Bot Username
+   * Step 4: Select Bot Username
    * @returns Promise that resolves when step is complete
    */
   private async stepUserSelection(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading('Step 3: Bot Username (Required)');
+    this.prompts.heading('Step 4: Bot Username (Required)');
     this.prompts.separator();
 
     const username = await this.prompts.ask('Bot username', 'openclaw-bot');
@@ -428,7 +459,7 @@ export class ZTMChatWizard {
     }
 
     // Validate username format
-    if (!IDENTIFIER_PATTERN.test(username)) {
+    if (!isValidUsername(username)) {
       this.prompts.error('Username must contain only letters, numbers, hyphens, and underscores');
       throw new Error('Invalid username format');
     }
@@ -438,12 +469,12 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 4: Security Settings
+   * Step 5: Security Settings
    * @returns Promise that resolves when step is complete
    */
   private async stepSecuritySettings(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading('Step 4: Security Settings');
+    this.prompts.heading('Step 5: Security Settings');
     this.prompts.separator();
 
     // DM Policy - pairing is the default
@@ -478,12 +509,12 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 5: Group Chat Settings
+   * Step 6: Group Chat Settings
    * @returns Promise that resolves when step is complete
    */
   private async stepGroupSettings(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading('Step 5: Group Chat Settings');
+    this.prompts.heading('Step 6: Group Chat Settings');
     this.prompts.separator();
 
     // Ask if user wants to enable groups
@@ -526,7 +557,7 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 6: Summary and Save
+   * Step 7: Summary and Save
    * @returns WizardResult with configuration and account details
    */
   private async summary(): Promise<WizardResult> {
@@ -535,6 +566,7 @@ export class ZTMChatWizard {
     this.prompts.separator();
 
     console.log('  Agent URL:', this.config.agentUrl);
+    console.log('  Mesh Name:', this.config.meshName);
     console.log('  Permit Source:', this.config.permitSource);
     if (this.config.permitSource === 'server') {
       console.log('  Permit Server URL:', this.config.permitUrl);
@@ -670,7 +702,7 @@ export class ZTMChatWizard {
       permitSource: (this.config.permitSource || 'server') as 'server' | 'file',
       permitUrl: this.config.permitUrl || '',
       permitFilePath: this.config.permitFilePath,
-      meshName: this.config.meshName || 'openclaw-mesh',
+      meshName: this.config.meshName || DEFAULT_MESH_NAME,
       username: this.config.username || 'openclaw-bot',
       enableGroups: this.config.enableGroups ?? false,
       dmPolicy: this.config.dmPolicy ?? 'pairing',
