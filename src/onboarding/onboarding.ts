@@ -11,7 +11,7 @@ import { isValidUrl } from '../utils/validation.js';
 import { isValidUsername, isValidMeshName } from '../config/validation.js';
 import { DEFAULT_MESH_NAME } from '../config/defaults.js';
 import { extractErrorMessage } from '../utils/error.js';
-import { getZTMRuntime, isRuntimeInitialized } from '../runtime/index.js';
+import { getZTMRuntime, isZTMRuntimeInitialized } from '../runtime/index.js';
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -592,7 +592,7 @@ export class ZTMChatWizard {
       const accountId = this.config.username || 'default';
 
       // Write to openclaw.yaml using runtime
-      if (!isRuntimeInitialized()) {
+      if (!isZTMRuntimeInitialized()) {
         this.prompts.error('Runtime not available. Please run through OpenClaw CLI.');
         return {
           config: this.buildConfig(),
@@ -743,7 +743,7 @@ export async function discoverConfig(): Promise<DiscoveredConfig | null> {
   const agentUrl = process.env.ZTM_AGENT_URL || 'http://localhost:7777';
 
   // Try to read from openclaw.yaml via runtime API
-  if (!isRuntimeInitialized()) {
+  if (!isZTMRuntimeInitialized()) {
     return null;
   }
 

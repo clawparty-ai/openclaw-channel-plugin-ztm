@@ -52,7 +52,7 @@ import { logger as loggerInstance } from '../utils/logger.js';
 import { getEffectiveChannelConfig } from '../channel/config.js';
 import { createZTMApiClient } from '../api/ztm-api.js';
 import { getAllowFromRepository, getMessageStateRepository } from '../runtime/repository-impl.js';
-import { getDefaultRuntimeProvider } from '../runtime/runtime.js';
+import { getZTMRuntime, isZTMRuntimeInitialized } from '../runtime/runtime.js';
 import { getAccountStateManager } from '../runtime/state.js';
 import { asChatReader, asChatSender, asDiscovery } from '../runtime/type-conversion.js';
 
@@ -181,13 +181,12 @@ export function createApiDiscoveryService(): () => IDiscovery {
  * @returns Factory function that returns an IRuntime instance
  */
 export function createRuntimeService(): () => IRuntime {
-  // Use the default provider to share the same runtime instance
+  // Use the runtime store to share the same runtime instance
   // that is set by setZTMRuntime() in index.ts
-  const provider = getDefaultRuntimeProvider();
 
   return () => ({
-    get: () => provider.getRuntime(),
-    isInitialized: () => provider.isInitialized(),
+    get: () => getZTMRuntime(),
+    isInitialized: () => isZTMRuntimeInitialized(),
   });
 }
 
