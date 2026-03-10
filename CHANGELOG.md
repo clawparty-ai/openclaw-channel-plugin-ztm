@@ -2,9 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.10 - 2026-03-10
+
+[6483b28](6483b28367855e057e040bd672f2ab5abcf26ed5)...[1441e8f](1441e8f6901db87470849e22735c41c3f257d420)
+
+### 🚨 BREAKING CHANGES
+
+- Add certificate expiry fields to credential snapshot (#14) ([b1c4cd2](b1c4cd23eb6e8a7748e7e6488b4dbb2a52c415ac)) - (Lin Yang)
+- Improve OpenClaw 2026.3.7 conformance (#19) ([cba9b48](cba9b484185daa68d0c162830a08da64f3c0acf4)) - (Lin Yang)
+
+
+
+### 🚀 Features
+
+- Add meshName interactive step to onboarding flow (#20) ([70ceffa](70ceffa6b1219e3ebb563bdef002ab3167d13fb5)) - (Lin Yang)
+- Complete OpenClaw 2026.3.8 SDK conformance - All Phases (0-4) ([e75b10f](e75b10f45875f637bf944469602d76b567c72dc0)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Set blockStreaming to false (#13) ([20bf7ba](20bf7ba155993898d6af2f3f04ed4373922d5507)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Extract resolveDefaultZTMChatAccountId as standalone function ([2ad488c](2ad488cccbe49a88f47b01b47c7501ccfeba8209)) - (Lin Yang)
+
+
+
+### 🔨 Build
+
+- Bump @types/node from 24.11.2 to 24.12.0 (#15) ([0a37e9a](0a37e9a033360f3306e80cd48c0ac4888be77235)) - (dependabot[bot])
+- Bump eslint from 10.0.2 to 10.0.3 (#18) ([e926642](e926642984af78c5dacf819fcbefd960917195d8)) - (dependabot[bot])
+- Bump openclaw from 2026.3.2 to 2026.3.7 (#17) ([7061add](7061add66cb2730ae9aa84629a19bbd602d398ff)) - (dependabot[bot])
+- Bump zod from 3.24.1 to 4.3.6 (#16) ([983a6e2](983a6e27afbac6a0fe497c530f5c9cf884094f07)) - (dependabot[bot])
+- Bump openclaw from 2026.3.7 to 2026.3.8 (#21) ([c50c83d](c50c83d13035bc961d2b31554d49413ac94739a6)) - (dependabot[bot])
+- Bump @typescript-eslint/parser from 8.56.1 to 8.57.0 (#23) ([3a33b5f](3a33b5f9faac2fe38572b08c26f52980783ec07d)) - (dependabot[bot])
+- Bump @typescript-eslint/eslint-plugin (#22) ([5e10477](5e104776e8d5c8fed1ba780e1a7997a136577c5b)) - (dependabot[bot])
+
+### 📖 Documentation
+
+- Fix documentation consistency and add TSDoc comments ([54331ea](54331ea2ce258cb9dd0d2aca4075af0168ca34ba)) - (Lin Yang)
+
+
 ## 2026.3.7 - 2026-03-07
 
-[a8ae92d](a8ae92d003872581a0c70c2acebf8ff68d626039)...[4c9d37e](4c9d37eb2e7d7b70c0335fcdb1ce4ec36f8b2ece)
+[a8ae92d](a8ae92d003872581a0c70c2acebf8ff68d626039)...[6483b28](6483b28367855e057e040bd672f2ab5abcf26ed5)
 
 ### 🚨 BREAKING CHANGES
 
