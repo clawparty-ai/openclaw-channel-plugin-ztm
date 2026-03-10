@@ -161,6 +161,18 @@ export class Semaphore {
   }
 
   /**
+   * Try to acquire a permit without blocking
+   * @returns true if permit was acquired immediately, false otherwise
+   */
+  tryAcquire(): boolean {
+    if (this.permits > 0) {
+      this.permits--;
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Get number of waiters queued for permits
    */
   queuedWaiters(): number {

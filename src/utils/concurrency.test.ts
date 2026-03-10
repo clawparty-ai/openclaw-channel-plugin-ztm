@@ -819,4 +819,43 @@ describe('Race condition tests', () => {
       expect(semaphore.availablePermits()).toBe(1);
     });
   });
+
+  describe('tryAcquire', () => {
+    it('should acquire permit immediately when available', () => {
+      const semaphore = new Semaphore(1);
+
+      const result = semaphore.tryAcquire();
+
+      expect(result).toBe(true);
+      expect(semaphore.availablePermits()).toBe(0);
+    });
+
+    it('should return false when no permits available', () => {
+      const semaphore = new Semaphore(1);
+
+      semaphore.tryAcquire();
+      const result = semaphore.tryAcquire();
+
+      expect(result).toBe(false);
+      expect(semaphore.availablePermits()).toBe(0);
+    });
+
+    it('should allow acquire after release', () => {
+      const semaphore = new Semaphore(1);
+
+      expect(semaphore.tryAcquire()).toBe(true);
+      semaphore.release();
+      expect(semaphore.tryAcquire()).toBe(true);
+    });
+
+    it('should work correctly with multiple permits', () => {
+      const semaphore = new Semaphore(3);
+
+      expect(semaphore.tryAcquire()).toBe(true);
+      expect(semaphore.tryAcquire()).toBe(true);
+      expect(semaphore.tryAcquire()).toBe(true);
+      expect(semaphore.tryAcquire()).toBe(false); // No more permits
+      expect(semaphore.availablePermits()).toBe(0);
+    });
+  });
 });

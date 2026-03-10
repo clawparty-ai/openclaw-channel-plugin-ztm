@@ -3662,3 +3662,118 @@ describe('Fibonacci backoff delay calculation', () => {
     }
   });
 });
+
+describe('WatchLoopController concurrency', () => {
+  it('should not allow watchChanges and fullSync to run simultaneously', async () => {
+    // Import the controller
+    const { WatchLoopController } = await import('./watcher-loop.js');
+
+    // Create mock state
+    const mockApiClient = {
+      watchChanges: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getChats: vi.fn(() => ({ ok: true, value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+    };
+
+    const mockState: AccountRuntimeState = {
+      accountId: testAccountId,
+      config: testConfig,
+      chatReader: mockApiClient as any,
+      chatSender: mockApiClient as any,
+      discovery: mockApiClient as any,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      messageCallbacks: new Set(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      groupPermissionCache: new Map(),
+    };
+
+    const mockRt = {} as any;
+    const mockContext = createMockMessagingContext();
+
+    // Create controller - this creates operationSemaphore internally
+    const controller = new WatchLoopController(mockState, mockRt, mockContext);
+
+    // Access the internal operation semaphore to verify behavior
+    const semaphore = (controller as any).operationSemaphore;
+
+    // Verify initial state - semaphore should have 1 permit
+    expect(semaphore.availablePermits()).toBe(1);
+
+    // Test 1: watchChanges uses tryAcquire (non-blocking)
+    const acquired1 = semaphore.tryAcquire();
+    expect(acquired1).toBe(true);
+    expect(semaphore.availablePermits()).toBe(0);
+
+    // Test 2: fullSync cannot acquire while watchChanges holds permit
+    // Simulate fullSync trying to acquire with timeout
+    const acquired2Promise = semaphore.acquire(50); // 50ms timeout
+
+    // Wait a bit
+    await new Promise(r => setTimeout(r, 10));
+
+    // Verify fullSync could not acquire (still waiting or timeout)
+    const acquired2 = await acquired2Promise;
+    expect(acquired2).toBe(false); // Timeout - could not acquire
+
+    // Test 3: After watchChanges releases, fullSync can acquire
+    semaphore.release();
+    const acquired3 = semaphore.tryAcquire();
+    expect(acquired3).toBe(true);
+    semaphore.release(); // Clean up
+  });
+
+  it('should use tryAcquire for non-blocking semaphore check', async () => {
+    // Import Semaphore
+    const { Semaphore } = await import('../utils/concurrency.js');
+
+    // Verify tryAcquire method exists and works
+    const semaphore = new Semaphore(1);
+    expect(semaphore.tryAcquire()).toBe(true);
+    expect(semaphore.tryAcquire()).toBe(false); // Already acquired
+    semaphore.release();
+    expect(semaphore.tryAcquire()).toBe(true); // Available again
+  });
+
+  it('should use acquire with timeout for fullSync', async () => {
+    // Import Semaphore
+    const { Semaphore } = await import('../utils/concurrency.js');
+
+    const semaphore = new Semaphore(1);
+
+    // Acquire the only permit
+    semaphore.tryAcquire();
+
+    // Try to acquire with timeout - should fail after timeout
+    const startTime = Date.now();
+    const acquired = await semaphore.acquire(100); // 100ms timeout
+
+    expect(acquired).toBe(false);
+    expect(Date.now() - startTime).toBeGreaterThanOrEqual(90); // Should have waited ~100ms
+  });
+
+  it('should properly release semaphore in finally block', async () => {
+    const { Semaphore } = await import('../utils/concurrency.js');
+
+    const semaphore = new Semaphore(1);
+
+    // Simulate the pattern used in runIteration
+    const acquired = semaphore.tryAcquire();
+    expect(acquired).toBe(true);
+
+    try {
+      // Do some work
+      await new Promise(r => setTimeout(r, 10));
+    } finally {
+      semaphore.release();
+    }
+
+    // Semaphore should be available again
+    expect(semaphore.tryAcquire()).toBe(true);
+  });
+});
