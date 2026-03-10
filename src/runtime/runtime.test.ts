@@ -4,10 +4,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   setZTMRuntime,
   getZTMRuntime,
-  isRuntimeInitialized,
-  createRuntimeProvider,
-  getDefaultRuntimeProvider,
-  resetDefaultProvider,
+  isZTMRuntimeInitialized,
+  clearZTMRuntime,
 } from './runtime.js';
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
 
@@ -24,12 +22,12 @@ vi.mock('../utils/logger.js', () => ({
 
 describe('Runtime Management', () => {
   beforeEach(() => {
-    resetDefaultProvider();
+    clearZTMRuntime();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    resetDefaultProvider();
+    clearZTMRuntime();
   });
 
   describe('getZTMRuntime', () => {
@@ -114,9 +112,9 @@ describe('Runtime Management', () => {
     });
   });
 
-  describe('isRuntimeInitialized', () => {
+  describe('isZTMRuntimeInitialized', () => {
     it('should return false when runtime not set', () => {
-      expect(isRuntimeInitialized()).toBe(false);
+      expect(isZTMRuntimeInitialized()).toBe(false);
     });
 
     it('should return true after runtime is set', () => {
@@ -126,82 +124,18 @@ describe('Runtime Management', () => {
 
       setZTMRuntime(mockRuntime);
 
-      expect(isRuntimeInitialized()).toBe(true);
+      expect(isZTMRuntimeInitialized()).toBe(true);
     });
 
-    it('should return false after reset', () => {
+    it('should return false after clearZTMRuntime', () => {
       const mockRuntime = {
         channel: { routing: { resolveAgentRoute: vi.fn() } },
       } as unknown as PluginRuntime;
 
       setZTMRuntime(mockRuntime);
-      resetDefaultProvider();
+      clearZTMRuntime();
 
-      expect(isRuntimeInitialized()).toBe(false);
+      expect(isZTMRuntimeInitialized()).toBe(false);
     });
-  });
-});
-
-describe('createRuntimeProvider', () => {
-  it('should return uninitialized state initially', () => {
-    const provider = createRuntimeProvider();
-    expect(provider.isInitialized()).toBe(false);
-  });
-
-  it('should throw when getRuntime() called before setRuntime()', () => {
-    const provider = createRuntimeProvider();
-    expect(() => provider.getRuntime()).toThrow('ZTM runtime not initialized');
-  });
-
-  it('should return set runtime after setRuntime()', () => {
-    const provider = createRuntimeProvider();
-    const mockRuntime = {
-      channel: { routing: { resolveAgentRoute: vi.fn() } },
-    } as unknown as PluginRuntime;
-
-    provider.setRuntime(mockRuntime);
-
-    expect(provider.getRuntime()).toBe(mockRuntime);
-    expect(provider.isInitialized()).toBe(true);
-  });
-
-  it('should allow runtime replacement', () => {
-    const provider = createRuntimeProvider();
-    const runtime1 = { id: 1 } as unknown as PluginRuntime;
-    const runtime2 = { id: 2 } as unknown as PluginRuntime;
-
-    provider.setRuntime(runtime1);
-    expect(provider.getRuntime()).toBe(runtime1);
-
-    provider.setRuntime(runtime2);
-    expect(provider.getRuntime()).toBe(runtime2);
-  });
-
-  it('should create independent instances', () => {
-    const provider1 = createRuntimeProvider();
-    const provider2 = createRuntimeProvider();
-
-    const runtime1 = { id: 1 } as unknown as PluginRuntime;
-    provider1.setRuntime(runtime1);
-
-    expect(provider2.isInitialized()).toBe(false);
-    expect(() => provider2.getRuntime()).toThrow();
-  });
-});
-
-describe('getDefaultRuntimeProvider', () => {
-  beforeEach(() => {
-    resetDefaultProvider();
-  });
-
-  afterEach(() => {
-    resetDefaultProvider();
-  });
-
-  it('should return same provider on multiple calls', () => {
-    const provider1 = getDefaultRuntimeProvider();
-    const provider2 = getDefaultRuntimeProvider();
-
-    expect(provider1).toBe(provider2);
   });
 });

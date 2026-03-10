@@ -27,16 +27,24 @@ describe('ZTM Chat Channel Plugin', () => {
 
     it('should have correct capabilities', () => {
       const capabilities = {
-        chatTypes: ['direct'],
+        chatTypes: ['direct', 'group'],
         reactions: false,
         threads: false,
         media: false,
-        nativeCommands: false,
+        nativeCommands: true,
+        polls: false,
+        edit: false,
+        unsend: false,
+        reply: false,
+        effects: false,
+        groupManagement: true,
         blockStreaming: false,
       };
 
-      expect(capabilities.chatTypes).toEqual(['direct']);
+      expect(capabilities.chatTypes).toEqual(['direct', 'group']);
       expect(capabilities.reactions).toBe(false);
+      expect(capabilities.nativeCommands).toBe(true);
+      expect(capabilities.groupManagement).toBe(true);
       expect(capabilities.blockStreaming).toBe(false);
     });
   });

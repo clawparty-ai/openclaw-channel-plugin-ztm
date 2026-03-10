@@ -5,6 +5,11 @@
  */
 
 import type { ChannelPlugin, OpenClawConfig } from 'openclaw/plugin-sdk';
+import {
+  buildAccountScopedDmSecurityPolicy,
+  createScopedChannelConfigBase,
+  createScopedAccountConfigAccessors,
+} from 'openclaw/plugin-sdk/compat';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import {
   container,
@@ -112,30 +117,22 @@ import {
 // Extracted Complex Functions - Reduce Cyclomatic Complexity
 // ============================================================================
 
-// Resolves DM policy configuration
+// Resolves DM policy configuration using SDK function
 
 const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
-  const resolvedAccountId = accountId ?? account.accountId ?? 'default';
   const config = getZTMChatConfig(account);
   if (!config) return null;
-  const channelsConfig = (cfg || {}) as {
-    channels?: { 'ztm-chat'?: { accounts?: Record<string, unknown> } };
-  };
-  const useAccountPath = Boolean(
-    channelsConfig.channels?.['ztm-chat']?.accounts?.[resolvedAccountId]
-  );
-  const basePath = useAccountPath
-    ? `channels.ztm-chat.accounts.${resolvedAccountId}.`
-    : 'channels.ztm-chat.';
 
-  return {
-    policy: config?.dmPolicy ?? 'pairing',
-    allowFrom: getOrDefault(config?.allowFrom, []),
-    policyPath: `${basePath}dmPolicy`,
-    allowFromPath: `${basePath}allowFrom`,
-    approveHint: '',
+  return buildAccountScopedDmSecurityPolicy({
+    cfg: cfg ?? {},
+    channelKey: 'ztm-chat',
+    accountId: accountId ?? undefined,
+    fallbackAccountId: account.accountId ?? 'default',
+    policy: config.dmPolicy ?? null,
+    allowFrom: config.allowFrom ?? null,
+    defaultPolicy: 'pairing',
     normalizeEntry: (raw: string) => raw.trim().toLowerCase(),
-  };
+  });
 };
 
 // Collects warnings for the account configuration
@@ -189,6 +186,30 @@ const collectWarningsImpl = async ({
 
   return warnings;
 };
+
+// ============================================================================
+// SDK Config Helpers - Using SDK helper functions
+// ============================================================================
+
+const ztmConfigBase = createScopedChannelConfigBase({
+  sectionKey: 'ztm-chat',
+  listAccountIds: cfg => listZTMChatAccountIds(cfg ?? undefined),
+  resolveAccount: (cfg, accountId) =>
+    resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
+  defaultAccountId: cfg => resolveDefaultZTMChatAccountId(cfg ?? undefined),
+  clearBaseFields: ['agentUrl', 'meshName', 'permitFilePath'],
+});
+
+const ztmConfigAccessors = createScopedAccountConfigAccessors({
+  resolveAccount: ({ cfg, accountId }) =>
+    resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
+  resolveAllowFrom: account => getZTMChatConfig(account)?.allowFrom ?? null,
+  formatAllowFrom: allowFrom =>
+    getOrDefault(allowFrom, [])
+      .map(entry => String(entry).trim())
+      .filter(Boolean)
+      .map(entry => entry.toLowerCase()),
+});
 
 // ============================================================================
 // Channel Plugin Definition - Modular Structure
@@ -250,7 +271,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     reactions: false,
     threads: false,
     media: false,
-    nativeCommands: false,
+    nativeCommands: true,
+    polls: false,
+    edit: false,
+    unsend: false,
+    reply: false,
+    effects: false,
+    groupManagement: true,
     blockStreaming: false,
   },
 
@@ -370,10 +397,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Config Section - Account configuration resolution
   // ---------------------------------------------------------------------------
   config: {
-    listAccountIds: cfg => listZTMChatAccountIds(cfg ?? undefined),
-    resolveAccount: (cfg, accountId) =>
-      resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
-    defaultAccountId: cfg => resolveDefaultZTMChatAccountId(cfg ?? undefined),
+    ...ztmConfigBase,
+    ...ztmConfigAccessors,
     isConfigured: account => isConfigMinimallyValid(getZTMChatConfig(account) ?? {}),
     unconfiguredReason: (account, _cfg) => {
       const config = getZTMChatConfig(account);
@@ -386,42 +411,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       // Return empty string when properly configured (falsy, will be handled by caller)
       return '';
     },
-    setAccountEnabled: ({ cfg, accountId, enabled }) => {
-      const accountKey = accountId || 'default';
-      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
-      const existing = accounts[accountKey] ?? {};
-      return {
-        ...cfg,
-        channels: {
-          ...cfg.channels,
-          ['ztm-chat']: {
-            ...cfg.channels?.['ztm-chat'],
-            accounts: {
-              ...accounts,
-              [accountKey]: {
-                ...existing,
-                enabled,
-              },
-            },
-          },
-        },
-      };
-    },
-    deleteAccount: ({ cfg, accountId }) => {
-      const accountKey = accountId || 'default';
-      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
-      delete accounts[accountKey];
-      return {
-        ...cfg,
-        channels: {
-          ...cfg.channels,
-          ['ztm-chat']: {
-            ...cfg.channels?.['ztm-chat'],
-            accounts: Object.keys(accounts).length ? accounts : undefined,
-          },
-        },
-      };
-    },
     describeAccount: account => {
       const config = getZTMChatConfig(account);
       return {
@@ -433,19 +422,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         meshName: config?.meshName,
       };
     },
-    resolveAllowFrom: ({ cfg, accountId }) => {
-      const account = resolveZTMChatAccount({
-        cfg: cfg ?? undefined,
-        accountId: accountId ?? undefined,
-      });
-      const config = getZTMChatConfig(account);
-      return getOrDefault(config?.allowFrom, []).map(entry => String(entry ?? ''));
-    },
-    formatAllowFrom: ({ allowFrom }) =>
-      getOrDefault(allowFrom, [])
-        .map(entry => String(entry).trim())
-        .filter(Boolean)
-        .map(entry => entry.toLowerCase()),
   },
 
   // ---------------------------------------------------------------------------
