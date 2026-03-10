@@ -27,19 +27,47 @@ vi.mock('../utils/sync-time.js', () => ({
   getMessageSyncStart: vi.fn().mockReturnValue(0),
 }));
 
+// Mock getAccountMessageStateStore
+vi.mock('../runtime/store.js', () => ({
+  getAccountMessageStateStore: vi.fn().mockReturnValue({
+    getWatermark: vi.fn().mockReturnValue(0),
+  }),
+}));
+
+// Mock isGroupChat
+vi.mock('./utils.js', () => ({
+  isGroupChat: vi.fn().mockReturnValue(false),
+}));
+
+// Mock sanitizeForLog
+vi.mock('../utils/log-sanitize.js', () => ({
+  sanitizeForLog: vi.fn().mockImplementation((s: string) => s),
+}));
+
+// Mock getOrDefault
+vi.mock('../utils/guards.js', () => ({
+  getOrDefault: vi.fn().mockImplementation((val: unknown, def: unknown) => val ?? def),
+}));
+
 describe('watcher-sync', () => {
   let mockState: AccountRuntimeState;
   const allowFrom = ['alice', 'bob'];
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     mockState = {
       accountId: 'test-account',
       config: { username: 'test-bot' },
       chatReader: {
         getChats: vi.fn(),
+        getPeerMessages: vi.fn().mockResolvedValue(success([])),
+        getGroupMessages: vi.fn().mockResolvedValue(success([])),
       },
     } as unknown as AccountRuntimeState;
+
+    // Reset isGroupChat to default (false = peer chat)
+    const { isGroupChat } = await import('./utils.js');
+    vi.mocked(isGroupChat).mockReturnValue(false);
   });
 
   describe('performInitialSync', () => {
@@ -70,30 +98,146 @@ describe('watcher-sync', () => {
 
     it('should process chats and return them', async () => {
       const chats = [
-        { id: 'chat1', peer: 'alice', lastMessage: { timestamp: 1000 } },
-        { id: 'chat2', peer: 'bob', lastMessage: { timestamp: 2000 } },
+        { peer: 'alice', time: 1000, updated: 1000, latest: { time: 1000, text: 'hi' } },
+        { peer: 'bob', time: 2000, updated: 2000, latest: { time: 2000, text: 'hello' } },
       ];
       vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+      (mockState.chatReader as any).getPeerMessages
+        .mockResolvedValueOnce(success([{ time: 1000, text: 'hi' }]))
+        .mockResolvedValueOnce(success([{ time: 2000, text: 'hello' }]));
 
       const result = await performInitialSync(mockState, allowFrom);
       expect(result).toEqual(chats);
       expect(result.length).toBe(2);
     });
 
-    it('should handle mixed processAndNotify results', async () => {
+    it('should fetch ALL messages per peer chat, not just latest', async () => {
       const { processAndNotify } = await import('./strategies/message-strategies.js');
-      vi.mocked(processAndNotify).mockImplementation((chat: any) =>
-        Promise.resolve(chat.id === 'chat1')
-      );
+      vi.mocked(processAndNotify).mockResolvedValue(true);
 
       const chats = [
-        { id: 'chat1', peer: 'alice' },
-        { id: 'chat2', peer: 'bob' },
+        { peer: 'alice', time: 3000, updated: 3000, latest: { time: 3000, text: 'msg3' } },
       ];
       vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
 
+      // Simulate 3 messages since watermark — the core bug fix scenario
+      const allMessages = [
+        { time: 1000, text: 'msg1' },
+        { time: 2000, text: 'msg2' },
+        { time: 3000, text: 'msg3' },
+      ];
+      (mockState.chatReader as any).getPeerMessages.mockResolvedValue(success(allMessages));
+
       const result = await performInitialSync(mockState, allowFrom);
       expect(result).toEqual(chats);
+
+      // All 3 messages should be processed, not just the latest
+      expect(processAndNotify).toHaveBeenCalledTimes(3);
+      expect(processAndNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ peer: 'alice', latest: allMessages[0] }),
+        mockState,
+        allowFrom
+      );
+      expect(processAndNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ peer: 'alice', latest: allMessages[1] }),
+        mockState,
+        allowFrom
+      );
+      expect(processAndNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ peer: 'alice', latest: allMessages[2] }),
+        mockState,
+        allowFrom
+      );
+    });
+
+    it('should fetch ALL messages for group chats', async () => {
+      const { processAndNotify } = await import('./strategies/message-strategies.js');
+      const { isGroupChat } = await import('./utils.js');
+      vi.mocked(isGroupChat).mockReturnValue(true);
+      vi.mocked(processAndNotify).mockResolvedValue(true);
+
+      const chats = [
+        {
+          creator: 'ttt',
+          group: 'group-id',
+          time: 2000,
+          updated: 2000,
+          latest: { time: 2000, text: 'group-msg2' },
+        },
+      ];
+      vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+
+      const allMessages = [
+        { time: 1000, text: 'group-msg1' },
+        { time: 2000, text: 'group-msg2' },
+      ];
+      (mockState.chatReader as any).getGroupMessages.mockResolvedValue(success(allMessages));
+
+      const result = await performInitialSync(mockState, allowFrom);
+      expect(result).toEqual(chats);
+
+      expect(processAndNotify).toHaveBeenCalledTimes(2);
+      expect(processAndNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ creator: 'ttt', group: 'group-id', latest: allMessages[0] }),
+        mockState,
+        allowFrom
+      );
+      expect(processAndNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ creator: 'ttt', group: 'group-id', latest: allMessages[1] }),
+        mockState,
+        allowFrom
+      );
+    });
+
+    it('should handle mixed processAndNotify results', async () => {
+      const { processAndNotify } = await import('./strategies/message-strategies.js');
+      vi.mocked(processAndNotify).mockImplementation((chat: any) =>
+        Promise.resolve(chat.latest?.text === 'msg1')
+      );
+
+      const chats = [
+        { peer: 'alice', time: 2000, updated: 2000, latest: { time: 2000, text: 'msg2' } },
+      ];
+      vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+      (mockState.chatReader as any).getPeerMessages.mockResolvedValue(
+        success([
+          { time: 1000, text: 'msg1' },
+          { time: 2000, text: 'msg2' },
+        ])
+      );
+
+      const result = await performInitialSync(mockState, allowFrom);
+      expect(result).toEqual(chats);
+    });
+
+    it('should skip chats where peer equals own username', async () => {
+      const { processAndNotify } = await import('./strategies/message-strategies.js');
+      vi.mocked(processAndNotify).mockResolvedValue(true);
+
+      const chats = [
+        { peer: 'test-bot', time: 1000, updated: 1000, latest: { time: 1000, text: 'self' } },
+      ];
+      vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+
+      await performInitialSync(mockState, allowFrom);
+
+      // Should not call getPeerMessages for self-chat
+      expect(mockState.chatReader!.getPeerMessages).not.toHaveBeenCalled();
+      expect(processAndNotify).not.toHaveBeenCalled();
+    });
+
+    it('should handle getPeerMessages failure gracefully', async () => {
+      const chats = [
+        { peer: 'alice', time: 1000, updated: 1000, latest: { time: 1000, text: 'hi' } },
+      ];
+      vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+      (mockState.chatReader as any).getPeerMessages.mockResolvedValue(
+        failure(new Error('Peer API error'))
+      );
+
+      const result = await performInitialSync(mockState, allowFrom);
+      expect(result).toEqual(chats);
+      // Should not throw
     });
   });
 
@@ -115,8 +259,13 @@ describe('watcher-sync', () => {
     });
 
     it('should process chats when they exist', async () => {
-      const chats = [{ id: 'chat1', peer: 'alice' }];
+      const chats = [
+        { peer: 'alice', time: 1000, updated: 1000, latest: { time: 1000, text: 'hi' } },
+      ];
       vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+      (mockState.chatReader as any).getPeerMessages.mockResolvedValue(
+        success([{ time: 1000, text: 'hi' }])
+      );
 
       await performFullSync(mockState, allowFrom);
       // Should process without error
@@ -130,15 +279,46 @@ describe('watcher-sync', () => {
     });
 
     it('should process all chats in the list', async () => {
+      const { processAndNotify } = await import('./strategies/message-strategies.js');
+      vi.mocked(processAndNotify).mockResolvedValue(true);
+
       const chats = [
-        { id: 'chat1', peer: 'alice' },
-        { id: 'chat2', peer: 'bob' },
-        { id: 'chat3', peer: 'charlie' },
+        { peer: 'alice', time: 1000, updated: 1000, latest: { time: 1000, text: 'a' } },
+        { peer: 'bob', time: 2000, updated: 2000, latest: { time: 2000, text: 'b' } },
+        { peer: 'charlie', time: 3000, updated: 3000, latest: { time: 3000, text: 'c' } },
+      ];
+      vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+      (mockState.chatReader as any).getPeerMessages
+        .mockResolvedValueOnce(success([{ time: 1000, text: 'a' }]))
+        .mockResolvedValueOnce(success([{ time: 2000, text: 'b' }]))
+        .mockResolvedValueOnce(success([{ time: 3000, text: 'c' }]));
+
+      await performFullSync(mockState, allowFrom);
+      // Should call getPeerMessages for each peer
+      expect(mockState.chatReader!.getPeerMessages).toHaveBeenCalledTimes(3);
+    });
+
+    it('should fetch ALL messages per peer in full sync (bug fix verification)', async () => {
+      const { processAndNotify } = await import('./strategies/message-strategies.js');
+      vi.mocked(processAndNotify).mockResolvedValue(true);
+
+      const chats = [
+        { peer: 'ttt', time: 3000, updated: 3000, latest: { time: 3000, text: 'latest' } },
       ];
       vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
 
+      // 3 messages since watermark
+      const allMessages = [
+        { time: 1000, text: 'first' },
+        { time: 2000, text: 'second' },
+        { time: 3000, text: 'latest' },
+      ];
+      (mockState.chatReader as any).getPeerMessages.mockResolvedValue(success(allMessages));
+
       await performFullSync(mockState, allowFrom);
-      // Should process all 3 chats
+
+      // All 3 must be processed
+      expect(processAndNotify).toHaveBeenCalledTimes(3);
     });
   });
 });
