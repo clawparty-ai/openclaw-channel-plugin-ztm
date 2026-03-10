@@ -92,52 +92,61 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   }
 
   // 2. Runtime state checks
-  const runtimeState = getAllAccountStates().get(accountId || 'default');
+  // Note: getAllAccountStates() returns an in-memory Map that is only populated
+  // within the gateway process. When called from the CLI process (e.g., `openclaw
+  // channels status`), the Map is always empty. We only report "Account not
+  // initialized" when the Map has entries for other accounts but not this one,
+  // which indicates a real issue within the running gateway.
+  const allStates = getAllAccountStates();
+  const runtimeState = allStates.get(accountId || 'default');
 
-  // 2a. Check if account is initialized
-  if (!runtimeState) {
-    issues.push({
-      channel: 'ztm-chat',
-      accountId: accountId || 'default',
-      kind: 'runtime',
-      level: 'info',
-      message: 'Account not initialized',
-    });
-  } else {
-    // 2b. Check if account is stopped
-    if (!runtimeState.started) {
+  // Only check runtime state when inside the gateway process (Map is non-empty)
+  if (allStates.size > 0) {
+    // 2a. Check if account is initialized
+    if (!runtimeState) {
       issues.push({
         channel: 'ztm-chat',
         accountId: accountId || 'default',
         kind: 'runtime',
-        level: 'warn',
-        message: 'Account stopped',
+        level: 'info',
+        message: 'Account not initialized',
       });
-    }
-
-    // 2c. Check for runtime errors
-    if (runtimeState.lastError) {
-      issues.push({
-        channel: 'ztm-chat',
-        accountId: accountId || 'default',
-        kind: 'runtime',
-        level: 'error',
-        message: `Runtime error: ${runtimeState.lastError}`,
-      });
-    }
-
-    // 2d. Check start/stop times (account was stopped)
-    if (runtimeState.lastStartAt && runtimeState.lastStopAt) {
-      const startTime = new Date(runtimeState.lastStartAt).getTime();
-      const stopTime = new Date(runtimeState.lastStopAt).getTime();
-      if (stopTime > startTime) {
+    } else {
+      // 2b. Check if account is stopped
+      if (!runtimeState.started) {
         issues.push({
           channel: 'ztm-chat',
           accountId: accountId || 'default',
           kind: 'runtime',
           level: 'warn',
-          message: 'Account was stopped',
+          message: 'Account stopped',
         });
+      }
+
+      // 2c. Check for runtime errors
+      if (runtimeState.lastError) {
+        issues.push({
+          channel: 'ztm-chat',
+          accountId: accountId || 'default',
+          kind: 'runtime',
+          level: 'error',
+          message: `Runtime error: ${runtimeState.lastError}`,
+        });
+      }
+
+      // 2d. Check start/stop times (account was stopped)
+      if (runtimeState.lastStartAt && runtimeState.lastStopAt) {
+        const startTime = new Date(runtimeState.lastStartAt).getTime();
+        const stopTime = new Date(runtimeState.lastStopAt).getTime();
+        if (stopTime > startTime) {
+          issues.push({
+            channel: 'ztm-chat',
+            accountId: accountId || 'default',
+            kind: 'runtime',
+            level: 'warn',
+            message: 'Account was stopped',
+          });
+        }
       }
     }
   }

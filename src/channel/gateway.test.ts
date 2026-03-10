@@ -447,9 +447,12 @@ describe('Channel Gateway', () => {
     });
 
     // Runtime state checks
-    it('should return info issue when account is not initialized', () => {
-      // Override mock to return empty Map (account not initialized)
-      mockGetAllAccountStates.mockReturnValueOnce(new Map());
+    it('should return info issue when account is not initialized (gateway process)', () => {
+      // Map has another account but not 'test' - simulates gateway process
+      // where runtime is active but this specific account was not initialized
+      mockGetAllAccountStates.mockReturnValueOnce(
+        new Map([['other-account', { ...mockState, started: true, lastError: null }]])
+      );
       mockIsConfigMinimallyValid.mockReturnValueOnce(true);
 
       const accounts = [{ accountId: 'test', config: mockConfig } as any];
@@ -461,6 +464,20 @@ describe('Channel Gateway', () => {
       expect(runtimeIssue).toBeDefined();
       expect(runtimeIssue!.level).toBe('info');
       expect(runtimeIssue!.message).toBe('Account not initialized');
+    });
+
+    it('should skip runtime checks when called from CLI process (empty state Map)', () => {
+      // Empty Map means we are in a CLI process where runtime was never initialized.
+      // No runtime issues should be reported.
+      mockGetAllAccountStates.mockReturnValueOnce(new Map());
+      mockIsConfigMinimallyValid.mockReturnValueOnce(true);
+
+      const accounts = [{ accountId: 'test', config: mockConfig } as any];
+
+      const result = collectStatusIssues(accounts);
+
+      // No issues at all - config is valid, runtime checks skipped
+      expect(result).toEqual([]);
     });
 
     it('should return warn issue when account is stopped', () => {
@@ -2363,6 +2380,7 @@ describe('collectStatusIssues additional coverage', () => {
 
     // Force mock to return false to trigger the error path
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    // Empty Map = CLI process context, runtime checks skipped
     mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: '', username: '' };
@@ -2370,8 +2388,8 @@ describe('collectStatusIssues additional coverage', () => {
 
     const result = collectStatusIssues(accounts);
 
-    // Should have config error + runtime info (account not initialized)
-    expect(result).toHaveLength(2);
+    // Should have config error only (runtime checks skipped in CLI context)
+    expect(result).toHaveLength(1);
     expect(result[0].accountId).toBe('default');
     const configIssue = result.find((i: any) => i.kind === 'config');
     expect(configIssue).toBeDefined();
@@ -2382,6 +2400,7 @@ describe('collectStatusIssues additional coverage', () => {
     const { collectStatusIssues } = await import('./gateway.js');
 
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    // Empty Map = CLI process context, runtime checks skipped
     mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: 'http://localhost:8080', username: '' };
@@ -2389,8 +2408,8 @@ describe('collectStatusIssues additional coverage', () => {
 
     const result = collectStatusIssues(accounts);
 
-    // Should have config error + runtime info
-    expect(result).toHaveLength(2);
+    // Should have config error only (runtime checks skipped in CLI context)
+    expect(result).toHaveLength(1);
     const configIssue = result.find((i: any) => i.kind === 'config');
     expect(configIssue).toBeDefined();
   });
@@ -2399,7 +2418,7 @@ describe('collectStatusIssues additional coverage', () => {
     const { collectStatusIssues } = await import('./gateway.js');
 
     mockIsConfigMinimallyValid.mockReturnValue(false);
-    // Return empty Map so no runtime state exists for this account
+    // Empty Map = CLI process context, runtime checks skipped
     mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: '', username: 'testuser' };
@@ -2407,8 +2426,8 @@ describe('collectStatusIssues additional coverage', () => {
 
     const result = collectStatusIssues(accounts);
 
-    // Should have config error + runtime info (account not initialized)
-    expect(result).toHaveLength(2);
+    // Should have config error only (runtime checks skipped in CLI context)
+    expect(result).toHaveLength(1);
     const configIssue = result.find((i: any) => i.kind === 'config');
     expect(configIssue).toBeDefined();
   });
@@ -2417,6 +2436,7 @@ describe('collectStatusIssues additional coverage', () => {
     const { collectStatusIssues } = await import('./gateway.js');
 
     mockIsConfigMinimallyValid.mockReturnValue(false);
+    // Empty Map = CLI process context, runtime checks skipped
     mockGetAllAccountStates.mockReturnValue(new Map());
 
     const invalidConfig = { agentUrl: '', username: 'testuser' };
@@ -2424,8 +2444,8 @@ describe('collectStatusIssues additional coverage', () => {
 
     const result = collectStatusIssues(accounts);
 
-    // Should have config error + runtime info
-    expect(result).toHaveLength(2);
+    // Should have config error only (runtime checks skipped in CLI context)
+    expect(result).toHaveLength(1);
     const configIssue = result.find((i: any) => i.kind === 'config');
     expect(configIssue!.message).toContain('agentUrl');
   });
