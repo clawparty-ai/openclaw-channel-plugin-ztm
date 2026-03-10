@@ -116,7 +116,7 @@ export class WatchLoopController {
 
       // Handle successful iteration
       const elapsed = Date.now() - loopStart;
-      this.handleWatchSuccess(result, elapsed);
+      await this.handleWatchSuccess(result, elapsed);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       logger.error(`[${this.state.accountId}] Watch iteration error: ${errorMsg}`);
@@ -138,12 +138,12 @@ export class WatchLoopController {
   /**
    * Handle successful watch iteration
    */
-  private handleWatchSuccess(
+  private async handleWatchSuccess(
     result: { success: true; items: WatchChangeItem[] },
     _elapsed: number
-  ): void {
-    // Process changed paths
-    this.messagesReceivedInCycle = this.processWatchChangesSync(
+  ): Promise<void> {
+    // Process changed paths - use async version that actually fetches and processes messages
+    this.messagesReceivedInCycle = await this.processWatchChanges(
       result.items,
       this.messagesReceivedInCycle
     );
@@ -151,27 +151,6 @@ export class WatchLoopController {
     // Success - reset retry count
     this.retryCount = 0;
     // Note: Next iteration is scheduled in finally block
-  }
-
-  /**
-   * Synchronous wrapper for processing watch changes
-   */
-  private processWatchChangesSync(
-    items: WatchChangeItem[],
-    previousMessagesReceived: boolean
-  ): boolean {
-    // Monitor semaphore queue health
-    const queuedWaiters = this.messageSemaphore.queuedWaiters();
-    if (queuedWaiters > 3) {
-      logger.warn(
-        `[${this.state.accountId}] High semaphore queue: ${queuedWaiters} waiters pending`
-      );
-    }
-
-    // Process synchronously - actual async work is done in processWatchChanges
-    // We need to handle this differently since handleWatchSuccess is not async
-    // For now, we'll just return the previous state and let the async processing happen
-    return items.length > 0 || previousMessagesReceived;
   }
 
   /**
