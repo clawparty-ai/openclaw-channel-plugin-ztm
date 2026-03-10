@@ -42,7 +42,7 @@
     "docs:watch": "typedoc --watch"
   },
   "dependencies": {
-    "openclaw": "2026.3.7",
+    "openclaw": "2026.3.8",
     "zod": "4.3.6"
   },
   "devDependencies": {
