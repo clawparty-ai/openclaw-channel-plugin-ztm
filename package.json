@@ -1,6 +1,6 @@
 {
   "name": "@flomesh/ztm-chat",
-  "version": "2026.3.10",
+  "version": "2026.3.11",
   "description": "ZTM Chat channel plugin for OpenClaw",
   "type": "module",
   "main": "./dist/index.js",

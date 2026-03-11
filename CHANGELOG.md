@@ -2,9 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.11 - 2026-03-11
+
+[f5075d5](f5075d5e9b55cb10c0bff2bb3e435438c4af43e4)...[0aae7f0](0aae7f0eed842b7006841c09ab1bf0140815cc8c)
+
+
+
+
+### 🐛 Bug Fixes
+
+- Add semaphore to prevent concurrent watchChanges and fullSync ([d9780a4](d9780a42059f943708d0d024b4e8ff61956d6cb1)) - (Lin Yang)
+- Add missing imports in large-message.e2e.test.ts ([57eec54](57eec5465068b35b2aa85e4ea0179236210e400f)) - (Lin Yang)
+
+
+
+
+### ✅ Testing
+
+- Add watermark deduplication and internal duplicate detection tests ([713e2d1](713e2d182fb9f5d6cab5da56b5c567699bbd97cd)) - (Lin Yang)
+- Add store write failure handling tests ([ce1ed0a](ce1ed0ad7f8a993e39cc9354f214e8cace523011)) - (Lin Yang)
+- Add watcher loop tests and docs ([e5c49cb](e5c49cb68fe30a621e6559db1bf7a0488928bca6)) - (Lin Yang)
+- Add large message boundary tests ([f814634](f8146343c25107728dc88f287b6993da4d2fee38)) - (Lin Yang)
+
+
+### 🔨 Build
+
+- Bump lint-staged from 16.3.2 to 16.3.3 (#26) ([9d48d54](9d48d54c601b1d5e6b1a6a2d671d37810779dc16)) - (dependabot[bot])
+- Bump hono in the npm_and_yarn group across 1 directory (#25) ([d384782](d384782cb287aa7ca278b88abd1f9b0cc2dc2b1e)) - (dependabot[bot])
+
+
+
 ## 2026.3.10 - 2026-03-10
 
-[6483b28](6483b28367855e057e040bd672f2ab5abcf26ed5)...[1441e8f](1441e8f6901db87470849e22735c41c3f257d420)
+[6483b28](6483b28367855e057e040bd672f2ab5abcf26ed5)...[f5075d5](f5075d5e9b55cb10c0bff2bb3e435438c4af43e4)
 
 ### 🚨 BREAKING CHANGES
 
