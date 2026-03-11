@@ -8,7 +8,9 @@ import {
   resolveZTMChatAccount,
   resolveDefaultZTMChatAccountId,
   buildChannelConfigSchemaWithHints,
+  InvalidAccountIdSecurityError,
 } from './config.js';
+import { logger } from '../utils/logger.js';
 
 // Mock config functions
 vi.mock('../config/index.js', () => ({
@@ -33,6 +35,16 @@ vi.mock('../config/index.js', () => ({
     ...base,
     ...account,
   })),
+}));
+
+// Mock logger for security tests
+vi.mock('../utils/logger.js', () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 describe('Channel Config', () => {
@@ -616,6 +628,178 @@ describe('Channel Config', () => {
       const result = listZTMChatAccountIds(cfg);
 
       expect(result).toContain(unicodeId);
+    });
+  });
+
+  // ============================================================================
+  // Security Tests
+  // ============================================================================
+
+  describe('Security - InvalidAccountIdSecurityError', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    describe('Path Traversal Protection', () => {
+      it('should reject accountId containing double-dot (..) path traversal', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '../etc/passwd' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId containing forward slash (/)', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: 'path/to/file' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId containing backslash (\\)', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: 'path\\to\\file' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId with Windows path traversal', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '..\\..\\windows\\system32' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId with mixed path separators', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '../path\\to/file' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+    });
+
+    describe('Prototype Pollution Protection', () => {
+      it('should reject accountId "__proto__"', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '__proto__' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId "constructor"', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: 'constructor' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId "prototype"', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: 'prototype' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+    });
+
+    describe('Empty/Whitespace accountId Protection', () => {
+      it('should reject empty accountId', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject whitespace-only accountId', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '   ' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject tab-only accountId', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '\t\t' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+
+      it('should reject accountId with only newlines', () => {
+        expect(() => {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '\n\n' });
+        }).toThrow(InvalidAccountIdSecurityError);
+      });
+    });
+
+    describe('Security Event Logging', () => {
+      it('should log security event when accountId is rejected', () => {
+        try {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '../../../etc/passwd' });
+        } catch (error) {
+          // Expected error
+        }
+
+        expect(logger.error).toHaveBeenCalledWith(
+          'Security: accountId validation rejected',
+          expect.objectContaining({
+            accountId: '../../../etc/passwd',
+            reason: expect.stringContaining('path traversal'),
+            timestamp: expect.any(String),
+          })
+        );
+      });
+
+      it('should log security event for prototype pollution attempt', () => {
+        try {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '__proto__' });
+        } catch (error) {
+          // Expected error
+        }
+
+        expect(logger.error).toHaveBeenCalledWith(
+          'Security: accountId validation rejected',
+          expect.objectContaining({
+            accountId: '__proto__',
+            reason: expect.stringContaining('dangerous property name'),
+          })
+        );
+      });
+
+      it('should include timestamp in security log', () => {
+        try {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '../attack' });
+        } catch (error) {
+          // Expected error
+        }
+
+        const logCall = (logger.error as ReturnType<typeof vi.fn>).mock.calls[0];
+        const context = logCall[1] as Record<string, unknown>;
+        expect(context).toHaveProperty('timestamp');
+        expect(typeof context.timestamp).toBe('string');
+        expect(context.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/); // ISO 8601 format
+      });
+    });
+
+    describe('Error Properties', () => {
+      it('should include accountId in error', () => {
+        try {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '../etc/passwd' });
+        } catch (error) {
+          expect(error).toBeInstanceOf(InvalidAccountIdSecurityError);
+          if (error instanceof InvalidAccountIdSecurityError) {
+            expect(error.accountId).toBe('../etc/passwd');
+          }
+        }
+      });
+
+      it('should include reason in error', () => {
+        try {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '__proto__' });
+        } catch (error) {
+          expect(error).toBeInstanceOf(InvalidAccountIdSecurityError);
+          if (error instanceof InvalidAccountIdSecurityError) {
+            expect(error.reason).toContain('dangerous property name');
+          }
+        }
+      });
+
+      it('should have correct error name', () => {
+        try {
+          resolveZTMChatAccount({ cfg: undefined, accountId: '/etc/passwd' });
+        } catch (error) {
+          expect(error).toBeInstanceOf(InvalidAccountIdSecurityError);
+          if (error instanceof InvalidAccountIdSecurityError) {
+            expect(error.name).toBe('InvalidAccountIdSecurityError');
+          }
+        }
+      });
     });
   });
 });

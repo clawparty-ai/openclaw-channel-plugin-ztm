@@ -9,6 +9,7 @@ import type { ZTMChatConfig } from '../types/config.js';
 import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../config/index.js';
 import { buildChannelConfigSchema } from 'openclaw/plugin-sdk';
 import { ztmChatConfigBaseSchema } from '../config/schema.js';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Types
@@ -85,26 +86,84 @@ export function resolveDefaultZTMChatAccountId(cfg: OpenClawConfig): string {
 const DANGEROUS_PROPERTY_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
- * Validate account ID to prevent path traversal and prototype pollution
+ * Security error for invalid account IDs.
+ *
+ * Thrown when an accountId contains potentially malicious patterns such as:
+ * - Path traversal sequences (.., /, \)
+ * - Prototype pollution attempts (__proto__, constructor, prototype)
+ *
+ * @remarks
+ * This is a security-sensitive error. All instances are logged for audit purposes.
  */
-function isValidAccountId(accountId: string | undefined): boolean {
-  if (!accountId) return true; // undefined/null is valid (will use default)
-  // Check for empty or whitespace-only
-  if (accountId.trim().length === 0) return false;
-  // Check for dangerous property names
-  if (DANGEROUS_PROPERTY_NAMES.has(accountId)) return false;
-  // Check for path traversal patterns
-  if (accountId.includes('..') || accountId.includes('/') || accountId.includes('\\')) return false;
-  return true;
+export class InvalidAccountIdSecurityError extends Error {
+  /** The invalid accountId that triggered this error */
+  readonly accountId: string;
+
+  /** The reason why the accountId was rejected */
+  readonly reason: string;
+
+  constructor(accountId: string, reason: string) {
+    super(`Invalid accountId: ${reason}`);
+    this.name = 'InvalidAccountIdSecurityError';
+    this.accountId = accountId;
+    this.reason = reason;
+  }
 }
 
 /**
- * Resolve a ZTM chat account with its configuration
+ * Validate account ID to prevent path traversal and prototype pollution.
+ *
+ * @returns Object with validity status and optional rejection reason
+ */
+function validateAccountId(accountId: string | undefined): { valid: boolean; reason?: string } {
+  // undefined/null is valid (will use default), but empty string is NOT valid
+  if (accountId === undefined || accountId === null) {
+    return { valid: true };
+  }
+
+  // Check for empty or whitespace-only (handles empty string '')
+  const trimmed = accountId.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, reason: 'accountId is empty or whitespace-only' };
+  }
+
+  // Check for dangerous property names (prototype pollution)
+  if (DANGEROUS_PROPERTY_NAMES.has(accountId)) {
+    return { valid: false, reason: `contains dangerous property name: ${accountId}` };
+  }
+
+  // Check for path traversal patterns
+  if (accountId.includes('..')) {
+    return { valid: false, reason: 'contains path traversal sequence (..)' };
+  }
+  if (accountId.includes('/') || accountId.includes('\\')) {
+    return { valid: false, reason: 'contains path separator (/ or \\)' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Resolve a ZTM chat account with its configuration.
  *
  * @param params - Parameters containing configuration and account ID
  * @param params.cfg - OpenClaw configuration object
  * @param params.accountId - Account identifier
  * @returns Resolved ZTM chat account with configuration
+ * @throws {InvalidAccountIdSecurityError} When accountId contains malicious patterns
+ *
+ * @example
+ * ```typescript
+ * // Valid usage
+ * const account = resolveZTMChatAccount({ cfg, accountId: 'user@example.com' });
+ *
+ * // Security violation - will throw and log
+ * try {
+ *   resolveZTMChatAccount({ cfg, accountId: '../../../etc/passwd' });
+ * } catch (error) {
+ *   // Error is logged for security audit
+ * }
+ * ```
  */
 export function resolveZTMChatAccount({
   cfg,
@@ -114,14 +173,16 @@ export function resolveZTMChatAccount({
   accountId?: string;
 }): ResolvedZTMChatAccount {
   // Validate accountId to prevent path traversal / prototype pollution
-  if (!isValidAccountId(accountId)) {
-    // Return default account for invalid IDs
-    return {
-      accountId: 'default',
-      username: 'default',
-      enabled: true,
-      config: getDefaultConfig(),
-    };
+  const validation = validateAccountId(accountId);
+  if (!validation.valid) {
+    // Log security event for audit
+    logger.error(`Security: accountId validation rejected`, {
+      accountId: accountId ?? '(undefined)',
+      reason: validation.reason,
+      timestamp: new Date().toISOString(),
+    });
+    // Throw security error - fail-closed approach
+    throw new InvalidAccountIdSecurityError(accountId ?? '', validation.reason!);
   }
 
   const channelConfig = getEffectiveChannelConfig(cfg);
