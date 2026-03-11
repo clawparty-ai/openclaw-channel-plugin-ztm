@@ -249,6 +249,34 @@ describe('Account Runtime State Management', () => {
       const retrievedState = states.get(testAccountId);
       expect(retrievedState?.lastError).toBe('test error');
     });
+
+    it('should return a copy, not the internal Map reference', () => {
+      getOrCreateAccountState('copy-test-account');
+
+      const states1 = getAllAccountStates();
+      const states2 = getAllAccountStates();
+
+      // Should be different Map instances (copy, not same reference)
+      expect(states1).not.toBe(states2);
+
+      // Both should have the same data
+      expect(states1.has('copy-test-account')).toBe(true);
+      expect(states2.has('copy-test-account')).toBe(true);
+    });
+
+    it('should prevent external mutation from affecting internal state', () => {
+      getOrCreateAccountState('mutation-test-account');
+
+      const states = getAllAccountStates();
+      // Try to mutate - should not affect internal state
+      (states as Map<string, unknown>).set('hacker-account', {} as never);
+      (states as Map<string, unknown>).clear();
+
+      // Internal state should be unchanged
+      const internalStates = getAllAccountStates();
+      expect(internalStates.has('mutation-test-account')).toBe(true);
+      expect(internalStates.has('hacker-account')).toBe(false);
+    });
   });
 
   describe('initializeRuntime', () => {

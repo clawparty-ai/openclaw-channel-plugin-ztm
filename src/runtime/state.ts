@@ -175,10 +175,12 @@ export class AccountStateManager {
   }
 
   /**
-   * Get all states
+   * Get all states (returns a copy to prevent internal state mutation)
+   *
+   * @returns A new Map containing copies of all account states
    */
-  getAll(): Map<string, AccountRuntimeState> {
-    return this.states;
+  getAll(): ReadonlyMap<string, AccountRuntimeState> {
+    return new Map(this.states);
   }
 
   /**
@@ -587,7 +589,7 @@ export function clearGroupPermissionCache(accountId: string): void {
  *   console.log(`${accountId}: ${state.connected ? 'connected' : 'disconnected'}`);
  * }
  */
-export function getAllAccountStates(): Map<string, AccountRuntimeState> {
+export function getAllAccountStates(): ReadonlyMap<string, AccountRuntimeState> {
   return accountStateManager.getAll();
 }
 
