@@ -35,7 +35,7 @@ vi.mock('../runtime/store.js', () => ({
 }));
 
 // Mock isGroupChat
-vi.mock('./utils.js', () => ({
+vi.mock('./message-processor-helpers.js', () => ({
   isGroupChat: vi.fn().mockReturnValue(false),
 }));
 
@@ -66,7 +66,7 @@ describe('watcher-sync', () => {
     } as unknown as AccountRuntimeState;
 
     // Reset isGroupChat to default (false = peer chat)
-    const { isGroupChat } = await import('./utils.js');
+    const { isGroupChat } = await import('./message-processor-helpers.js');
     vi.mocked(isGroupChat).mockReturnValue(false);
   });
 
@@ -152,7 +152,7 @@ describe('watcher-sync', () => {
 
     it('should fetch ALL messages for group chats', async () => {
       const { processAndNotify } = await import('./strategies/message-strategies.js');
-      const { isGroupChat } = await import('./utils.js');
+      const { isGroupChat } = await import('./message-processor-helpers.js');
       vi.mocked(isGroupChat).mockReturnValue(true);
       vi.mocked(processAndNotify).mockResolvedValue(true);
 

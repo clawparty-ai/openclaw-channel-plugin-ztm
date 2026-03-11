@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getMessageStrategy, processAndNotify } from './message-strategies.js';
-import { isGroupChat, validateChatMessage } from '../utils.js';
+import { isGroupChat, validateChatMessage } from '../message-processor-helpers.js';
 import { processIncomingMessage } from '../processor.js';
 import { notifyMessageCallbacks } from '../dispatcher.js';
 import { checkMessagePolicy } from '../../core/policy-checker.js';
@@ -9,7 +9,7 @@ import type { ZTMChat } from '../../types/api.js';
 import type { AccountRuntimeState } from '../../runtime/state.js';
 
 // Mock dependencies
-vi.mock('../utils.js', () => ({
+vi.mock('../message-processor-helpers.js', () => ({
   isGroupChat: vi.fn(),
   extractSender: vi.fn((chat: ZTMChat) => chat.latest?.sender || chat.peer || ''),
   validateChatMessage: vi.fn(),
@@ -114,7 +114,11 @@ describe('processAndNotify', () => {
 
     (validateChatMessage as ReturnType<typeof vi.fn>).mockReturnValue({ valid: true });
     (isGroupChat as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({
+      allowed: true,
+      reason: 'allowed',
+      action: 'process',
+    });
     (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue({
       peer: 'alice',
       time: 123,
@@ -125,7 +129,11 @@ describe('processAndNotify', () => {
       timestamp: new Date(123),
     });
     (notifyMessageCallbacks as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (checkDmPolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+    (checkDmPolicy as ReturnType<typeof vi.fn>).mockReturnValue({
+      allowed: true,
+      reason: 'allowed',
+      action: 'process',
+    });
 
     const result = await processAndNotify(chat, mockState, []);
 
@@ -145,7 +153,11 @@ describe('processAndNotify', () => {
 
     (validateChatMessage as ReturnType<typeof vi.fn>).mockReturnValue({ valid: true });
     (isGroupChat as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: true, reason: 'allowed', action: 'process' });
+    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({
+      allowed: true,
+      reason: 'allowed',
+      action: 'process',
+    });
     (processIncomingMessage as ReturnType<typeof vi.fn>).mockReturnValue({
       isGroup: true,
       groupId: 'group1',
@@ -179,7 +191,11 @@ describe('processAndNotify', () => {
 
     (validateChatMessage as ReturnType<typeof vi.fn>).mockReturnValue({ valid: true });
     (isGroupChat as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({ allowed: false, reason: 'denied', action: 'ignore' });
+    (checkMessagePolicy as ReturnType<typeof vi.fn>).mockReturnValue({
+      allowed: false,
+      reason: 'denied',
+      action: 'ignore',
+    });
 
     const result = await processAndNotify(chat, mockState, []);
 

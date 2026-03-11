@@ -34,12 +34,19 @@ export async function processChatMessage(
   const isGroup = isGroupChat(chat);
   const sender = extractSender(chat);
 
+  // Defensive check: ensure latest exists (already validated, for safety)
+  const latest = chat.latest;
+  if (!latest) {
+    return false;
+  }
+
   if (isGroup) {
+    // Group info already validated by isGroupChat
     const groupInfo = { creator: chat.creator!, group: chat.group! };
     const normalized = processIncomingMessage(
       {
-        time: chat.latest!.time,
-        message: chat.latest!.message,
+        time: latest.time,
+        message: latest.message,
         sender: sender,
       },
       { config, storeAllowFrom, accountId, groupInfo }
@@ -50,8 +57,8 @@ export async function processChatMessage(
   // Peer chat
   const normalized = processIncomingMessage(
     {
-      time: chat.latest!.time,
-      message: chat.latest!.message,
+      time: latest.time,
+      message: latest.message,
       sender: sender,
     },
     { config, storeAllowFrom, accountId }

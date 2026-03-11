@@ -9,7 +9,7 @@ import { processAndNotify } from './strategies/message-strategies.js';
 import type { AccountRuntimeState } from '../types/runtime.js';
 import { isSuccess } from '../types/common.js';
 import type { ZTMChat, ZTMMessage } from '../types/api.js';
-import { isGroupChat } from './utils.js';
+import { isGroupChat } from './message-processor-helpers.js';
 import { getMessageSyncStart } from '../utils/sync-time.js';
 import { getAccountMessageStateStore } from '../runtime/store.js';
 import { sanitizeForLog } from '../utils/log-sanitize.js';

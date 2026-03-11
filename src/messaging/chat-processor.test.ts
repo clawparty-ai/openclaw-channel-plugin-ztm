@@ -57,6 +57,19 @@ function createMockChat(overrides?: Partial<ZTMChat>): ZTMChat {
   };
 }
 
+/**
+ * Create a chat without the latest property
+ * This tests the defensive null check in processChatMessage
+ */
+function createChatWithoutLatest(overrides?: Partial<ZTMChat>): ZTMChat {
+  const base: ZTMChat = {
+    peer: 'alice',
+    time: Date.now(),
+    updated: Date.now(),
+  } as ZTMChat;
+  return { ...base, ...overrides };
+}
+
 describe('processChatMessage', () => {
   const baseConfig: ZTMChatConfig = {
     ...testConfig,
@@ -65,6 +78,19 @@ describe('processChatMessage', () => {
   };
 
   describe('group chat processing', () => {
+    it('should return false when latest property is completely missing (defensive check)', async () => {
+      // This tests the defensive null check - even if validation passes,
+      // the code should handle missing latest gracefully
+      const chat = createChatWithoutLatest({
+        creator: 'alice',
+        group: 'test-group',
+        name: 'Test Group',
+      });
+
+      const result = await processChatMessage(chat, baseConfig, [], testAccountId);
+      expect(result).toBe(false);
+    });
+
     it('should return false when no latest message', async () => {
       const chat = createMockChat({
         creator: 'alice',
@@ -115,6 +141,15 @@ describe('processChatMessage', () => {
   });
 
   describe('peer chat processing', () => {
+    it('should return false when latest property is completely missing (defensive check)', async () => {
+      // This tests the defensive null check - even if validation passes,
+      // the code should handle missing latest gracefully
+      const chat = createChatWithoutLatest();
+
+      const result = await processChatMessage(chat, baseConfig, [], testAccountId);
+      expect(result).toBe(false);
+    });
+
     it('should return false when no peer', async () => {
       const chat = createMockChat({
         peer: '',

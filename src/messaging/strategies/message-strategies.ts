@@ -10,7 +10,7 @@
 import type { ZTMChat } from '../../types/api.js';
 import type { ZTMChatMessage } from '../../types/messaging.js';
 import type { AccountRuntimeState } from '../../runtime/state.js';
-import { isGroupChat, extractSender, validateChatMessage } from '../utils.js';
+import { isGroupChat, extractSender, validateChatMessage } from '../message-processor-helpers.js';
 import { notifyMessageCallbacks } from '../dispatcher.js';
 import { processIncomingMessage } from '../processor.js';
 import { checkMessagePolicy } from '../../core/policy-checker.js';
