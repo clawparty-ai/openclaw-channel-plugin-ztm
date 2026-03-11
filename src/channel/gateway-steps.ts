@@ -203,8 +203,10 @@ function resolveAndValidateConfig(
 async function preloadMessageState(accountId: string, log?: GatewayLogger): Promise<void> {
   const { getAccountMessageStateStore } = await import('../runtime/store.js');
   const messageStateStore = getAccountMessageStateStore(accountId);
-  messageStateStore.ensureLoaded().catch(err => {
+  try {
+    await messageStateStore.ensureLoaded();
+  } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     log?.error?.(`[${accountId}] Failed to pre-load message state: ${errorMsg}`);
-  });
+  }
 }

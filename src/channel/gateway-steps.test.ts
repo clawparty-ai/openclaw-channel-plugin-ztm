@@ -366,3 +366,222 @@ describe('Full pipeline integration', () => {
     });
   });
 });
+
+// Step 6: preload_message_state detailed tests
+describe('Step execution - preload_message_state', () => {
+  let mockCtx: StepContext;
+  let mockLogger: { info: any; warn: any; error: any };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    mockCtx = {
+      account: {
+        config: {
+          agentUrl: 'http://localhost:8080',
+          meshName: 'testmesh',
+          username: 'testuser',
+        } as any,
+        accountId: 'test-account-123',
+      },
+      log: mockLogger,
+    } as any;
+  });
+
+  /**
+   * Test: preloadMessageState should properly await ensureLoaded()
+   *
+   * This test verifies the fix for the race condition bug where
+   * ensureLoaded() was not being awaited, causing subsequent steps
+   * to potentially execute before state was fully loaded.
+   */
+  it('should properly await ensureLoaded() before completing', async () => {
+    const { getAccountMessageStateStore } = await import('../runtime/store.js');
+
+    // Create a mock that tracks when ensureLoaded completes
+    let ensureLoadedCompleted = false;
+    const mockStore = {
+      ensureLoaded: vi.fn().mockImplementation(async () => {
+        // Simulate async loading
+        await new Promise(resolve => setTimeout(resolve, 10));
+        ensureLoadedCompleted = true;
+      }),
+    };
+
+    vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore as any);
+
+    const steps = createGatewaySteps(mockCtx);
+    const step = steps[5]; // preload_message_state
+
+    const stepCtx: any = {
+      account: mockCtx.account,
+      log: mockLogger,
+    };
+
+    // Execute step
+    await step.execute(stepCtx);
+
+    // Critical assertion: ensureLoaded must have completed
+    // This is the fix - previously the function returned before ensureLoaded finished
+    expect(ensureLoadedCompleted).toBe(true);
+    expect(mockStore.ensureLoaded).toHaveBeenCalled();
+  });
+
+  /**
+   * Test: preloadMessageState should handle ensureLoaded() errors gracefully
+   *
+   * The function should log errors but NOT throw, to avoid blocking
+   * account initialization.
+   */
+  it('should log error but not throw when ensureLoaded() fails', async () => {
+    const { getAccountMessageStateStore } = await import('../runtime/store.js');
+
+    const testError = new Error('State file corrupted');
+    const mockStore = {
+      ensureLoaded: vi.fn().mockRejectedValue(testError),
+    };
+
+    vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore as any);
+
+    const steps = createGatewaySteps(mockCtx);
+    const step = steps[5]; // preload_message_state
+
+    const stepCtx: any = {
+      account: mockCtx.account,
+      log: mockLogger,
+    };
+
+    // Should NOT throw
+    await expect(step.execute(stepCtx)).resolves.toBeUndefined();
+
+    // Should log the error
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      '[test-account-123] Failed to pre-load message state: State file corrupted'
+    );
+  });
+
+  /**
+   * Test: verify error message format for non-Error exceptions
+   */
+  it('should handle non-Error exceptions gracefully', async () => {
+    const { getAccountMessageStateStore } = await import('../runtime/store.js');
+
+    const mockStore = {
+      ensureLoaded: vi.fn().mockRejectedValue('String error value'),
+    };
+
+    vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore as any);
+
+    const steps = createGatewaySteps(mockCtx);
+    const step = steps[5]; // preload_message_state
+
+    const stepCtx: any = {
+      account: mockCtx.account,
+      log: mockLogger,
+    };
+
+    await step.execute(stepCtx);
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      '[test-account-123] Failed to pre-load message state: String error value'
+    );
+  });
+
+  /**
+   * Test: preloadMessageState should work without logger
+   *
+   * Error handling should not crash if logger is not provided.
+   */
+  it('should handle missing logger gracefully', async () => {
+    const { getAccountMessageStateStore } = await import('../runtime/store.js');
+
+    const testError = new Error('Test error');
+    const mockStore = {
+      ensureLoaded: vi.fn().mockRejectedValue(testError),
+    };
+
+    vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore as any);
+
+    const steps = createGatewaySteps(mockCtx);
+    const step = steps[5]; // preload_message_state
+
+    const stepCtx: any = {
+      account: mockCtx.account,
+      // No logger provided
+    };
+
+    // Should not throw even without logger
+    await expect(step.execute(stepCtx)).resolves.toBeUndefined();
+  });
+
+  /**
+   * Test: timing verification - ensureLoaded must complete before next step
+   *
+   * This is a regression test for the original bug where ensureLoaded()
+   * was not awaited, causing a race condition.
+   */
+  it('should complete ensureLoaded before next step can execute', async () => {
+    const { getAccountMessageStateStore } = await import('../runtime/store.js');
+
+    let loadInProgress = false;
+    let loadCompleted = false;
+
+    const mockStore = {
+      ensureLoaded: vi.fn().mockImplementation(async () => {
+        loadInProgress = true;
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 20));
+        loadInProgress = false;
+        loadCompleted = true;
+      }),
+    };
+
+    vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore as any);
+
+    const steps = createGatewaySteps(mockCtx);
+    const preloadStep = steps[5]; // preload_message_state
+
+    const stepCtx: any = {
+      account: mockCtx.account,
+      log: mockLogger,
+    };
+
+    // Execute preload step
+    await preloadStep.execute(stepCtx);
+
+    // At this point, ensureLoaded MUST be complete
+    // This is the fix - previously loadInProgress could still be true
+    expect(loadInProgress).toBe(false);
+    expect(loadCompleted).toBe(true);
+
+    // Verify next step can now safely use the loaded state
+    // (In real scenario, next step would use watermarks, getWatermark, etc.)
+    expect(mockStore.ensureLoaded).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Test: preloadMessageState should use correct account ID
+   */
+  it('should pass correct accountId to getAccountMessageStateStore', async () => {
+    const { getAccountMessageStateStore } = await import('../runtime/store.js');
+
+    const mockStore = {
+      ensureLoaded: vi.fn().mockResolvedValue(undefined),
+    };
+
+    vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore as any);
+
+    const steps = createGatewaySteps(mockCtx);
+    const step = steps[5]; // preload_message_state
+
+    const stepCtx: any = {
+      account: mockCtx.account,
+      log: mockLogger,
+    };
+
+    await step.execute(stepCtx);
+
+    expect(getAccountMessageStateStore).toHaveBeenCalledWith('test-account-123');
+    expect(mockStore.ensureLoaded).toHaveBeenCalled();
+  });
+});
