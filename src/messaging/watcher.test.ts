@@ -3777,3 +3777,204 @@ describe('WatchLoopController concurrency', () => {
     expect(semaphore.tryAcquire()).toBe(true);
   });
 });
+
+describe('multiple account interleaved operations', () => {
+  let createdTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const originalSetTimeout = global.setTimeout;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdTimeouts = [];
+
+    global.setTimeout = vi.fn((callback: () => void, ms: number) => {
+      const ref = originalSetTimeout(callback, ms);
+      createdTimeouts.push(ref);
+      return ref;
+    }) as unknown as typeof setTimeout;
+  });
+
+  afterEach(() => {
+    for (const timeout of createdTimeouts) {
+      clearTimeout(timeout);
+    }
+    createdTimeouts = [];
+    global.setTimeout = originalSetTimeout;
+  });
+
+  it('should handle multiple account state objects independently', async () => {
+    const accountIds = ['account-1', 'account-2', 'account-3'];
+
+    // Create separate state for each account
+    const states = accountIds.map(accountId => {
+      const mockApiClient = {
+        watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+        getChats: vi.fn(() => mockSuccess({ value: [] })),
+        getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+        getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      };
+
+      return {
+        accountId,
+        config: testConfig,
+        chatReader: mockApiClient as unknown as ZTMApiClient,
+        chatSender: mockApiClient as unknown as IChatSender,
+        discovery: mockApiClient as unknown as IDiscovery,
+        lastError: null,
+        lastStartAt: new Date(),
+        lastStopAt: null,
+        lastInboundAt: null,
+        lastOutboundAt: null,
+        messageCallbacks: new Set<MessageCallback>(),
+        watchInterval: null,
+        watchErrorCount: 0,
+        groupPermissionCache: new Map(),
+      };
+    });
+
+    const mockContext = createMockMessagingContext();
+
+    // Start watchers for multiple accounts
+    const watchPromises = states.map(state => startMessageWatcher(state, mockContext));
+    await Promise.all(watchPromises);
+
+    // All should complete without error
+    await new Promise(resolve => setTimeout(resolve, 1100));
+
+    // Each account's watchChanges should have been called
+    for (const state of states) {
+      const apiClient = state.chatReader as any;
+      expect(apiClient.watchChanges).toHaveBeenCalled();
+    }
+  });
+
+  it('should handle interleaved watch cycles for different accounts', async () => {
+    let callOrder: string[] = [];
+    let callCount = 0;
+
+    const accountIds = ['account-a', 'account-b'];
+
+    const states = accountIds.map(accountId => {
+      const mockApiClient = {
+        watchChanges: vi.fn(() => {
+          callCount++;
+          callOrder.push(`${accountId}-${callCount}`);
+          return Promise.resolve(mockSuccess({ value: [] }));
+        }),
+        getChats: vi.fn(() => mockSuccess({ value: [] })),
+        getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+        getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      };
+
+      return {
+        accountId,
+        config: testConfig,
+        chatReader: mockApiClient as unknown as ZTMApiClient,
+        chatSender: mockApiClient as unknown as IChatSender,
+        discovery: mockApiClient as unknown as IDiscovery,
+        lastError: null,
+        lastStartAt: new Date(),
+        lastStopAt: null,
+        lastInboundAt: null,
+        lastOutboundAt: null,
+        messageCallbacks: new Set<MessageCallback>(),
+        watchInterval: null,
+        watchErrorCount: 0,
+        groupPermissionCache: new Map(),
+      };
+    });
+
+    const mockContext = createMockMessagingContext();
+
+    // Start both watchers
+    await Promise.all(states.map(state => startMessageWatcher(state, mockContext)));
+
+    // Wait for multiple iterations
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    // Both accounts should have processed multiple iterations
+    const apiClient1 = states[0].chatReader as any;
+    const apiClient2 = states[1].chatReader as any;
+
+    expect(apiClient1.watchChanges).toHaveBeenCalled();
+    expect(apiClient2.watchChanges).toHaveBeenCalled();
+  });
+
+  it('should handle different account states with different API behaviors', async () => {
+    // Account 1: always returns empty (no messages)
+    const mockApiClient1 = {
+      watchChanges: vi.fn(() => Promise.resolve(mockSuccess({ value: [] }))),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+    };
+
+    // Account 2: returns peer change
+    const mockApiClient2 = {
+      watchChanges: vi.fn(() =>
+        Promise.resolve(
+          mockSuccess({
+            value: [{ type: 'peer' as const, peer: 'alice' }],
+          })
+        )
+      ),
+      getChats: vi.fn(() => mockSuccess({ value: [] })),
+      getPeerMessages: vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          value: [{ time: 1000, message: 'Hello', sender: 'alice' }],
+        })
+      ),
+      getGroupMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+    };
+
+    const states = [
+      {
+        accountId: 'account-empty',
+        config: testConfig,
+        chatReader: mockApiClient1 as unknown as ZTMApiClient,
+        chatSender: mockApiClient1 as unknown as IChatSender,
+        discovery: mockApiClient1 as unknown as IDiscovery,
+        lastError: null,
+        lastStartAt: new Date(),
+        lastStopAt: null,
+        lastInboundAt: null,
+        lastOutboundAt: null,
+        messageCallbacks: new Set<MessageCallback>(),
+        watchInterval: null,
+        watchErrorCount: 0,
+        groupPermissionCache: new Map(),
+      },
+      {
+        accountId: 'account-messages',
+        config: testConfig,
+        chatReader: mockApiClient2 as unknown as ZTMApiClient,
+        chatSender: mockApiClient2 as unknown as IChatSender,
+        discovery: mockApiClient2 as unknown as IDiscovery,
+        lastError: null,
+        lastStartAt: new Date(),
+        lastStopAt: null,
+        lastInboundAt: null,
+        lastOutboundAt: null,
+        messageCallbacks: new Set<MessageCallback>(),
+        watchInterval: null,
+        watchErrorCount: 0,
+        groupPermissionCache: new Map(),
+      },
+    ];
+
+    const mockContext = createMockMessagingContext();
+
+    await Promise.all(states.map(state => startMessageWatcher(state, mockContext)));
+
+    // Wait for watch loops to run
+    await new Promise(resolve => setTimeout(resolve, 1100));
+
+    // Both accounts should have run watch cycles independently
+    expect(mockApiClient1.watchChanges).toHaveBeenCalled();
+    expect(mockApiClient2.watchChanges).toHaveBeenCalled();
+
+    // Each account should have separate state - they don't interfere
+    expect(states[0].watchErrorCount).toBe(0);
+    expect(states[1].watchErrorCount).toBe(0);
+  });
+});
