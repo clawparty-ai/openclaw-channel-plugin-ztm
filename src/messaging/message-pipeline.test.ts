@@ -382,6 +382,112 @@ describe('Inbound message processing', () => {
 
       expect(result).not.toBeNull();
     });
+
+    // ========================================
+    // NEW: Watermark-based deduplication tests
+    // Covers: duplicate message detection, new message detection
+    // ========================================
+
+    it('should process NEW messages when msg.time > watermark', async () => {
+      const { getAccountMessageStateStore } = await import('../runtime/store.js');
+      const fixedTime = 1000000;
+      const message = createMessage({ time: fixedTime + 100 }); // Newer than watermark
+
+      // Mock store with lower watermark (simulating already-processed messages)
+      const mockStore = {
+        ensureLoaded: vi.fn().mockResolvedValue(undefined),
+        isLoaded: vi.fn(() => true),
+        getWatermark: vi.fn(() => fixedTime), // Watermark = fixedTime
+        getGlobalWatermark: vi.fn(() => 0),
+        setWatermark: vi.fn(),
+        setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
+        flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
+        dispose: vi.fn(),
+      };
+
+      const originalImpl = vi.mocked(getAccountMessageStateStore).getMockImplementation?.();
+      vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore);
+
+      const config = { ...baseConfig, dmPolicy: 'allow' as const };
+      const result = processIncomingMessage(message, {
+        config,
+        storeAllowFrom: [],
+        accountId: testAccountId,
+      });
+
+      // Message should be processed (not skipped) because time > watermark
+      expect(result).not.toBeNull();
+      expect(result?.content).toBe('Hello, world!');
+
+      // Restore
+      if (originalImpl) {
+        vi.mocked(getAccountMessageStateStore).mockImplementation(originalImpl);
+      } else {
+        vi.mocked(getAccountMessageStateStore).mockReset();
+      }
+    });
+
+    it('should SKIP messages when msg.time === watermark (equal boundary)', async () => {
+      const { getAccountMessageStateStore } = await import('../runtime/store.js');
+      const fixedTime = 1000000;
+      const message = createMessage({ time: fixedTime }); // Equal to watermark
+
+      // Mock store with same watermark
+      const mockStore = {
+        ensureLoaded: vi.fn().mockResolvedValue(undefined),
+        isLoaded: vi.fn(() => true),
+        getWatermark: vi.fn(() => fixedTime), // Same as message.time
+        getGlobalWatermark: vi.fn(() => 0),
+        setWatermark: vi.fn(),
+        setWatermarkAsync: vi.fn().mockResolvedValue(undefined),
+        flush: vi.fn(),
+        flushAsync: vi.fn().mockResolvedValue(undefined),
+        dispose: vi.fn(),
+      };
+
+      const originalImpl = vi.mocked(getAccountMessageStateStore).getMockImplementation?.();
+      vi.mocked(getAccountMessageStateStore).mockReturnValue(mockStore);
+
+      const config = { ...baseConfig, dmPolicy: 'allow' as const };
+      const result = processIncomingMessage(message, {
+        config,
+        storeAllowFrom: [],
+        accountId: testAccountId,
+      });
+
+      // Message should be SKIPPED because time <= watermark (not strictly greater)
+      expect(result).toBeNull();
+
+      // Restore
+      if (originalImpl) {
+        vi.mocked(getAccountMessageStateStore).mockImplementation(originalImpl);
+      } else {
+        vi.mocked(getAccountMessageStateStore).mockReset();
+      }
+    });
+
+    it('should use per-peer watermark key for isolation', async () => {
+      const { getWatermarkKey } = await import('./watermark.js');
+
+      // Verify that different peers get different watermark keys
+      const aliceKey = getWatermarkKey({ type: 'peer', data: 'alice' });
+      const bobKey = getWatermarkKey({ type: 'peer', data: 'bob' });
+      const groupKey = getWatermarkKey({
+        type: 'group',
+        data: { group: 'mygroup', creator: 'alice' },
+      });
+
+      // Keys should be different for different peers/groups
+      expect(aliceKey).not.toBe(bobKey);
+      expect(aliceKey).not.toBe(groupKey);
+      expect(bobKey).not.toBe(groupKey);
+
+      // Peer key should contain peer identifier
+      expect(aliceKey).toContain('alice');
+      expect(bobKey).toContain('bob');
+      expect(groupKey).toContain('group:');
+    });
   });
 
   describe('notifyMessageCallbacks', () => {

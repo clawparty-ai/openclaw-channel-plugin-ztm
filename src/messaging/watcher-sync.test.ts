@@ -278,6 +278,24 @@ describe('watcher-sync', () => {
       // Should not throw
     });
 
+    it('should NOT call processAndNotify when getPeerMessages returns empty array', async () => {
+      const { processAndNotify } = await import('./strategies/message-strategies.js');
+      vi.mocked(processAndNotify).mockResolvedValue(true);
+
+      const chats = [
+        { peer: 'alice', time: 1000, updated: 1000, latest: { time: 1000, text: 'hi' } },
+      ];
+      vi.mocked(mockState.chatReader!.getChats).mockResolvedValue(success(chats));
+
+      // Return empty array - no messages since watermark
+      (mockState.chatReader as any).getPeerMessages.mockResolvedValue(success([]));
+
+      await performFullSync(mockState, allowFrom);
+
+      // Should NOT process anything - prevents internal duplicate detection
+      expect(processAndNotify).not.toHaveBeenCalled();
+    });
+
     it('should process all chats in the list', async () => {
       const { processAndNotify } = await import('./strategies/message-strategies.js');
       vi.mocked(processAndNotify).mockResolvedValue(true);
