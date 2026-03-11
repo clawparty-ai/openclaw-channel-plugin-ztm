@@ -136,6 +136,661 @@ describe('createInboundContext', () => {
       })
     );
   });
+
+  it('should set ChatType to direct and peer.kind to direct for DM messages', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-dm',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: 'Hello',
+      timestamp: new Date(),
+      peer: 'alice',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('direct');
+    expect(result.ctxPayload.ConversationLabel).toBe('alice');
+    expect(rt.channel.routing.resolveAgentRoute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peer: { kind: 'direct', id: 'alice' },
+      })
+    );
+  });
+
+  it('should set ChatType to group and peer.kind to group for group messages', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'team',
+      groupCreator: 'bob',
+      groupName: 'Test Group',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('bob/team');
+    expect(rt.channel.routing.resolveAgentRoute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peer: { kind: 'group', id: 'bob/team' },
+      })
+    );
+  });
+
+  it('should use groupId as fallback when groupCreator is missing', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-no-creator',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'team',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('team');
+    expect(rt.channel.routing.resolveAgentRoute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peer: { kind: 'group', id: 'team' },
+      })
+    );
+  });
+
+  it('should handle DM message with empty content', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-empty',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '',
+      timestamp: new Date(),
+      peer: 'alice',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.Body).toBe('');
+    expect(result.ctxPayload.ChatType).toBe('direct');
+    expect(result.ctxPayload.ConversationLabel).toBe('alice');
+  });
+
+  it('should handle DM message with undefined timestamp', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-no-timestamp',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: 'Hello',
+      timestamp: undefined as any,
+      peer: 'alice',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.Timestamp).toBeUndefined();
+    expect(result.ctxPayload.ChatType).toBe('direct');
+  });
+
+  it('should handle DM message with special characters in sender', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-special-sender',
+      sender: 'user@example.com',
+      senderId: 'user-id',
+      content: 'Hello',
+      timestamp: new Date(),
+      peer: 'user@example.com',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.From).toBe('ztm-chat:user@example.com');
+    expect(result.ctxPayload.ConversationLabel).toBe('user@example.com');
+    expect(result.ctxPayload.SenderName).toBe('user@example.com');
+  });
+
+  it('should handle group message with both groupCreator and groupId missing', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-no-id',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupCreator: undefined,
+      groupId: undefined,
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('alice');
+    expect(rt.channel.routing.resolveAgentRoute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peer: { kind: 'group', id: 'alice' },
+      })
+    );
+  });
+
+  it('should handle group message with only groupCreator (no groupId)', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-no-id',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupCreator: 'bob',
+      groupId: undefined,
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('bob');
+    expect(rt.channel.routing.resolveAgentRoute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peer: { kind: 'group', id: 'bob' },
+      })
+    );
+  });
+
+  it('should handle group message with sender as groupCreator', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-creator-sender',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'team',
+      groupCreator: 'alice',
+      groupName: 'Alice Team',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('alice/team');
+    expect(result.ctxPayload.SenderName).toBe('alice');
+  });
+
+  it('should handle group message with empty content', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-empty',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'team',
+      groupCreator: 'bob',
+      groupName: 'Test Group',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.Body).toBe('');
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('bob/team');
+  });
+
+  it('should handle group message with undefined timestamp', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-no-timestamp',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: undefined as any,
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'team',
+      groupCreator: 'bob',
+      groupName: 'Test Group',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.Timestamp).toBeUndefined();
+    expect(result.ctxPayload.ChatType).toBe('group');
+  });
+
+  it('should handle group message with special characters in groupId', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const msg: ZTMChatMessage = {
+      id: 'msg-group-special-id',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content: '@bot help',
+      timestamp: new Date(),
+      peer: 'alice',
+      isGroup: true,
+      groupId: 'team/subgroup',
+      groupCreator: 'bob',
+      groupName: 'Test Group',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.ChatType).toBe('group');
+    expect(result.ctxPayload.ConversationLabel).toBe('bob/team/subgroup');
+    expect(rt.channel.routing.resolveAgentRoute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peer: { kind: 'group', id: 'bob/team/subgroup' },
+      })
+    );
+  });
+
+  it('should handle message with newlines and special characters', () => {});
+
+  it('should handle message with newlines and special characters', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const content = 'Hello\nWorld\n@bot help me\n';
+    const msg: ZTMChatMessage = {
+      id: 'msg-newlines',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content,
+      timestamp: new Date(),
+      peer: 'alice',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.Body).toBe(content);
+    expect(result.ctxPayload.RawBody).toBe(content);
+    expect(result.ctxPayload.CommandBody).toBe(content);
+  });
+
+  it('should handle message with Unicode characters', () => {
+    const rt = {
+      channel: {
+        routing: {
+          resolveAgentRoute: vi.fn(() => ({
+            sessionKey: 'test-session-key',
+            accountId: testAccountId,
+            matchedBy: 'default',
+            agentId: 'agent-1',
+          })),
+        },
+        reply: {
+          finalizeInboundContext: vi.fn((ctx: unknown) => ctx),
+        },
+      },
+    } as any;
+
+    const content = '你好 @bot 帮我 🎉';
+    const msg: ZTMChatMessage = {
+      id: 'msg-unicode',
+      sender: 'alice',
+      senderId: 'alice-id',
+      content,
+      timestamp: new Date(),
+      peer: 'alice',
+    };
+
+    const config: ZTMChatConfig = {
+      ...testConfig,
+      username: 'testuser',
+    };
+
+    const result = createInboundContext({
+      rt,
+      msg,
+      config,
+      accountId: testAccountId,
+    });
+
+    expect(result.ctxPayload.Body).toBe(content);
+    expect(result.ctxPayload.SenderName).toBe('alice');
+  });
 });
 
 describe('handleInboundMessage', () => {

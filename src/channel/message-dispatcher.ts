@@ -24,10 +24,19 @@ export function createInboundContext(params: {
 }) {
   const { rt, msg, config, accountId, cfg = {} } = params;
 
+  const isGroup = Boolean(msg.isGroup);
+  const groupLabel = msg.groupId
+    ? msg.groupCreator
+      ? `${msg.groupCreator}/${msg.groupId}`
+      : msg.groupId
+    : msg.groupCreator;
+
   const route = rt.channel.routing.resolveAgentRoute({
     channel: 'ztm-chat',
     accountId,
-    peer: { kind: 'direct' as const, id: msg.sender },
+    peer: isGroup
+      ? { kind: 'group' as const, id: groupLabel ?? msg.sender }
+      : { kind: 'direct' as const, id: msg.sender },
     cfg,
   });
 
@@ -40,8 +49,8 @@ export function createInboundContext(params: {
       To: `ztm-chat:${config.username}`,
       SessionKey: route.sessionKey,
       AccountId: route.accountId,
-      ChatType: 'direct' as const,
-      ConversationLabel: msg.sender,
+      ChatType: isGroup ? ('group' as const) : ('direct' as const),
+      ConversationLabel: isGroup ? (groupLabel ?? msg.sender) : msg.sender,
       SenderName: msg.sender,
       SenderId: msg.sender,
       Provider: 'ztm-chat',
