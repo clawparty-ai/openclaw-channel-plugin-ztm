@@ -191,6 +191,26 @@ describe('retryMessageLater', () => {
   // ============================================================================
 
   describe('Account Shutdown Handling', () => {
+    it('should skip retry when config becomes undefined during delay (race condition)', async () => {
+      // Simulate: config exists when retry is scheduled, but becomes undefined before execution
+      // This tests the race condition where account state is removed during the delay
+      const retryPromise = retryMessageLater(mockState, mockMsg, 1);
+
+      // Before timer fires, simulate account removal (config set to undefined)
+      mockState.config = undefined;
+
+      // Advance timer to trigger retry callback
+      vi.advanceTimersByTime(MESSAGE_RETRY_DELAY_MS);
+      await retryPromise;
+
+      // Should skip retry and log debug message
+      expect(loggerMock.debug).toHaveBeenCalledWith(
+        expect.stringContaining('account state no longer exists')
+      );
+      // Should NOT have attempted to dispatch message
+      expect(dispatchInboundMessageMock).not.toHaveBeenCalled();
+    });
+
     it('should skip retry when account is stopping (aborted signal)', async () => {
       mockState.watchAbortController.signal.aborted = true;
 

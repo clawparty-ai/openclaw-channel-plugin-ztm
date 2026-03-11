@@ -78,8 +78,14 @@ export async function retryMessageLater(
       // Clean up this timer
       state.messageRetries?.delete(timerKey);
 
+      // Defensive check: account may have been removed during delay
+      if (!state.config) {
+        logger.debug(`[${state.accountId}] Skipping retry - account state no longer exists`);
+        return;
+      }
+
       const rt = container.get(DEPENDENCIES.RUNTIME).get();
-      await dispatchInboundMessage(state, state.accountId, state.config!, msg, rt);
+      await dispatchInboundMessage(state, state.accountId, state.config, msg, rt);
       logger.info(`[${state.accountId}] Retry succeeded for message from ${msg.sender}`);
     } catch (error) {
       const errorMsg = extractErrorMessage(error);
