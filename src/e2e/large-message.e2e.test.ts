@@ -8,9 +8,8 @@
  * 4. 2MB messages
  */
 
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { processIncomingMessage } from '../messaging/processor.js';
-import type { ZTMChatMessage } from '../types/messaging.js';
 import {
   testConfigOpenDM,
   testAccountId,
