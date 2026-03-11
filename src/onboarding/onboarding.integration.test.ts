@@ -4,6 +4,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ZTMChatWizard, type WizardPrompts } from './onboarding.js';
 
+// Import actual validation functions to use in tests
+import { containsPathTraversal, isValidUrl } from '../utils/validation.js';
+
 // MockPrompts class for testing wizard flows
 class MockPrompts implements WizardPrompts {
   private prompts: Record<string, unknown>;
@@ -110,6 +113,12 @@ class MockPrompts implements WizardPrompts {
 // Mock dependencies
 vi.mock('../utils/validation.js', () => ({
   isValidUrl: vi.fn().mockReturnValue(true),
+  containsPathTraversal: vi.fn((input: string) => {
+    // Check for path traversal patterns
+    const patterns = ['../', '..\\', '%2e%2e', '%2e%2e%2f', '%2e%2e%5c', '..%2f', '..%5c'];
+    const lower = input.toLowerCase();
+    return patterns.some(p => lower.includes(p));
+  }),
   IDENTIFIER_PATTERN: /^[a-zA-Z0-9_-]+$/,
 }));
 

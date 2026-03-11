@@ -10,7 +10,80 @@
 
 import * as net from 'net';
 import { logger } from '../utils/logger.js';
+import { isValidUrl } from '../utils/validation.js';
+import { isValidMeshName } from '../config/validation.js';
 import type { PermitData } from '../types/connectivity.js';
+
+/**
+ * Custom error for invalid input parameters
+ * Thrown when input validation fails for security reasons
+ */
+export class MeshInputValidationError extends Error {
+  /** The parameter name that failed validation */
+  readonly param: string;
+  /** The invalid value that was provided */
+  readonly value: unknown;
+
+  constructor(param: string, value: unknown, reason: string) {
+    super(`Invalid ${param}: ${reason}`);
+    this.name = 'MeshInputValidationError';
+    this.param = param;
+    this.value = value;
+  }
+}
+
+/**
+ * Validate hostname format
+ * @param hostname - Hostname to validate
+ * @returns true if valid, false otherwise
+ */
+function isValidHostname(hostname: string): boolean {
+  if (!hostname || typeof hostname !== 'string') {
+    return false;
+  }
+  const trimmed = hostname.trim();
+  if (trimmed.length === 0 || trimmed.length > 253) {
+    return false;
+  }
+  // Check for path traversal patterns
+  if (trimmed.includes('..') || trimmed.includes('/') || trimmed.includes('\\')) {
+    return false;
+  }
+  // Basic hostname pattern (labels separated by dots)
+  const hostnamePattern =
+    /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  return hostnamePattern.test(trimmed);
+}
+
+/**
+ * Validate port number
+ * @param port - Port number to validate
+ * @returns true if valid, false otherwise
+ */
+function isValidPort(port: number): boolean {
+  return Number.isInteger(port) && port >= 1 && port <= 65535;
+}
+
+/**
+ * Validate endpoint name format
+ * @param name - Endpoint name to validate
+ * @returns true if valid, false otherwise
+ */
+function isValidEndpointName(name: string): boolean {
+  if (!name || typeof name !== 'string') {
+    return false;
+  }
+  const trimmed = name.trim();
+  if (trimmed.length === 0 || trimmed.length > 64) {
+    return false;
+  }
+  // Check for path traversal or special characters
+  if (trimmed.includes('..') || trimmed.includes('/') || trimmed.includes('\\')) {
+    return false;
+  }
+  // Same pattern as mesh name
+  return isValidMeshName(trimmed);
+}
 
 /**
  * Check if a TCP port is open and accepting connections.
@@ -27,6 +100,16 @@ import type { PermitData } from '../types/connectivity.js';
  * // isOpen: true if agent is running
  */
 export async function checkPortOpen(hostname: string, port: number): Promise<boolean> {
+  // Security: Validate hostname to prevent SSRF attacks
+  if (!isValidHostname(hostname)) {
+    throw new MeshInputValidationError('hostname', hostname, 'Invalid hostname format');
+  }
+
+  // Security: Validate port range
+  if (!isValidPort(port)) {
+    throw new MeshInputValidationError('port', port, 'Port must be between 1 and 65535');
+  }
+
   return new Promise(resolve => {
     const socket = new net.Socket();
     socket.setTimeout(5000);
@@ -64,6 +147,11 @@ export async function checkPortOpen(hostname: string, port: number): Promise<boo
  * // pubkey: "-----BEGIN PUBLIC KEY-----\nMIIBIj...\n-----END PUBLIC KEY-----"
  */
 export async function getIdentity(agentUrl: string): Promise<string | null> {
+  // Security: Validate URL to prevent SSRF attacks
+  if (!isValidUrl(agentUrl)) {
+    throw new MeshInputValidationError('agentUrl', agentUrl, 'Invalid URL format');
+  }
+
   try {
     const response = await fetch(`${agentUrl}/api/identity`, {
       method: 'GET',
@@ -120,6 +208,27 @@ export async function joinMesh(
   endpointName: string,
   permitData: PermitData
 ): Promise<boolean> {
+  // Security: Validate inputs before making network requests
+  if (!isValidUrl(agentUrl)) {
+    throw new MeshInputValidationError('agentUrl', agentUrl, 'Invalid URL format');
+  }
+
+  if (!isValidMeshName(meshName)) {
+    throw new MeshInputValidationError(
+      'meshName',
+      meshName,
+      'Mesh name must be 1-64 characters, alphanumeric with - and _ only'
+    );
+  }
+
+  if (!isValidEndpointName(endpointName)) {
+    throw new MeshInputValidationError(
+      'endpointName',
+      endpointName,
+      'Endpoint name must be 1-64 characters, alphanumeric with - and _ only'
+    );
+  }
+
   try {
     const permit = {
       ca: permitData.ca,

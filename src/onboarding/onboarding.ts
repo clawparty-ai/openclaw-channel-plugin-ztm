@@ -7,7 +7,7 @@
 import * as readline from 'readline';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { DMPolicy, GroupPolicy } from '../config/schema.js';
-import { isValidUrl } from '../utils/validation.js';
+import { isValidUrl, containsPathTraversal } from '../utils/validation.js';
 import { isValidUsername, isValidMeshName } from '../config/validation.js';
 import { DEFAULT_MESH_NAME } from '../config/defaults.js';
 import { extractErrorMessage } from '../utils/error.js';
@@ -438,6 +438,13 @@ export class ZTMChatWizard {
       this.prompts.error('Permit file path is required');
       throw new Error('Permit file path is required');
     }
+
+    // Security: Check for path traversal attacks
+    if (containsPathTraversal(permitFilePath)) {
+      this.prompts.error('Permit file path contains invalid path traversal patterns');
+      throw new Error('Path traversal detected in permit file path');
+    }
+
     this.config.permitFilePath = permitFilePath;
     this.prompts.success(`Permit file path set to: ${permitFilePath}`);
   }

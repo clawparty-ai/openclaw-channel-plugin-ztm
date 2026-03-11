@@ -1,7 +1,7 @@
 // Unit tests for Mesh connectivity functions via Agent API
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { checkPortOpen, getIdentity, joinMesh } from './mesh.js';
+import { checkPortOpen, getIdentity, joinMesh, MeshInputValidationError } from './mesh.js';
 import type { PermitData } from '../types/connectivity.js';
 
 // Track event handlers for manual triggering
@@ -237,6 +237,166 @@ describe('Mesh connectivity functions', () => {
       const result = await checkPortOpen('unreachable-host', 7777);
 
       expect(result).toBe(false);
+    });
+  });
+
+  // ============================================
+  // Security: Input Validation Tests
+  // ============================================
+
+  describe('checkPortOpen security validation', () => {
+    it('should reject hostname with path traversal (../)', async () => {
+      await expect(checkPortOpen('../etc/passwd', 7777)).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject hostname with Windows path traversal (..\\)', async () => {
+      await expect(checkPortOpen('..\\windows\\system32', 7777)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject port out of range (too low)', async () => {
+      await expect(checkPortOpen('localhost', 0)).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject port out of range (too high)', async () => {
+      await expect(checkPortOpen('localhost', 65536)).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject port with decimal value', async () => {
+      await expect(checkPortOpen('localhost', 80.5 as unknown as number)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject invalid port (NaN)', async () => {
+      await expect(checkPortOpen('localhost', NaN as unknown as number)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should accept valid port boundary (1)', async () => {
+      // Mock socket to return false (port closed)
+      setTimeout(() => {
+        const errorHandler = socketHandlers.get('error');
+        if (errorHandler) errorHandler();
+      }, 10);
+
+      // Should not throw validation error, may return false due to network
+      await expect(checkPortOpen('localhost', 1)).resolves.toEqual(false);
+    });
+
+    it('should accept valid port boundary (65535)', async () => {
+      setTimeout(() => {
+        const errorHandler = socketHandlers.get('error');
+        if (errorHandler) errorHandler();
+      }, 10);
+
+      // Should not throw validation error
+      await expect(checkPortOpen('localhost', 65535)).resolves.toEqual(false);
+    });
+  });
+
+  describe('joinMesh security validation', () => {
+    const mockPermitData: PermitData = {
+      ca: '-----BEGIN CERTIFICATE-----\nCA...\n-----END CERTIFICATE-----',
+      agent: {
+        certificate: '-----BEGIN CERTIFICATE-----\nAGENT...\n-----END CERTIFICATE-----',
+        privateKey: '-----BEGIN PRIVATE KEY-----\nKEY...\n-----END PRIVATE KEY-----',
+        labels: [],
+      },
+      bootstraps: ['hub.example.com:8888'],
+    };
+
+    it('should reject invalid agentUrl (not a URL)', async () => {
+      await expect(joinMesh('not-a-url', 'mesh', 'ep', mockPermitData)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject agentUrl with invalid protocol (ftp)', async () => {
+      await expect(joinMesh('ftp://example.com', 'mesh', 'ep', mockPermitData)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject agentUrl with invalid protocol (file://)', async () => {
+      await expect(joinMesh('file:///etc/passwd', 'mesh', 'ep', mockPermitData)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject empty meshName', async () => {
+      await expect(joinMesh('http://localhost:7777', '', 'ep', mockPermitData)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject meshName exceeding max length', async () => {
+      const longName = 'a'.repeat(100);
+      await expect(
+        joinMesh('http://localhost:7777', longName, 'ep', mockPermitData)
+      ).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject meshName with special characters', async () => {
+      await expect(
+        joinMesh('http://localhost:7777', 'mesh/@#$', 'ep', mockPermitData)
+      ).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject meshName with path traversal', async () => {
+      await expect(
+        joinMesh('http://localhost:7777', '../malicious', 'ep', mockPermitData)
+      ).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject empty endpointName', async () => {
+      await expect(joinMesh('http://localhost:7777', 'mesh', '', mockPermitData)).rejects.toThrow(
+        MeshInputValidationError
+      );
+    });
+
+    it('should reject endpointName exceeding max length', async () => {
+      const longName = 'a'.repeat(100);
+      await expect(
+        joinMesh('http://localhost:7777', 'mesh', longName, mockPermitData)
+      ).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should reject endpointName with path traversal', async () => {
+      await expect(
+        joinMesh('http://localhost:7777', 'mesh', '../etc', mockPermitData)
+      ).rejects.toThrow(MeshInputValidationError);
+    });
+
+    it('should accept valid parameters (network may fail but validation passes)', async () => {
+      // Mock fetch to simulate network error
+      (global.fetch as any).mockRejectedValue(new Error('Network error'));
+
+      // joinMesh catches network errors and returns false (not throw)
+      // Valid parameters should pass validation without throwing MeshInputValidationError
+      const result = await joinMesh(
+        'http://localhost:7777',
+        'valid-mesh',
+        'valid-ep',
+        mockPermitData
+      );
+      expect(result).toBe(false); // Network error, not validation error
+    });
+
+    it('should accept valid parameters when API succeeds', async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      const result = await joinMesh(
+        'http://localhost:7777',
+        'valid-mesh',
+        'valid-ep',
+        mockPermitData
+      );
+      expect(result).toBe(true);
     });
   });
 });

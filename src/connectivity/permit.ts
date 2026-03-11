@@ -14,10 +14,25 @@ import { logger } from '../utils/logger.js';
 import { getZTMRuntime } from '../runtime/index.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
-import { normalizeUsername } from '../utils/validation.js';
+import { normalizeUsername, containsPathTraversal } from '../utils/validation.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getOrDefault } from '../utils/guards.js';
 import type { PermitData } from '../types/connectivity.js';
+
+/**
+ * Custom error for path traversal security violations
+ * Thrown when a file path contains path traversal patterns
+ */
+export class PathTraversalError extends Error {
+  /** The malicious path that was rejected */
+  readonly path: string;
+
+  constructor(path: string) {
+    super(`Path traversal detected: ${path}`);
+    this.name = 'PathTraversalError';
+    this.path = path;
+  }
+}
 
 /**
  * Request permit from permit server
@@ -99,7 +114,24 @@ export async function requestPermit(
  * const saved = savePermitData(permitData, "/path/to/permit.json");
  */
 export function savePermitData(permitData: PermitData, permitPath: string): boolean {
+  // Security: Check for path traversal attacks
+  if (containsPathTraversal(permitPath)) {
+    const error = new PathTraversalError(permitPath);
+    logger.error(`[Security] Path traversal detected in savePermitData: ${permitPath}`);
+    throw error;
+  }
+
   try {
+    // Security: Check for symlink attacks
+    if (fs.existsSync(permitPath)) {
+      const stats = fs.lstatSync(permitPath);
+      if (stats.isSymbolicLink()) {
+        const error = new PathTraversalError(permitPath);
+        logger.error(`[Security] Symlink attack detected in savePermitData: ${permitPath}`);
+        throw error;
+      }
+    }
+
     // Ensure directory exists
     const dir = path.dirname(permitPath);
     if (!fs.existsSync(dir)) {
@@ -125,11 +157,27 @@ export function savePermitData(permitData: PermitData, permitPath: string): bool
  * const permit = loadPermitFromFile("/path/to/permit.json");
  */
 export function loadPermitFromFile(filePath: string): PermitData | null {
+  // Security: Check for path traversal attacks
+  if (containsPathTraversal(filePath)) {
+    const error = new PathTraversalError(filePath);
+    logger.error(`[Security] Path traversal detected in loadPermitFromFile: ${filePath}`);
+    throw error;
+  }
+
   try {
     if (!fs.existsSync(filePath)) {
       logger.error(`Permit file not found: ${filePath}`);
       return null;
     }
+
+    // Security: Check for symlink attacks
+    const stats = fs.lstatSync(filePath);
+    if (stats.isSymbolicLink()) {
+      const error = new PathTraversalError(filePath);
+      logger.error(`[Security] Symlink attack detected in loadPermitFromFile: ${filePath}`);
+      throw error;
+    }
+
     const content = fs.readFileSync(filePath, 'utf-8');
     const permitData = JSON.parse(content) as PermitData;
     logger.info(`Permit loaded from file: ${filePath}`);
