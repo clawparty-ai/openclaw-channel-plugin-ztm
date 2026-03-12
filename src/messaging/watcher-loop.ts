@@ -381,7 +381,7 @@ export async function processWatchChanges(
           .catch((err: unknown) => {
             const errorMsg = err instanceof Error ? err.message : String(err);
             logger.error(`[${state.accountId}] Timeout processing peer message: ${errorMsg}`);
-            throw err; // Re-throw to propagate error to caller
+            // Log error but continue processing other messages to prevent loop termination
           })
       );
     }
@@ -406,7 +406,7 @@ export async function processWatchChanges(
           .catch((err: unknown) => {
             const errorMsg = err instanceof Error ? err.message : String(err);
             logger.error(`[${state.accountId}] Timeout processing group message: ${errorMsg}`);
-            throw err; // Re-throw to propagate error to caller
+            // Log error but continue processing other messages to prevent loop termination
           })
       );
     }

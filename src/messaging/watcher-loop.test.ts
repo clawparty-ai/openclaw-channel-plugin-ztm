@@ -477,3 +477,107 @@ describe('processChangedGroup', () => {
     expect(stateNoReader).toBeDefined();
   });
 });
+
+// ============================================================================
+// Error Handling Tests - Fail-safe behavior
+// ============================================================================
+
+describe('processWatchChanges error handling', () => {
+  let mockState: AccountRuntimeState;
+  let mockRt: ReturnType<typeof createMockRuntime>;
+  let mockContext: ReturnType<typeof createMockMessagingContext>;
+  let messageSemaphore: Semaphore;
+
+  beforeEach(() => {
+    mockState = createMockState(testAccountId, testConfig, createMockApiClient());
+    mockRt = createMockRuntime();
+    mockContext = createMockMessagingContext();
+    messageSemaphore = new Semaphore(10);
+    vi.clearAllMocks();
+  });
+
+  it('should continue processing when peer processing throws', async () => {
+    const ctx: WatchContext = {
+      state: mockState,
+      rt: mockRt as any,
+      messageSemaphore,
+    };
+
+    // Mock chatReader.getPeerMessages to throw for 'bad-peer'
+    mockState.chatReader = {
+      ...mockState.chatReader!,
+      getPeerMessages: vi.fn().mockImplementation(async (peer: string) => {
+        if (peer === 'bad-peer') {
+          throw new Error('Simulated peer error');
+        }
+        return { ok: true, value: [] };
+      }),
+    } as any;
+
+    const items: WatchChangeItem[] = [
+      { type: 'peer', peer: 'good-peer' },
+      { type: 'peer', peer: 'bad-peer' },
+    ];
+
+    // Should NOT throw - fail-safe behavior continues processing
+    const result = await processWatchChanges(ctx, items, false, vi.fn(), mockContext);
+
+    // Should return true since some processing occurred
+    expect(result).toBe(true);
+    // Both peers were attempted (no early termination)
+    const reader = mockState.chatReader!;
+    expect(reader.getPeerMessages).toHaveBeenCalledTimes(2);
+  });
+
+  it('should continue processing when group processing throws', async () => {
+    const ctx: WatchContext = {
+      state: mockState,
+      rt: mockRt as any,
+      messageSemaphore,
+    };
+
+    // Mock chatReader.getGroupMessages to throw for 'bad-group'
+    mockState.chatReader = {
+      ...mockState.chatReader!,
+      getGroupMessages: vi.fn().mockImplementation(async () => {
+        throw new Error('Simulated group error');
+      }),
+    } as any;
+
+    const items: WatchChangeItem[] = [
+      { type: 'group', creator: 'alice', group: 'good-group' },
+      { type: 'group', creator: 'alice', group: 'bad-group' },
+    ];
+
+    // Should NOT throw - fail-safe behavior continues processing
+    const result = await processWatchChanges(ctx, items, false, vi.fn(), mockContext);
+
+    // Should return true since some processing occurred
+    expect(result).toBe(true);
+  });
+
+  it('should handle semaphore timeout without breaking loop', async () => {
+    // Create a semaphore that will timeout
+    const timeoutSemaphore = new Semaphore(1);
+
+    const ctxWithTimeout: WatchContext = {
+      state: mockState,
+      rt: mockRt as any,
+      messageSemaphore: timeoutSemaphore,
+    };
+
+    // Fill the semaphore so next acquire times out
+    await timeoutSemaphore.acquire();
+
+    const items: WatchChangeItem[] = [
+      { type: 'peer', peer: 'peer1' },
+      { type: 'peer', peer: 'peer2' },
+    ];
+
+    // Should NOT throw even when semaphore times out
+    const result = await processWatchChanges(ctxWithTimeout, items, false, vi.fn(), mockContext);
+
+    // Should return true (some items may have been processed before semaphore filled)
+    expect(result).toBe(true);
+  });
+});
