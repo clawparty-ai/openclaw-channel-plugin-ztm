@@ -104,10 +104,12 @@ class MockPrompts {
 // We'll use vi.mock at top level properly
 vi.mock('readline', () => ({
   createInterface: vi.fn().mockReturnValue({
-    question: vi.fn((prompt, callback) => {
+    question: vi.fn((_prompt: string, callback: (answer: string) => void) => {
       callback('');
     }),
     close: vi.fn(),
+    once: vi.fn(),
+    off: vi.fn(),
   }),
 }));
 
@@ -881,6 +883,164 @@ describe('ZTMChatWizard', () => {
 
       expect(capturedCallback).not.toBeNull();
       capturedCallback!('test answer');
+    });
+
+    describe('Promise rejection handling', () => {
+      it('should reject promise when readline closes before answer', async () => {
+        const { ConsolePrompts } = await import('./onboarding.js');
+
+        // Create event emitter mock for readline
+        const mockRl = {
+          question: vi.fn(),
+          close: vi.fn(),
+          once: vi.fn(),
+          off: vi.fn(),
+        };
+
+        let closeHandler: (() => void) | null = null;
+
+        mockRl.once.mockImplementation((event: string, handler: () => void) => {
+          if (event === 'close') {
+            closeHandler = handler;
+          }
+        });
+
+        // Create ConsolePrompts instance with mocked readline
+        const prompts = new ConsolePrompts();
+        (prompts as any).rl = mockRl;
+
+        // Call ask() - this will set up the close listener
+        const askPromise = prompts.ask('Enter name:');
+
+        // Simulate readline closing before user answers
+        expect(closeHandler).not.toBeNull();
+        closeHandler!();
+
+        // Verify promise is rejected
+        await expect(askPromise).rejects.toThrow('Readline interface closed');
+      });
+
+      it('should reject confirm promise when readline closes', async () => {
+        const { ConsolePrompts } = await import('./onboarding.js');
+
+        const mockRl = {
+          question: vi.fn(),
+          close: vi.fn(),
+          once: vi.fn(),
+          off: vi.fn(),
+        };
+
+        let closeHandler: (() => void) | null = null;
+        mockRl.once.mockImplementation((event: string, handler: () => void) => {
+          if (event === 'close') {
+            closeHandler = handler;
+          }
+        });
+
+        const prompts = new ConsolePrompts();
+        (prompts as any).rl = mockRl;
+
+        const confirmPromise = prompts.confirm('Continue?');
+
+        expect(closeHandler).not.toBeNull();
+        closeHandler!();
+
+        await expect(confirmPromise).rejects.toThrow('Readline interface closed');
+      });
+
+      it('should reject password promise when readline closes', async () => {
+        const { ConsolePrompts } = await import('./onboarding.js');
+
+        const mockRl = {
+          question: vi.fn(),
+          close: vi.fn(),
+          once: vi.fn(),
+          off: vi.fn(),
+        };
+
+        let closeHandler: (() => void) | null = null;
+        mockRl.once.mockImplementation((event: string, handler: () => void) => {
+          if (event === 'close') {
+            closeHandler = handler;
+          }
+        });
+
+        const prompts = new ConsolePrompts();
+        (prompts as any).rl = mockRl;
+
+        const passwordPromise = prompts.password('Enter password:');
+
+        expect(closeHandler).not.toBeNull();
+        closeHandler!();
+
+        await expect(passwordPromise).rejects.toThrow('Readline interface closed');
+      });
+
+      it('should not reject when question is answered before close', async () => {
+        const { ConsolePrompts } = await import('./onboarding.js');
+
+        let questionCallback: ((answer: string) => void) | null = null;
+        const mockRl = {
+          question: vi.fn((_prompt: string, callback: (answer: string) => void) => {
+            questionCallback = callback;
+          }),
+          close: vi.fn(),
+          once: vi.fn(),
+          off: vi.fn(),
+        };
+
+        let closeHandler: (() => void) | null = null;
+        mockRl.once.mockImplementation((event: string, handler: () => void) => {
+          if (event === 'close') {
+            closeHandler = handler;
+          }
+        });
+
+        const prompts = new ConsolePrompts();
+        (prompts as any).rl = mockRl;
+
+        const askPromise = prompts.ask('Enter name:');
+
+        // Answer the question first
+        expect(questionCallback).not.toBeNull();
+        questionCallback!('Alice');
+
+        // Then trigger close event
+        closeHandler!();
+
+        // Promise should resolve successfully, not reject
+        await expect(askPromise).resolves.toBe('Alice');
+      });
+
+      it('should remove close listener after successful answer', async () => {
+        const { ConsolePrompts } = await import('./onboarding.js');
+
+        let questionCallback: ((answer: string) => void) | null = null;
+        const mockRl = {
+          question: vi.fn((_prompt: string, callback: (answer: string) => void) => {
+            questionCallback = callback;
+          }),
+          close: vi.fn(),
+          once: vi.fn(),
+          off: vi.fn(),
+        };
+
+        mockRl.once.mockImplementation(() => {});
+        mockRl.off.mockImplementation(() => {});
+
+        const prompts = new ConsolePrompts();
+        (prompts as any).rl = mockRl;
+
+        const askPromise = prompts.ask('Enter name:');
+
+        // Answer the question
+        questionCallback!('Bob');
+
+        await expect(askPromise).resolves.toBe('Bob');
+
+        // Verify off was called to remove the close listener
+        expect(mockRl.off).toHaveBeenCalledWith('close', expect.any(Function));
+      });
     });
   });
 
