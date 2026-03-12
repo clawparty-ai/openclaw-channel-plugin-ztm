@@ -161,7 +161,16 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   if (permitData?.agent?.certificate) {
     const expiryStatus = getCertificateExpiryStatus(permitData.agent.certificate);
 
-    if (expiryStatus.isExpired) {
+    // Check for parse errors first - certificate cannot be read
+    if (expiryStatus.parseError) {
+      issues.push({
+        channel: 'ztm-chat',
+        accountId: accountId || 'default',
+        kind: 'auth',
+        level: 'error',
+        message: 'Failed to parse certificate - certificate may be corrupted',
+      });
+    } else if (expiryStatus.isExpired) {
       issues.push({
         channel: 'ztm-chat',
         accountId: accountId || 'default',

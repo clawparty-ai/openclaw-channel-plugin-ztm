@@ -38,7 +38,7 @@ export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAcco
   // Certificate expiry fields
   certExpiryDate?: string | null;
   certDaysUntilExpiry?: number | null;
-  certIsExpired?: boolean;
+  certIsExpired?: boolean | null;
 } {
   const accountStates = getAllAccountStates();
   const state = accountStates.get(account.accountId);
@@ -56,14 +56,20 @@ export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAcco
 
   let certExpiryDate: string | null = null;
   let certDaysUntilExpiry: number | null = null;
-  let certIsExpired = false;
+  let certIsExpired: boolean | null = null;
 
   if (permitData?.agent?.certificate) {
     const expiryStatus = getCertificateExpiryStatus(permitData.agent.certificate);
-    // Only format certExpiryDate as local timezone string
-    certExpiryDate = formatTimestampToLocalTz(expiryStatus.expiryDate);
-    certDaysUntilExpiry = expiryStatus.daysUntilExpiry;
-    certIsExpired = expiryStatus.isExpired;
+
+    // Handle parse error - mark as expired so system doesn't trust the certificate
+    if (expiryStatus.parseError) {
+      certIsExpired = null; // Indicates parsing failed
+    } else {
+      // Only format certExpiryDate as local timezone string when parsing succeeds
+      certExpiryDate = formatTimestampToLocalTz(expiryStatus.expiryDate);
+      certDaysUntilExpiry = expiryStatus.daysUntilExpiry;
+      certIsExpired = expiryStatus.isExpired;
+    }
   }
 
   return {
