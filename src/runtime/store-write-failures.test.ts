@@ -76,8 +76,11 @@ describe('MessageStateStore write failures', () => {
       // flushAsync should fail gracefully
       await expect(store.flushAsync()).resolves.toBeUndefined();
 
-      // Warning should be logged
-      expect(mockLogger.warn).toHaveBeenCalledWith('Failed to persist message state');
+      // Warning should be logged with path and error details
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to persist message state to ${tempFile}`)
+      );
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Mock writeFile error'));
 
       // Data should still be in memory
       expect(store.getWatermark('fail-test-1', 'peer1')).toBe(1000);
@@ -148,8 +151,11 @@ describe('MessageStateStore write failures', () => {
       // flush() should not throw
       expect(() => store.flush()).not.toThrow();
 
-      // Warning should be logged
-      expect(mockLogger.warn).toHaveBeenCalledWith('Failed to persist message state');
+      // Warning should be logged with path and error details
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to persist message state to ${tempFile}`)
+      );
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Mock writeFile error'));
 
       // Data should still be in memory
       expect(store.getWatermark('sync-fail-1', 'peer1')).toBe(1000);
@@ -188,8 +194,11 @@ describe('MessageStateStore write failures', () => {
       // dispose() should not throw even if write fails
       expect(() => store.dispose()).not.toThrow();
 
-      // Warning should be logged
-      expect(mockLogger.warn).toHaveBeenCalledWith('Failed to persist message state');
+      // Warning should be logged with path and error details
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to persist message state to ${tempFile}`)
+      );
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Mock writeFile error'));
     });
 
     it('should preserve data after dispose with write failure', () => {

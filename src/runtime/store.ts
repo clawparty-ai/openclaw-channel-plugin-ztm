@@ -255,9 +255,12 @@ export class MessageStateStoreImpl implements MessageStateStore {
       this.data = {
         accounts: validated.accounts,
       };
-    } catch {
-      // Ignore read/parse errors — start fresh
-      this.logger.warn('Failed to load message state, starting fresh');
+    } catch (error) {
+      // Capture error details for debugging
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Failed to load message state from ${this.statePath}: ${errorMessage}, starting fresh`
+      );
     }
     this.loaded = true;
   }
@@ -288,8 +291,10 @@ export class MessageStateStoreImpl implements MessageStateStore {
     // Ensure directory exists (async)
     try {
       await this.fs.promises.mkdir(this.stateDir, { recursive: true });
-    } catch {
-      // Directory may already exist, ignore error
+    } catch (error) {
+      // Directory may already exist or creation failed - log for visibility
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.debug(`Directory creation note for ${this.stateDir}: ${errorMessage}`);
     }
 
     try {
@@ -317,8 +322,11 @@ export class MessageStateStoreImpl implements MessageStateStore {
       this.data = {
         accounts: validated.accounts,
       };
-    } catch {
-      this.logger.warn('Failed to load message state, starting fresh');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Failed to load message state from ${this.statePath}: ${errorMessage}, starting fresh`
+      );
     }
     this.loaded = true;
   }
@@ -367,8 +375,9 @@ export class MessageStateStoreImpl implements MessageStateStore {
       await this.fs.promises.mkdir(this.stateDir, { recursive: true });
       await this.fs.promises.writeFile(this.statePath, JSON.stringify(this.data, null, 2));
       this.dirty = false;
-    } catch {
-      this.logger.warn('Failed to persist message state');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to persist message state to ${this.statePath}: ${errorMessage}`);
     }
   }
 
@@ -380,8 +389,9 @@ export class MessageStateStoreImpl implements MessageStateStore {
       }
       this.fs.writeFileSync(this.statePath, JSON.stringify(this.data, null, 2));
       this.dirty = false;
-    } catch {
-      this.logger.warn('Failed to persist message state');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to persist message state to ${this.statePath}: ${errorMessage}`);
     }
   }
 
