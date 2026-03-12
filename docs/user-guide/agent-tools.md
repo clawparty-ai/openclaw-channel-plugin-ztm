@@ -47,6 +47,13 @@ Agent: Peers:
        - user1
        - user2
        - user3
+
+---
+
+User: Send a message to alice
+
+Agent: [Invokes ztm_send_peer_message tool with {peer: "alice", message: "Hello!"}]
+Agent: Message sent to alice
 ```
 
 ## Available Tools
@@ -56,6 +63,7 @@ Agent: Peers:
 | `ztm_status` | Get ZTM connection status | "Is ZTM connected?" / "Check status" |
 | `ztm_mesh_info` | Get detailed mesh network info | "Show mesh network info" / "How's the network" |
 | `ztm_peers` | List online nodes | "What nodes are online?" / "List peers" |
+| `ztm_send_peer_message` | Send a message to a peer | "Send hello to alice" / "Message bob" |
 
 ## Technical Details
 
@@ -76,7 +84,7 @@ User Message
     ↓
 OpenClaw Agent
     ↓ (auto-select)
-Agent Tool (ztm_status / ztm_mesh_info / ztm_peers)
+Agent Tool (ztm_status / ztm_mesh_info / ztm_peers / ztm_send_peer_message)
     ↓
 ZTM API Client
     ↓
@@ -92,8 +100,7 @@ Agent formats and returns to user
 Current implementation limitations:
 
 1. **Signal Cancellation** - Cannot cancel in-flight requests because ZTM API client doesn't support AbortSignal
-2. **Parameters** - Current tools are parameter-less, status query only
-3. **Permissions** - Tools are not restricted to owner use (suitable for read-only queries)
+2. **Permissions** - Tools are not restricted to owner use (suitable for read-only queries)
 
 ## FAQ
 

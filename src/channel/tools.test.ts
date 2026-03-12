@@ -63,10 +63,10 @@ describe('createZTMChatAgentTools', () => {
       expect(tools.length).toBe(0);
     });
 
-    it('should return 3 tools when configured', async () => {
+    it('should return 4 tools when configured', async () => {
       const { createZTMChatAgentTools } = await import('./tools.js');
       const tools = createZTMChatAgentTools({ cfg: {} });
-      expect(tools.length).toBe(3);
+      expect(tools.length).toBe(4);
     });
   });
 
@@ -316,6 +316,140 @@ describe('createZTMChatAgentTools', () => {
       const result = await ztmPeersTool.execute('call-id', {});
 
       expect(result.content[0].text).toContain('Network error');
+    });
+  });
+
+  describe('ztmSendPeerMessageTool.execute', () => {
+    it('should export ztmSendPeerMessageTool with correct properties', async () => {
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      expect(ztmSendPeerMessageTool.name).toBe('ztm_send_peer_message');
+      expect(ztmSendPeerMessageTool.label).toBe('ZTM Send Peer Message');
+      expect(ztmSendPeerMessageTool.description).toBeDefined();
+    });
+
+    it('should return error for empty peer', async () => {
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: '',
+        message: 'Hello',
+      });
+
+      expect(result.content[0].text).toContain('Peer username is required');
+    });
+
+    it('should return error for empty message', async () => {
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: 'alice',
+        message: '',
+      });
+
+      expect(result.content[0].text).toContain('Message content is required');
+    });
+
+    it('should return error for whitespace-only peer', async () => {
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: '   ',
+        message: 'Hello',
+      });
+
+      expect(result.content[0].text).toContain('Peer username is required');
+    });
+
+    it('should return error for whitespace-only message', async () => {
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: 'alice',
+        message: '   ',
+      });
+
+      expect(result.content[0].text).toContain('Message content is required');
+    });
+
+    it('should return not configured when config is null', async () => {
+      const { getZTMChatConfig } = await import('../utils/ztm-config.js');
+      vi.mocked(getZTMChatConfig).mockReturnValueOnce(null);
+
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: 'alice',
+        message: 'Hello',
+      });
+
+      expect(result.content[0].text).toContain('not configured');
+    });
+
+    it('should send message successfully', async () => {
+      const { container } = await import('../di/index.js');
+      const { createMockApiClient } = await import('../test-utils/mocks.js');
+
+      const mockClient = createMockApiClient({
+        sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
+      });
+
+      vi.mocked(container.get).mockImplementation(key => {
+        if (String(key).includes('API_CLIENT_FACTORY')) {
+          return vi.fn(() => mockClient);
+        }
+        if (String(key).includes('LOGGER')) {
+          return { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        }
+        return undefined;
+      });
+
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: 'alice',
+        message: 'Hello!',
+      });
+
+      expect(result.content[0].text).toContain('Message sent to alice');
+      expect(result.details).toEqual({ success: true, peer: 'alice', messageLength: 6 });
+    });
+
+    it('should return error when API fails', async () => {
+      const { container } = await import('../di/index.js');
+      const { createMockApiClient } = await import('../test-utils/mocks.js');
+
+      const mockClient = createMockApiClient({
+        sendPeerMessage: vi.fn().mockResolvedValue(failure(new Error('Peer not found'))),
+      });
+
+      vi.mocked(container.get).mockImplementation(key => {
+        if (String(key).includes('API_CLIENT_FACTORY')) {
+          return vi.fn(() => mockClient);
+        }
+        if (String(key).includes('LOGGER')) {
+          return { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        }
+        return undefined;
+      });
+
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: 'alice',
+        message: 'Hello',
+      });
+
+      expect(result.content[0].text).toContain('Error');
+      expect(result.content[0].text).toContain('Peer not found');
+    });
+
+    it('should handle exceptions gracefully', async () => {
+      const { container } = await import('../di/index.js');
+
+      vi.mocked(container.get).mockImplementation(() => {
+        throw new Error('Test error');
+      });
+
+      const { ztmSendPeerMessageTool } = await import('./tools.js');
+      const result = await ztmSendPeerMessageTool.execute('call-id', {
+        peer: 'alice',
+        message: 'Hello',
+      });
+
+      expect(result.content[0].text).toContain('Test error');
     });
   });
 });

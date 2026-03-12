@@ -58,6 +58,29 @@ Peers:
 - user3
 ```
 
+### ztm_send_peer_message
+
+Send a direct message to a peer in the ZTM mesh network.
+
+**Name:** `ztm_send_peer_message`
+**Label:** ZTM Send Peer Message
+**Description:** Send a direct message to a peer in the ZTM mesh network
+
+**Parameters:**
+- `peer` (string, required): Username of the peer to send message to
+- `message` (string, required): Message text to send (max 4096 characters)
+
+**Returns:**
+```
+Message sent to alice
+```
+
+**Error Messages:**
+- `"Error: Peer username is required."` - Empty or whitespace-only peer
+- `"Error: Message content is required."` - Empty or whitespace-only message
+- `"Error: Peer username must be 64 characters or less"` - Peer too long
+- `"Error: Message must be 4096 characters or less"` - Message too long
+
 ## Factory Function
 
 The tools are created via a factory function that checks if the channel is configured:
@@ -71,7 +94,7 @@ export const createZTMChatAgentTools: ChannelAgentToolFactory = ({ cfg }) => {
     return []; // No tools if not configured
   }
 
-  return [ztmStatusTool, ztmMeshInfoTool, ztmPeersTool];
+  return [ztmStatusTool, ztmMeshInfoTool, ztmPeersTool, ztmSendPeerMessageTool];
 };
 ```
 
@@ -94,6 +117,7 @@ The agent tools include tests in `src/channel/tools.test.ts`:
 - Exports `ztmStatusTool` with correct name
 - Exports `ztmMeshInfoTool` with correct name
 - Exports `ztmPeersTool` with correct name
+- Exports `ztmSendPeerMessageTool` with correct name
 
 ## Usage
 

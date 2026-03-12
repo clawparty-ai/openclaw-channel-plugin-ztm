@@ -522,6 +522,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
 - `ztm_status` - Get ZTM connection status
 - `ztm_mesh_info` - Get detailed mesh network information
 - `ztm_peers` - List all peers in the mesh
+- `ztm_send_peer_message` - Send a direct message to a peer
 
 **See also**:
 - [Heartbeat Adapter](channel/heartbeat.md)
