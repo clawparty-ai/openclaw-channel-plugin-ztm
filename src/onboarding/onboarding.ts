@@ -134,12 +134,38 @@ export class ConsolePrompts implements WizardPrompts {
   private async _ask(question: string, defaultValue?: string, isPassword = false): Promise<string> {
     const prompt = defaultValue ? `${question} [${defaultValue}]: ` : `${question}: `;
 
-    return new Promise((resolve, _reject) => {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+
+      const settle = (value: string) => {
+        if (!settled) {
+          settled = true;
+          resolve(value);
+        }
+      };
+
+      const fail = (error: Error) => {
+        if (!settled) {
+          settled = true;
+          reject(error);
+        }
+      };
+
+      // Handle case where readline interface is closed before question is answered
+      const onClose = () => {
+        fail(new Error('Readline interface closed before prompt was answered'));
+      };
+
+      this.rl.once('close', onClose);
+
       this.rl.question(prompt, answer => {
+        // Remove close listener since question was answered
+        this.rl.off('close', onClose);
+
         if (answer.trim() === '') {
-          resolve(defaultValue || '');
+          settle(defaultValue || '');
         } else {
-          resolve(isPassword ? answer : answer.trim());
+          settle(isPassword ? answer : answer.trim());
         }
       });
     });
