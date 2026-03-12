@@ -122,20 +122,6 @@ export class RetryableErrorChecker {
       }
     }
 
-    // Check ZTM-specific error types
-    if (error instanceof ZTMTimeoutError) {
-      return true;
-    }
-
-    if (error instanceof ZTMApiError) {
-      const statusCode = error.context.statusCode as number | undefined;
-      if (statusCode !== undefined) {
-        return this.config.retryableStatusCodes.includes(statusCode);
-      }
-      // If no status code, be conservative and allow retry
-      return true;
-    }
-
     // Check error message patterns for standard errors
     const message = error.message.toLowerCase();
     for (const pattern of this.config.retryableErrorPatterns) {
