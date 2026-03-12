@@ -13,16 +13,12 @@ import { DEFAULT_MESH_NAME } from '../config/defaults.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getZTMRuntime, isZTMRuntimeInitialized } from '../runtime/index.js';
 
-// Extended config with wizard-specific fields
-interface WizardConfig extends Partial<ZTMChatConfig> {
-  enableGroups?: boolean;
-  groupPolicy?: GroupPolicy;
-  allowFrom?: string[];
-  dmPolicy?: DMPolicy;
-  permitSource?: 'server' | 'file';
-  permitUrl?: string;
-  permitFilePath?: string;
-}
+/**
+ * Wizard configuration type.
+ * All fields from ZTMChatConfig are optional during wizard flow.
+ * Add wizard-specific fields here if needed in the future.
+ */
+interface WizardConfig extends Partial<ZTMChatConfig> {}
 
 /**
  * Interactive prompts for user input
