@@ -371,7 +371,7 @@ export function validateMessageContent(content: string): ValidationResult<string
   if (content.length > MAX_MESSAGE_LENGTH) {
     return {
       valid: false,
-      error: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} bytes`,
+      error: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`,
     };
   }
 

@@ -87,7 +87,7 @@ export const MAX_PEERS_PER_ACCOUNT = 1000;
 /** Maximum cached group permissions per account */
 export const MAX_GROUP_PERMISSION_CACHE_SIZE = 500;
 
-/** Maximum message content length in bytes (10KB) - prevents memory exhaustion */
+/** Maximum message content length in characters (10k chars) - prevents memory exhaustion */
 export const MAX_MESSAGE_LENGTH = 10000;
 
 // ============================================================================

@@ -95,7 +95,7 @@ export function processIncomingMessage(
   // Step 1.5: Validate message length to prevent memory exhaustion
   if (msg.message.length > MAX_MESSAGE_LENGTH) {
     logger.warn(
-      `Rejecting oversized message from ${msg.sender}: ${msg.message.length} bytes (max: ${MAX_MESSAGE_LENGTH})`
+      `Rejecting oversized message from ${msg.sender}: ${msg.message.length} characters (max: ${MAX_MESSAGE_LENGTH})`
     );
     return null;
   }
