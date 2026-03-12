@@ -69,12 +69,15 @@ describe('DM Policy enforcement', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('should default to allow for unknown policy', () => {
+    it('should deny for unknown/invalid policy (fail-closed)', () => {
       const config = { ...baseConfig, dmPolicy: 'unknown' as any };
       const result = checkDmPolicy('alice', config, []);
 
-      expect(result.allowed).toBe(true);
-      expect(result.reason).toBe('allowed');
+      // Security: Unknown/invalid policies must deny (fail-closed)
+      // This prevents configuration errors from opening security holes
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe('denied');
+      expect(result.action).toBe('ignore');
     });
 
     it('should prioritize config whitelist over store whitelist', () => {

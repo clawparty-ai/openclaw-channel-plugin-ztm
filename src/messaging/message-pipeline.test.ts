@@ -159,14 +159,15 @@ describe('Inbound message processing', () => {
     });
 
     describe('with unknown dmPolicy', () => {
-      it('should default to allow', () => {
+      it('should deny for unknown dmPolicy (fail-closed)', () => {
         const config = { ...baseConfig, dmPolicy: 'unknown' as any };
         const result = checkDmPolicy('alice', config, []);
 
+        // Security: Unknown policy must deny (fail-closed)
         expect(result).toEqual({
-          allowed: true,
-          reason: 'allowed',
-          action: 'process',
+          allowed: false,
+          reason: 'denied',
+          action: 'ignore',
         });
       });
     });

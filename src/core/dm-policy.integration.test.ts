@@ -259,16 +259,17 @@ describe('DM Policy Integration', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('should handle unknown dmPolicy as allow', () => {
+    it('should handle unknown dmPolicy as deny (fail-closed)', () => {
       const config = createMockConfig({
         dmPolicy: 'unknown' as any,
         allowFrom: [],
       });
 
-      // Unknown policy defaults to allow
+      // Security: Unknown policy defaults to deny (fail-closed)
       const result = checkDmPolicy('alice', config, []);
-      expect(result.allowed).toBe(true);
-      expect(result.reason).toBe('allowed');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe('denied');
+      expect(result.action).toBe('ignore');
     });
 
     it('should prioritize config whitelist over store whitelist', () => {

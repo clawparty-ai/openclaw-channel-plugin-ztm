@@ -88,7 +88,9 @@ export function checkDmPolicy(
       return { allowed: false, reason: 'pending', action: 'request_pairing' };
 
     default:
-      return { allowed: true, reason: 'allowed', action: 'process' };
+      // Security: Fail-closed for unknown/invalid policy values
+      // This prevents configuration errors from opening security holes
+      return { allowed: false, reason: 'denied', action: 'ignore' };
   }
 }
 
