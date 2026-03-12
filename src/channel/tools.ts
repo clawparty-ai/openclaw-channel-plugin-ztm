@@ -8,8 +8,12 @@ import type { ChannelAgentToolFactory } from 'openclaw/plugin-sdk';
 import { z } from 'zod';
 import { container, DEPENDENCIES } from '../di/index.js';
 import type { IApiClientFactory, ILogger } from '../di/index.js';
+import type { ZTMMessage } from '../api/ztm-api.js';
 import { resolveZTMChatAccount } from './config.js';
 import { getZTMChatConfig } from '../utils/ztm-config.js';
+
+const MAX_MESSAGE_LENGTH = 4096;
+const MAX_PEER_LENGTH = 64;
 
 /**
  * ZTM Status Tool - Get connection status
@@ -179,6 +183,100 @@ const ztmPeersTool = {
 };
 
 /**
+ * ZTM Send Peer Message Tool - Send a message to a peer
+ */
+const ztmSendPeerMessageTool = {
+  name: 'ztm_send_peer_message',
+  label: 'ZTM Send Peer Message',
+  description: 'Send a direct message to a peer in the ZTM mesh network',
+
+  parameters: z.object({
+    peer: z
+      .string()
+      .describe('Username of the peer to send message to')
+      .min(1, 'Peer username is required')
+      .max(MAX_PEER_LENGTH, `Peer username must be ${MAX_PEER_LENGTH} characters or less`),
+    message: z
+      .string()
+      .describe('Message text to send (max 4096 characters)')
+      .min(1, 'Message is required')
+      .max(MAX_MESSAGE_LENGTH, `Message must be ${MAX_MESSAGE_LENGTH} characters or less`),
+  }),
+
+  async execute(_toolCallId: string, params: unknown) {
+    try {
+      const { peer, message } = params as { peer: string; message: string };
+
+      // Input validation (for better UX, complements API layer validation)
+      const peerTrimmed = peer.trim();
+      const messageTrimmed = message.trim();
+
+      if (peerTrimmed.length === 0) {
+        return {
+          content: [{ type: 'text', text: 'Error: Peer username is required.' }],
+          details: undefined,
+        };
+      }
+
+      if (messageTrimmed.length === 0) {
+        return {
+          content: [{ type: 'text', text: 'Error: Message content is required.' }],
+          details: undefined,
+        };
+      }
+
+      const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
+      const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+
+      const account = resolveZTMChatAccount({});
+      const config = getZTMChatConfig(account);
+
+      if (!config) {
+        return {
+          content: [{ type: 'text', text: 'ZTM Chat is not configured.' }],
+          details: undefined,
+        };
+      }
+
+      const apiClient = apiClientFactory(config, { logger });
+
+      // Construct ZTMMessage object (see: src/messaging/outbound.ts:67-71)
+      const ztmMessage: ZTMMessage = {
+        time: Date.now(),
+        message: messageTrimmed,
+        sender: config.username,
+      };
+
+      const sendResult = await apiClient.sendPeerMessage(peerTrimmed, ztmMessage);
+
+      if (!sendResult.ok) {
+        // Provide user-friendly error message
+        const errorMsg = sendResult.error?.message || 'Unknown error';
+        return {
+          content: [{ type: 'text', text: `Error: ${errorMsg}` }],
+          details: undefined,
+        };
+      }
+
+      return {
+        content: [{ type: 'text', text: `Message sent to ${peerTrimmed}` }],
+        details: { success: true, peer: peerTrimmed, messageLength: messageTrimmed.length },
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        details: undefined,
+      };
+    }
+  },
+};
+
+/**
  * Create ZTM Chat agent tools factory
  */
 export const createZTMChatAgentTools: ChannelAgentToolFactory = ({ cfg }) => {
@@ -194,8 +292,9 @@ export const createZTMChatAgentTools: ChannelAgentToolFactory = ({ cfg }) => {
     ztmStatusTool,
     ztmMeshInfoTool,
     ztmPeersTool,
+    ztmSendPeerMessageTool,
   ] as unknown as ReturnType<ChannelAgentToolFactory>;
 };
 
 // Export individual tools for testing
-export { ztmStatusTool, ztmMeshInfoTool, ztmPeersTool };
+export { ztmStatusTool, ztmMeshInfoTool, ztmPeersTool, ztmSendPeerMessageTool };
