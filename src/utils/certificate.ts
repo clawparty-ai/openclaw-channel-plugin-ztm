@@ -104,15 +104,15 @@ export function getExpiryStatus(cert: crypto.X509Certificate): {
 export function getCertificateExpiryStatus(certificatePem: string): {
   expiryDate: number | null;
   daysUntilExpiry: number | null;
-  isExpired: boolean;
+  isExpired: boolean | null;
   parseError: boolean;
 } {
   const cert = parseCertificate(certificatePem);
 
   if (!cert) {
     // Return parseError flag to indicate parsing failure
-    // isExpired defaults to false but should be ignored when parseError is true
-    return { expiryDate: null, daysUntilExpiry: null, isExpired: false, parseError: true };
+    // isExpired is null when parsing fails (meaningless value)
+    return { expiryDate: null, daysUntilExpiry: null, isExpired: null, parseError: true };
   }
 
   const status = getExpiryStatus(cert);

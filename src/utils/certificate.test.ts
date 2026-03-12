@@ -120,13 +120,41 @@ describe('getExpiryStatus', () => {
 });
 
 describe('getCertificateExpiryStatus', () => {
+  describe('type validation', () => {
+    it('should return isExpired as boolean when parsing succeeds', () => {
+      const result = getCertificateExpiryStatus(getValidTestCertificate());
+      expect(result.parseError).toBe(false);
+      // isExpired should be boolean (not null) when parse succeeds
+      expect(result.isExpired).toBeTypeOf('boolean');
+    });
+
+    it('should return isExpired as null when parsing fails', () => {
+      const result = getCertificateExpiryStatus('invalid');
+      expect(result.parseError).toBe(true);
+      // isExpired should be null (not boolean) when parse fails
+      expect(result.isExpired).toBeNull();
+    });
+
+    it('should never have isExpired: false when parseError: true', () => {
+      // This is the key semantic test - isExpired: false is misleading when parsing fails
+      const invalidInputs = ['', 'invalid', 'not-a-cert', null as any, undefined as any];
+      for (const input of invalidInputs) {
+        const result = getCertificateExpiryStatus(input as string);
+        if (result.parseError) {
+          expect(result.isExpired).not.toBe(false);
+          expect(result.isExpired).toBeNull();
+        }
+      }
+    });
+  });
+
   describe('parse error handling', () => {
     it('should return parseError: true for empty string', () => {
       const result = getCertificateExpiryStatus('');
 
       expect(result.expiryDate).toBeNull();
       expect(result.daysUntilExpiry).toBeNull();
-      expect(result.isExpired).toBe(false);
+      expect(result.isExpired).toBeNull();
       expect(result.parseError).toBe(true);
     });
 
@@ -135,7 +163,7 @@ describe('getCertificateExpiryStatus', () => {
 
       expect(result.expiryDate).toBeNull();
       expect(result.daysUntilExpiry).toBeNull();
-      expect(result.isExpired).toBe(false);
+      expect(result.isExpired).toBeNull();
       expect(result.parseError).toBe(true);
     });
 
@@ -144,7 +172,7 @@ describe('getCertificateExpiryStatus', () => {
 
       expect(result.expiryDate).toBeNull();
       expect(result.daysUntilExpiry).toBeNull();
-      expect(result.isExpired).toBe(false);
+      expect(result.isExpired).toBeNull();
       expect(result.parseError).toBe(true);
     });
 
@@ -153,7 +181,7 @@ describe('getCertificateExpiryStatus', () => {
 
       expect(result.expiryDate).toBeNull();
       expect(result.daysUntilExpiry).toBeNull();
-      expect(result.isExpired).toBe(false);
+      expect(result.isExpired).toBeNull();
       expect(result.parseError).toBe(true);
     });
 
@@ -164,7 +192,7 @@ describe('getCertificateExpiryStatus', () => {
 
       expect(result.expiryDate).toBeNull();
       expect(result.daysUntilExpiry).toBeNull();
-      expect(result.isExpired).toBe(false);
+      expect(result.isExpired).toBeNull();
       expect(result.parseError).toBe(true);
     });
 
