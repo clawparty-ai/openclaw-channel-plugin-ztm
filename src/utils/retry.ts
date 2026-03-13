@@ -186,13 +186,39 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
 
 /**
  * Sleep for specified milliseconds
+ *
+ * @param ms - Milliseconds to sleep
+ * @returns Promise that resolves after the specified delay
+ *
+ * @example
+ * ```typescript
+ * await sleep(1000); // Sleep for 1 second
+ * ```
+ *
+ * @complexity O(1) - Constant time operation
+ * @since 2026.3.13
  */
 export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * Calculate delay for a given retry attempt
+ * Calculate delay for a given retry attempt using exponential backoff
+ *
+ * @param attempt - The retry attempt number (1-indexed)
+ * @param config - Retry configuration options
+ * @returns Delay in milliseconds for this retry attempt
+ *
+ * @example
+ * ```typescript
+ * const delay = getRetryDelay(3, { maxRetries: 3, initialDelay: 1000, maxDelay: 30000, backoffMultiplier: 2, timeout: 5000 });
+ * // Returns: 4000 (1000 * 2^2)
+ * ```
+ *
+ * @complexity O(1) - Constant time calculation
+ * @performance Uses exponential backoff formula with max delay cap
+ * @since 2026.3.13
+ * @see {@link retryAsync} For retry logic that uses this delay calculation
  */
 export function getRetryDelay(attempt: number, config: RetryConfig = DEFAULT_RETRY_CONFIG): number {
   const delay = config.initialDelay * Math.pow(config.backoffMultiplier, attempt - 1);
@@ -200,7 +226,27 @@ export function getRetryDelay(attempt: number, config: RetryConfig = DEFAULT_RET
 }
 
 /**
- * Create an abort controller with timeout
+ * Create an abort controller with automatic timeout
+ *
+ * Creates an AbortController that automatically aborts after the specified timeout.
+ * Useful for implementing timeout behavior in async operations.
+ *
+ * @param timeoutMs - Timeout in milliseconds
+ * @returns Object containing the AbortController and timeout ID
+ *
+ * @example
+ * ```typescript
+ * const { controller, timeoutId } = createTimeoutController(5000);
+ * try {
+ *   const response = await fetch(url, { signal: controller.signal });
+ * } finally {
+ *   clearTimeout(timeoutId);
+ * }
+ * ```
+ *
+ * @complexity O(1) - Constant time operation
+ * @since 2026.3.13
+ * @see {@link fetchWithRetry} For fetch with timeout support
  */
 export function createTimeoutController(timeoutMs: number): {
   controller: AbortController;
@@ -212,7 +258,29 @@ export function createTimeoutController(timeoutMs: number): {
 }
 
 /**
- * Execute a function with retry logic
+ * Execute a function with retry logic and exponential backoff
+ *
+ * Retries the function on failure with exponential backoff delay between attempts.
+ * Only retries errors classified as retryable by isRetryableError().
+ *
+ * @param fn - Async function to execute
+ * @param options - Retry configuration options
+ * @returns Result of the function call
+ * @throws Last error if all retries are exhausted or error is non-retryable
+ *
+ * @example
+ * ```typescript
+ * const result = await retryAsync(async () => {
+ *   return await api.getData();
+ * }, { maxRetries: 3, initialDelay: 1000 });
+ * ```
+ *
+ * @complexity O(n * m) - Where n is maxRetries, m is function execution time
+ * @performance Exponential backoff prevents request storms during failures
+ * @since 2026.3.13
+ * @see {@link isRetryableError} For error classification logic
+ * @see {@link getRetryDelay} For delay calculation
+ * @see {@link fetchWithRetry} For fetch-specific retry wrapper
  */
 export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const config: RetryConfig = {
@@ -250,6 +318,29 @@ export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions 
 
 /**
  * Fetch with timeout and retry support
+ *
+ * Wraps the native fetch API with automatic retry on failure and timeout support.
+ * Combines AbortController timeout with retryAsync for robust network requests.
+ *
+ * @param url - URL to fetch
+ * @param options - Fetch API options
+ * @param retryOptions - Retry configuration options
+ * @returns Fetch Response object
+ * @throws Last error if all retries are exhausted or timeout occurs
+ *
+ * @example
+ * ```typescript
+ * const response = await fetchWithRetry('https://api.example.com/data', {
+ *   method: 'GET',
+ *   headers: { 'Content-Type': 'application/json' }
+ * }, { maxRetries: 3, timeout: 5000 });
+ * ```
+ *
+ * @complexity O(n * t) - Where n is maxRetries, t is network timeout
+ * @performance Uses AbortController for timeout, exponential backoff for retries
+ * @since 2026.3.13
+ * @see {@link retryAsync} For underlying retry logic
+ * @see {@link createTimeoutController} For timeout implementation
  */
 export async function fetchWithRetry(
   url: string,
@@ -279,7 +370,25 @@ export async function fetchWithRetry(
 }
 
 /**
- * Wrap any function with retry logic
+ * Wrap any async function with retry logic
+ *
+ * Higher-order function that adds retry capability to any async function.
+ * Returns a new function with the same signature that retries on failure.
+ *
+ * @param fn - Async function to wrap
+ * @param options - Retry configuration options
+ * @returns Wrapped function with retry capability
+ *
+ * @example
+ * ```typescript
+ * const apiWithRetry = withRetry(api.getData, { maxRetries: 3 });
+ * const result = await apiWithRetry(); // Automatically retries on failure
+ * ```
+ *
+ * @complexity O(n * m) - Where n is maxRetries, m is wrapped function execution time
+ * @performance Creates closure over original function with retry logic
+ * @since 2026.3.13
+ * @see {@link retryAsync} For direct retry execution without wrapper
  */
 export function withRetry<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,

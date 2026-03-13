@@ -126,6 +126,7 @@ function validatePolicyInput(input: {
  * @returns Policy check result with allowed flag and action
  *
  * @example
+ * ```typescript
  * // Check DM message policy
  * const dmResult = checkMessagePolicy({
  *   sender: 'alice',
@@ -134,8 +135,10 @@ function validatePolicyInput(input: {
  *   accountId: 'account-123',
  *   storeAllowFrom: []
  * });
+ * ```
  *
  * @example
+ * ```typescript
  * // Check group message policy (DM policy is NOT applied)
  * const groupResult = checkMessagePolicy({
  *   sender: 'bob',
@@ -144,6 +147,14 @@ function validatePolicyInput(input: {
  *   accountId: 'account-123',
  *   groupInfo: { creator: 'alice', group: 'team-chat' }
  * });
+ * ```
+ *
+ * @complexity O(1) - Constant time validation and policy lookup
+ * @performance Uses cached group permissions for fast repeated checks
+ * @since 2026.3.13
+ * @see {@link ./dm-policy.ts} DM policy implementation
+ * @see {@link ./group-policy.ts} Group policy implementation
+ * @see {@link ../runtime/state.ts#getGroupPermissionCached} Permission caching
  */
 export function checkMessagePolicy(input: PolicyCheckInput): PolicyCheckResult {
   const { sender, content, config, accountId, storeAllowFrom = [], groupInfo } = input;
@@ -195,6 +206,20 @@ export function checkMessagePolicy(input: PolicyCheckInput): PolicyCheckResult {
  * @param config - ZTM Chat configuration
  * @param accountId - Account identifier for caching
  * @returns true if group policy is NOT 'disabled'
+ *
+ * @example
+ * ```typescript
+ * const enabled = isGroupPolicyEnabled('alice', 'team-chat', config, 'account-123');
+ * if (enabled) {
+ *   console.log('Group policy is active');
+ * }
+ * ```
+ *
+ * @complexity O(1) - Constant time permission lookup with caching
+ * @performance Uses cached group permissions for fast repeated checks
+ * @since 2026.3.13
+ * @see {@link ./group-policy.ts} Group policy implementation
+ * @see {@link ../runtime/state.ts#getGroupPermissionCached} Permission caching
  */
 export function isGroupPolicyEnabled(
   creator: string,

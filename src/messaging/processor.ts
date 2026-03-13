@@ -68,6 +68,25 @@ export interface ProcessMessageContext {
  * @param msg - Raw message object with time, message, and sender
  * @param context - Processing context with config and optional parameters
  * @returns Processed ZTMChatMessage or null if message should be skipped
+ *
+ * @example
+ * ```typescript
+ * const result = processIncomingMessage(
+ *   { time: 1234567890, message: 'Hello!', sender: 'alice' },
+ *   { config, storeAllowFrom: [], accountId: 'account-123' }
+ * );
+ * if (result) {
+ *   console.log('Processed message:', result.content);
+ * }
+ * ```
+ *
+ * @complexity O(1) - Constant time validation checks
+ * @performance Watermark check prevents reprocessing with O(1) key lookup
+ * @security Escapes HTML to prevent XSS, validates message length
+ * @since 2026.3.13
+ * @see {@link ./watermark.ts#getWatermarkKey} For watermark key generation
+ * @see {@link ../core/policy-checker.ts#checkMessagePolicy} For unified policy checking
+ * @see {@link ./dispatcher.ts} For callback dispatching
  */
 export function processIncomingMessage(
   msg: { time: number; message: string; sender: string },

@@ -61,6 +61,29 @@ export interface RequestHandler {
 
 /**
  * Create a request handler for the ZTM API client
+ *
+ * Creates a configured request handler with retry logic, timeout handling,
+ * and error wrapping for ZTM API operations.
+ *
+ * @param baseUrl - Base URL for all API requests
+ * @param apiTimeout - Timeout in milliseconds for requests
+ * @param deps - Injected dependencies (logger, fetch, fetchWithRetry)
+ * @returns Configured request handler function
+ *
+ * @example
+ * ```typescript
+ * const handler = createRequestHandler('https://ztm.example.com', 5000, defaultDeps);
+ * const result = await handler('GET', '/api/meshes/test/apps/ztm/chat/api/chats');
+ * if (result.ok) {
+ *   console.log('Chats:', result.value);
+ * }
+ * ```
+ *
+ * @complexity O(1) - Function creation, async operations depend on network
+ * @performance Uses fetchWithRetry for automatic retry on transient failures
+ * @since 2026.3.13
+ * @see {@link ./ztm-api.ts} ZTM API client implementation
+ * @see {@link ../utils/retry.ts#fetchWithRetry} Retry logic implementation
  */
 export function createRequestHandler(
   baseUrl: string,

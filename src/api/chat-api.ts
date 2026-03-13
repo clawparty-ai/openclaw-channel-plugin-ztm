@@ -20,6 +20,17 @@ import { getOrDefault } from '../utils/guards.js';
  *
  * @param message - The raw message content from the API (can be string, object, or nested object)
  * @returns A normalized string representation of the message content
+ *
+ * @example
+ * ```typescript
+ * normalizeMessageContent("Hello"); // Returns: "Hello"
+ * normalizeMessageContent({text: "Hi"}); // Returns: "Hi"
+ * normalizeMessageContent({message: {text: "Hey"}}); // Returns: "Hey"
+ * ```
+ *
+ * @complexity O(n) - Where n is the depth of the object structure
+ * @since 2026.3.13
+ * @see {@link createChatApi} Chat API factory
  */
 export function normalizeMessageContent(message: unknown): string {
   if (message === null || message === undefined) {
@@ -56,6 +67,22 @@ export function normalizeMessageContent(message: unknown): string {
  * @param request - HTTP request handler for making API calls
  * @param logger - Logger instance for debugging and error reporting
  * @returns Chat API interface with methods for retrieving chats
+ *
+ * @example
+ * ```typescript
+ * const chatApi = createChatApi(config, request, logger);
+ * const result = await chatApi.getChats();
+ * if (result.ok) {
+ *   console.log(`Found ${result.value.length} chats`);
+ * }
+ * ```
+ *
+ * @throws {ZTMReadError} When HTTP request fails or response is invalid
+ *
+ * @complexity O(n) - Where n is the number of chats (for message normalization)
+ * @since 2026.3.13
+ * @see {@link ./request.ts} HTTP request handler
+ * @see {@link ../types/api.ts} ZTMChat type definition
  */
 export function createChatApi(config: ZTMChatConfig, request: RequestHandler, logger: ZTMLogger) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
@@ -65,6 +92,13 @@ export function createChatApi(config: ZTMChatConfig, request: RequestHandler, lo
      * Get all chats from the Chat App API
      *
      * @returns Promise resolving to a Result containing array of ZTMChat objects, or failure with ZTMReadError
+     *
+     * @throws {ZTMReadError} When HTTP request fails or returns non-OK status
+     *
+     * @complexity O(n) - Where n is the number of chats (for message normalization)
+     * @performance Normalizes all message formats in parallel
+     * @since 2026.3.13
+     * @see {@link normalizeMessageContent} Message normalization logic
      */
     async getChats(): Promise<Result<ZTMChat[], ZTMReadError>> {
       logger.debug?.(`[ZTM API] Fetching chats via Chat App API`);

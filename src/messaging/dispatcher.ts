@@ -50,6 +50,20 @@ async function executeCallbackWithSemaphore(
  *
  * @param state - Account runtime state containing callbacks
  * @param message - Normalized message to dispatch
+ * @param watermarkStore - Optional watermark store for testing
+ * @throws {Error} When callback execution fails (errors are logged, not thrown)
+ *
+ * @example
+ * ```typescript
+ * await notifyMessageCallbacks(state, message);
+ * console.log("Message dispatched to callbacks");
+ * ```
+ *
+ * @complexity O(n) - Where n is the number of callbacks (parallel execution)
+ * @performance Uses Promise.all for concurrent callback execution with semaphore control
+ * @since 2026.3.13
+ * @see {@link getCallbackStats} For callback statistics
+ * @see {@link ../watermark.ts} Watermark management
  */
 export async function notifyMessageCallbacks(
   state: AccountRuntimeState,
@@ -83,11 +97,7 @@ export async function notifyMessageCallbacks(
   if (successCount > 0) {
     // Use async version to ensure atomic watermark update in concurrent scenarios
     const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
-    await store.setWatermarkAsync(
-      state.accountId,
-      watermarkKey,
-      message.timestamp.getTime()
-    );
+    await store.setWatermarkAsync(state.accountId, watermarkKey, message.timestamp.getTime());
   } else {
     logger.warn(
       `[${state.accountId}] Message processing failed for ${watermarkKey}, watermark not updated`
@@ -105,8 +115,14 @@ export async function notifyMessageCallbacks(
  * @returns Object with total and active callback counts
  *
  * @example
+ * ```typescript
  * const stats = getCallbackStats(state);
  * console.log(`Active callbacks: ${stats.active}`);
+ * ```
+ *
+ * @complexity O(1) - Constant time operation
+ * @since 2026.3.13
+ * @see {@link notifyMessageCallbacks} For callback execution
  */
 export function getCallbackStats(state: AccountRuntimeState): {
   total: number;
@@ -128,9 +144,15 @@ export function getCallbackStats(state: AccountRuntimeState): {
  * @returns true if at least one callback is registered, false otherwise
  *
  * @example
+ * ```typescript
  * if (hasCallbacks(state)) {
  *   console.log("Ready to receive messages");
  * }
+ * ```
+ *
+ * @complexity O(1) - Constant time operation
+ * @since 2026.3.13
+ * @see {@link clearCallbacks} For removing all callbacks
  */
 export function hasCallbacks(state: AccountRuntimeState): boolean {
   return state.messageCallbacks.size > 0;
@@ -145,9 +167,16 @@ export function hasCallbacks(state: AccountRuntimeState): boolean {
  * @param state - Account runtime state containing callbacks to clear
  *
  * @example
+ * ```typescript
  * // Clear callbacks during account shutdown
  * clearCallbacks(state);
  * console.log("All callbacks cleared");
+ * ```
+ *
+ * @complexity O(n) - Where n is the number of callbacks (clear operation)
+ * @since 2026.3.13
+ * @see {@link hasCallbacks} For checking if callbacks exist
+ * @see {@link notifyMessageCallbacks} For callback execution
  */
 export function clearCallbacks(state: AccountRuntimeState): void {
   const count = state.messageCallbacks.size;

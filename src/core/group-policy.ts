@@ -41,7 +41,16 @@ const DEFAULT_GROUP_PERMISSIONS: GroupPermissions = {
  * @returns GroupPermissions for the specified group
  *
  * @example
+ * ```typescript
  * const perms = getGroupPermission("alice", "123456", config);
+ * console.log('Group policy:', perms.groupPolicy);
+ * ```
+ *
+ * @complexity O(1) - Object property access with defaults
+ * @performance Uses getOrDefault for safe array access
+ * @since 2026.3.13
+ * @see {@link checkGroupPolicy} For policy enforcement
+ * @see {@link ../runtime/state.ts#getGroupPermissionCached} Cached version
  */
 export function getGroupPermission(
   creator: string,
@@ -136,6 +145,7 @@ function isCreator(sender: string, creator: string): boolean {
  * @returns GroupMessageCheckResult with allowed flag, reason, and action
  *
  * @example
+ * ```typescript
  * // Check if Bob can send message to a group
  * const result = checkGroupPolicy("bob", "hello", {
  *   creator: "alice",
@@ -144,6 +154,14 @@ function isCreator(sender: string, creator: string): boolean {
  *   requireMention: true,
  *   allowFrom: ["bob", "charlie"],
  * }, "chatbot");
+ * ```
+ *
+ * @complexity O(n) - Where n is the allowFrom array size
+ * @performance Creator bypass is constant time, whitelist requires array scan
+ * @since 2026.3.13
+ * @see {@link getGroupPermission} For permission retrieval
+ * @see {@link applyGroupToolsPolicy} For tool permission filtering
+ * @see {@link hasMention} Internal mention detection
  */
 export function checkGroupPolicy(
   sender: string,
@@ -220,6 +238,7 @@ export function checkGroupPolicy(
  * @returns Filtered list of allowed tools
  *
  * @example
+ * ```typescript
  * // Apply tool restrictions
  * const tools = applyGroupToolsPolicy("bob", {
  *   creator: "alice",
@@ -231,6 +250,13 @@ export function checkGroupPolicy(
  * }, ["group:messaging", "group:sessions", "group:fs", "group:ui", "exec"]);
  *
  * // Result: ["group:messaging", "group:sessions", "exec"]
+ * ```
+ *
+ * @complexity O(n * m) - Where n is allTools length, m is restrictions length
+ * @performance Apply allow list first (reduction), then deny list (filtering)
+ * @since 2026.3.13
+ * @see {@link getGroupPermission} For permission retrieval
+ * @see {@link checkGroupPolicy} For message policy checking
  */
 export function applyGroupToolsPolicy(
   sender: string,

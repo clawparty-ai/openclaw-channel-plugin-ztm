@@ -51,6 +51,13 @@ export type WatermarkKeyInput =
  * });
  * // Returns: "bob@example.com"
  * ```
+ *
+ * @complexity O(1) - Constant time string concatenation
+ * @performance Uses switch statement for fast type-based dispatch
+ * @since 2026.3.13
+ * @see {@link ./processor.ts} For message processing with watermark checking
+ * @see {@link ./dispatcher.ts} For callback dispatching after watermark update
+ * @see {@link ../runtime/store.ts#MessageStateStore} Watermark persistence
  */
 export function getWatermarkKey(input: WatermarkKeyInput): string {
   switch (input.type) {

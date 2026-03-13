@@ -28,6 +28,18 @@ import { performInitialSync } from './watcher-sync.js';
  * @param context - Messaging context with repository dependencies
  * @param abortSignal - Optional abort signal for graceful shutdown
  * @returns Promise that resolves when the watcher starts
+ *
+ * @example
+ * ```typescript
+ * await startMessageWatcher(state, context, abortSignal);
+ * console.log('Message watcher started');
+ * ```
+ *
+ * @complexity O(1) - Function initialization, async operations run in background
+ * @performance Uses Fibonacci backoff for error resilience and request throttling
+ * @since 2026.3.13
+ * @see {@link ./watcher-loop.ts} Watch loop implementation
+ * @see {@link ./watcher-sync.ts} Initial sync implementation
  */
 export async function startMessageWatcher(
   state: AccountRuntimeState,

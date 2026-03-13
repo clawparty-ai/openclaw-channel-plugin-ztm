@@ -30,14 +30,25 @@ import { normalizeUsername } from '../utils/validation.js';
  * @returns MessageCheckResult with allowed flag, reason, and recommended action
  *
  * @example
+ * ```typescript
  * // Check if Alice can send messages (pairing mode)
  * const result = checkDmPolicy("alice", { dmPolicy: "pairing", allowFrom: [] });
  * // result: { allowed: false, reason: "pending", action: "request_pairing" }
+ * ```
  *
  * @example
+ * ```typescript
  * // Check if whitelisted user can send (deny mode)
  * const result = checkDmPolicy("alice", { dmPolicy: "deny", allowFrom: ["alice"] });
  * // result: { allowed: true, reason: "whitelisted", action: "process" }
+ * ```
+ *
+ * @complexity O(n) - Where n is the total whitelist size (config + store)
+ * @performance Normalizes usernames once for case-insensitive comparison
+ * @security Fail-closed for unknown/invalid policy values prevents security holes
+ * @since 2026.3.13
+ * @see {@link isPairingMode} For pairing mode detection
+ * @see {@link isUserWhitelisted} For whitelist checking
  */
 export function checkDmPolicy(
   sender: string,
@@ -106,9 +117,16 @@ export function checkDmPolicy(
  * @returns true if username is whitelisted in either source, false otherwise
  *
  * @example
- * // Check if user is whitelisted
+ * ```typescript
  * const isAllowed = isUserWhitelisted("alice", { allowFrom: ["alice", "bob"] }, []);
  * // isAllowed: true
+ * ```
+ *
+ * @complexity O(n) - Where n is the total whitelist size (config + store)
+ * @performance Uses case-insensitive comparison via normalizeUsername
+ * @since 2026.3.13
+ * @see {@link normalizeUsername} For username normalization logic
+ * @see {@link checkDmPolicy} For complete DM policy checking
  */
 export function isUserWhitelisted(
   username: string,
@@ -145,8 +163,15 @@ export function isUserWhitelisted(
  * @returns true if dmPolicy is "pairing", false otherwise
  *
  * @example
+ * ```typescript
  * const isPairing = isPairingMode({ dmPolicy: "pairing", allowFrom: [] });
  * // isPairing: true
+ * ```
+ *
+ * @complexity O(1) - Constant time property access
+ * @since 2026.3.13
+ * @see {@link checkDmPolicy} For complete DM policy checking
+ * @see {@link ../onboarding/pairing.ts} Pairing request workflow
  */
 export function isPairingMode(config: ZTMChatConfig): boolean {
   return config.dmPolicy === 'pairing';
