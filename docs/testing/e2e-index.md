@@ -38,7 +38,7 @@ This approach balances **centralization** (easy to find common tests) with **mod
 
 | File | Description | Preconditions | Est. Time |
 |------|-------------|--------------|-----------|
-| `group-messages.e2e.test.ts` | Group message handling with different policies (all_members, only_mentioned, admins) | Mock server | ~15s |
+| `group-messages.e2e.test.ts` | Group message handling with different policies (open, allowlist, disabled) | Mock server | ~15s |
 | `message-flow.e2e.test.ts` | Complete message flow: receive via Watch API, process, dispatch to callbacks, send response | Mock server | ~20s |
 | `watch-backoff.e2e.test.ts` | Watch mode with Fibonacci backoff for error recovery | None | ~15s |
 

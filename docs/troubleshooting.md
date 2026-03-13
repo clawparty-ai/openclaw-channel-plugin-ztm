@@ -274,14 +274,20 @@ if (message.chatType === "dm") {
 
 4. **Check Group Policy:**
 ```typescript
-import { checkGroupPermission } from "@flomesh/ztm-chat/core";
+import { getGroupPermission, checkGroupPolicy } from "@flomesh/ztm-chat/core";
 
 if (message.chatType === "group") {
-  const result = checkGroupPermission({
-    groupCreator: message.groupInfo?.creator,
-    sender: message.sender,
-    groupConfig: config,
-  });
+  const permissions = getGroupPermission(
+    message.groupInfo?.creator || "",
+    message.groupInfo?.group || "",
+    config
+  );
+  const result = checkGroupPolicy(
+    message.sender,
+    message.content,
+    permissions,
+    config.username
+  );
   console.log("Group permission:", result);
 }
 ```

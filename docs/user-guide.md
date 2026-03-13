@@ -106,9 +106,9 @@ Pairing requests expire after 1 hour.
 
 | Policy | Description |
 |--------|-------------|
-| `all_members` | All group members can send messages |
-| `only_mentioned` | Only @mentioned users can send |
-| `admins` | Only admins can send |
+| `open` | Allow all group messages |
+| `allowlist` | Only whitelisted users can send |
+| `disabled` | Block all group messages |
 
 ### Usage Example
 
@@ -116,9 +116,9 @@ Pairing requests expire after 1 hour.
 const config = {
   agentUrl: 'http://localhost:7777',
   enableGroups: true,
-  groupPolicy: {
-    'my-group': { policy: 'only_mentioned' }
-  }
+  groupPolicy: 'allowlist',
+  allowFrom: ['alice', 'bob'],
+  requireMention: true
 };
 ```
 

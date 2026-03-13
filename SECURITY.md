@@ -43,7 +43,7 @@ This plugin implements the following security measures:
 
 ### Authentication & Authorization
 - DM policy enforcement: `allow`, `deny`, or `pairing` modes
-- Group permissions: `all_members`, `only_mentioned`, `admins`
+- Group permissions: `open`, `allowlist`, `disabled`
 - Pairing request validation with expiration (1 hour)
 
 ### Data Handling

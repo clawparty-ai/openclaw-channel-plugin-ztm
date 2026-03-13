@@ -245,7 +245,7 @@ const config = {
 
   // Group settings
   enableGroups: true,
-  groupPolicy: "all_members",  // or "only_mentioned", "admins"
+  groupPolicy: "open",  // or "allowlist", "disabled"
 
   // Message settings
   messagePath: "/var/ztm/messages",
@@ -274,7 +274,7 @@ const config = await resolveZTMChatAccount({
 
   // Feature flags
   enableGroups: process.env.ENABLE_GROUPS === "true",
-  groupPolicy: process.env.GROUP_POLICY || "all_members",
+  groupPolicy: process.env.GROUP_POLICY || "open",
 });
 ```
 
