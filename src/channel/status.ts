@@ -5,6 +5,7 @@
  */
 
 import type { ChannelAccountSnapshot as BaseChannelAccountSnapshot } from 'openclaw/plugin-sdk';
+import { DEFAULT_ACCOUNT_ID } from '../constants.js';
 
 /**
  * Extended snapshot type with ZTM custom fields
@@ -75,7 +76,7 @@ export function buildChannelSummary({ snapshot }: BuildChannelSummaryContext) {
  * @returns Default channel account snapshot
  */
 export const defaultRuntime: ChannelAccountSnapshot = {
-  accountId: 'default',
+  accountId: DEFAULT_ACCOUNT_ID,
   running: false,
   lastStartAt: null,
   lastStopAt: null,

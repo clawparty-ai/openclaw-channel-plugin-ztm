@@ -10,7 +10,7 @@ import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../c
 import { buildChannelConfigSchema } from 'openclaw/plugin-sdk';
 import { ztmChatConfigBaseSchema } from '../config/schema.js';
 import { logger } from '../utils/logger.js';
-import { ZTM_CHANNEL_ID } from '../constants.js';
+import { ZTM_CHANNEL_ID, DEFAULT_ACCOUNT_ID } from '../constants.js';
 
 // ============================================================================
 // Types
@@ -61,8 +61,8 @@ export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
     const ids = Object.keys(accounts);
     if (ids.length > 0) return ids;
   }
-  // Fallback: return ["default"] so the channel appears in channels status
-  return ['default'];
+  // Fallback: return [DEFAULT_ACCOUNT_ID] so the channel appears in channels status
+  return [DEFAULT_ACCOUNT_ID];
 }
 
 /**
@@ -80,7 +80,7 @@ export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
  * ```
  */
 export function resolveDefaultZTMChatAccountId(cfg: OpenClawConfig): string {
-  return listZTMChatAccountIds(cfg)[0] ?? 'default';
+  return listZTMChatAccountIds(cfg)[0] ?? DEFAULT_ACCOUNT_ID;
 }
 
 // Dangerous property names that could lead to prototype pollution
@@ -187,7 +187,7 @@ export function resolveZTMChatAccount({
   }
 
   const channelConfig = getEffectiveChannelConfig(cfg);
-  const accountKey = accountId ?? 'default';
+  const accountKey = accountId ?? DEFAULT_ACCOUNT_ID;
 
   if (!channelConfig) {
     return {

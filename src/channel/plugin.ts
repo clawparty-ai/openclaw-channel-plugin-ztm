@@ -30,7 +30,7 @@ import {
 } from '../di/index.js';
 import { createMessagingContext } from '../messaging/context.js';
 import type { ResolvedZTMChatAccount } from './config.js';
-import { PROBE_TIMEOUT_MS, ZTM_CHANNEL_ID } from '../constants.js';
+import { PROBE_TIMEOUT_MS, ZTM_CHANNEL_ID, DEFAULT_ACCOUNT_ID } from '../constants.js';
 import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
 import { getZTMChatConfig } from '../utils/ztm-config.js';
 
@@ -127,7 +127,7 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
     cfg: cfg ?? {},
     channelKey: ZTM_CHANNEL_ID,
     accountId: accountId ?? undefined,
-    fallbackAccountId: account.accountId ?? 'default',
+    fallbackAccountId: account.accountId ?? DEFAULT_ACCOUNT_ID,
     policy: config.dmPolicy ?? null,
     allowFrom: config.allowFrom ?? null,
     defaultPolicy: 'pairing',
@@ -285,9 +285,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Setup Section - CLI account management
   // ---------------------------------------------------------------------------
   setup: {
-    resolveAccountId: ({ accountId }) => accountId?.trim()?.toLowerCase() || 'default',
+    resolveAccountId: ({ accountId }) => accountId?.trim()?.toLowerCase() || DEFAULT_ACCOUNT_ID,
     applyAccountName: ({ cfg, accountId, name }) => {
-      const accountKey = accountId || 'default';
+      const accountKey = accountId || DEFAULT_ACCOUNT_ID;
       const accounts = { ...cfg.channels?.[ZTM_CHANNEL_ID]?.accounts };
       const existing = accounts[accountKey] ?? {};
       return {
@@ -331,7 +331,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       return null;
     },
     applyAccountConfig: ({ cfg, accountId, input }) => {
-      const accountKey = accountId || 'default';
+      const accountKey = accountId || DEFAULT_ACCOUNT_ID;
       const channelInput = input as Record<string, unknown>;
       const accounts = { ...cfg.channels?.[ZTM_CHANNEL_ID]?.accounts };
       const existing = accounts[accountKey] ?? {};
@@ -580,7 +580,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       });
     },
     logoutAccount: async ({ accountId, cfg }) => {
-      return logoutAccountGateway({ accountId: accountId ?? 'default', cfg: cfg ?? undefined });
+      return logoutAccountGateway({
+        accountId: accountId ?? DEFAULT_ACCOUNT_ID,
+        cfg: cfg ?? undefined,
+      });
     },
   },
 };

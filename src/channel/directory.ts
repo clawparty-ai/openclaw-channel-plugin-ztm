@@ -13,6 +13,7 @@ import {
   type IDiscovery,
 } from '../di/index.js';
 import { getOrDefault } from '../utils/guards.js';
+import { DEFAULT_ACCOUNT_ID } from '../constants.js';
 import { getZTMChatConfig } from '../utils/ztm-config.js';
 import { resolveZTMChatAccount } from './config.js';
 
@@ -88,7 +89,7 @@ export async function directoryListPeers({
 
   if (!config) {
     logger.warn(
-      `Failed to list peers: ZTM Chat config not found for account ${accountId ?? 'default'}`
+      `Failed to list peers: ZTM Chat config not found for account ${accountId ?? DEFAULT_ACCOUNT_ID}`
     );
     return [];
   }

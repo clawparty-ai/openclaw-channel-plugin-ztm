@@ -16,7 +16,7 @@ import { getAccountMessageStateStore } from '../runtime/store.js';
 import type { MessageStateStore } from '../runtime/store.js';
 import { checkDmPolicy } from '../core/dm-policy.js';
 import { escapeHtml } from '../utils/validation.js';
-import { MAX_MESSAGE_LENGTH } from '../constants.js';
+import { MAX_MESSAGE_LENGTH, DEFAULT_ACCOUNT_ID } from '../constants.js';
 import { getWatermarkKey } from './watermark.js';
 import type { ZTMChatConfig } from '../types/config.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
@@ -76,7 +76,7 @@ export function processIncomingMessage(
   const {
     config,
     storeAllowFrom = [],
-    accountId = 'default',
+    accountId = DEFAULT_ACCOUNT_ID,
     groupInfo,
     skipPolicyCheck = false,
     watermarkStore,

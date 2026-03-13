@@ -10,7 +10,7 @@ import type { DMPolicy, GroupPolicy } from '../config/schema.js';
 import { isValidUrl, containsPathTraversal } from '../utils/validation.js';
 import { isValidUsername, isValidMeshName } from '../config/validation.js';
 import { DEFAULT_MESH_NAME } from '../config/defaults.js';
-import { ZTM_CHANNEL_ID } from '../constants.js';
+import { ZTM_CHANNEL_ID, DEFAULT_ACCOUNT_ID } from '../constants.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getZTMRuntime, isZTMRuntimeInitialized } from '../runtime/index.js';
 
@@ -619,14 +619,14 @@ export class ZTMChatWizard {
     let savePath: string | undefined;
     if (save) {
       const config = this.buildConfig();
-      const accountId = this.config.username || 'default';
+      const accountId = this.config.username || DEFAULT_ACCOUNT_ID;
 
       // Write to openclaw.yaml using runtime
       if (!isZTMRuntimeInitialized()) {
         this.prompts.error('Runtime not available. Please run through OpenClaw CLI.');
         return {
           config: this.buildConfig(),
-          accountId: this.config.username || 'default',
+          accountId: this.config.username || DEFAULT_ACCOUNT_ID,
           savePath: undefined,
         };
       }
@@ -717,7 +717,7 @@ export class ZTMChatWizard {
 
     return {
       config: this.buildConfig(),
-      accountId: this.config.username || 'default',
+      accountId: this.config.username || DEFAULT_ACCOUNT_ID,
       savePath,
     };
   }
