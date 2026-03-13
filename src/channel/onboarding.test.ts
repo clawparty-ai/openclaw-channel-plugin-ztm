@@ -523,6 +523,149 @@ describe('ztmChatOnboardingAdapter', () => {
       );
     });
 
+    it('should handle missing DI dependencies gracefully', async () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            enabled: true,
+            accounts: {
+              'test-bot': {
+                agentUrl: 'http://localhost:8080',
+                username: 'test-bot',
+              },
+            },
+          },
+        },
+      } as unknown as OpenClawConfig;
+
+      // Mock DI container to return null for dependencies
+      mockContainerGet.mockReturnValue(null);
+
+      mockPrompter.select.mockResolvedValue('test');
+
+      const result = await adapter.configureWhenConfigured!({
+        cfg,
+        runtime: {} as never,
+        prompter: mockPrompter as never,
+        label: 'ZTM Chat',
+        configured: true,
+        accountOverrides: {},
+        shouldPromptAccountIds: false,
+        forceAllowFrom: false,
+      });
+
+      expect(result).toEqual({ cfg, accountId: 'test-bot' });
+      expect(mockPrompter.note).toHaveBeenCalledWith(
+        expect.stringContaining('Service not initialized')
+      );
+    });
+
+    it('should handle unexpected error in connection test', async () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            enabled: true,
+            accounts: {
+              'test-bot': {
+                agentUrl: 'http://localhost:8080',
+                username: 'test-bot',
+              },
+            },
+          },
+        },
+      } as unknown as OpenClawConfig;
+
+      mockPrompter.select.mockResolvedValue('test');
+      // Mock getMeshInfo to throw
+      mockApiClient.getMeshInfo.mockImplementation(() => {
+        throw new Error('Unexpected connection error');
+      });
+
+      const result = await adapter.configureWhenConfigured!({
+        cfg,
+        runtime: {} as never,
+        prompter: mockPrompter as never,
+        label: 'ZTM Chat',
+        configured: true,
+        accountOverrides: {},
+        shouldPromptAccountIds: false,
+        forceAllowFrom: false,
+      });
+
+      expect(result).toEqual({ cfg, accountId: 'test-bot' });
+      expect(mockPrompter.note).toHaveBeenCalledWith(expect.stringContaining('Connection failed'));
+    });
+
+    it('should handle invalid select option (exhaustive check)', async () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            enabled: true,
+            accounts: {
+              'test-bot': {
+                agentUrl: 'http://localhost:8080',
+                username: 'test-bot',
+              },
+            },
+          },
+        },
+      } as unknown as OpenClawConfig;
+
+      // Mock select to return an invalid option
+      mockPrompter.select.mockResolvedValue('invalid' as never);
+
+      const result = await adapter.configureWhenConfigured!({
+        cfg,
+        runtime: {} as never,
+        prompter: mockPrompter as never,
+        label: 'ZTM Chat',
+        configured: true,
+        accountOverrides: {},
+        shouldPromptAccountIds: false,
+        forceAllowFrom: false,
+      });
+
+      // Should return 'skip' for invalid option (exhaustive check)
+      expect(result).toBe('skip');
+    });
+
+    it('should handle DI container throwing error', async () => {
+      const cfg: OpenClawConfig = {
+        channels: {
+          'ztm-chat': {
+            enabled: true,
+            accounts: {
+              'test-bot': {
+                agentUrl: 'http://localhost:8080',
+                username: 'test-bot',
+              },
+            },
+          },
+        },
+      } as unknown as OpenClawConfig;
+
+      // Mock container.get to throw
+      mockContainerGet.mockImplementation(() => {
+        throw new Error('Container error');
+      });
+
+      mockPrompter.select.mockResolvedValue('test');
+
+      const result = await adapter.configureWhenConfigured!({
+        cfg,
+        runtime: {} as never,
+        prompter: mockPrompter as never,
+        label: 'ZTM Chat',
+        configured: true,
+        accountOverrides: {},
+        shouldPromptAccountIds: false,
+        forceAllowFrom: false,
+      });
+
+      // Should handle gracefully and return accountId
+      expect(result).toEqual({ cfg, accountId: 'test-bot' });
+    });
+
     it('should return skip when no account found', async () => {
       const cfg: OpenClawConfig = {
         channels: {},

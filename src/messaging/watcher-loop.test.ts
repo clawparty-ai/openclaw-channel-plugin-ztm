@@ -476,6 +476,54 @@ describe('processChangedGroup', () => {
     );
     expect(stateNoReader).toBeDefined();
   });
+
+  it('should handle getGroupMessages failure gracefully', async () => {
+    const mockChatReader = createMockApiClient();
+    mockState.chatReader = mockChatReader as any;
+
+    // Mock getGroupMessages to return error result
+    mockChatReader.getGroupMessages = vi.fn().mockResolvedValue({
+      ok: false,
+      error: new Error('Group not found'),
+    });
+
+    // Should not throw - should log warning and return early
+    await processChangedGroup(
+      mockState,
+      mockRt as any,
+      'alice',
+      'nonexistent-group',
+      'Nonexistent Group',
+      []
+    );
+
+    // Verify the error was logged (warning level)
+    const { logger } = await import('../utils/logger.js');
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('should process group messages successfully', async () => {
+    const mockChatReader = createMockApiClient();
+    mockState.chatReader = mockChatReader as any;
+
+    // Mock getGroupMessages to return messages
+    mockChatReader.getGroupMessages = vi.fn().mockResolvedValue({
+      ok: true,
+      value: [
+        { time: 1000, message: 'Hello group', sender: 'alice' },
+        { time: 2000, message: 'Group message 2', sender: 'bob' },
+      ],
+    });
+
+    // Should process messages without throwing
+    await processChangedGroup(mockState, mockRt as any, 'alice', 'test-group', 'Test Group', []);
+
+    expect(mockChatReader.getGroupMessages).toHaveBeenCalledWith(
+      'alice',
+      'test-group',
+      expect.any(Number)
+    );
+  });
 });
 
 // ============================================================================
