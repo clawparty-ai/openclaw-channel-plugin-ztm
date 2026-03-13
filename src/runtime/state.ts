@@ -59,6 +59,9 @@ export { GroupPermissionLRUCache } from './cache.js';
  * Replaces module-level singleton Map with explicit class management.
  * Provides better testability and lifecycle management.
  */
+/**
+ * @internal
+ */
 export class AccountStateManager {
   private states = new Map<string, AccountRuntimeState>();
   private deps: AccountStateManagerDeps;

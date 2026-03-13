@@ -20,6 +20,9 @@ import { MAX_GROUP_PERMISSION_CACHE_SIZE, GROUP_PERMISSION_CACHE_TTL_MS } from '
  *
  * TTL eviction is amortized O(1) using lazy expiration checking.
  */
+/**
+ * @internal
+ */
 export class GroupPermissionLRUCache {
   // Map maintains insertion order: [oldest, ..., newest]
   // This enables O(1) LRU eviction by deleting the first entry

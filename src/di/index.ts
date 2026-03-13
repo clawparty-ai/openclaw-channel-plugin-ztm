@@ -231,6 +231,9 @@ export function createApiClientFactory(): () => IApiClientFactory {
  *
  * @returns Factory function that returns the AccountStateManager singleton
  */
+/**
+ * @internal
+ */
 export function createAccountStateManagerService(): () => unknown {
   // Import getAccountStateManager to use the singleton
 
@@ -246,6 +249,9 @@ export function createAccountStateManagerService(): () => unknown {
  * Provides centralized access to account state management
  *
  * @returns AccountStateManager instance from the DI container
+ */
+/**
+ * @internal
  */
 export function getAccountStateManagerService(): import('../runtime/state.js').AccountStateManager {
   return container.get(

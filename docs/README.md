@@ -74,7 +74,7 @@ Output will be generated to `docs/typedoc/`.
 
 - `ZTMApiClient` - Main API client for ZTM Agent communication
 - `ChatProcessor` - High-level chat message processing
-- `MessageDispatcher` - Message routing to registered callbacks
+- `notifyMessageCallbacks` - Message routing to registered callbacks
 
 ## Examples
 

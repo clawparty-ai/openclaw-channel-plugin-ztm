@@ -40,6 +40,12 @@ jobs:
       - name: Install TypeDoc
         run: npm install --save-dev typedoc
 
+      - name: Verify API documentation accuracy
+        run: npm run docs:api:check
+
+      - name: Verify TSDoc coverage
+        run: npm run docs:coverage:check
+
       - name: Generate documentation
         run: npx typedoc
 

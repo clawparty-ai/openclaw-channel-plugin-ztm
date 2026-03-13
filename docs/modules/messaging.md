@@ -21,7 +21,7 @@ The Messaging module handles the complete message processing pipeline for ZTM Ch
 | `stopWatcher` | Stop the message watcher |
 | `MessageContext` | Message processing context |
 | `MessageProcessor` | Message processor interface |
-| `MessageDispatcher` | Message dispatcher interface |
+| `notifyMessageCallbacks` | Message dispatcher interface |
 | `ZTMChatMessage` | Message type definition |
 
 ## Message Pipeline

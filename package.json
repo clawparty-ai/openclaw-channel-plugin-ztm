@@ -41,7 +41,11 @@
     "docs": "typedoc",
     "docs:watch": "typedoc --watch",
     "docs:coverage": "npx tsx scripts/measure-doc-coverage.ts",
-    "docs:coverage:check": "npx tsx scripts/measure-doc-coverage.ts || exit 1"
+    "docs:coverage:check": "npx tsx scripts/measure-doc-coverage.ts || exit 1",
+    "docs:api:check": "npx tsx scripts/fix-api-documentation.ts check",
+    "docs:api:fix": "npx tsx scripts/fix-api-documentation.ts fix",
+    "pre:release": "npx tsx scripts/pre-release-check.ts",
+    "pre:release:quick": "npx tsx scripts/pre-release-check.ts | grep -E '(PASS|FAIL|Summary)'"
   },
   "dependencies": {
     "openclaw": "2026.3.12",

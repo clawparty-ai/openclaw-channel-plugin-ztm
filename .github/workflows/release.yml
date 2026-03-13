@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Pre-release checks
+        run: npm run pre:release
+
       - name: Lint
         run: npm run lint
 
