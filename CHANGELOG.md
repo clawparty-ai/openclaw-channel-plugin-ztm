@@ -2,9 +2,68 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026.3.13 - 2026-03-13
+
+[6e2399f](6e2399f442bbe164bc1084dd3463270e28342de3)...[491bb10](491bb108fbd741c4de1d7852d26d3c2e4d162e69)
+
+### 🚨 BREAKING CHANGES
+
+- Return parseError flag when certificate parsing fails ([c8ccffa](c8ccffaaca60cb61acf92c3851fa677436ee8d79)) - (Lin Yang)
+
+
+
+### 🚀 Features
+
+- Add ztm_send_peer_message tool for sending peer messages (#28) ([ed0eb9e](ed0eb9e37f7b248c241fccb613cdb3f645f1eee8)) - (Lin Yang)
+
+### 🐛 Bug Fixes
+
+- Add defensive check for race condition in message retry ([c8af75f](c8af75f80003cb7b8fbd6b43568d2075152f319e)) - (Lin Yang)
+- Return defensive copy in getAll() to prevent state mutation ([8ef8990](8ef8990613ce41de4c761afd75c36be117199c11)) - (Lin Yang)
+- Await ensureLoaded() in preloadMessageState ([b3eece7](b3eece701d2da3204a7ed400ac3e71aee5ebbf25)) - (Lin Yang)
+- Throw error for invalid accountId instead of silent fallback ([e10ee03](e10ee03adad547e898c0b1da505d55ed91724096)) - (Lin Yang)
+- Add input validation for SSRF and path traversal attacks ([4a4f9ea](4a4f9ea3f0b0d5319d8f43de3d2bb86aea60aaf3)) - (Lin Yang)
+- Fail-closed for unknown dmPolicy values ([413941e](413941e47e04dc81fecfe988987c1bc0d96e2bf2)) - (Lin Yang)
+- Handle Promise rejection when readline closes ([44a4dc7](44a4dc7ac951824143ae7df96cf63b1b7b48efbd)) - (Lin Yang)
+- Enhance error logging in store catch blocks ([e7a344b](e7a344ba34359f10fce9e9f37566418599743430)) - (Lin Yang)
+- Correct message length unit from bytes to characters ([c8359f1](c8359f15447f94857280af8235ea774b5cfdb2e5)) - (Lin Yang)
+- Use fail-safe error handling in watch loop ([e4b5551](e4b555178d9d11674ae1e2f9acb07f582309d18b)) - (Lin Yang)
+- Return isExpired: null when certificate parsing fails ([46fe55e](46fe55e3a479b9bf87ce33001e46aecfb81ecd5d)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Remove duplicate utils.ts and add defensive null checks ([9b8a042](9b8a042a3ae7e898b7fc01d85b5ae8a20d1a8e1e)) - (Lin Yang)
+- Remove unreachable dead code in retry.ts ([f968428](f96842839e9dc28e61d11503c7a0c95fef056ab6)) - (Lin Yang)
+- Simplify WizardConfig type definition ([48b51de](48b51de35f4644fd66d9555b80e65c8f455fbe43)) - (Lin Yang)
+- Extract shared path validation in permit.ts ([4f5e86a](4f5e86a5051ec53de3cf835abb4280a609c221fe)) - (Lin Yang)
+- Extract repeated values into local variables in gateway ([2da030e](2da030e75fb24a318a411f6f6b81d125e3c18352)) - (Lin Yang)
+- Extract path check into reusable containsPathSeparator ([a329127](a32912752be28ca33dde94af4bb04746a0dcc272)) - (Lin Yang)
+- Extract CERT_EXPIRY_WARNING_DAYS to constants ([a6919d2](a6919d206844ba46e2be6f35075808f6f322ec9e)) - (Lin Yang)
+- Add isEmptyString helper and use in tools ([1181f95](1181f95f9412f8760b6c4ec542ae8d8b18c97ab2)) - (Lin Yang)
+- Optimize normalizeUsername calls and fix unused param ([2ee9c4b](2ee9c4b886ec4a1d26f9a50835eaad9760054ce6)) - (Lin Yang)
+- Reuse sanitizeForLog result in watcher-loop ([55a1cea](55a1ceafa3b95266c9da65aa2e5e39990a04e7aa)) - (Lin Yang)
+- Extract ZTM address formatting to reusable functions ([d5c491d](d5c491d1d502e06b2a0a2b1a8e8daddeeae5c908)) - (Lin Yang)
+- Replace hardcoded 'default' with DEFAULT_ACCOUNT_ID ([b37727a](b37727a41a326ccd00f82a3efca9d294490f11b2)) - (Lin Yang)
+
+### ✅ Testing
+
+- Add Promise rejection handling tests ([25dfe99](25dfe99eed7b875e2237c9d29534128464704942)) - (Lin Yang)
+- Fix vitest vi.mock() nesting warnings ([0dc9a86](0dc9a86e78003b918841013f6c2d9c4d8523da46)) - (Lin Yang)
+
+
+### 🔨 Build
+
+- Bump openclaw from 2026.3.8 to 2026.3.11 (#27) ([2f3a56e](2f3a56e56e60599aa201b37e7287a5d58652ac16)) - (dependabot[bot])
+- Bump esbuild from 0.27.3 to 0.27.4 (#31) ([766f32f](766f32f2c42c2ac72c875959e214efaedba7afb8)) - (dependabot[bot])
+- Bump vitest from 4.0.18 to 4.1.0 ([d6484b4](d6484b40903283433a8e0dcdf8b4fe28b6519c41)) - (Lin Yang)
+
+
+
 ## 2026.3.11 - 2026-03-11
 
-[f5075d5](f5075d5e9b55cb10c0bff2bb3e435438c4af43e4)...[0aae7f0](0aae7f0eed842b7006841c09ab1bf0140815cc8c)
+[f5075d5](f5075d5e9b55cb10c0bff2bb3e435438c4af43e4)...[6e2399f](6e2399f442bbe164bc1084dd3463270e28342de3)
 
 
 
