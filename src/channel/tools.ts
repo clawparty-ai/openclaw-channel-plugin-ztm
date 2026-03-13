@@ -11,6 +11,7 @@ import type { IApiClientFactory, ILogger } from '../di/index.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import { resolveZTMChatAccount } from './config.js';
 import { getZTMChatConfig } from '../utils/ztm-config.js';
+import { isEmptyString } from '../utils/validation.js';
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_PEER_LENGTH = 64;
@@ -208,22 +209,22 @@ const ztmSendPeerMessageTool = {
       const { peer, message } = params as { peer: string; message: string };
 
       // Input validation (for better UX, complements API layer validation)
-      const peerTrimmed = peer.trim();
-      const messageTrimmed = message.trim();
-
-      if (peerTrimmed.length === 0) {
+      if (isEmptyString(peer)) {
         return {
           content: [{ type: 'text', text: 'Error: Peer username is required.' }],
           details: undefined,
         };
       }
 
-      if (messageTrimmed.length === 0) {
+      if (isEmptyString(message)) {
         return {
           content: [{ type: 'text', text: 'Error: Message content is required.' }],
           details: undefined,
         };
       }
+
+      const peerTrimmed = peer.trim();
+      const messageTrimmed = message.trim();
 
       const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
       const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);

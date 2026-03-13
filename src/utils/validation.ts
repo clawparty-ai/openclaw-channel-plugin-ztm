@@ -59,6 +59,29 @@ export type ValidationResult<T = void> =
   | { valid: false; error: string };
 
 // ============================================
+// String Utilities
+// ============================================
+
+/**
+ * Check if a string is empty (null, undefined, or whitespace-only)
+ * Provides consistent empty string detection across the codebase
+ *
+ * @param value - The value to check
+ * @returns true if the string is null, undefined, or contains only whitespace
+ *
+ * @example
+ * isEmptyString('')        // true
+ * isEmptyString('   ')     // true
+ * isEmptyString(null)      // true
+ * isEmptyString('hello')   // false
+ */
+export function isEmptyString(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'string') return false;
+  return value.trim().length === 0;
+}
+
+// ============================================
 // Username Normalization
 // ============================================
 
