@@ -208,6 +208,12 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
 
 /**
  * Probe an account to check connectivity
+ *
+ * @example
+ * ```typescript
+ * const result = await probeAccountGateway({ account: { config: myConfig } });
+ * console.log(result.ok); // true or false
+ * ```
  */
 export async function probeAccountGateway({
   account,
@@ -230,6 +236,11 @@ export async function probeAccountGateway({
 
 /**
  * Send text message gateway
+ *
+ * @example
+ * ```typescript
+ * const result = await sendTextGateway({ to: 'alice', text: 'Hello!', accountId: 'default' });
+ * ```
  */
 export async function sendTextGateway({
   to,
@@ -289,6 +300,16 @@ export async function sendTextGateway({
  * const cleanup = await startAccountGateway({ account, log, setStatus });
  * // ... account is running
  * await cleanup(); // stop account
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const cleanup = await startAccountGateway({
+ *   account: { config: myConfig, accountId: 'default' },
+ *   log: console
+ * });
+ * // Account is running...
+ * await cleanup(); // Stop account
  * ```
  */
 
@@ -359,6 +380,11 @@ export async function startAccountGateway(ctx: {
  *
  * @param accountId - The account ID to logout
  * @returns Promise resolving to cleared status
+ *
+ * @example
+ * ```typescript
+ * await logoutAccountGateway({ accountId: 'default' });
+ * ```
  */
 export async function logoutAccountGateway({
   accountId,
@@ -379,6 +405,12 @@ export async function logoutAccountGateway({
  * Message dispatch and retry logic has been extracted to separate modules:
  * - gateway-message-handler.ts: Message dispatching
  * - gateway-message-retry.ts: Retry logic with exponential backoff
+ *
+ * @example
+ * ```typescript
+ * const callback = buildMessageCallback(state, 'default', config);
+ * callback({ content: 'Hello', sender: 'alice', timestamp: Date.now() });
+ * ```
  */
 export function buildMessageCallback(
   state: AccountRuntimeState,

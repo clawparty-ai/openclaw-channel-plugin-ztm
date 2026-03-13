@@ -18,6 +18,15 @@ import { getOrDefault } from '../utils/guards.js';
  * @param request - HTTP request handler for making API calls
  * @param logger - Logger instance for debugging and error reporting
  * @returns Mesh API interface with methods for mesh info, endpoints, and peer discovery
+ *
+ * @example
+ * ```typescript
+ * const meshApi = createMeshApi(config, request, logger);
+ * const meshInfo = await meshApi.getMeshInfo();
+ * if (meshInfo.ok) {
+ *   console.log('Connected:', meshInfo.value.connected);
+ * }
+ * ```
  */
 export function createMeshApi(config: ZTMChatConfig, request: RequestHandler, logger: ZTMLogger) {
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
@@ -36,12 +45,14 @@ export function createMeshApi(config: ZTMChatConfig, request: RequestHandler, lo
 
     const value = result.value;
     if (!value) {
-      return failure(new ZTMApiError({
-        method: 'GET',
-        path: `/api/meshes/${config.meshName}`,
-        statusCode: 500,
-        cause: new Error('Unexpected empty response'),
-      })) as Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>;
+      return failure(
+        new ZTMApiError({
+          method: 'GET',
+          path: `/api/meshes/${config.meshName}`,
+          statusCode: 500,
+          cause: new Error('Unexpected empty response'),
+        })
+      ) as Result<ZTMMeshInfo, ZTMApiError | ZTMTimeoutError>;
     }
 
     return success({

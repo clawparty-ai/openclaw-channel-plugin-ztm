@@ -26,6 +26,15 @@ export interface ProcessMessageResult {
  *
  * @param chat - The ZTM chat to check
  * @returns True if the chat is a group chat, false otherwise
+ *
+ * @example
+ * ```typescript
+ * const chat = { creator: 'alice', group: 'team-chat' };
+ * isGroupChat(chat); // Returns: true
+ *
+ * const peerChat = { peer: 'bob' };
+ * isGroupChat(peerChat); // Returns: false
+ * ```
  */
 export function isGroupChat(chat: ZTMChat): boolean {
   return !!(chat.creator && chat.group);
@@ -37,6 +46,15 @@ export function isGroupChat(chat: ZTMChat): boolean {
  *
  * @param chat - The ZTM chat to check
  * @returns True if the chat is a peer chat, false otherwise
+ *
+ * @example
+ * ```typescript
+ * const peerChat = { peer: 'bob' };
+ * isPeerChat(peerChat); // Returns: true
+ *
+ * const groupChat = { creator: 'alice', group: 'team-chat' };
+ * isPeerChat(groupChat); // Returns: false
+ * ```
  */
 export function isPeerChat(chat: ZTMChat): boolean {
   return !isGroupChat(chat);
@@ -49,6 +67,18 @@ export function isPeerChat(chat: ZTMChat): boolean {
  *
  * @param chat - The ZTM chat to extract sender from
  * @returns The sender identifier
+ *
+ * @example
+ * ```typescript
+ * const peerChat = { peer: 'bob', latest: { sender: 'alice' } };
+ * extractSender(peerChat); // Returns: 'alice'
+ *
+ * const peerChatNoSender = { peer: 'bob' };
+ * extractSender(peerChatNoSender); // Returns: 'bob'
+ *
+ * const groupChat = { creator: 'alice', group: 'team', latest: { sender: 'charlie' } };
+ * extractSender(groupChat); // Returns: 'charlie'
+ * ```
  */
 export function extractSender(chat: ZTMChat): string {
   const explicitSender = chat.latest?.sender;
@@ -72,6 +102,12 @@ export function extractSender(chat: ZTMChat): string {
  * @param sender - The sender identifier to check
  * @param botUsername - The bot's username
  * @returns True if the message is from the bot itself
+ *
+ * @example
+ * ```typescript
+ * isSelfMessage('alice', 'alice'); // Returns: true
+ * isSelfMessage('bob', 'alice');   // Returns: false
+ * ```
  */
 export function isSelfMessage(sender: string, botUsername: string): boolean {
   return sender === botUsername;
@@ -84,6 +120,19 @@ export function isSelfMessage(sender: string, botUsername: string): boolean {
  * @param chat - The ZTM chat to validate
  * @param config - ZTM Chat configuration
  * @returns Validation result with valid flag and optional reason
+ *
+ * @example
+ * ```typescript
+ * const config = { username: 'mybot', meshName: 'test' };
+ * const peerChat = { peer: 'alice', latest: { sender: 'alice', message: 'hi' } };
+ *
+ * const result = validateChatMessage(peerChat, config);
+ * // Returns: { valid: true }
+ *
+ * const selfChat = { peer: 'mybot', latest: { sender: 'mybot' } };
+ * validateChatMessage(selfChat, config);
+ * // Returns: { valid: false, reason: 'self_message' }
+ * ```
  */
 export function validateChatMessage(
   chat: ZTMChat,
@@ -128,6 +177,18 @@ export function validateChatMessage(
  * @param messages - Array of messages to process
  * @param state - Account runtime state
  * @param storeAllowFrom - Persisted allowFrom list for pairing mode
+ *
+ * @example
+ * ```typescript
+ * const messages = [
+ *   { time: Date.now(), message: 'Hello', sender: 'alice' },
+ *   { time: Date.now(), message: 'Hi', sender: 'bob' }
+ * ];
+ * const state = createMockAccountRuntimeState();
+ *
+ * await processAndNotifyPeerMessages(messages, state, []);
+ * // Notifies callbacks for valid peer messages
+ * ```
  */
 export async function processAndNotifyPeerMessages(
   messages: Array<{ time: number; message: string; sender: string }>,
@@ -174,6 +235,18 @@ export async function processAndNotifyPeerMessages(
  * @param storeAllowFrom - Persisted allowFrom list for pairing mode
  * @param groupInfo - Group metadata (creator, group)
  * @param groupName - Optional display name for the group
+ *
+ * @example
+ * ```typescript
+ * const messages = [
+ *   { time: Date.now(), message: '@mybot help', sender: 'alice' }
+ * ];
+ * const state = createMockAccountRuntimeState();
+ * const groupInfo = { creator: 'charlie', group: 'team-chat' };
+ *
+ * await processAndNotifyGroupMessages(messages, state, [], groupInfo, 'Team Chat');
+ * // Notifies callbacks for valid group messages
+ * ```
  */
 export async function processAndNotifyGroupMessages(
   messages: Array<{ time: number; message: string; sender: string }>,

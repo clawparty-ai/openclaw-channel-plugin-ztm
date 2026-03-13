@@ -83,6 +83,14 @@ export function validateZTMChatConfig(raw: unknown): ZTMChatConfigValidation {
  * Check if config is minimally valid (has required fields)
  * @param config - Partial configuration to check
  * @returns True if the config has all required fields
+ *
+ * @example
+ * ```typescript
+ * const config = { agentUrl: 'https://api.example.com', username: 'bot', meshName: 'test', permitSource: 'server', permitUrl: 'https://permit.example.com' };
+ * if (isConfigMinimallyValid(config)) {
+ *   console.log('Config has all required fields');
+ * }
+ * ```
  */
 export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean {
   // Check basic required fields
@@ -106,6 +114,14 @@ export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean 
  * Validate a single username format
  * @param username - Username string to validate
  * @returns True if the username matches identifier pattern and length constraints
+ *
+ * @example
+ * ```typescript
+ * isValidUsername('alice_123');  // Returns: true
+ * isValidUsername('user-name');  // Returns: true
+ * isValidUsername('');            // Returns: false
+ * isValidUsername('a'.repeat(65)); // Returns: false (too long)
+ * ```
  */
 export function isValidUsername(username: string): boolean {
   return IDENTIFIER_PATTERN.test(username) && username.length > 0 && username.length <= 64;
@@ -115,6 +131,14 @@ export function isValidUsername(username: string): boolean {
  * Validate a mesh name format
  * @param meshName - Mesh name string to validate
  * @returns True if the mesh name matches identifier pattern and length constraints
+ *
+ * @example
+ * ```typescript
+ * isValidMeshName('my-mesh');    // Returns: true
+ * isValidMeshName('test_network'); // Returns: true
+ * isValidMeshName('');             // Returns: false
+ * isValidMeshName('a'.repeat(65)); // Returns: false (too long)
+ * ```
  */
 export function isValidMeshName(meshName: string): boolean {
   return IDENTIFIER_PATTERN.test(meshName) && meshName.length > 0 && meshName.length <= 64;
@@ -124,6 +148,14 @@ export function isValidMeshName(meshName: string): boolean {
  * Validate DM policy value
  * @param policy - Policy string to validate
  * @returns True if the policy is a valid DMPolicy value ('allow', 'deny', or 'pairing')
+ *
+ * @example
+ * ```typescript
+ * isValidDmPolicy('allow');    // Returns: true
+ * isValidDmPolicy('deny');     // Returns: true
+ * isValidDmPolicy('pairing');  // Returns: true
+ * isValidDmPolicy('invalid');   // Returns: false
+ * ```
  */
 export function isValidDmPolicy(policy: string): policy is DMPolicy {
   return ['allow', 'deny', 'pairing'].includes(policy);

@@ -67,6 +67,12 @@ export type DependencyKey<T> = symbol & { __brand: T };
 
 /**
  * Create a typed dependency key
+ *
+ * @example
+ * ```typescript
+ * const myServiceKey = createDependencyKey<MyService>(Symbol('my-service'));
+ * // Returns a typed symbol for dependency lookup
+ * ```
  */
 export function createDependencyKey<T>(symbol: symbol): DependencyKey<T> {
   return symbol as DependencyKey<T>;

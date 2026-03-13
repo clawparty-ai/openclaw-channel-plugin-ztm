@@ -400,7 +400,14 @@ export const schemaMetadata = {
 
 /**
  * Get the ZTM Chat configuration schema
+ *
  * @returns The Zod schema for ZTMChatConfig
+ *
+ * @example
+ * ```typescript
+ * const schema = getConfigSchema();
+ * const result = schema.safeParse(config);
+ * ```
  */
 export function getConfigSchema(): typeof ztmChatConfigSchema {
   return ztmChatConfigSchema;

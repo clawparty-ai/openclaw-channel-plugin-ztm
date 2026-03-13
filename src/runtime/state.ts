@@ -548,6 +548,12 @@ export function clearAllowFromCache(accountId: string): void {
  * @param group - Group ID
  * @param config - ZTM Chat configuration
  * @returns GroupPermissions for the specified group
+ *
+ * @example
+ * ```typescript
+ * const perms = getGroupPermissionCached('account-123', 'alice', 'team-chat', config);
+ * // Returns: { groupPolicy: 'open', mentionPolicy: 'all' }
+ * ```
  */
 export function getGroupPermissionCached(
   accountId: string,
@@ -563,6 +569,12 @@ export function getGroupPermissionCached(
  * Useful when group permissions configuration changes.
  *
  * @param accountId - The account identifier
+ *
+ * @example
+ * ```typescript
+ * // Clear cache when group policy changes
+ * clearGroupPermissionCache('account-123');
+ * ```
  */
 export function clearGroupPermissionCache(accountId: string): void {
   accountStateManager.clearGroupPermissionCache(accountId);

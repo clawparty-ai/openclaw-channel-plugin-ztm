@@ -65,6 +65,16 @@ function getAccountState(accountId: string): AccountRuntimeState {
  * 5. initialize_runtime - Initializes the runtime state
  * 6. preload_message_state - Pre-loads message state
  * 7. setup_callbacks - Sets up message callbacks and watchers
+ *
+ * @example
+ * ```typescript
+ * import { createGatewaySteps } from './channel/gateway-steps.js';
+ *
+ * const steps = createGatewaySteps({});
+ * // Returns array of 7 PipelineStep objects
+ * steps.forEach(step => console.log(step.name));
+ * // validate_config, validate_connectivity, load_permit, join_mesh, initialize_runtime, preload_message_state, setup_callbacks
+ * ```
  */
 export function createGatewaySteps(_ctx: StepContext): PipelineStep[] {
   return [

@@ -27,6 +27,17 @@ export class GatewayPipeline {
    * Creates a new GatewayPipeline instance
    * @param ctx - The step context containing account info and callbacks
    * @param steps - Array of pipeline steps to execute
+   *
+   * @example
+   * ```typescript
+   * import { GatewayPipeline } from './channel/gateway-pipeline.js';
+   * import { createGatewaySteps } from './channel/gateway-steps.js';
+   *
+   * const steps = createGatewaySteps({});
+   * const pipeline = new GatewayPipeline({ account, log }, steps);
+   * const cleanup = await pipeline.execute();
+   * // On shutdown: await cleanup();
+   * ```
    */
   constructor(ctx: StepContext, steps: PipelineStep[]) {
     this.ctx = ctx;

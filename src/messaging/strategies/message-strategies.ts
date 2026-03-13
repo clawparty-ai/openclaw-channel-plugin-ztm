@@ -41,6 +41,13 @@ import type {
  * @param state - Account runtime state
  * @param storeAllowFrom - Persisted allowFrom list for pairing mode
  * @returns Processed message or null if skipped
+ *
+ * @example
+ * ```typescript
+ * const msg = { time: Date.now(), message: 'Hello', sender: 'alice' };
+ * const result = processPeerMessage(msg, state, ['alice', 'bob']);
+ * // Returns: Processed message or null if blocked by policy
+ * ```
  */
 export function processPeerMessage(
   msg: { time: number; message: string; sender: string },
@@ -97,6 +104,14 @@ export function processPeerMessage(
  * @param groupInfo - Group metadata (creator, group)
  * @param groupName - Optional display name for the group
  * @returns Processed message with group metadata or null if skipped
+ *
+ * @example
+ * ```typescript
+ * const msg = { time: Date.now(), message: 'Hello', sender: 'alice' };
+ * const groupInfo = { creator: 'admin', group: 'team-chat' };
+ * const result = processGroupMessage(msg, state, [], groupInfo, 'Team Chat');
+ * // Returns: Processed message with group metadata or null if blocked
+ * ```
  */
 export function processGroupMessage(
   msg: { time: number; message: string; sender: string },
@@ -161,6 +176,12 @@ export function processGroupMessage(
  * @param state - Account runtime state
  * @param storeAllowFrom - Persisted allowFrom list for pairing mode
  * @param reason - Reason for the check (for logging)
+ *
+ * @example
+ * ```typescript
+ * await handlePeerPolicyCheck('alice', state, ['alice', 'bob'], 'message received');
+ * // Triggers pairing request if policy requires it
+ * ```
  */
 export async function handlePeerPolicyCheck(
   peer: string,
@@ -217,6 +238,13 @@ class GroupMessageStrategy implements GroupMessageProcessingStrategy {
  *
  * @param chat - The ZTM chat to analyze
  * @returns Strategy instance (PeerMessageProcessingStrategy or GroupMessageProcessingStrategy)
+ *
+ * @example
+ * ```typescript
+ * const chat = { peer: 'alice', latest: {...} };
+ * const strategy = getMessageStrategy(chat);
+ * // Returns: PeerMessageStrategy instance
+ * ```
  */
 export function getMessageStrategy(chat: ZTMChat): MessageProcessingStrategy {
   return isGroupChat(chat) ? new GroupMessageStrategy() : new PeerMessageStrategy();
@@ -233,6 +261,13 @@ export function getMessageStrategy(chat: ZTMChat): MessageProcessingStrategy {
  * @param state - Account runtime state
  * @param storeAllowFrom - Allowed senders list
  * @returns True if message was processed, false otherwise
+ *
+ * @example
+ * ```typescript
+ * const chat = { peer: 'alice', latest: { time: Date.now(), message: 'Hi', sender: 'alice' } };
+ * const processed = await processAndNotify(chat, state, ['alice']);
+ * // Returns: true if message was processed successfully
+ * ```
  */
 export async function processAndNotify(
   chat: ZTMChat,

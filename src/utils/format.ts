@@ -8,6 +8,12 @@
  * Format timestamp to local timezone with three-letter abbreviation
  * @param ts - Unix timestamp in milliseconds
  * @returns Formatted string like "2025-01-01 00:00:00.000 CST" or null if input is null/undefined
+ *
+ * @example
+ * ```typescript
+ * const formatted = formatTimestampToLocalTz(Date.now());
+ * // Returns: "2026-03-13 08:30:00.000 CST"
+ * ```
  */
 export function formatTimestampToLocalTz(ts: number | null | undefined): string | null {
   if (ts === null || ts === undefined) return null;

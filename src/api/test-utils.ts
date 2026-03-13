@@ -19,6 +19,14 @@ export interface MockLogger {
 
 /**
  * Create a mock logger that tracks all calls
+ *
+ * @example
+ * ```typescript
+ * const logger = createMockLogger();
+ * logger.info('test', { key: 'value' });
+ * console.log(logger.calls);
+ * // [{ level: 'info', args: [['test', { key: 'value' }]] }]
+ * ```
  */
 export function createMockLogger(): MockLogger & {
   calls: { level: string; args: unknown[][] }[];
@@ -53,6 +61,15 @@ export interface MockFetchResponse {
 
 /**
  * Create a mock fetch function for testing
+ *
+ * @example
+ * ```typescript
+ * const { fetch, mockResponse, calls } = createMockFetch();
+ * mockResponse({ success: true });
+ * const res = await fetch('https://api.example.com/data');
+ * console.log(calls);
+ * // [{ url: 'https://api.example.com/data', options: {} }]
+ * ```
  */
 export function createMockFetch(): {
   fetch: typeof fetch;
@@ -99,6 +116,12 @@ export function createMockFetch(): {
 /**
  * Create a mock fetchWithRetry for testing
  * Uses the same underlying mock logic as createMockFetch
+ *
+ * @example
+ * ```typescript
+ * const { fetchWithRetry, calls } = createMockFetchWithRetry();
+ * // Uses the same mock logic as createMockFetch
+ * ```
  */
 export function createMockFetchWithRetry(): {
   fetchWithRetry: typeof fetchWithRetry;
@@ -134,6 +157,12 @@ export interface ZTMApiTestDeps {
 /**
  * Create a test client with injected dependencies
  * All dependencies are optional - defaults will be used if not provided
+ *
+ * @example
+ * ```typescript
+ * const client = createTestClient({ username: 'test', agentUrl: 'http://localhost:7777' });
+ * // Creates a test client with mock logger and fetch
+ * ```
  */
 export function createTestClient(
   config: ZTMChatConfig,

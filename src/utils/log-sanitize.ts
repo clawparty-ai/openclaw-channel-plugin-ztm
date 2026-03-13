@@ -21,6 +21,12 @@
  * @param input - The string to sanitize
  * @param maxLength - Maximum length to truncate to (default: 200)
  * @returns Sanitized string safe for logging
+ *
+ * @example
+ * ```typescript
+ * const safe = sanitizeForLog('User input with\nnewlines');
+ * // Returns: 'User input with newlines'
+ * ```
  */
 export function sanitizeForLog(input: string, maxLength = 200): string {
   if (input === null || input === undefined) {
@@ -51,6 +57,12 @@ export function sanitizeForLog(input: string, maxLength = 200): string {
  * @param obj - The object to sanitize
  * @param maxLength - Maximum length for string values
  * @returns Object with sanitized string values
+ *
+ * @example
+ * ```typescript
+ * const safe = sanitizeObjectForLog({ username: 'alice\n', message: 'Hi' });
+ * // Returns: { username: 'alice', message: 'Hi' }
+ * ```
  */
 export function sanitizeObjectForLog<T extends Record<string, unknown>>(
   obj: T,

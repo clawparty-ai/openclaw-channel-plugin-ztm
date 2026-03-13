@@ -24,6 +24,12 @@ import type { ZTMApiClient } from '../types/api.js';
  *
  * @param client - ZTM API client with specific error types
  * @returns Same client typed as IChatReader
+ *
+ * @example
+ * ```typescript
+ * const reader = asChatReader(client);
+ * // reader is now typed as IChatReader
+ * ```
  */
 export function asChatReader(client: ZTMApiClient): IChatReader {
   return client as unknown as IChatReader;
@@ -34,6 +40,12 @@ export function asChatReader(client: ZTMApiClient): IChatReader {
  *
  * @param client - ZTM API client with specific error types
  * @returns Same client typed as IChatSender
+ *
+ * @example
+ * ```typescript
+ * const sender = asChatSender(client);
+ * // sender is now typed as IChatSender
+ * ```
  */
 export function asChatSender(client: ZTMApiClient): IChatSender {
   return client as unknown as IChatSender;
@@ -44,6 +56,12 @@ export function asChatSender(client: ZTMApiClient): IChatSender {
  *
  * @param client - ZTM API client with specific error types
  * @returns Same client typed as IDiscovery
+ *
+ * @example
+ * ```typescript
+ * const discovery = asDiscovery(client);
+ * // discovery is now typed as IDiscovery
+ * ```
  */
 export function asDiscovery(client: ZTMApiClient): IDiscovery {
   return client as unknown as IDiscovery;

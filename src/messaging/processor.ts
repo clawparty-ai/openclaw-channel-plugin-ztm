@@ -170,6 +170,12 @@ export function processIncomingMessage(
  *
  * @param msg - The message object to validate
  * @returns True if the message has all required fields
+ *
+ * @example
+ * ```typescript
+ * isValidMessage({ time: 123, message: 'Hi', sender: 'alice' }); // Returns: true
+ * isValidMessage({ time: 123 }); // Returns: false
+ * ```
  */
 export function isValidMessage(
   msg: unknown
@@ -190,6 +196,12 @@ export function isValidMessage(
  * @param time - Message timestamp
  * @param sender - Message sender identifier
  * @returns A unique message ID string
+ *
+ * @example
+ * ```typescript
+ * const id = createMessageId(1234567890, 'alice');
+ * // Returns: "1234567890-alice"
+ * ```
  */
 export function createMessageId(time: number, sender: string): string {
   return `${time}-${sender}`;
@@ -200,6 +212,13 @@ export function createMessageId(time: number, sender: string): string {
  *
  * @param raw - Raw message content (string or object)
  * @returns Normalized message string
+ *
+ * @example
+ * ```typescript
+ * parseMessageContent('hello'); // Returns: "hello"
+ * parseMessageContent({ text: 'hello' }); // Returns: "hello"
+ * parseMessageContent({ message: { text: 'nested' } }); // Returns: "nested"
+ * ```
  */
 export function parseMessageContent(raw: unknown): string {
   if (typeof raw === 'string') return raw;

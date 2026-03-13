@@ -2,6 +2,18 @@
  * ZTM Chat Heartbeat Adapter
  * @module channel/heartbeat
  * Implements ChannelHeartbeatAdapter for connection health checking
+ *
+ * @example
+ * ```typescript
+ * import { ztmChatHeartbeatAdapter } from './channel/heartbeat.js';
+ *
+ * // Registered in plugin.ts as the heartbeat adapter
+ * const result = await ztmChatHeartbeatAdapter.checkReady({
+ *   cfg: { meshName: 'my-mesh', agentUrl: 'http://localhost:3000' },
+ *   accountId: 'default'
+ * });
+ * // Returns: { ok: true, reason: 'Connected' } or { ok: false, reason: '...' }
+ * ```
  */
 
 import type { ChannelHeartbeatAdapter } from 'openclaw/plugin-sdk';

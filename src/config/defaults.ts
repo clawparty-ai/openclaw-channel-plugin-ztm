@@ -9,12 +9,24 @@ import type { DMPolicy } from './schema.js';
 
 /**
  * Default mesh name constant
+ *
+ * @example
+ * ```typescript
+ * console.log(DEFAULT_MESH_NAME); // 'openclaw-mesh'
+ * ```
  */
 export const DEFAULT_MESH_NAME = 'openclaw-mesh';
 
 /**
  * Get default configuration values for ZTM Chat plugin
  * @returns A ZTMChatConfig object with all default values
+ *
+ * @example
+ * ```typescript
+ * const config = getDefaultConfig();
+ * console.log(config.agentUrl); // 'http://localhost:7777'
+ * console.log(config.dmPolicy); // 'pairing'
+ * ```
  */
 export function getDefaultConfig(): ZTMChatConfig {
   return {
@@ -34,6 +46,12 @@ export function getDefaultConfig(): ZTMChatConfig {
  * Resolve raw config with defaults applied
  * @param raw - Raw configuration object (may be undefined, null, or invalid)
  * @returns A fully resolved ZTMChatConfig with defaults applied to missing fields
+ *
+ * @example
+ * ```typescript
+ * const config = resolveZTMChatConfig({ meshName: 'my-mesh' });
+ * console.log(config.agentUrl); // 'http://localhost:7777' (default)
+ * ```
  */
 export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
   if (!raw || typeof raw !== 'object') {
@@ -84,6 +102,12 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
  * Create a partial config for probing ZTM Agent availability
  * @param config - Partial configuration with optional fields
  * @returns A complete ZTMChatConfig with defaults applied to missing fields
+ *
+ * @example
+ * ```typescript
+ * const probeConfig = createProbeConfig({ agentUrl: 'http://localhost:9000' });
+ * / result: { agentUrl: 'http://localhost:9000', permitUrl: '...', permitSource: 'server', ... }
+ * ```
  */
 export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig {
   return {
@@ -104,6 +128,12 @@ export function createProbeConfig(config: Partial<ZTMChatConfig>): ZTMChatConfig
  * @param baseConfig - Base configuration object
  * @param accountConfig - Account-specific configuration overrides
  * @returns Merged configuration object with account overrides applied
+ *
+ * @example
+ * ```typescript
+ * const merged = mergeAccountConfig({ username: 'base', agentUrl: 'http://localhost:7777' }, { username: 'override' });
+ * / result: { username: 'override', agentUrl: 'http://localhost:7777' }
+ * ```
  */
 export function mergeAccountConfig(
   baseConfig: Record<string, unknown>,

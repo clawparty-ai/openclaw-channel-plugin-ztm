@@ -43,6 +43,22 @@ export type { ZTMApiClientDeps };
  * @param config - ZTM Chat configuration containing agent URL, mesh name, and other settings
  * @param deps - Optional dependencies to override defaults (logger, fetch, fetchWithRetry)
  * @returns ZTM API Client instance with all chat, message, and mesh operations
+ *
+ * @example
+ * ```typescript
+ * import { createZTMApiClient } from './api/ztm-api.js';
+ *
+ * const client = createZTMApiClient({
+ *   agentUrl: 'http://localhost:3000',
+ *   meshName: 'my-mesh',
+ *   username: 'agent-1'
+ * });
+ *
+ * // Use client methods
+ * const meshInfo = await client.getMeshInfo();
+ * const messages = await client.getPeerMessages('alice');
+ * await client.sendPeerMessage('alice', { time: Date.now(), message: 'Hello!' });
+ * ```
  */
 export function createZTMApiClient(
   config: ZTMChatConfig,

@@ -27,6 +27,22 @@ import { getOrDefault } from '../utils/guards.js';
  * @param logger - Logger instance for debugging and error reporting
  * @param getChats - Function to retrieve chats for change detection
  * @returns Message API interface with methods for peer/group messages and change watching
+ *
+ * @example
+ * ```typescript
+ * import { createMessageApi } from './api/message-api.js';
+ *
+ * const messageApi = createMessageApi(config, request, logger, getChats);
+ *
+ * // Get peer messages
+ * const messages = await messageApi.getPeerMessages('alice', Date.now() - 86400000);
+ *
+ * // Send a message
+ * await messageApi.sendPeerMessage('bob', { time: Date.now(), message: 'Hi!' });
+ *
+ * // Watch for changes
+ * const changes = await messageApi.watchChanges();
+ * ```
  */
 export function createMessageApi(
   config: ZTMChatConfig,

@@ -86,7 +86,14 @@ let messageStateRepositoryInstance: IMessageStateRepository | null = null;
 
 /**
  * Get the singleton AllowFromRepository instance
+ *
  * @returns The AllowFromRepository singleton instance
+ *
+ * @example
+ * ```typescript
+ * const repo = getAllowFromRepository();
+ * const allowFrom = await repo.getAllowFrom('default', runtime);
+ * ```
  */
 export function getAllowFromRepository(): IAllowFromRepository {
   if (!allowFromRepositoryInstance) {
@@ -97,7 +104,14 @@ export function getAllowFromRepository(): IAllowFromRepository {
 
 /**
  * Get the singleton MessageStateRepository instance
+ *
  * @returns The MessageStateRepository singleton instance
+ *
+ * @example
+ * ```typescript
+ * const repo = getMessageStateRepository();
+ * const watermark = repo.getWatermark('default', 'peer:alice');
+ * ```
  */
 export function getMessageStateRepository(): IMessageStateRepository {
   if (!messageStateRepositoryInstance) {

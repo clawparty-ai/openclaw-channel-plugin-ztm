@@ -82,7 +82,16 @@ async function fetchAndProcessAllMessages(
 /**
  * Perform initial sync of all existing messages.
  * Fetches ALL messages since watermark for each chat, not just the latest.
+ *
+ * @param state - Account runtime state with config and API client
+ * @param storeAllowFrom - Allowed senders list for pairing mode
  * @returns Array of chats for message processing
+ *
+ * @example
+ * ```typescript
+ * const chats = await performInitialSync(state, ['alice', 'bob']);
+ * // Returns: [{ peer: 'alice', ... }, { peer: 'bob', ... }]
+ * ```
  */
 export async function performInitialSync(
   state: AccountRuntimeState,
@@ -113,6 +122,16 @@ export async function performInitialSync(
 /**
  * Perform full sync of all peers to catch missed messages in append-only files.
  * Fetches ALL messages since watermark for each chat, not just the latest.
+ *
+ * @param state - Account runtime state with config and API client
+ * @param storeAllowFrom - Allowed senders list for pairing mode
+ * @returns void
+ *
+ * @example
+ * ```typescript
+ * await performFullSync(state, ['alice', 'bob']);
+ * // Performs full sync of all peers to catch any missed messages
+ * ```
  */
 export async function performFullSync(
   state: AccountRuntimeState,

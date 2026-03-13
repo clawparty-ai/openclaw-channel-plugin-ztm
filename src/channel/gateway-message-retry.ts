@@ -38,6 +38,12 @@ export const MESSAGE_RETRY_DELAY_MS = 2000;
  * @param msg - The message to retry
  * @param attempt - Current attempt number (1-based)
  * @returns Promise that resolves when retry is scheduled
+ *
+ * @example
+ * ```typescript
+ * await retryMessageLater(state, message, 1);
+ * // Schedules retry in 2 seconds (MESSAGE_RETRY_DELAY_MS * 2^0)
+ * ```
  */
 export async function retryMessageLater(
   state: AccountRuntimeState,

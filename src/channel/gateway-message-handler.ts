@@ -23,6 +23,15 @@ import { logger } from '../utils/logger.js';
  * @param agentId - The AI agent identifier
  * @param rt - ZTM runtime instance
  * @returns Dispatcher options object with deliver and onError callbacks
+ *
+ * @example
+ * ```typescript
+ * const msg = { sender: 'alice', message: 'Hello', time: Date.now() };
+ * const options = createReplyDispatcherOptions(state, msg, 'account-123', 'agent-1', rt);
+ *
+ * // Deliver a reply
+ * await options.deliver({ text: 'Hi there!' });
+ * ```
  */
 export function createReplyDispatcherOptions(
   state: AccountRuntimeState,
@@ -58,6 +67,18 @@ export function createReplyDispatcherOptions(
  * @param msg - The incoming message to dispatch
  * @param rt - ZTM runtime instance
  * @returns Promise that resolves when dispatch completes
+ *
+ * @example
+ * ```typescript
+ * const msg: ZTMChatMessage = {
+ *   sender: 'alice',
+ *   message: 'Hello bot!',
+ *   time: Date.now()
+ * };
+ *
+ * await dispatchInboundMessage(state, 'account-123', config, msg, rt);
+ * // Dispatches message to AI agent and handles response
+ * ```
  */
 export async function dispatchInboundMessage(
   state: AccountRuntimeState,

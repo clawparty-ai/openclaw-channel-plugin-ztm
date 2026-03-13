@@ -22,6 +22,16 @@ import { containsPathTraversal } from '../utils/validation.js';
  * @param agentUrl - The URL of the ZTM agent to validate
  * @param _ctx - Optional context with logger for debugging
  * @returns Promise that resolves if connectivity is valid, throws if unreachable
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await validateAgentConnectivity('http://localhost:7777');
+ *   console.log('Agent is reachable');
+ * } catch (error) {
+ *   console.error('Agent not reachable:', error.message);
+ * }
+ * ```
  */
 export async function validateAgentConnectivity(
   agentUrl: string,
@@ -45,6 +55,11 @@ export async function validateAgentConnectivity(
 
 /**
  * Load or request permit data based on configuration
+ *
+ * @example
+ * ```typescript
+ * const permit = await loadOrRequestPermit(config, '/path/to/permit.json', { log: console });
+ * ```
  */
 export async function loadOrRequestPermit(
   config: ZTMChatConfig,
@@ -115,6 +130,11 @@ export async function loadOrRequestPermit(
  *
  * @param config - ZTM chat configuration including agentUrl
  * @param ctx - Context with logger
+ *
+ * @example
+ * ```typescript
+ * await configureAgent({ agentUrl: 'http://localhost:7777', meshName: 'test' }, { log: console });
+ * ```
  */
 export async function configureAgent(
   config: ZTMChatConfig,
@@ -138,6 +158,11 @@ export async function configureAgent(
 
 /**
  * Join mesh if not already connected
+ *
+ * @example
+ * ```typescript
+ * await joinMeshIfNeeded(config, 'endpoint', permitData, { log: console });
+ * ```
  */
 export async function joinMeshIfNeeded(
   config: ZTMChatConfig,
@@ -177,6 +202,12 @@ export async function joinMeshIfNeeded(
 
 /**
  * Probe an account to check connectivity
+ *
+ * @example
+ * ```typescript
+ * const result = await probeAccount({ config: { agentUrl: 'http://localhost:7777', meshName: 'test' } });
+ * console.log(result.ok); // true or false
+ * ```
  */
 export async function probeAccount({
   config,
@@ -223,6 +254,12 @@ export async function probeAccount({
  *
  * @param accountId - The account identifier
  * @returns The resolved path to the permit file
+ *
+ * @example
+ * ```typescript
+ * const path = resolveAccountPermitPath('default');
+ * // Returns: '/path/to/state/default/permit.json'
+ * ```
  */
 export function resolveAccountPermitPath(accountId: string): string {
   return resolvePermitPath(accountId);

@@ -24,6 +24,12 @@ import type { ZTMChatMessage } from '../types/messaging.js';
  * @param state - Runtime state to populate with callbacks
  * @param ctx - Logging and config context
  * @returns Object containing the message callback
+ *
+ * @example
+ * ```typescript
+ * const { messageCallback } = await setupAccountCallbacks('default', config, state, ctx);
+ * // Sets up message callbacks and starts message watcher
+ * ```
  */
 export async function setupAccountCallbacks(
   accountId: string,

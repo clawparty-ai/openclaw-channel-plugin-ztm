@@ -46,6 +46,12 @@ export interface DirectoryContext {
  * @param cfg - OpenClaw configuration
  * @param accountId - Account identifier
  * @returns DirectoryUser entry for the current bot
+ *
+ * @example
+ * ```typescript
+ * const self = await directorySelf({ cfg, accountId: 'default' });
+ * // Returns: { kind: 'user', id: 'mybot', name: 'mybot', raw: { username: 'mybot', meshName: 'test' } }
+ * ```
  */
 export async function directorySelf({
   cfg,
@@ -75,6 +81,12 @@ export async function directorySelf({
  * @param cfg - OpenClaw configuration
  * @param accountId - Account identifier
  * @returns Array of directory user entries
+ *
+ * @example
+ * ```typescript
+ * const peers = await directoryListPeers({ cfg, accountId: 'default' });
+ * // Returns: [{ kind: 'user', id: 'alice', name: 'alice', raw: { username: 'alice' } }, ...]
+ * ```
  */
 export async function directoryListPeers({
   cfg,

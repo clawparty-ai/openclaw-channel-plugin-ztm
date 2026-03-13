@@ -538,6 +538,13 @@ export class MessageStateStoreImpl implements MessageStateStore {
  * @param fsImpl - Optional file system implementation for testing
  * @param loggerImpl - Optional logger implementation for testing
  * @returns New MessageStateStore instance
+ *
+ * @example
+ * ```typescript
+ * const store = createMessageStateStore('./state/account-123.json');
+ * store.setWatermark(1234567890);
+ * const watermark = store.getWatermark();
+ * ```
  */
 export function createMessageStateStore(
   statePath: string,
@@ -556,6 +563,12 @@ const accountStores = new Map<string, MessageStateStore>();
  *
  * @param accountId - The account identifier
  * @returns Isolated MessageStateStore for the account
+ *
+ * @example
+ * ```typescript
+ * const store = getAccountMessageStateStore('account-123');
+ * store.setWatermark(Date.now());
+ * ```
  */
 export function getAccountMessageStateStore(accountId: string): MessageStateStore {
   let store = accountStores.get(accountId);
@@ -568,7 +581,16 @@ export function getAccountMessageStateStore(accountId: string): MessageStateStor
   return store;
 }
 
-// Export dispose function for plugin cleanup
+/**
+ * Dispose all MessageStateStore instances.
+ * Called during plugin cleanup to release resources.
+ *
+ * @example
+ * ```typescript
+ * // Clean up all account stores on plugin shutdown
+ * disposeMessageStateStore();
+ * ```
+ */
 export function disposeMessageStateStore(): void {
   // Dispose all account-specific stores
   for (const store of accountStores.values()) {

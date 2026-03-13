@@ -35,6 +35,12 @@ export interface ResolvedZTMChatAccount {
  *
  * @param cfg - OpenClaw configuration object
  * @returns The channel configuration object, or null if not configured
+ *
+ * @example
+ * ```typescript
+ * const channelConfig = getEffectiveChannelConfig(cfg);
+ * // Returns: { accounts: {...} } or null
+ * ```
  */
 export function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, unknown> | null {
   const inlineConfig = cfg?.channels?.[ZTM_CHANNEL_ID] as Record<string, unknown>;
@@ -53,6 +59,12 @@ export function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, 
  *
  * @param cfg - OpenClaw configuration object
  * @returns Array of account IDs
+ *
+ * @example
+ * ```typescript
+ * const accountIds = listZTMChatAccountIds(cfg);
+ * // Returns: ['default', 'account-1']
+ * ```
  */
 export function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
   const channelConfig = getEffectiveChannelConfig(cfg);
@@ -222,6 +234,12 @@ export function resolveZTMChatAccount({
  * Build channel config schema for OpenClaw plugin
  *
  * @returns ChannelConfigSchema with JSON schema and UI hints
+ *
+ * @example
+ * ```typescript
+ * const schemaWithHints = buildChannelConfigSchemaWithHints();
+ * // Returns: ChannelConfigSchema with UI hints for form generation
+ * ```
  */
 export function buildChannelConfigSchemaWithHints() {
   // Build schema using OpenClaw's helper

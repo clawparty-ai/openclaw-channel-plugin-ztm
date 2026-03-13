@@ -61,6 +61,13 @@ import { asChatReader, asChatSender, asDiscovery } from '../runtime/type-convers
  * Returns a factory function that creates a logger instance
  *
  * @returns Factory function that returns an ILogger instance
+ *
+ * @example
+ * ```typescript
+ * const loggerFactory = createLogger('my-service');
+ * const logger = loggerFactory();
+ * logger.info('Service initialized');
+ * ```
  */
 export function createLogger(_serviceName: string): () => ILogger {
   // Return logger instance with type cast for DI compatibility

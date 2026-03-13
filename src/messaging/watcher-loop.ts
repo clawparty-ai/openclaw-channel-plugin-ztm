@@ -42,6 +42,12 @@ export interface WatchContext {
 /**
  * Controller for managing the watch loop lifecycle
  * Breaks down complex watch logic into smaller, testable methods
+ *
+ * @example
+ * ```typescript
+ * const controller = new WatchLoopController(context, semaphore);
+ * await controller.runIteration();
+ * ```
  */
 export class WatchLoopController {
   private pendingIteration = false;
@@ -308,6 +314,12 @@ export class WatchLoopController {
 
 /**
  * Start the watch loop that monitors for changes
+ *
+ * @example
+ * ```typescript
+ * startWatchLoop(state, runtime, context, abortSignal);
+ * // Watch loop starts monitoring for messages
+ * ```
  */
 export function startWatchLoop(
   state: AccountRuntimeState,
@@ -322,7 +334,18 @@ export function startWatchLoop(
 /**
  * Process all changed items and handle state updates
  *
+ * @param ctx - Watch context with state and semaphore
+ * @param changedItems - Array of changed items from watch
+ * @param messagesReceivedInCycle - Whether messages were received in this cycle
+ * @param scheduleFullSync - Callback to schedule full sync
+ * @param messagingContext - Messaging context
  * @returns true if any messages were actually processed
+ *
+ * @example
+ * ```typescript
+ * const processed = await processWatchChanges(ctx, items, false, scheduleFullSync, messagingContext);
+ * // Returns: true if any messages were processed
+ * ```
  */
 export async function processWatchChanges(
   ctx: WatchContext,
@@ -419,6 +442,19 @@ export async function processWatchChanges(
 
 /**
  * Process all messages for a specific peer
+ *
+ * @param state - Account runtime state
+ * @param rt - Plugin runtime (unused but kept for signature compatibility)
+ * @param peer - Peer identifier
+ * @param storeAllowFrom - Allowed senders list
+ * @param watermarkStore - Optional message state store
+ * @returns void
+ *
+ * @example
+ * ```typescript
+ * await processChangedPeer(state, rt, 'alice', []);
+ * // Processes all messages from peer 'alice'
+ * ```
  */
 export async function processChangedPeer(
   state: AccountRuntimeState,
@@ -459,6 +495,21 @@ export async function processChangedPeer(
 
 /**
  * Process all messages for a specific group
+ *
+ * @param state - Account runtime state
+ * @param rt - Plugin runtime (unused but kept for signature compatibility)
+ * @param creator - Group creator identifier
+ * @param group - Group identifier
+ * @param name - Optional group name
+ * @param storeAllowFrom - Allowed senders list
+ * @param watermarkStore - Optional message state store
+ * @returns void
+ *
+ * @example
+ * ```typescript
+ * await processChangedGroup(state, rt, 'admin', 'team-chat', 'Team Chat', []);
+ * // Processes all messages from group 'team-chat'
+ * ```
  */
 export async function processChangedGroup(
   state: AccountRuntimeState,

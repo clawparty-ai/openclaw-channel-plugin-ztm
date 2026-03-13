@@ -34,12 +34,26 @@ export interface Result<T, E = Error> {
 // Factory Functions - Create Result instances with clear intent
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-/** Create a successful Result with a value */
+/** Create a successful Result with a value
+ *
+ * @example
+ * ```typescript
+ * const result = success('hello');
+ * // Returns: { ok: true, value: 'hello' }
+ * ```
+ */
 export function success<T, E extends Error = never>(value: T): Result<T, E> {
   return { ok: true, value } as Result<T, E>;
 }
 
-/** Create a failed Result with an error */
+/** Create a failed Result with an error
+ *
+ * @example
+ * ```typescript
+ * const result = failure(new Error('something went wrong'));
+ * // Returns: { ok: false, error: Error }
+ * ```
+ */
 export function failure<T = never, E extends Error = Error>(error: E): Result<T, E> {
   return { ok: false, error } as Result<T, E>;
 }
@@ -48,14 +62,32 @@ export function failure<T = never, E extends Error = Error>(error: E): Result<T,
 // Type Guards - Type-safe way to check Result state at runtime
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-/** Type guard: returns true if the Result is successful */
+/** Type guard: returns true if the Result is successful
+ *
+ * @example
+ * ```typescript
+ * const result = success('hello');
+ * if (isSuccess(result)) {
+ *   console.log(result.value); // TypeScript knows value exists
+ * }
+ * ```
+ */
 export function isSuccess<T, E extends Error>(
   result: Result<T, E>
 ): result is { ok: true; value: T } {
   return result.ok === true;
 }
 
-/** Type guard: returns true if the Result is a failure */
+/** Type guard: returns true if the Result is a failure
+ *
+ * @example
+ * ```typescript
+ * const result = failure(new Error('failed'));
+ * if (isFailure(result)) {
+ *   console.log(result.error.message); // TypeScript knows error exists
+ * }
+ * ```
+ */
 export function isFailure<T, E extends Error>(
   result: Result<T, E>
 ): result is { ok: false; error: E } {
@@ -69,6 +101,15 @@ export function isFailure<T, E extends Error>(
 /**
  * Unwrap the Result, returning the value or throwing if failed.
  * Use this when you want to propagate errors as exceptions.
+ *
+ * @example
+ * ```typescript
+ * const result = success('hello');
+ * const value = unwrap(result); // Returns: 'hello'
+ *
+ * const failResult = failure(new Error('error'));
+ * unwrap(failResult); // Throws: Error
+ * ```
  */
 export function unwrap<T, E>(result: Result<T, E>): T {
   if (result.ok && result.value !== undefined) {
@@ -79,6 +120,15 @@ export function unwrap<T, E>(result: Result<T, E>): T {
 
 /**
  * Unwrap the Result, returning the value or a default.
+ *
+ * @example
+ * ```typescript
+ * const result = success('hello');
+ * unwrapOr(result, 'default'); // Returns: 'hello'
+ *
+ * const failResult = failure(new Error('error'));
+ * unwrapOr(failResult, 'default'); // Returns: 'default'
+ * ```
  */
 export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
   if (result.ok && result.value !== undefined) {
@@ -89,6 +139,15 @@ export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
 
 /**
  * Unwrap the Result, returning the value or undefined.
+ *
+ * @example
+ * ```typescript
+ * const result = success('hello');
+ * maybe(result); // Returns: 'hello'
+ *
+ * const failResult = failure(new Error('error'));
+ * maybe(failResult); // Returns: undefined
+ * ```
  */
 export function maybe<T, E>(result: Result<T, E>): T | undefined {
   return result.value;
@@ -101,6 +160,13 @@ export function maybe<T, E>(result: Result<T, E>): T | undefined {
 /**
  * Map the success value to a new type.
  * If the Result is a failure, it propagates the error unchanged.
+ *
+ * @example
+ * ```typescript
+ * const result = success('hello');
+ * const mapped = map(result, (s) => s.toUpperCase());
+ * // Returns: { ok: true, value: 'HELLO' }
+ * ```
  */
 export function map<T, U, E extends Error>(
   result: Result<T, E>,
@@ -115,6 +181,13 @@ export function map<T, U, E extends Error>(
 /**
  * Map the error to a new error type.
  * If the Result is successful, it returns unchanged.
+ *
+ * @example
+ * ```typescript
+ * const result = failure(new Error('original'));
+ * const mapped = mapErr(result, (e) => new Error(`Wrapped: ${e.message}`));
+ * // Returns: { ok: false, error: Error('Wrapped: original') }
+ * ```
  */
 export function mapErr<T, E extends Error, F extends Error>(
   result: Result<T, E>,
@@ -129,6 +202,13 @@ export function mapErr<T, E extends Error, F extends Error>(
 /**
  * FlatMap (bind): transform and flatten nested Results.
  * Use when the mapping function itself can fail.
+ *
+ * @example
+ * ```typescript
+ * const result = success(5);
+ * const flatMapped = flatMap(result, (n) => n > 0 ? success(n * 2) : failure(new Error('negative')));
+ * // Returns: { ok: true, value: 10 }
+ * ```
  */
 export function flatMap<T, U, E extends Error>(
   result: Result<T, E>,

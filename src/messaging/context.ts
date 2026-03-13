@@ -35,6 +35,15 @@ export interface MessagingContext {
  * @param allowFromRepo - AllowFrom repository instance
  * @param messageStateRepo - Message state repository instance
  * @returns Messaging context with all required dependencies
+ *
+ * @example
+ * ```typescript
+ * const allowFromRepo = createAllowFromRepository();
+ * const messageStateRepo = createMessageStateRepository();
+ *
+ * const context = createMessagingContext(allowFromRepo, messageStateRepo);
+ * // Returns: { allowFromRepo, messageStateRepo }
+ * ```
  */
 export function createMessagingContext(
   allowFromRepo: IAllowFromRepository,

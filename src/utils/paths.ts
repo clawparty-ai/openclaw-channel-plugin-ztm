@@ -75,6 +75,12 @@ function resolvePath(input: string): string {
 /**
  * Resolve the OpenClaw home directory
  * Priority: OPENCLAW_HOME > HOME > USERPROFILE > os.homedir()
+ *
+ * @example
+ * ```typescript
+ * const home = resolveOpenclawHome();
+ * / Returns: /home/user (on Unix) or C:\Users\user (on Windows)
+ * ```
  */
 export function resolveOpenclawHome(): string {
   // Check explicit OPENCLAW_HOME override
@@ -99,6 +105,12 @@ export function resolveOpenclawHome(): string {
 /**
  * Resolve the OpenClaw state directory
  * Priority: OPENCLAW_STATE_DIR > (OPENCLAW_HOME or ~)/.openclaw
+ *
+ * @example
+ * ```typescript
+ * const stateDir = resolveOpenclawStateDir();
+ * / Returns: /home/user/.openclaw
+ * ```
  */
 export function resolveOpenclawStateDir(): string {
   // Check explicit OPENCLAW_STATE_DIR override
@@ -116,6 +128,14 @@ export function resolveOpenclawStateDir(): string {
  *
  * This follows OpenClaw SDK conventions where plugin-specific data
  * is stored under the main state directory, with per-account subdirectories
+ *
+ * @param accountId - Account identifier
+ *
+ * @example
+ * ```typescript
+ * const ztmDir = resolveZTMStateDir('account-123');
+ * / Returns: /home/user/.openclaw/ztm/account-123
+ * ```
  */
 export function resolveZTMStateDir(accountId: string): string {
   // Check explicit ZTM_STATE_PATH override
@@ -135,6 +155,14 @@ export function resolveZTMStateDir(accountId: string): string {
 /**
  * Resolve the ZTM state file path for a specific account
  * Uses per-account directory: {accountId}/state.json
+ *
+ * @param accountId - Account identifier
+ *
+ * @example
+ * ```typescript
+ * const statePath = resolveStatePath('account-123');
+ * / Returns: /home/user/.openclaw/ztm/account-123/state.json
+ * ```
  */
 export function resolveStatePath(accountId: string): string {
   return path.join(resolveZTMStateDir(accountId), 'state.json');
@@ -143,6 +171,14 @@ export function resolveStatePath(accountId: string): string {
 /**
  * Resolve the ZTM permit file path for a specific account
  * Uses per-account directory: {accountId}/permit.json
+ *
+ * @param accountId - Account identifier
+ *
+ * @example
+ * ```typescript
+ * const permitPath = resolvePermitPath('account-123');
+ * / Returns: /home/user/.openclaw/ztm/account-123/permit.json
+ * ```
  */
 export function resolvePermitPath(accountId: string): string {
   return path.join(resolveZTMStateDir(accountId), 'permit.json');
@@ -187,6 +223,15 @@ export interface ResolveStateDirOptions {
 /**
  * Resolve ZTM state directory with overrides (for testing)
  * @internal - exported for testing only
+ *
+ * @param accountId - Account identifier
+ * @param overrides - Optional environment overrides for testing
+ *
+ * @example
+ * ```typescript
+ * const dir = resolveZTMStateDirWithOverrides('account-123', { HOME: '/custom/home' });
+ * / Returns: /custom/home/.openclaw/ztm/account-123
+ * ```
  */
 export function resolveZTMStateDirWithOverrides(
   accountId: string,
@@ -248,6 +293,12 @@ export function resolveZTMStateDirWithOverrides(
 /**
  * Resolve state file path with overrides (for testing)
  * @internal - exported for testing only
+ *
+ * @example
+ * ```typescript
+ * const path = resolveStatePathWithOverrides('account-123', { HOME: '/custom/home' });
+ * // Returns: /custom/home/.openclaw/ztm/account-123/state.json
+ * ```
  */
 export function resolveStatePathWithOverrides(
   accountId: string,
@@ -259,6 +310,12 @@ export function resolveStatePathWithOverrides(
 /**
  * Resolve permit file path with overrides (for testing)
  * @internal - exported for testing only
+ *
+ * @example
+ * ```typescript
+ * const path = resolvePermitPathWithOverrides('account-123', { HOME: '/custom/home' });
+ * // Returns: /custom/home/.openclaw/ztm/account-123/permit.json
+ * ```
  */
 export function resolvePermitPathWithOverrides(
   accountId: string,

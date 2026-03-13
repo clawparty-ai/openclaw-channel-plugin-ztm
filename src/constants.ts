@@ -108,8 +108,15 @@ export const CERT_EXPIRY_WARNING_DAYS = 30;
 
 /**
  * Format a ZTM Chat address (e.g., "ztm-chat:user@example.com")
+ *
  * @param identifier - The username or identifier to format
  * @returns Formatted ZTM Chat address
+ *
+ * @example
+ * ```typescript
+ * const address = formatZTMAddress('alice');
+ * // Returns: 'ztm-chat:alice'
+ * ```
  */
 export function formatZTMAddress(identifier: string): string {
   return `${ZTM_CHANNEL_ID}:${identifier}`;
@@ -117,8 +124,15 @@ export function formatZTMAddress(identifier: string): string {
 
 /**
  * Parse a ZTM Chat address to extract the identifier
+ *
  * @param address - The formatted address (e.g., "ztm-chat:user@example.com")
  * @returns The extracted identifier, or the original string if not a valid ZTM address
+ *
+ * @example
+ * ```typescript
+ * const identifier = parseZTMAddress('ztm-chat:alice');
+ * // Returns: 'alice'
+ * ```
  */
 export function parseZTMAddress(address: string): string {
   return address.replace(new RegExp(`^${ZTM_CHANNEL_ID}:`), '');

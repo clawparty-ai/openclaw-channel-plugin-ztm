@@ -19,6 +19,15 @@ import { formatTimestampToLocalTz } from '../utils/format.js';
 
 /**
  * Build account snapshot for status display
+ *
+ * @param account - The resolved ZTM Chat account
+ * @returns Account snapshot with status information
+ *
+ * @example
+ * ```typescript
+ * const snapshot = buildAccountSnapshot({ account: resolvedAccount });
+ * // Returns: { accountId: 'default', name: 'mybot', enabled: true, configured: true, running: true, ... }
+ * ```
  */
 export function buildAccountSnapshot({ account }: { account: ResolvedZTMChatAccount }): {
   accountId: string;

@@ -746,6 +746,14 @@ export class ZTMChatWizard {
 /**
  * Create wizard and run it
  * @returns WizardResult if completed successfully, null if cancelled or failed
+ *
+ * @example
+ * ```typescript
+ * const result = await runWizard();
+ * if (result) {
+ *   console.log('Account created:', result.accountId);
+ * }
+ * ```
  */
 export async function runWizard(): Promise<WizardResult | null> {
   const wizard = new ZTMChatWizard();
@@ -767,6 +775,14 @@ export interface DiscoveredConfig {
 /**
  * Attempt to auto-discover ZTM configuration from openclaw.yaml via runtime API
  * @returns DiscoveredConfig if found, null otherwise
+ *
+ * @example
+ * ```typescript
+ * const config = await discoverConfig();
+ * if (config) {
+ *   console.log('Found config:', config.agentUrl, config.meshName);
+ * }
+ * ```
  */
 export async function discoverConfig(): Promise<DiscoveredConfig | null> {
   // Check environment variables first

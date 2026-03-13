@@ -19,6 +19,18 @@ import type { ZTMChat } from '../types/api.js';
  * @param storeAllowFrom - Allowed senders list for pairing mode
  * @param accountId - Account identifier
  * @returns True if message was processed, false otherwise
+ *
+ * @example
+ * ```typescript
+ * const chat = {
+ *   peer: 'alice',
+ *   latest: { time: Date.now(), message: 'Hello', sender: 'alice' }
+ * };
+ * const config = { username: 'mybot', meshName: 'test' };
+ *
+ * const processed = await processChatMessage(chat, config, [], 'account-123');
+ * // Returns: true if valid, false if invalid
+ * ```
  */
 export async function processChatMessage(
   chat: ZTMChat,

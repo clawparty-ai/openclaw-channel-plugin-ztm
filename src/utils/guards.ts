@@ -32,6 +32,13 @@ export function isDefined<T>(value: T | null | undefined): value is T {
  * Type guard to check if a value is null or undefined
  * @param value - Value to check
  * @returns true if value is null or undefined
+ *
+ * @example
+ * ```typescript
+ * if (isNullish(value)) {
+ *   console.log('Value is null or undefined');
+ * }
+ * ```
  */
 export function isNullish(value: unknown): value is null | undefined {
   return value === null || value === undefined;
@@ -137,6 +144,14 @@ export function coalesce<T>(...values: Array<T | null | undefined>): T | undefin
  * Check if array is not empty
  * @param arr - Array to check
  * @returns true if array exists and has length > 0
+ *
+ * @example
+ * ```typescript
+ * const items = getItems();
+ * if (isNonEmptyArray(items)) {
+ *   items.forEach(item => process(item)); // TypeScript knows items is non-empty
+ * }
+ * ```
  */
 export function isNonEmptyArray<T>(arr: T[] | null | undefined): arr is T[] {
   return isDefined(arr) && arr.length > 0;

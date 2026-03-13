@@ -19,11 +19,13 @@
  * @returns The error message as a string
  *
  * @example
+ * ```typescript
  * try {
  *   await riskyOperation();
  * } catch (err) {
  *   logger.error(`Operation failed: ${extractErrorMessage(err)}`);
  * }
+ * ```
  */
 export function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -37,6 +39,18 @@ export function extractErrorMessage(error: unknown): string {
  *
  * @param error - Any error value
  * @returns The stack trace if available, undefined otherwise
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await riskyOperation();
+ * } catch (err) {
+ *   const stack = extractErrorStack(err);
+ *   if (stack) {
+ *     logger.debug(`Stack trace: ${stack}`);
+ *   }
+ * }
+ * ```
  */
 export function extractErrorStack(error: unknown): string | undefined {
   if (error instanceof Error) {
@@ -54,11 +68,13 @@ export function extractErrorStack(error: unknown): string | undefined {
  * @returns New Error with cause chain
  *
  * @example
+ * ```typescript
  * try {
  *   await riskyOperation();
  * } catch (err) {
  *   throw wrapError('Failed to process request', err);
  * }
+ * ```
  */
 export function wrapError(message: string, cause: unknown): Error {
   const error = new Error(message);

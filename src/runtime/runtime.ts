@@ -23,6 +23,12 @@ export const resetDefaultProvider = runtimeStore.clearRuntime;
 /**
  * Set the ZTM runtime
  * @param next - The runtime to use
+ *
+ * @example
+ * ```typescript
+ * setZTMRuntime(runtime);
+ * // Runtime is now available via getZTMRuntime()
+ * ```
  */
 export function setZTMRuntime(next: PluginRuntime): void {
   runtimeStore.setRuntime(next);
@@ -50,6 +56,12 @@ export function setZTMRuntime(next: PluginRuntime): void {
  * Get the ZTM runtime
  * @returns The current runtime instance
  * @throws Error if runtime not initialized
+ *
+ * @example
+ * ```typescript
+ * const rt = getZTMRuntime();
+ * // Use runtime for API calls, channel operations, etc.
+ * ```
  */
 export function getZTMRuntime(): PluginRuntime {
   return runtimeStore.getRuntime();
@@ -58,6 +70,15 @@ export function getZTMRuntime(): PluginRuntime {
 /**
  * Check if runtime is initialized
  * @returns true if runtime has been set
+ *
+ * @example
+ * ```typescript
+ * if (isZTMRuntimeInitialized()) {
+ *   console.log('Runtime is ready');
+ * } else {
+ *   console.log('Runtime not initialized');
+ * }
+ * ```
  */
 export function isZTMRuntimeInitialized(): boolean {
   return runtimeStore.tryGetRuntime() !== null;

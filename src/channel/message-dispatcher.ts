@@ -15,6 +15,17 @@ import { ZTM_CHANNEL_ID, formatZTMAddress } from '../constants.js';
 /**
  * Create inbound context payload for AI agent dispatch.
  * Centralized context construction to avoid code duplication.
+ *
+ * @param params - Parameters including runtime, message, config, and accountId
+ * @returns Inbound context payload with routing information
+ *
+ * @example
+ * ```typescript
+ * const context = createInboundContext({
+ *   rt, msg, config, accountId, cfg
+ * });
+ * // Returns: { ctxPayload, matchedBy, agentId }
+ * ```
  */
 export function createInboundContext(params: {
   rt: ReturnType<typeof getZTMRuntime>;
@@ -76,6 +87,21 @@ export function createInboundContext(params: {
  * - Group messages: checkMessagePolicy in processGroupMessage
  *
  * This function only handles routing to the AI agent (Layer 4 responsibility).
+ *
+ * @param state - Account runtime state
+ * @param rt - ZTM runtime
+ * @param cfg - OpenClaw configuration
+ * @param config - ZTM Chat configuration
+ * @param accountId - Account identifier
+ * @param ctx - Log context
+ * @param msg - Chat message
+ * @returns void
+ *
+ * @example
+ * ```typescript
+ * await handleInboundMessage(state, rt, cfg, config, accountId, ctx, msg);
+ * // Dispatches message to AI agent for processing
+ * ```
  */
 export async function handleInboundMessage(
   state: AccountRuntimeState,
@@ -137,6 +163,20 @@ export async function handleInboundMessage(
 
 /**
  * Create message callback for inbound messages
+ *
+ * @param accountId - Account identifier
+ * @param config - ZTM Chat configuration
+ * @param rt - ZTM runtime
+ * @param cfg - OpenClaw configuration
+ * @param state - Account runtime state
+ * @param ctx - Log context
+ * @returns Message callback function
+ *
+ * @example
+ * ```typescript
+ * const callback = createMessageCallback('default', config, rt, cfg, state, ctx);
+ * callback(message); // Handles inbound message dispatch
+ * ```
  */
 export function createMessageCallback(
   accountId: string,

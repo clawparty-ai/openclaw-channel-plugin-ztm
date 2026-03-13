@@ -324,6 +324,12 @@ export class ZTMConfigError extends ZTMError {
 /**
  * Create a failed Result from an Error.
  * Useful for converting caught exceptions to Result types.
+ *
+ * @example
+ * ```typescript
+ * const result = toFailure(new Error('Something went wrong'));
+ * / result: failure with the error
+ * ```
  */
 export function toFailure<T, E extends Error>(error: E): Result<T, E> {
   return failure<T, E>(error);
@@ -331,6 +337,14 @@ export function toFailure<T, E extends Error>(error: E): Result<T, E> {
 
 /**
  * Safely execute a function that might throw, returning a Result.
+ *
+ * @example
+ * ```typescript
+ * const result = tryCatch(() => JSON.parse('{"valid": true}'));
+ * if (isSuccess(result)) {
+ *   console.log(result.value); // { valid: true }
+ * }
+ * ```
  */
 export function tryCatch<T, E extends Error = Error>(
   fn: () => T,
@@ -349,6 +363,14 @@ export function tryCatch<T, E extends Error = Error>(
 
 /**
  * Safely execute an async function that might throw, returning an AsyncResult.
+ *
+ * @example
+ * ```typescript
+ * const result = await tryCatchAsync(() => fetch('/api/data').then(r => r.json()));
+ * if (isSuccess(result)) {
+ *   console.log(result.value);
+ * }
+ * ```
  */
 export async function tryCatchAsync<T, E extends Error = Error>(
   fn: () => Promise<T>,

@@ -46,6 +46,19 @@ export interface ChannelStatusIssue {
  *
  * @param snapshot - Account snapshot to convert
  * @returns Channel summary object with all fields
+ *
+ * @example
+ * ```typescript
+ * const snapshot = {
+ *   accountId: 'account-1',
+ *   configured: true,
+ *   running: true,
+ *   meshName: 'my-mesh',
+ *   certDaysUntilExpiry: 30
+ * };
+ * const summary = buildChannelSummary({ snapshot });
+ * console.log(summary.running); // true
+ * ```
  */
 export function buildChannelSummary({ snapshot }: BuildChannelSummaryContext) {
   return {
