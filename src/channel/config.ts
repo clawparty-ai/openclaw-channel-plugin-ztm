@@ -10,6 +10,7 @@ import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../c
 import { buildChannelConfigSchema } from 'openclaw/plugin-sdk';
 import { ztmChatConfigBaseSchema } from '../config/schema.js';
 import { logger } from '../utils/logger.js';
+import { ZTM_CHANNEL_ID } from '../constants.js';
 
 // ============================================================================
 // Types
@@ -36,7 +37,7 @@ export interface ResolvedZTMChatAccount {
  * @returns The channel configuration object, or null if not configured
  */
 export function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, unknown> | null {
-  const inlineConfig = cfg?.channels?.['ztm-chat'] as Record<string, unknown>;
+  const inlineConfig = cfg?.channels?.[ZTM_CHANNEL_ID] as Record<string, unknown>;
   if (inlineConfig && typeof inlineConfig === 'object' && Object.keys(inlineConfig).length > 0) {
     return inlineConfig;
   }

@@ -28,6 +28,8 @@
  * const log = getLogger(); // Uses runtime logger if available
  */
 
+import { ZTM_CHANNEL_ID } from '../constants.js';
+
 // ZTM Chat Plugin Logger
 
 /**
@@ -68,7 +70,7 @@ interface LogEntry {
 class ZTMChatLogger {
   private static instance: ZTMChatLogger;
   private logLevel: LogLevel = 'info';
-  private channel = 'ztm-chat';
+  private channel = ZTM_CHANNEL_ID;
 
   private constructor() {
     // Read log level from environment

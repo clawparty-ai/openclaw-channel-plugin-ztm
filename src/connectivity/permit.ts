@@ -15,6 +15,7 @@ import { getZTMRuntime } from '../runtime/index.js';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import { normalizeUsername, containsPathTraversal } from '../utils/validation.js';
+import { ZTM_CHANNEL_ID } from '../constants.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getOrDefault } from '../utils/guards.js';
 import type { PermitData } from '../types/connectivity.js';
@@ -241,7 +242,7 @@ export async function handlePairingRequest(
   try {
     const rt = getZTMRuntime();
     const { code, created } = await rt.channel.pairing.upsertPairingRequest({
-      channel: 'ztm-chat',
+      channel: ZTM_CHANNEL_ID,
       accountId: state.accountId,
       id: normalizedPeer,
       meta: { name: peer },
@@ -263,7 +264,7 @@ export async function handlePairingRequest(
     try {
       const rt = getZTMRuntime();
       messageText = rt.channel.pairing.buildPairingReply({
-        channel: 'ztm-chat',
+        channel: ZTM_CHANNEL_ID,
         idLine: `Your ZTM Chat username: ${peer}`,
         code: pairingCode,
       });

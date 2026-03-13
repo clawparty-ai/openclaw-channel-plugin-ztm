@@ -40,6 +40,7 @@ import {
   MESH_CONNECT_MAX_RETRIES,
   RETRY_DELAY_MS,
   CALLBACK_SEMAPHORE_PERMITS,
+  ZTM_CHANNEL_ID,
 } from '../constants.js';
 
 // Dependencies interface for AccountStateManager
@@ -206,7 +207,10 @@ export class AccountStateManager {
     // If no state, fetch directly without caching
     if (!state) {
       try {
-        return await runtime.channel.pairing.readAllowFromStore({ channel: 'ztm-chat', accountId });
+        return await runtime.channel.pairing.readAllowFromStore({
+          channel: ZTM_CHANNEL_ID,
+          accountId,
+        });
       } catch (err) {
         this.deps.logger.error(
           `[${accountId}] readAllowFromStore failed: ${err instanceof Error ? err.message : String(err)}`
@@ -238,7 +242,7 @@ export class AccountStateManager {
     const fetchPromise = (async (): Promise<string[] | null> => {
       try {
         const freshAllowFrom = await runtime.channel.pairing.readAllowFromStore({
-          channel: 'ztm-chat',
+          channel: ZTM_CHANNEL_ID,
           accountId,
         });
         state.allowFromCache = {

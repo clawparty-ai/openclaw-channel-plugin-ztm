@@ -26,7 +26,7 @@ import { probeAccount as probeAccountConnectivity } from './connectivity-manager
 import type { StepContext } from './gateway-pipeline.types.js';
 import { dispatchInboundMessage } from './gateway-message-handler.js';
 import { retryMessageLater } from './gateway-message-retry.js';
-import { CERT_EXPIRY_WARNING_DAYS } from '../constants.js';
+import { CERT_EXPIRY_WARNING_DAYS, ZTM_CHANNEL_ID, parseZTMAddress } from '../constants.js';
 
 // ============================================================================
 // Local Types
@@ -77,7 +77,7 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   const accountId = snapshot?.accountId;
 
   // Extract repeated values into local variables
-  const channel = 'ztm-chat';
+  const channel = ZTM_CHANNEL_ID;
   const effectiveAccountId = accountId || 'default';
 
   const issues: ChannelStatusIssue[] = [];
@@ -240,7 +240,7 @@ export async function sendTextGateway({
   messageId: string;
   error?: string;
 }> {
-  const channel = 'ztm-chat';
+  const channel = ZTM_CHANNEL_ID;
   const accountKey = accountId ?? 'default';
   const accountStates = getAllAccountStates();
   const state = accountStates.get(accountKey);
@@ -254,7 +254,7 @@ export async function sendTextGateway({
     };
   }
 
-  const peer = to.replace(/^ztm-chat:/, '');
+  const peer = parseZTMAddress(to);
   const result = await sendZTMMessage(state, peer, text);
 
   return {

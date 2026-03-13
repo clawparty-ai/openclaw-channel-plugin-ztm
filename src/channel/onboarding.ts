@@ -13,6 +13,7 @@ import type { WizardPrompts } from '../onboarding/onboarding.js';
 import { validateUsername } from '../utils/validation.js';
 import type { ZTMChatConfig } from '../config/schema.js';
 import { getOrCreateAccountState } from '../runtime/state.js';
+import { ZTM_CHANNEL_ID } from '../constants.js';
 import { container, DEPENDENCIES, type IApiClientFactory, type ILogger } from '../di/index.js';
 
 /**
@@ -93,7 +94,7 @@ function getZTMChatAccount(
   const channels = cfg.channels as
     | Record<string, { accounts?: Record<string, ZTMChatConfig> }>
     | undefined;
-  const ztmChat = channels?.['ztm-chat'];
+  const ztmChat = channels?.[ZTM_CHANNEL_ID];
 
   if (!ztmChat) return null;
 
@@ -170,7 +171,7 @@ function createNoopLogger(): ILogger {
  * @see {@link https://openclaw.dev/docs/adapters | Adapter Documentation}
  */
 export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
-  channel: 'ztm-chat',
+  channel: ZTM_CHANNEL_ID,
 
   /**
    * Get onboarding status for ZTM Chat channel
@@ -191,7 +192,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
     }
 
     return {
-      channel: 'ztm-chat',
+      channel: ZTM_CHANNEL_ID,
       configured,
       statusLines,
       selectionHint: 'ZTM Chat (P2P)',
@@ -299,19 +300,19 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
     const otherBindings = existingBindings.filter((b: unknown) => {
       const binding = b as Record<string, unknown> | undefined;
       const match = binding?.match as Record<string, unknown> | undefined;
-      return match?.channel !== 'ztm-chat';
+      return match?.channel !== ZTM_CHANNEL_ID;
     });
     const ztmChatBindings = existingBindings.filter((b: unknown) => {
       const binding = b as Record<string, unknown> | undefined;
       const match = binding?.match as Record<string, unknown> | undefined;
-      return match?.channel === 'ztm-chat';
+      return match?.channel === ZTM_CHANNEL_ID;
     });
 
     // Create new binding (with accountId)
     const newBinding = {
       agentId: 'main', // Default agent
       match: {
-        channel: 'ztm-chat',
+        channel: ZTM_CHANNEL_ID,
         accountId: accountId, // Explicitly bind to account
       },
     };
@@ -330,7 +331,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       ...cfg,
       channels: {
         ...cfg.channels,
-        'ztm-chat': {
+        [ZTM_CHANNEL_ID]: {
           enabled: true,
           accounts: {
             [accountId]: wizardResult.config as ZTMChatConfig,
@@ -340,7 +341,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       bindings: updatedBindings as unknown as Array<{
         agentId: string;
         match: { channel: string; accountId: string };
-      }>
+      }>,
     };
 
     return { cfg: newCfg, accountId };
@@ -351,12 +352,12 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
    */
   dmPolicy: {
     label: 'ZTM Chat',
-    channel: 'ztm-chat',
+    channel: ZTM_CHANNEL_ID,
     policyKey: 'channels.ztm-chat.dmPolicy',
     allowFromKey: 'channels.ztm-chat.allowFrom',
     getCurrent: (cfg: OpenClawConfig): DmPolicy => {
       const channels = cfg.channels as Record<string, { dmPolicy?: DmPolicy }> | undefined;
-      return channels?.['ztm-chat']?.dmPolicy ?? 'pairing';
+      return channels?.[ZTM_CHANNEL_ID]?.dmPolicy ?? 'pairing';
     },
     setPolicy: (cfg: OpenClawConfig, policy: DmPolicy): OpenClawConfig => {
       const newCfg = { ...cfg };
@@ -365,10 +366,10 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       }
       const channels = newCfg.channels as Record<string, unknown>;
 
-      if (!channels['ztm-chat']) {
-        channels['ztm-chat'] = {};
+      if (!channels[ZTM_CHANNEL_ID]) {
+        channels[ZTM_CHANNEL_ID] = {};
       }
-      const ztmChat = channels['ztm-chat'] as Record<string, unknown>;
+      const ztmChat = channels[ZTM_CHANNEL_ID] as Record<string, unknown>;
 
       ztmChat.dmPolicy = policy;
 
@@ -385,7 +386,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
       return newCfg;
     }
     const channels = newCfg.channels as Record<string, unknown>;
-    delete channels['ztm-chat'];
+    delete channels[ZTM_CHANNEL_ID];
     return newCfg;
   },
 

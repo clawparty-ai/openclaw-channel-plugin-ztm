@@ -10,6 +10,7 @@ import type { AccountRuntimeState } from '../runtime/state.js';
 import { sendZTMMessage } from '../messaging/outbound.js';
 import { getZTMRuntime } from '../runtime/index.js';
 import { extractErrorMessage } from '../utils/error.js';
+import { ZTM_CHANNEL_ID, formatZTMAddress } from '../constants.js';
 
 /**
  * Create inbound context payload for AI agent dispatch.
@@ -32,7 +33,7 @@ export function createInboundContext(params: {
     : msg.groupCreator;
 
   const route = rt.channel.routing.resolveAgentRoute({
-    channel: 'ztm-chat',
+    channel: ZTM_CHANNEL_ID,
     accountId,
     peer: isGroup
       ? { kind: 'group' as const, id: groupLabel ?? msg.sender }
@@ -45,20 +46,20 @@ export function createInboundContext(params: {
       Body: msg.content,
       RawBody: msg.content,
       CommandBody: msg.content,
-      From: `ztm-chat:${msg.sender}`,
-      To: `ztm-chat:${config.username}`,
+      From: formatZTMAddress(msg.sender),
+      To: formatZTMAddress(config.username),
       SessionKey: route.sessionKey,
       AccountId: route.accountId,
       ChatType: isGroup ? ('group' as const) : ('direct' as const),
       ConversationLabel: isGroup ? (groupLabel ?? msg.sender) : msg.sender,
       SenderName: msg.sender,
       SenderId: msg.sender,
-      Provider: 'ztm-chat',
-      Surface: 'ztm-chat',
+      Provider: ZTM_CHANNEL_ID,
+      Surface: ZTM_CHANNEL_ID,
       MessageSid: msg.id,
       Timestamp: msg.timestamp,
-      OriginatingChannel: 'ztm-chat',
-      OriginatingTo: `ztm-chat:${msg.sender}`,
+      OriginatingChannel: ZTM_CHANNEL_ID,
+      OriginatingTo: formatZTMAddress(msg.sender),
     }),
     matchedBy: route.matchedBy,
     agentId: route.agentId,

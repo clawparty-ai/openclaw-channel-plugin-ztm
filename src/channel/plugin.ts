@@ -30,7 +30,7 @@ import {
 } from '../di/index.js';
 import { createMessagingContext } from '../messaging/context.js';
 import type { ResolvedZTMChatAccount } from './config.js';
-import { PROBE_TIMEOUT_MS } from '../constants.js';
+import { PROBE_TIMEOUT_MS, ZTM_CHANNEL_ID } from '../constants.js';
 import { getOrDefault, isNonEmptyArray } from '../utils/guards.js';
 import { getZTMChatConfig } from '../utils/ztm-config.js';
 
@@ -52,7 +52,7 @@ interface CollectWarningsContext {
 // ============================================================================
 
 const meta = {
-  id: 'ztm-chat',
+  id: ZTM_CHANNEL_ID,
   label: 'ZTM Chat',
   selectionLabel: 'ZTM Chat (P2P)',
   docsPath: '/channels/ztm-chat',
@@ -67,7 +67,7 @@ const meta = {
 // DEPENDENCY INJECTION
 // ============================================================================
 // Initialize services on module load
-container.register(DEPENDENCIES.LOGGER, createLogger('ztm-chat'));
+container.register(DEPENDENCIES.LOGGER, createLogger(ZTM_CHANNEL_ID));
 container.register(DEPENDENCIES.CONFIG, createConfigService());
 container.register(DEPENDENCIES.API_CLIENT_READER, createApiReaderService());
 container.register(DEPENDENCIES.API_CLIENT_SENDER, createApiSenderService());
@@ -125,7 +125,7 @@ const resolveDmPolicyImpl = ({ cfg, accountId, account }: DmPolicyContext) => {
 
   return buildAccountScopedDmSecurityPolicy({
     cfg: cfg ?? {},
-    channelKey: 'ztm-chat',
+    channelKey: ZTM_CHANNEL_ID,
     accountId: accountId ?? undefined,
     fallbackAccountId: account.accountId ?? 'default',
     policy: config.dmPolicy ?? null,
@@ -192,7 +192,7 @@ const collectWarningsImpl = async ({
 // ============================================================================
 
 const ztmConfigBase = createScopedChannelConfigBase({
-  sectionKey: 'ztm-chat',
+  sectionKey: ZTM_CHANNEL_ID,
   listAccountIds: cfg => listZTMChatAccountIds(cfg ?? undefined),
   resolveAccount: (cfg, accountId) =>
     resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
@@ -221,7 +221,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // ---------------------------------------------------------------------------
   // Meta Section - Plugin metadata and branding
   // ---------------------------------------------------------------------------
-  id: 'ztm-chat',
+  id: ZTM_CHANNEL_ID,
   meta: {
     id: meta.id,
     label: meta.label,
@@ -288,14 +288,14 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     resolveAccountId: ({ accountId }) => accountId?.trim()?.toLowerCase() || 'default',
     applyAccountName: ({ cfg, accountId, name }) => {
       const accountKey = accountId || 'default';
-      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
+      const accounts = { ...cfg.channels?.[ZTM_CHANNEL_ID]?.accounts };
       const existing = accounts[accountKey] ?? {};
       return {
         ...cfg,
         channels: {
           ...cfg.channels,
-          ['ztm-chat']: {
-            ...cfg.channels?.['ztm-chat'],
+          [ZTM_CHANNEL_ID]: {
+            ...cfg.channels?.[ZTM_CHANNEL_ID],
             accounts: {
               ...accounts,
               [accountKey]: {
@@ -333,7 +333,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     applyAccountConfig: ({ cfg, accountId, input }) => {
       const accountKey = accountId || 'default';
       const channelInput = input as Record<string, unknown>;
-      const accounts = { ...cfg.channels?.['ztm-chat']?.accounts };
+      const accounts = { ...cfg.channels?.[ZTM_CHANNEL_ID]?.accounts };
       const existing = accounts[accountKey] ?? {};
 
       // Build config object from input
@@ -353,8 +353,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         ...cfg,
         channels: {
           ...cfg.channels,
-          ['ztm-chat']: {
-            ...cfg.channels?.['ztm-chat'],
+          [ZTM_CHANNEL_ID]: {
+            ...cfg.channels?.[ZTM_CHANNEL_ID],
             accounts: {
               ...accounts,
               [accountKey]: {
@@ -437,7 +437,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // ---------------------------------------------------------------------------
   groups: {
     resolveRequireMention: () => false,
-    resolveToolPolicy: () => ({ allow: ['ztm-chat'] }),
+    resolveToolPolicy: () => ({ allow: [ZTM_CHANNEL_ID] }),
   },
 
   // ---------------------------------------------------------------------------
@@ -474,7 +474,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     sendMedia: async ({ to: _to, text: _text, mediaUrl: _mediaUrl, accountId: _accountId }) => {
       // ZTM doesn't support media sending yet
       return {
-        channel: 'ztm-chat',
+        channel: ZTM_CHANNEL_ID,
         ok: false,
         messageId: '',
         error: 'Media sending not supported',

@@ -10,6 +10,7 @@ import type { DMPolicy, GroupPolicy } from '../config/schema.js';
 import { isValidUrl, containsPathTraversal } from '../utils/validation.js';
 import { isValidUsername, isValidMeshName } from '../config/validation.js';
 import { DEFAULT_MESH_NAME } from '../config/defaults.js';
+import { ZTM_CHANNEL_ID } from '../constants.js';
 import { extractErrorMessage } from '../utils/error.js';
 import { getZTMRuntime, isZTMRuntimeInitialized } from '../runtime/index.js';
 
@@ -636,7 +637,7 @@ export class ZTMChatWizard {
 
         // Build channel config in openclaw.yaml format
         const channelConfig =
-          (currentConfig.channels?.['ztm-chat'] as Record<string, unknown>) || {};
+          (currentConfig.channels?.[ZTM_CHANNEL_ID] as Record<string, unknown>) || {};
         const accounts = (channelConfig.accounts as Record<string, unknown>) || {};
 
         // 1. Save account config (username key only)
@@ -652,19 +653,19 @@ export class ZTMChatWizard {
         const otherBindings = existingBindings.filter((b: unknown) => {
           const binding = b as Record<string, unknown> | undefined;
           const match = binding?.match as Record<string, unknown> | undefined;
-          return match?.channel !== 'ztm-chat';
+          return match?.channel !== ZTM_CHANNEL_ID;
         });
         const ztmChatBindings = existingBindings.filter((b: unknown) => {
           const binding = b as Record<string, unknown> | undefined;
           const match = binding?.match as Record<string, unknown> | undefined;
-          return match?.channel === 'ztm-chat';
+          return match?.channel === ZTM_CHANNEL_ID;
         });
 
         // 3. Create new binding (with accountId)
         const newBinding = {
           agentId: 'main', // Default agent
           match: {
-            channel: 'ztm-chat',
+            channel: ZTM_CHANNEL_ID,
             accountId: accountId, // Explicitly bind to account
           },
         };
@@ -682,7 +683,7 @@ export class ZTMChatWizard {
           ...currentConfig,
           channels: {
             ...currentConfig.channels,
-            'ztm-chat': {
+            [ZTM_CHANNEL_ID]: {
               ...channelConfig,
               accounts,
             },
@@ -781,7 +782,7 @@ export async function discoverConfig(): Promise<DiscoveredConfig | null> {
     const config = rt.config.loadConfig();
 
     // Look for ztm-chat channel config
-    const channelConfig = config.channels?.['ztm-chat'] as Record<string, unknown> | undefined;
+    const channelConfig = config.channels?.[ZTM_CHANNEL_ID] as Record<string, unknown> | undefined;
     const accounts = channelConfig?.accounts as Record<string, unknown> | undefined;
     const firstAccount = accounts ? (Object.values(accounts)[0] as Record<string, unknown>) : null;
 
