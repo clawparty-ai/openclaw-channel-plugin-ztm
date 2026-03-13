@@ -10,7 +10,7 @@
 
 import * as net from 'net';
 import { logger } from '../utils/logger.js';
-import { isValidUrl } from '../utils/validation.js';
+import { isValidUrl, containsPathTraversal, containsPathSeparator } from '../utils/validation.js';
 import { isValidMeshName } from '../config/validation.js';
 import type { PermitData } from '../types/connectivity.js';
 
@@ -45,8 +45,8 @@ function isValidHostname(hostname: string): boolean {
   if (trimmed.length === 0 || trimmed.length > 253) {
     return false;
   }
-  // Check for path traversal patterns
-  if (trimmed.includes('..') || trimmed.includes('/') || trimmed.includes('\\')) {
+  // Check for path traversal or path separators
+  if (containsPathTraversal(trimmed) || containsPathSeparator(trimmed)) {
     return false;
   }
   // Basic hostname pattern (labels separated by dots)
@@ -77,8 +77,8 @@ function isValidEndpointName(name: string): boolean {
   if (trimmed.length === 0 || trimmed.length > 64) {
     return false;
   }
-  // Check for path traversal or special characters
-  if (trimmed.includes('..') || trimmed.includes('/') || trimmed.includes('\\')) {
+  // Check for path traversal or path separators
+  if (containsPathTraversal(trimmed) || containsPathSeparator(trimmed)) {
     return false;
   }
   // Same pattern as mesh name

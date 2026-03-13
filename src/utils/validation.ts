@@ -191,6 +191,17 @@ export function containsPathTraversal(input: string): boolean {
 }
 
 /**
+ * Check if input contains path separators (forward or backslash)
+ * Used for validating identifiers that should not contain paths
+ *
+ * @param input - String to check
+ * @returns true if path separator detected, false otherwise
+ */
+export function containsPathSeparator(input: string): boolean {
+  return input.includes('/') || input.includes('\\');
+}
+
+/**
  * Validate a peer username format
  * Checks for:
  * - Non-empty string
