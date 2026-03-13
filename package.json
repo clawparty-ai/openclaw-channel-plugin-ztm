@@ -39,7 +39,9 @@
     "changelog:preview": "git-cliff --unreleased",
     "prepare": "husky",
     "docs": "typedoc",
-    "docs:watch": "typedoc --watch"
+    "docs:watch": "typedoc --watch",
+    "docs:coverage": "npx tsx scripts/measure-doc-coverage.ts",
+    "docs:coverage:check": "npx tsx scripts/measure-doc-coverage.ts || exit 1"
   },
   "dependencies": {
     "openclaw": "2026.3.12",
