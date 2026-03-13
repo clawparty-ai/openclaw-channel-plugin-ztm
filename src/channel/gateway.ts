@@ -75,6 +75,10 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   const cfg = (snapshot as ChannelAccountSnapshot & { cfg?: OpenClawConfig }).cfg;
   const accountId = snapshot?.accountId;
 
+  // Extract repeated values into local variables
+  const channel = 'ztm-chat';
+  const effectiveAccountId = accountId || 'default';
+
   const issues: ChannelStatusIssue[] = [];
   const account = resolveZTMChatAccount({ cfg, accountId });
   const config = account.config as ZTMChatConfig;
@@ -82,8 +86,8 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   // 1. Configuration check (no early return, continue to collect all issues)
   if (!isConfigMinimallyValid(config)) {
     issues.push({
-      channel: 'ztm-chat',
-      accountId: accountId || 'default',
+      channel,
+      accountId: effectiveAccountId,
       kind: 'config',
       level: 'error',
       message: 'Missing required configuration (agentUrl or username)',
@@ -98,15 +102,15 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   // initialized" when the Map has entries for other accounts but not this one,
   // which indicates a real issue within the running gateway.
   const allStates = getAllAccountStates();
-  const runtimeState = allStates.get(accountId || 'default');
+  const runtimeState = allStates.get(effectiveAccountId);
 
   // Only check runtime state when inside the gateway process (Map is non-empty)
   if (allStates.size > 0) {
     // 2a. Check if account is initialized
     if (!runtimeState) {
       issues.push({
-        channel: 'ztm-chat',
-        accountId: accountId || 'default',
+        channel,
+        accountId: effectiveAccountId,
         kind: 'runtime',
         level: 'info',
         message: 'Account not initialized',
@@ -115,8 +119,8 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
       // 2b. Check if account is stopped
       if (!runtimeState.started) {
         issues.push({
-          channel: 'ztm-chat',
-          accountId: accountId || 'default',
+          channel,
+          accountId: effectiveAccountId,
           kind: 'runtime',
           level: 'warn',
           message: 'Account stopped',
@@ -126,8 +130,8 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
       // 2c. Check for runtime errors
       if (runtimeState.lastError) {
         issues.push({
-          channel: 'ztm-chat',
-          accountId: accountId || 'default',
+          channel,
+          accountId: effectiveAccountId,
           kind: 'runtime',
           level: 'error',
           message: `Runtime error: ${runtimeState.lastError}`,
@@ -140,8 +144,8 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
         const stopTime = new Date(runtimeState.lastStopAt).getTime();
         if (stopTime > startTime) {
           issues.push({
-            channel: 'ztm-chat',
-            accountId: accountId || 'default',
+            channel,
+            accountId: effectiveAccountId,
             kind: 'runtime',
             level: 'warn',
             message: 'Account was stopped',
@@ -155,7 +159,7 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
   const CERT_EXPIRY_WARNING_DAYS = 30;
 
   // 3. Check certificate expiration
-  const permitPath = resolvePermitPath(accountId || 'default');
+  const permitPath = resolvePermitPath(effectiveAccountId);
   const permitData = loadPermitFromFile(permitPath);
 
   if (permitData?.agent?.certificate) {
@@ -164,16 +168,16 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
     // Check for parse errors first - certificate cannot be read
     if (expiryStatus.parseError) {
       issues.push({
-        channel: 'ztm-chat',
-        accountId: accountId || 'default',
+        channel,
+        accountId: effectiveAccountId,
         kind: 'auth',
         level: 'error',
         message: 'Failed to parse certificate - certificate may be corrupted',
       });
     } else if (expiryStatus.isExpired) {
       issues.push({
-        channel: 'ztm-chat',
-        accountId: accountId || 'default',
+        channel,
+        accountId: effectiveAccountId,
         kind: 'auth',
         level: 'error',
         message: 'Certificate has expired',
@@ -183,8 +187,8 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
       expiryStatus.daysUntilExpiry < CERT_EXPIRY_WARNING_DAYS
     ) {
       issues.push({
-        channel: 'ztm-chat',
-        accountId: accountId || 'default',
+        channel,
+        accountId: effectiveAccountId,
         kind: 'auth',
         level: 'warn',
         message: `Certificate expires in ${expiryStatus.daysUntilExpiry} days`,
@@ -238,13 +242,14 @@ export async function sendTextGateway({
   messageId: string;
   error?: string;
 }> {
+  const channel = 'ztm-chat';
   const accountKey = accountId ?? 'default';
   const accountStates = getAllAccountStates();
   const state = accountStates.get(accountKey);
 
   if (!state) {
     return {
-      channel: 'ztm-chat',
+      channel,
       ok: false,
       messageId: '',
       error: 'Account not initialized',
@@ -255,7 +260,7 @@ export async function sendTextGateway({
   const result = await sendZTMMessage(state, peer, text);
 
   return {
-    channel: 'ztm-chat',
+    channel,
     ok: result.ok,
     messageId: result.ok ? generateMessageId() : '',
     error: result.ok ? undefined : (result.error?.message ?? state.lastError ?? undefined),
