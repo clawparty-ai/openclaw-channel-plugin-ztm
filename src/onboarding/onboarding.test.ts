@@ -1164,7 +1164,7 @@ describe('ZTMChatWizard', () => {
 
   describe('discoverConfig error handling', () => {
     it('should return null when runtime is not available', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => false),
         getZTMRuntime: vi.fn(),
       }));
@@ -1176,7 +1176,7 @@ describe('ZTMChatWizard', () => {
     });
 
     it('should handle config read errors gracefully', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1195,7 +1195,7 @@ describe('ZTMChatWizard', () => {
     });
 
     it('should handle missing ztm-chat channel config', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1214,7 +1214,7 @@ describe('ZTMChatWizard', () => {
     });
 
     it('should handle empty accounts in channel config', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1256,7 +1256,7 @@ describe('ZTMChatWizard', () => {
         save: true,
       });
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1311,7 +1311,7 @@ describe('ZTMChatWizard', () => {
         save: true,
       });
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1565,7 +1565,7 @@ describe('ZTMChatWizard', () => {
         close(): void {},
       };
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1632,7 +1632,7 @@ describe('ZTMChatWizard', () => {
         close(): void {},
       };
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1686,7 +1686,7 @@ describe('ZTMChatWizard', () => {
         save: true,
       });
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1722,7 +1722,7 @@ describe('ZTMChatWizard', () => {
         save: true,
       });
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1754,7 +1754,7 @@ describe('ZTMChatWizard', () => {
         save: true,
       });
 
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => false),
         getZTMRuntime: vi.fn(),
       }));
@@ -1770,7 +1770,7 @@ describe('ZTMChatWizard', () => {
 
   describe('network timeout retry scenarios', () => {
     it('should handle timeout during config discovery', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1789,7 +1789,7 @@ describe('ZTMChatWizard', () => {
     });
 
     it('should handle network error during config discovery', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1807,7 +1807,7 @@ describe('ZTMChatWizard', () => {
     });
 
     it('should handle DNS resolution failure during config discovery', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => true),
         getZTMRuntime: vi.fn(() => ({
           config: {
@@ -1832,7 +1832,7 @@ describe('ZTMChatWizard', () => {
     });
 
     it('should actually execute runWizard and return result', async () => {
-      vi.mock('../runtime/index.js', () => ({
+      vi.doMock('../runtime/index.js', () => ({
         isZTMRuntimeInitialized: vi.fn(() => false),
         getZTMRuntime: vi.fn(),
       }));

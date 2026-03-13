@@ -264,7 +264,7 @@ describe('ztmChatOnboardingAdapter', () => {
     };
 
     // Mock validateUsername
-    vi.mock('../utils/validation.js', () => ({
+    vi.doMock('../utils/validation.js', () => ({
       validateUsername: vi.fn().mockReturnValue({ valid: true, value: 'test-bot' }),
     }));
 
@@ -310,7 +310,6 @@ describe('ztmChatOnboardingAdapter', () => {
       expect(result).toBe('skip');
       expect(mockPrompter.select).toHaveBeenCalled();
     });
-
   });
 
   describe('configureWhenConfigured', () => {

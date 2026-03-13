@@ -2675,7 +2675,7 @@ describe('watermark persistence failure handling', () => {
     };
 
     // Mock getAccountMessageStateStore to throw on getWatermark
-    vi.mock('../runtime/store.js', () => ({
+    vi.doMock('../runtime/store.js', () => ({
       getAccountMessageStateStore: vi.fn(() => ({
         getWatermark: vi.fn(() => {
           throw new Error('Watermark store error');
@@ -2733,7 +2733,7 @@ describe('watermark persistence failure handling', () => {
     };
 
     // Mock getAccountMessageStateStore to return invalid watermark (negative)
-    vi.mock('../runtime/store.js', () => ({
+    vi.doMock('../runtime/store.js', () => ({
       getAccountMessageStateStore: vi.fn(() => ({
         getWatermark: vi.fn(() => -1), // Invalid watermark
         setWatermark: vi.fn(),

@@ -9,6 +9,22 @@ import { ZTMSendError } from '../types/errors.js';
 import type { AccountRuntimeState, MessageCallback } from '../types/runtime.js';
 import type { ZTMApiClient } from '../types/api.js';
 
+// Mock logger at module level
+vi.mock('../utils/logger.js', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+  defaultLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 // Create a fresh state for each test
 function createMockState(): AccountRuntimeState {
   return {
@@ -43,20 +59,6 @@ function createSendFailure(peer: string, message: string) {
 describe('Outbound message functions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mock('../utils/logger.js', () => ({
-      logger: {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-      },
-      defaultLogger: {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-      },
-    }));
   });
 
   describe('generateMessageId', () => {
