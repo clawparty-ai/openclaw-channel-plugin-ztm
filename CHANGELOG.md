@@ -2,9 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-## 2026.3.13 - 2026-03-13
+## v2026.3.13(2026-03-13)
 
-[6e2399f](6e2399f442bbe164bc1084dd3463270e28342de3)...[491bb10](491bb108fbd741c4de1d7852d26d3c2e4d162e69)
 
 ### 🚨 BREAKING CHANGES
 
@@ -61,9 +60,11 @@ All notable changes to this project will be documented in this file.
 
 
 
-## 2026.3.11 - 2026-03-11
 
-[f5075d5](f5075d5e9b55cb10c0bff2bb3e435438c4af43e4)...[6e2399f](6e2399f442bbe164bc1084dd3463270e28342de3)
+
+Full Changelog: [v2026.3.11...v2026.3.13](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.11...v2026.3.13)
+## v2026.3.11(2026-03-11)
+
 
 
 
@@ -91,9 +92,11 @@ All notable changes to this project will be documented in this file.
 
 
 
-## 2026.3.10 - 2026-03-10
 
-[6483b28](6483b28367855e057e040bd672f2ab5abcf26ed5)...[f5075d5](f5075d5e9b55cb10c0bff2bb3e435438c4af43e4)
+
+Full Changelog: [v2026.3.10...v2026.3.11](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.10...v2026.3.11)
+## v2026.3.10(2026-03-10)
+
 
 ### 🚨 BREAKING CHANGES
 
@@ -134,9 +137,11 @@ All notable changes to this project will be documented in this file.
 - Fix documentation consistency and add TSDoc comments ([54331ea](54331ea2ce258cb9dd0d2aca4075af0168ca34ba)) - (Lin Yang)
 
 
-## 2026.3.7 - 2026-03-07
 
-[a8ae92d](a8ae92d003872581a0c70c2acebf8ff68d626039)...[6483b28](6483b28367855e057e040bd672f2ab5abcf26ed5)
+
+Full Changelog: [v2026.3.7...v2026.3.10](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.7...v2026.3.10)
+## v2026.3.7(2026-03-07)
+
 
 ### 🚨 BREAKING CHANGES
 
@@ -177,9 +182,11 @@ All notable changes to this project will be documented in this file.
 - Add CODEOWNERS and OWNERS documentation (#9) ([b7fc943](b7fc9431079bd81cf645b18c297f92a33b337e74)) - (Lin Yang)
 
 
-## 2026.3.6 - 2026-03-06
 
-[e0a8738](e0a87388a032f546d9a5eb48beea9ee7c6e4525b)...[a8ae92d](a8ae92d003872581a0c70c2acebf8ff68d626039)
+
+Full Changelog: [v2026.3.6...v2026.3.7](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.6...v2026.3.7)
+## v2026.3.6(2026-03-06)
+
 
 
 
@@ -209,9 +216,11 @@ All notable changes to this project will be documented in this file.
 - Update How It Works diagram with correct ZTM P2P architecture ([b801bcb](b801bcb5a96c170d63c3e1cd55ef80fab0e412c3)) - (Lin Yang)
 
 
-## 2026.3.5 - 2026-03-05
 
-[690a5c5](690a5c51f7d533e7d43dd53651a444ac34f69942)...[e0a8738](e0a87388a032f546d9a5eb48beea9ee7c6e4525b)
+
+Full Changelog: [v2026.3.5...v2026.3.6](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.5...v2026.3.6)
+## v2026.3.5(2026-03-05)
+
 
 ### 🚨 BREAKING CHANGES
 
@@ -260,9 +269,11 @@ All notable changes to this project will be documented in this file.
 
 - Remove NODE_AUTH_TOKEN from npm publish step ([3065211](306521163e9e39c6822753e62f1805b1b436fd21)) - (Lin Yang)
 
-## 2026.3.2 - 2026-03-02
 
-[6ed2eaf](6ed2eaffb264507f9de452b3a7c653d7d60f9f09)...[690a5c5](690a5c51f7d533e7d43dd53651a444ac34f69942)
+
+Full Changelog: [v2026.3.2...v2026.3.5](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.2...v2026.3.5)
+## v2026.3.2(2026-03-02)
+
 
 
 
@@ -297,9 +308,11 @@ All notable changes to this project will be documented in this file.
 - Optimize and reorganize architecture documentation ([828640c](828640c834c890913ec381002c0576ba26d51a36)) - (Lin Yang)
 
 
-## 2026.2.28 - 2026-02-28
 
-[d9a3694](d9a369440c483a38ddc3bdb53ae5a0c1079cef52)...[6ed2eaf](6ed2eaffb264507f9de452b3a7c653d7d60f9f09)
+
+Full Changelog: [v2026.2.28...v2026.3.2](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.28...v2026.3.2)
+## v2026.2.28(2026-02-28)
+
 
 
 
@@ -327,9 +340,11 @@ All notable changes to this project will be documented in this file.
 - Enhance README badges with logos ([5d356de](5d356de4c587b5e94abcdefd387a09767309a6c4)) - (Lin Yang)
 
 
-## 2026.2.27 - 2026-02-27
 
-[fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)...[d9a3694](d9a369440c483a38ddc3bdb53ae5a0c1079cef52)
+
+Full Changelog: [v2026.2.27...v2026.2.28](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.27...v2026.2.28)
+## v2026.2.27(2026-02-27)
+
 
 
 
@@ -347,9 +362,11 @@ All notable changes to this project will be documented in this file.
 
 
 
-## 2026.2.26 - 2026-02-26
 
-[f30219f](f30219ff957a7db983d544b5f2265b8288e2ccff)...[fdb4281](fdb428199d5dc319f044d7688c06b4390af8b9d5)
+
+Full Changelog: [v2026.2.26...v2026.2.27](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.26...v2026.2.27)
+## v2026.2.26(2026-02-26)
+
 
 ### 🚨 BREAKING CHANGES
 
@@ -380,9 +397,11 @@ All notable changes to this project will be documented in this file.
 - Update ADR index with new records ([c32c361](c32c3614481f7a6a09f9dc4b3c44dc8fc7dd0060)) - (Lin Yang)
 
 
-## 2026.2.25 - 2026-02-25
 
-[7c23a9d](7c23a9df91f92ee87ce760bb3dbe931f138bbbba)...[f30219f](f30219ff957a7db983d544b5f2265b8288e2ccff)
+
+Full Changelog: [v2026.2.25...v2026.2.26](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.25...v2026.2.26)
+## v2026.2.25(2026-02-25)
+
 
 ### 🚨 BREAKING CHANGES
 
@@ -435,9 +454,11 @@ All notable changes to this project will be documented in this file.
 - Update GitHub Actions workflow permissions ([a1b0cbb](a1b0cbb0766083c3571094f6934b2df5016ebd99)) - (Lin Yang)
 - Add lint step to test and release workflows ([e75decf](e75decf01d1408e361935f4221b0704e029aa862)) - (Lin Yang)
 
-## 2026.2.23 - 2026-02-23
 
-[b5645d1](b5645d13cf1397a320de0ff565f3c609ef7f0223)...[7c23a9d](7c23a9df91f92ee87ce760bb3dbe931f138bbbba)
+
+Full Changelog: [v2026.2.23...v2026.2.25](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.23...v2026.2.25)
+## v2026.2.23(2026-02-23)
+
 
 
 
@@ -528,9 +549,11 @@ All notable changes to this project will be documented in this file.
 - Add comprehensive JSDoc comments to all source files ([ee52a8d](ee52a8d0c6de0e04aad967395407d4f0ea79f68c)) - (Lin Yang)
 
 
-## 2026.2.20-rc.3 - 2026-02-19
 
-[0e727cd](0e727cd79176e0dd2e749b6009d995ebfc375261)...[b5645d1](b5645d13cf1397a320de0ff565f3c609ef7f0223)
+
+Full Changelog: [v2026.2.20-rc.3...v2026.2.23](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.20-rc.3...v2026.2.23)
+## v2026.2.20-rc.3(2026-02-19)
+
 
 
 
@@ -601,9 +624,11 @@ All notable changes to this project will be documented in this file.
 
 - Upgrade codecov-action from v4 to v5 ([d3d232e](d3d232e471bd2829fa28a2fd5252767dda44240f)) - (Lin Yang)
 
-## 2026.2.18-rc.3 - 2026-02-18
 
-[3fccdae](3fccdae0eb2706a0e210a9bb50572a3e069f1bc8)...[0e727cd](0e727cd79176e0dd2e749b6009d995ebfc375261)
+
+Full Changelog: [v2026.2.18-rc.3...v2026.2.20-rc.3](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.2.18-rc.3...v2026.2.20-rc.3)
+## v2026.2.18-rc.3(2026-02-18)
+
 
 ### 🚨 BREAKING CHANGES
 
@@ -767,7 +792,10 @@ All notable changes to this project will be documented in this file.
 
 - Add Dependabot for automated dependency updates ([2b39237](2b39237df0b82d00967f6505dfcbfa0e4323a988)) - (Lin Yang)
 
-## 2026.2.15 - 2026-02-15
+
+
+Full Changelog: [2026.2.15...v2026.2.18-rc.3](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/2026.2.15...v2026.2.18-rc.3)
+## 2026.2.15(2026-02-15)
 
 
 
@@ -802,5 +830,7 @@ All notable changes to this project will be documented in this file.
 ### 🔧 Miscellaneous Tasks
 
 - Add GitHub Actions test workflow (#1) ([d99d8e2](d99d8e2ab1608a3245da56d648cee688da9d404f)) - (Lin Yang)
+
+
 
 <!-- generated by git-cliff -->
