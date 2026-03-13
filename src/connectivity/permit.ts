@@ -200,7 +200,7 @@ export function loadPermitFromFile(filePath: string): PermitData | null {
  *
  * @param state - The account runtime state
  * @param peer - The username of the peer requesting pairing
- * @param context - Additional context for the pairing request (currently unused)
+ * @param _context - Additional context for the pairing request (currently unused)
  * @param storeAllowFrom - Optional array of approved usernames from persistent store
  * @returns Promise that resolves when pairing request handling is complete
  *
@@ -210,7 +210,7 @@ export function loadPermitFromFile(filePath: string): PermitData | null {
 export async function handlePairingRequest(
   state: AccountRuntimeState,
   peer: string,
-  context: string,
+  _context: string,
   storeAllowFrom: string[] = []
 ): Promise<void> {
   const { config, chatSender } = state;
@@ -219,18 +219,19 @@ export async function handlePairingRequest(
   const normalizedPeer = normalizeUsername(peer);
 
   const allowFrom = getOrDefault(config.allowFrom, []);
-  if (allowFrom.some(entry => normalizeUsername(entry) === normalizedPeer)) {
+  const normalizedAllowFrom = allowFrom.map(entry => normalizeUsername(entry));
+  if (normalizedAllowFrom.includes(normalizedPeer)) {
     logger.debug(`[${state.accountId}] ${peer} is already approved`);
     return;
   }
 
   // Check if already approved via pairing store (persisted across restarts)
-  if (
-    storeAllowFrom.length > 0 &&
-    storeAllowFrom.some(entry => normalizeUsername(entry) === normalizedPeer)
-  ) {
-    logger.debug(`[${state.accountId}] ${peer} is already approved via pairing store`);
-    return;
+  if (storeAllowFrom.length > 0) {
+    const normalizedStoreAllowFrom = storeAllowFrom.map(entry => normalizeUsername(entry));
+    if (normalizedStoreAllowFrom.includes(normalizedPeer)) {
+      logger.debug(`[${state.accountId}] ${peer} is already approved via pairing store`);
+      return;
+    }
   }
 
   // Register pairing request with openclaw's pairing store
