@@ -842,15 +842,27 @@ classDiagram
     class ZTMError {
         <<abstract>>
         #message: string
+        #context: Record
+        #cause?: Error
     }
-    class ZTMApiError
     class ZTMSendError
+    class ZTMWriteError
+    class ZTMReadError
+    class ZTMParseError
+    class ZTMDiscoveryError
+    class ZTMApiError
     class ZTMTimeoutError
+    class ZTMRuntimeError
     class ZTMConfigError
 
-    ZTMError <|-- ZTMApiError
     ZTMError <|-- ZTMSendError
+    ZTMError <|-- ZTMWriteError
+    ZTMError <|-- ZTMReadError
+    ZTMError <|-- ZTMParseError
+    ZTMError <|-- ZTMDiscoveryError
+    ZTMError <|-- ZTMApiError
     ZTMError <|-- ZTMTimeoutError
+    ZTMError <|-- ZTMRuntimeError
     ZTMError <|-- ZTMConfigError
 ```
 
@@ -858,10 +870,15 @@ classDiagram
 
 | Type | Use Case | Retryable |
 |------|----------|-----------|
-| **ZTMApiError** | API failures | If 5xx |
-| **ZTMSendError** | Send failures | If network |
-| **ZTMTimeoutError** | Timeout | Yes |
-| **ZTMConfigError** | Invalid config | No |
+| **ZTMSendError** | Message send failures | If network |
+| **ZTMWriteError** | Message file write failures | If disk space |
+| **ZTMReadError** | Message read failures | If lock |
+| **ZTMParseError** | Message parse failures | No |
+| **ZTMDiscoveryError** | User/peer discovery failures | If network |
+| **ZTMApiError** | API communication failures | If 5xx |
+| **ZTMTimeoutError** | API request timeout | Yes |
+| **ZTMRuntimeError** | Runtime not initialized | No |
+| **ZTMConfigError** | Invalid configuration | No |
 
 **Retry Strategy**: Exponential backoff with max 3 attempts.
 

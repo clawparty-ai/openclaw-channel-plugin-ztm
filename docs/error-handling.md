@@ -11,31 +11,43 @@ classDiagram
     class ZTMError {
         <<abstract>>
         +message: string
-        +code: string
+        +context: Record
         +cause?: Error
     }
-    class ZTMApiError
     class ZTMSendError
+    class ZTMWriteError
+    class ZTMReadError
+    class ZTMParseError
+    class ZTMDiscoveryError
+    class ZTMApiError
     class ZTMTimeoutError
+    class ZTMRuntimeError
     class ZTMConfigError
-    class ZTMValidationError
 
-    ZTMError <|-- ZTMApiError
     ZTMError <|-- ZTMSendError
+    ZTMError <|-- ZTMWriteError
+    ZTMError <|-- ZTMReadError
+    ZTMError <|-- ZTMParseError
+    ZTMError <|-- ZTMDiscoveryError
+    ZTMError <|-- ZTMApiError
     ZTMError <|-- ZTMTimeoutError
+    ZTMError <|-- ZTMRuntimeError
     ZTMError <|-- ZTMConfigError
-    ZTMError <|-- ZTMValidationError
 ```
 
 ## Error Types
 
 | Type | Use Case | Retryable | Example |
 |------|----------|-----------|---------|
-| **ZTMApiError** | API failures | If 5xx | Invalid response |
-| **ZTMSendError** | Send failures | If network | Connection lost |
-| **ZTMTimeoutError** | Timeout | Yes | Request timeout |
-| **ZTMConfigError** | Invalid config | No | Missing required field |
-| **ZTMValidationError** | Input validation | No | Invalid format |
+| **ZTMSendError** | Message send failures | If network | Connection lost |
+| **ZTMWriteError** | Message file write failures | If disk space | I/O error |
+| **ZTMReadError** | Message read failures | If lock | File locked |
+| **ZTMParseError** | Message parse failures | No | Invalid JSON |
+| **ZTMDiscoveryError** | User/peer discovery failures | If network | DNS failure |
+| **ZTMApiError** | API communication failures | If 5xx | Invalid response |
+| **ZTMTimeoutError** | API request timeout | Yes | Request timeout |
+| **ZTMRuntimeError** | Runtime not initialized | No | Missing setup |
+| **ZTMConfigError** | Invalid configuration | No | Missing required field |
 
 ## Result Pattern
 
