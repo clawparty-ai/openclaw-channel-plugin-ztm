@@ -433,10 +433,10 @@ export async function processChangedPeer(
   const store = watermarkStore ?? getAccountMessageStateStore(state.accountId);
   const watermark = store.getWatermark(state.accountId, peer);
   const since = getMessageSyncStart(watermark);
+  const safePeer = sanitizeForLog(peer);
   const messagesResult = await state.chatReader.getPeerMessages(peer, since);
 
   if (!messagesResult.ok) {
-    const safePeer = sanitizeForLog(peer);
     logger.warn(
       `[${state.accountId}] Failed to get messages from peer "${safePeer}": ${messagesResult.error?.message ?? 'Unknown error'}`
     );
@@ -444,7 +444,6 @@ export async function processChangedPeer(
   }
 
   const messages = getOrDefault(messagesResult.value as ZTMMessage[], []);
-  const safePeer = sanitizeForLog(peer);
   const hasNoHistory = watermark === 0;
   logger.debug(
     `[${state.accountId}] Processing ${messages.length} messages from peer "${safePeer}" since=${since}${hasNoHistory ? ' (no history)' : ''}`
