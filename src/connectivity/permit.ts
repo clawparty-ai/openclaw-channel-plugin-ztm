@@ -35,6 +35,32 @@ export class PathTraversalError extends Error {
 }
 
 /**
+ * Validates a file path for security concerns (path traversal and symlink attacks)
+ *
+ * @param filePath - The file path to validate
+ * @param operation - The operation name for error messages (e.g., "save", "load")
+ * @throws {PathTraversalError} If path traversal or symlink attack is detected
+ */
+function validateFilePath(filePath: string, operation: string): void {
+  // Security: Check for path traversal attacks
+  if (containsPathTraversal(filePath)) {
+    const error = new PathTraversalError(filePath);
+    logger.error(`[Security] Path traversal detected in ${operation}: ${filePath}`);
+    throw error;
+  }
+
+  // Security: Check for symlink attacks (only if file exists)
+  if (fs.existsSync(filePath)) {
+    const stats = fs.lstatSync(filePath);
+    if (stats.isSymbolicLink()) {
+      const error = new PathTraversalError(filePath);
+      logger.error(`[Security] Symlink attack detected in ${operation}: ${filePath}`);
+      throw error;
+    }
+  }
+}
+
+/**
  * Request permit from permit server
  *
  * The permit server returns a complete permit package including:
@@ -114,24 +140,10 @@ export async function requestPermit(
  * const saved = savePermitData(permitData, "/path/to/permit.json");
  */
 export function savePermitData(permitData: PermitData, permitPath: string): boolean {
-  // Security: Check for path traversal attacks
-  if (containsPathTraversal(permitPath)) {
-    const error = new PathTraversalError(permitPath);
-    logger.error(`[Security] Path traversal detected in savePermitData: ${permitPath}`);
-    throw error;
-  }
+  // Security: Validate path for traversal and symlink attacks
+  validateFilePath(permitPath, 'savePermitData');
 
   try {
-    // Security: Check for symlink attacks
-    if (fs.existsSync(permitPath)) {
-      const stats = fs.lstatSync(permitPath);
-      if (stats.isSymbolicLink()) {
-        const error = new PathTraversalError(permitPath);
-        logger.error(`[Security] Symlink attack detected in savePermitData: ${permitPath}`);
-        throw error;
-      }
-    }
-
     // Ensure directory exists
     const dir = path.dirname(permitPath);
     if (!fs.existsSync(dir)) {
@@ -157,25 +169,13 @@ export function savePermitData(permitData: PermitData, permitPath: string): bool
  * const permit = loadPermitFromFile("/path/to/permit.json");
  */
 export function loadPermitFromFile(filePath: string): PermitData | null {
-  // Security: Check for path traversal attacks
-  if (containsPathTraversal(filePath)) {
-    const error = new PathTraversalError(filePath);
-    logger.error(`[Security] Path traversal detected in loadPermitFromFile: ${filePath}`);
-    throw error;
-  }
+  // Security: Validate path for traversal and symlink attacks
+  validateFilePath(filePath, 'loadPermitFromFile');
 
   try {
     if (!fs.existsSync(filePath)) {
       logger.error(`Permit file not found: ${filePath}`);
       return null;
-    }
-
-    // Security: Check for symlink attacks
-    const stats = fs.lstatSync(filePath);
-    if (stats.isSymbolicLink()) {
-      const error = new PathTraversalError(filePath);
-      logger.error(`[Security] Symlink attack detected in loadPermitFromFile: ${filePath}`);
-      throw error;
     }
 
     const content = fs.readFileSync(filePath, 'utf-8');
