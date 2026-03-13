@@ -102,3 +102,6 @@ export const ZTM_CHANNEL_ID = 'ztm-chat';
 
 /** Default message storage path */
 export const ZTM_MESSAGE_PATH = '/apps/ztm/chat/shared/';
+
+/** Certificate expiry warning threshold (days) */
+export const CERT_EXPIRY_WARNING_DAYS = 30;

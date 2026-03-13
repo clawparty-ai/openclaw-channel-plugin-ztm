@@ -26,6 +26,7 @@ import { probeAccount as probeAccountConnectivity } from './connectivity-manager
 import type { StepContext } from './gateway-pipeline.types.js';
 import { dispatchInboundMessage } from './gateway-message-handler.js';
 import { retryMessageLater } from './gateway-message-retry.js';
+import { CERT_EXPIRY_WARNING_DAYS } from '../constants.js';
 
 // ============================================================================
 // Local Types
@@ -154,9 +155,6 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
       }
     }
   }
-
-  // Certificate expiry warning threshold (days)
-  const CERT_EXPIRY_WARNING_DAYS = 30;
 
   // 3. Check certificate expiration
   const permitPath = resolvePermitPath(effectiveAccountId);
