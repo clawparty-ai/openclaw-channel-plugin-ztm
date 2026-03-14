@@ -89,6 +89,9 @@ describe('ztmChatOnboardingAdapter', () => {
 
       expect(result.channel).toBe('ztm-chat');
       expect(result.configured).toBe(true);
+      expect(result.statusLines).toContain('Agent: http://localhost:8080');
+      expect(result.statusLines).toContain('Username: test-bot');
+      expect(result.statusLines).toContain('Mesh: test-mesh');
     });
 
     it('should return unconfigured when no accounts', async () => {
@@ -100,6 +103,7 @@ describe('ztmChatOnboardingAdapter', () => {
 
       expect(result.channel).toBe('ztm-chat');
       expect(result.configured).toBe(false);
+      expect(result.statusLines).toContain('Not configured');
     });
   });
 

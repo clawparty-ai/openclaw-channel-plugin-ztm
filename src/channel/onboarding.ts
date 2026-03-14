@@ -174,7 +174,19 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
   channel: ZTM_CHANNEL_ID,
 
   /**
-   * Get onboarding status for ZTM Chat channel
+   * Get onboarding status for ZTM Chat channel.
+   *
+   * @param params - The onboarding status parameters
+   * @param params.cfg - OpenClaw configuration object
+   * @returns Status object containing channel ID, configured flag, and status lines
+   *
+   * @example
+   * ```typescript
+   * const status = await ztmChatOnboardingAdapter.getStatus({ cfg });
+   * console.log(status.configured); // true
+   * console.log(status.statusLines);
+   * // ["Agent: http://localhost:3000", "Username: alice", "Mesh: my-mesh"]
+   * ```
    */
   getStatus: async ({ cfg }) => {
     const account = getZTMChatAccount(cfg);
