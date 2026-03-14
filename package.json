@@ -50,7 +50,7 @@
     "pre:release:quick": "npx tsx scripts/pre-release-check.ts | grep -E '(PASS|FAIL|Summary)'"
   },
   "dependencies": {
-    "openclaw": "2026.3.12",
+    "openclaw": "2026.3.13",
     "zod": "4.3.6"
   },
   "devDependencies": {
