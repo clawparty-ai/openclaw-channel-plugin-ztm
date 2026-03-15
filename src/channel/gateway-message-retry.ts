@@ -19,11 +19,25 @@ import { dispatchInboundMessage } from './gateway-message-handler.js';
 
 /**
  * Maximum number of retry attempts for message dispatch
+ *
+ * @example
+ * ```typescript
+ * if (attempts >= MESSAGE_RETRY_MAX_ATTEMPTS) {
+ *   // Give up after 3 attempts
+ *   return;
+ * }
+ * ```
  */
 export const MESSAGE_RETRY_MAX_ATTEMPTS = 3;
 
 /**
  * Initial delay in milliseconds between retry attempts
+ *
+ * @example
+ * ```typescript
+ * await new Promise(resolve => setTimeout(resolve, MESSAGE_RETRY_DELAY_MS));
+ * // Wait 2000ms before retrying
+ * ```
  */
 export const MESSAGE_RETRY_DELAY_MS = 2000;
 

@@ -774,7 +774,8 @@ export interface DiscoveredConfig {
 
 /**
  * Attempt to auto-discover ZTM configuration from openclaw.yaml via runtime API
- * @returns DiscoveredConfig if found, null otherwise
+ *
+ * @returns Promise resolving to DiscoveredConfig if found, null otherwise
  *
  * @example
  * ```typescript

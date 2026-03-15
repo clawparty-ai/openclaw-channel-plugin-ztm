@@ -24,6 +24,23 @@ import { getGroupPermissionCached } from '../runtime/state.js';
 
 /**
  * Result of a unified policy check
+ *
+ * @example
+ * ```typescript
+ * // Allowed message
+ * const result: PolicyCheckResult = {
+ *   allowed: true,
+ *   reason: 'allowed',
+ *   action: 'process'
+ * };
+ *
+ * // Blocked message requiring pairing
+ * const blocked: PolicyCheckResult = {
+ *   allowed: false,
+ *   reason: 'not_pairing',
+ *   action: 'request_pairing'
+ * };
+ * ```
  */
 export interface PolicyCheckResult {
   /** Whether the message is allowed to proceed */
@@ -36,6 +53,27 @@ export interface PolicyCheckResult {
 
 /**
  * Input parameters for unified policy checking
+ *
+ * @example
+ * ```typescript
+ * // Direct message check
+ * const dmInput: PolicyCheckInput = {
+ *   sender: 'alice',
+ *   content: 'Hello',
+ *   config: ztmChatConfig,
+ *   accountId: 'account-123',
+ *   storeAllowFrom: ['bob', 'charlie']
+ * };
+ *
+ * // Group message check
+ * const groupInput: PolicyCheckInput = {
+ *   sender: 'alice',
+ *   content: '@bob Hello',
+ *   config: ztmChatConfig,
+ *   accountId: 'account-123',
+ *   groupInfo: { creator: 'admin', group: 'team-chat' }
+ * };
+ * ```
  */
 export interface PolicyCheckInput {
   /** Sender username */

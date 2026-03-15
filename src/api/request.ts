@@ -12,6 +12,16 @@ import { API_TIMEOUT_MS } from '../constants.js';
 
 /**
  * Logger interface for dependency injection
+ *
+ * @example
+ * ```typescript
+ * const logger: ZTMLogger = {
+ *   debug: (msg) => console.debug(msg),
+ *   info: (msg) => console.info(msg),
+ *   warn: (msg) => console.warn(msg),
+ *   error: (msg) => console.error(msg)
+ * };
+ * ```
  */
 export interface ZTMLogger {
   debug?: (...args: unknown[]) => void;
@@ -22,6 +32,15 @@ export interface ZTMLogger {
 
 /**
  * Dependencies that can be injected into the API client
+ *
+ * @example
+ * ```typescript
+ * const deps: ZTMApiClientDeps = {
+ *   logger: console,
+ *   fetch: window.fetch,
+ *   fetchWithRetry: myFetchWithRetry
+ * };
+ * ```
  */
 export interface ZTMApiClientDeps {
   logger: ZTMLogger;
@@ -40,6 +59,13 @@ export const defaultDeps: ZTMApiClientDeps = {
 
 /**
  * Type alias for ZTM API operations that can fail with ZTMApiError
+ *
+ * @example
+ * ```typescript
+ * async function getChats(): ApiResult<ZTMChat[]> {
+ *   // Returns Promise<Result<ZTMChat[], ZTMApiError | ZTMTimeoutError>>
+ * }
+ * ```
  */
 export type ApiResult<T> = Promise<Result<T, ZTMApiError | ZTMTimeoutError>>;
 
@@ -48,6 +74,14 @@ export const DEFAULT_TIMEOUT = API_TIMEOUT_MS;
 
 /**
  * Request handler function type
+ *
+ * @example
+ * ```typescript
+ * const handler: RequestHandler = async (method, path, body) => {
+ *   const response = await fetch(path, { method, body: JSON.stringify(body) });
+ *   return success(await response.json());
+ * };
+ * ```
  */
 export interface RequestHandler {
   <T>(

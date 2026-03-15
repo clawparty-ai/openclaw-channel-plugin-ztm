@@ -14,6 +14,23 @@ import { setRuntimeLogger } from '../utils/logger.js';
 
 const runtimeStore = createPluginRuntimeStore<PluginRuntime>('ZTM runtime not initialized');
 
+/**
+ * Clear the ZTM runtime instance
+ *
+ * Resets the runtime to uninitialized state. Use this in tests or when
+ * switching between different runtime configurations.
+ *
+ * @example
+ * ```typescript
+ * import { clearZTMRuntime, setZTMRuntime } from './runtime/runtime.js';
+ *
+ * // After testing with a mock runtime
+ * clearZTMRuntime();
+ *
+ * // Set a new runtime for production
+ * setZTMRuntime(productionRuntime);
+ * ```
+ */
 export const clearZTMRuntime = runtimeStore.clearRuntime;
 export const tryGetZTMRuntime = runtimeStore.tryGetRuntime;
 

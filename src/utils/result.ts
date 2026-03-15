@@ -154,8 +154,19 @@ export function mustResult<T, E extends Error = Error>(
  * Short-circuits on failure.
  *
  * @param result - Initial Result
- * @param fns - Functions to apply in sequence
+ * @param fn - Function to apply to the value if Result is successful
  * @returns Final Result after transformations
+ *
+ * @example
+ * ```typescript
+ * const result = success('  hello  ');
+ * const trimmed = pipeResult(result, s => success(s.trim()));
+ * // Returns: { ok: true, value: 'hello' }
+ *
+ * const failed = failure(new Error('invalid'));
+ * const result2 = pipeResult(failed, s => success(s.trim()));
+ * // Returns: { ok: false, error: Error('invalid') } (short-circuits)
+ * ```
  */
 export function pipeResult<T, E extends Error = Error>(
   result: Result<T, E>,

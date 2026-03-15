@@ -217,6 +217,30 @@ const ztmConfigAccessors = createScopedAccountConfigAccessors({
 // The plugin is organized into logical sections for better maintainability.
 // Each section is self-contained and focuses on a specific responsibility.
 
+/**
+ * ZTM Chat Channel Plugin
+ *
+ * Main plugin definition that implements the ChannelPlugin interface for
+ * OpenClaw. Enables decentralized P2P messaging through ZTM (Zero Trust Mesh) network.
+ *
+ * @remarks
+ * This plugin provides:
+ * - Direct and group messaging via ZTM network
+ * - Device pairing with approval workflow
+ * - AI agent tools for chat automation
+ * - Account lifecycle management (start/logout)
+ * - Connection health monitoring
+ *
+ * @example
+ * ```typescript
+ * import { ztmChatPlugin } from './channel/plugin.js';
+ *
+ * // Register with OpenClaw
+ * openClaw.registerChannel(ztmChatPlugin);
+ * ```
+ *
+ * @see {@link https://www.npmjs.com/package/openclaw-plugin-sdk | OpenClaw Plugin SDK}
+ */
 export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // ---------------------------------------------------------------------------
   // Meta Section - Plugin metadata and branding

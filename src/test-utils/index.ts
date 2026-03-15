@@ -1,5 +1,22 @@
-// Test Utilities - Central export for all test utilities
-// Provides fixtures, mocks, and helpers for ZTM Chat tests
+/**
+ * Test Utilities Module
+ *
+ * Central export point for all test utilities used in ZTM Chat plugin testing.
+ * Provides fixtures, mocks, helpers, and specialized testing tools.
+ *
+ * @module test-utils
+ *
+ * @example
+ * ```typescript
+ * import { testConfig, testAccountId, createMockChat } from './test-utils/index.js';
+ *
+ * const config = testConfig();
+ * const account = testAccountId();
+ * ```
+ *
+ * @see {@link ./fixtures.js} for test data fixtures
+ * @see {@link ./mocks.js} for mock responses
+ */
 
 // Re-export fixtures
 export * from './fixtures.js';

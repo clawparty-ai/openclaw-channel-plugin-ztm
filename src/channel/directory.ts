@@ -19,6 +19,16 @@ import { resolveZTMChatAccount } from './config.js';
 
 /**
  * Directory entry for a user (self or peer)
+ *
+ * @example
+ * ```typescript
+ * const user: DirectoryUser = {
+ *   kind: 'user',
+ *   id: 'alice',
+ *   name: 'Alice',
+ *   raw: { username: 'alice', meshName: 'test-mesh' }
+ * };
+ * ```
  */
 export interface DirectoryUser {
   kind: 'user';
@@ -34,6 +44,14 @@ export interface DirectoryUser {
 
 /**
  * Interface for directory function parameters
+ *
+ * @example
+ * ```typescript
+ * const ctx: DirectoryContext = {
+ *   cfg: openclawConfig,
+ *   accountId: 'default'
+ * };
+ * ```
  */
 export interface DirectoryContext {
   cfg?: OpenClawConfig | null;

@@ -53,6 +53,14 @@ export function createMockLogger(): MockLogger & {
 
 /**
  * Mock fetch response for testing
+ *
+ * @example
+ * ```typescript
+ * const response: MockFetchResponse = {
+ *   data: { success: true, chats: [] },
+ *   status: 200
+ * };
+ * ```
  */
 export interface MockFetchResponse {
   data: unknown;

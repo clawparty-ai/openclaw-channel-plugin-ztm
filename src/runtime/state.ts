@@ -521,6 +521,14 @@ export function removeAccountState(accountId: string): void {
  * @param accountId - The account identifier
  * @param rt - ZTM runtime to fetch fresh data if cache expired (or function that returns it)
  * @returns Promise resolving to allowFrom string array, or null if fetch failed and no cache available
+ *
+ * @example
+ * ```typescript
+ * const allowFrom = await getAllowFromCache('account-123', runtime);
+ * if (allowFrom) {
+ *   console.log('Allowed users:', allowFrom);
+ * }
+ * ```
  */
 export async function getAllowFromCache(
   accountId: string,

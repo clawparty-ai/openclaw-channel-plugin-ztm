@@ -209,6 +209,10 @@ export function collectStatusIssues(accounts: ChannelAccountSnapshot[]): Channel
 /**
  * Probe an account to check connectivity
  *
+ * @param account - Account object containing ZTM configuration
+ * @param timeoutMs - Optional timeout in milliseconds
+ * @returns Promise resolving to connectivity check result
+ *
  * @example
  * ```typescript
  * const result = await probeAccountGateway({ account: { config: myConfig } });
@@ -237,9 +241,17 @@ export async function probeAccountGateway({
 /**
  * Send text message gateway
  *
+ * @param to - Target username to send message to
+ * @param text - Message content to send
+ * @param accountId - Optional account identifier (uses default if not provided)
+ * @returns Promise resolving to send result with status and message ID
+ *
  * @example
  * ```typescript
  * const result = await sendTextGateway({ to: 'alice', text: 'Hello!', accountId: 'default' });
+ * if (result.ok) {
+ *   console.log('Message sent:', result.messageId);
+ * }
  * ```
  */
 export async function sendTextGateway({

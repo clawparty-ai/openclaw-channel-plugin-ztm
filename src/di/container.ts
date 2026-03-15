@@ -39,6 +39,24 @@ const _messageStateRepoKey = Symbol('ztm:message-state-repo');
 const _accountStateManagerKey = Symbol('ztm:account-state-manager');
 const _messagingContextKey = Symbol('ztm:messaging-context');
 
+/**
+ * Dependency keys for type-safe service lookup
+ *
+ * Each key is a unique symbol that prevents naming conflicts and enables
+ * compile-time type safety when retrieving services from the DI container.
+ *
+ * @constant
+ * @example
+ * ```typescript
+ * import { container, DEPENDENCIES } from './di/container.js';
+ *
+ * // Register a service
+ * container.register(DEPENDENCIES.LOGGER, () => myLogger);
+ *
+ * // Retrieve with type safety
+ * const logger = container.get(DEPENDENCIES.LOGGER);
+ * ```
+ */
 export const DEPENDENCIES = {
   LOGGER: createDependencyKey<ILogger>(_loggerKey),
   CONFIG: createDependencyKey<IConfig>(_configKey),
@@ -62,6 +80,12 @@ export const DEPENDENCIES = {
 
 /**
  * Type-safe dependency key type
+ *
+ * @example
+ * ```typescript
+ * const MY_KEY: DependencyKey<MyService> = Symbol('my-service');
+ * // Ensures type-safe dependency lookup
+ * ```
  */
 export type DependencyKey<T> = symbol & { __brand: T };
 
@@ -84,6 +108,16 @@ export function createDependencyKey<T>(symbol: symbol): DependencyKey<T> {
 
 /**
  * Logger service interface
+ *
+ * @example
+ * ```typescript
+ * const logger: ILogger = {
+ *   info: (msg) => console.log(msg),
+ *   warn: (msg) => console.warn(msg),
+ *   error: (msg) => console.error(msg),
+ *   debug: (msg) => console.debug(msg)
+ * };
+ * ```
  */
 export interface ILogger {
   info: (...args: unknown[]) => void;
@@ -94,6 +128,14 @@ export interface ILogger {
 
 /**
  * Config service interface
+ *
+ * @example
+ * ```typescript
+ * const config: IConfig = {
+ *   get: () => ({ agentUrl: 'https://...', meshName: 'test', dmPolicy: 'allow', username: 'alice' }),
+ *   isValid: () => true
+ * };
+ * ```
  */
 export interface IConfig {
   get(): ZTMChatConfig;

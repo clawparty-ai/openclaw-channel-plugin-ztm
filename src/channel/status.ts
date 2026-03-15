@@ -9,6 +9,18 @@ import { DEFAULT_ACCOUNT_ID } from '../constants.js';
 
 /**
  * Extended snapshot type with ZTM custom fields
+ *
+ * @example
+ * ```typescript
+ * const snapshot: ChannelAccountSnapshot = {
+ *   accountId: 'account-1',
+ *   configured: true,
+ *   running: true,
+ *   credentialSource: 'permit-file',
+ *   meshName: 'my-mesh',
+ *   certDaysUntilExpiry: 30
+ * };
+ * ```
  */
 export type ChannelAccountSnapshot = BaseChannelAccountSnapshot & {
   credentialSource?: string;
@@ -20,6 +32,17 @@ export type ChannelAccountSnapshot = BaseChannelAccountSnapshot & {
 
 /**
  * Interface for buildChannelSummary function parameters
+ *
+ * @example
+ * ```typescript
+ * const ctx: BuildChannelSummaryContext = {
+ *   snapshot: {
+ *     accountId: 'account-1',
+ *     configured: true,
+ *     running: true
+ *   }
+ * };
+ * ```
  */
 export interface BuildChannelSummaryContext {
   snapshot: ChannelAccountSnapshot;
@@ -27,6 +50,17 @@ export interface BuildChannelSummaryContext {
 
 /**
  * Interface for status issues
+ *
+ * @example
+ * ```typescript
+ * const issue: ChannelStatusIssue = {
+ *   channel: 'ztm-chat',
+ *   accountId: 'account-1',
+ *   kind: 'auth',
+ *   level: 'error',
+ *   message: 'Certificate expired'
+ * };
+ * ```
  */
 export interface ChannelStatusIssue {
   channel: string;

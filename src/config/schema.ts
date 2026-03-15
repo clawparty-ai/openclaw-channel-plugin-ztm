@@ -246,6 +246,16 @@ export const ztmChatConfigSchema = ztmChatConfigSchemaInner
 
 /**
  * ZTM Chat configuration type inferred from schema
+ *
+ * @example
+ * ```typescript
+ * const config: ZTMChatConfig = {
+ *   agentUrl: 'https://ztm.example.com',
+ *   meshName: 'my-mesh',
+ *   dmPolicy: 'allow',
+ *   username: 'alice'
+ * };
+ * ```
  */
 export type ZTMChatConfig = z.infer<typeof ztmChatConfigSchema>;
 

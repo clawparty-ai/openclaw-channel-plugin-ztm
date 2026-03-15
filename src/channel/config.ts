@@ -18,6 +18,21 @@ import { ZTM_CHANNEL_ID, DEFAULT_ACCOUNT_ID } from '../constants.js';
 
 /**
  * Resolved ZTM chat account with configuration
+ *
+ * @example
+ * ```typescript
+ * const account: ResolvedZTMChatAccount = {
+ *   accountId: 'ztm-alice',
+ *   username: 'alice',
+ *   enabled: true,
+ *   config: {
+ *     agentUrl: 'https://ztm.example.com',
+ *     meshName: 'my-mesh',
+ *     dmPolicy: 'allow',
+ *     username: 'alice'
+ *   }
+ * };
+ * ```
  */
 export interface ResolvedZTMChatAccount {
   accountId: string;

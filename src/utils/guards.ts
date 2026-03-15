@@ -73,6 +73,13 @@ export function requireDefined<T>(
  * @param value - Value to check
  * @param errorFactory - Function to create error with context
  * @returns The defined value
+ * @throws E if value is null or undefined
+ *
+ * @example
+ * ```typescript
+ * const config = requireValue(process.env.API_KEY, () => new ConfigError('API_KEY is required'));
+ * // config is guaranteed to be defined here
+ * ```
  */
 export function requireValue<T, E extends Error>(
   value: T | null | undefined,

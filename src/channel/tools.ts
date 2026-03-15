@@ -279,6 +279,20 @@ const ztmSendPeerMessageTool = {
 
 /**
  * Create ZTM Chat agent tools factory
+ *
+ * Returns a factory function that creates AI agent tools for ZTM Chat operations.
+ * Includes tools for status checks, mesh info, peer discovery, and messaging.
+ *
+ * @param cfg - OpenClaw configuration object
+ * @returns Array of agent tools or empty array if channel not configured
+ *
+ * @example
+ * ```typescript
+ * import { createZTMChatAgentTools } from './channel/tools.js';
+ *
+ * const toolsFactory = createZTMChatAgentTools({ cfg: myConfig });
+ * // Returns array of tools: [ztmStatusTool, ztmMeshInfoTool, ztmPeersTool, ztmSendPeerMessageTool]
+ * ```
  */
 export const createZTMChatAgentTools: ChannelAgentToolFactory = ({ cfg }) => {
   // Check if channel is configured

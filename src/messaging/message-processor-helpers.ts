@@ -189,6 +189,8 @@ export function validateChatMessage(
  * await processAndNotifyPeerMessages(messages, state, []);
  * // Notifies callbacks for valid peer messages
  * ```
+ *
+ * @returns Promise that resolves when all messages are processed
  */
 export async function processAndNotifyPeerMessages(
   messages: Array<{ time: number; message: string; sender: string }>,
@@ -247,6 +249,8 @@ export async function processAndNotifyPeerMessages(
  * await processAndNotifyGroupMessages(messages, state, [], groupInfo, 'Team Chat');
  * // Notifies callbacks for valid group messages
  * ```
+ *
+ * @returns Promise that resolves when all messages are processed
  */
 export async function processAndNotifyGroupMessages(
   messages: Array<{ time: number; message: string; sender: string }>,
