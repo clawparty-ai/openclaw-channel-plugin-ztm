@@ -48,7 +48,8 @@
     "docs:api:check": "npx tsx scripts/fix-api-documentation.ts check",
     "docs:api:fix": "npx tsx scripts/fix-api-documentation.ts fix",
     "pre:release": "npx tsx scripts/pre-release-check.ts",
-    "pre:release:quick": "npx tsx scripts/pre-release-check.ts | grep -E '(PASS|FAIL|Summary)'"
+    "pre:release:quick": "npx tsx scripts/pre-release-check.ts | grep -E '(PASS|FAIL|Summary)'",
+    "version:plugin": "npx tsx scripts/update-plugin-version.ts"
   },
   "dependencies": {
     "openclaw": "2026.3.13",
