@@ -42,6 +42,7 @@
     "changelog:preview": "git-cliff --unreleased",
     "prepare": "husky",
     "docs": "typedoc",
+    "docs:check": "typedoc --emit none",
     "docs:watch": "typedoc --watch",
     "docs:coverage": "npx tsx scripts/measure-doc-coverage.ts",
     "docs:coverage:check": "npx tsx scripts/measure-doc-coverage.ts || exit 1",

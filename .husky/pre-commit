@@ -21,6 +21,10 @@ npx tsc --noEmit
 echo "Checking for circular dependencies..."
 npm run check:circular
 
+# Check documentation syntax
+echo "Checking docs syntax..."
+npm run docs:check
+
 # Run tests
 echo "Running tests..."
 npm test
