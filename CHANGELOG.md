@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2026.3.16(2026-03-15)
+
+
+
+
+
+### 🐛 Bug Fixes
+
+- Include openclaw.plugin.json in npm package ([66c4c4c](66c4c4c6cfe92e7dd0c3465be9f9345b2f87de62)) - (Lin Yang)
+
+
+
+
+
+
+
+### 📖 Documentation
+
+- Improve TypeDoc documentation completeness ([31565f2](31565f2344d0ceed2e5227a4a998923a17f358fe)) - (Lin Yang)
+
+
+
+
+**Full Changelog:** [v2026.3.15...v2026.3.16](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.15...v2026.3.16)
 ## v2026.3.15(2026-03-15)
 
 
