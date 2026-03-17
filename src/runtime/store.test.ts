@@ -555,4 +555,136 @@ describe('MessageStateStore', () => {
       store.dispose();
     });
   });
+
+  describe('file permissions security', () => {
+    /**
+     * Mock FileSystem that tracks chmod calls to verify security behavior
+     */
+    function createPermissionTrackingFs() {
+      const chmodCalls: { path: string; mode: number }[] = [];
+      const chmodSyncCalls: { path: string; mode: number }[] = [];
+
+      const trackingFs = {
+        existsSync: fs.existsSync,
+        mkdirSync: fs.mkdirSync,
+        readFileSync: (p: string, enc: string) => fs.readFileSync(p, enc as BufferEncoding),
+        writeFileSync: (p: string, d: string) => fs.writeFileSync(p, d),
+        chmodSync: (path: string, mode: number) => {
+          chmodSyncCalls.push({ path, mode });
+          fs.chmodSync(path, mode);
+        },
+        promises: {
+          mkdir: async (path: string, options?: { recursive?: boolean }) => {
+            await fs.promises.mkdir(path, options);
+          },
+          readFile: (p: string, enc: string) => fs.promises.readFile(p, enc as BufferEncoding),
+          writeFile: (p: string, d: string) => fs.promises.writeFile(p, d),
+          access: (p: string) => fs.promises.access(p),
+          chmod: async (path: string, mode: number) => {
+            chmodCalls.push({ path, mode });
+            await fs.promises.chmod(path, mode);
+          },
+        },
+      };
+
+      return {
+        fs: trackingFs,
+        getChmodCalls: () => chmodCalls,
+        getChmodSyncCalls: () => chmodSyncCalls,
+        clearCalls: () => {
+          chmodCalls.length = 0;
+          chmodSyncCalls.length = 0;
+        },
+      };
+    }
+
+    it('should set restrictive permissions (0o600) after async write', async () => {
+      const testDir = path.join(
+        os.tmpdir(),
+        `ztm-perm-test-async-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      );
+      const testFile = path.join(testDir, 'state.json');
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const { fs: trackingFs, getChmodCalls, clearCalls } = createPermissionTrackingFs();
+
+      const store = new MessageStateStoreImpl(testFile, trackingFs);
+      clearCalls();
+
+      // Trigger an async write
+      store.setWatermark('perm-async-test', 'peer1', 1000);
+      await store.flushAsync();
+
+      const chmodCalls = getChmodCalls();
+      expect(chmodCalls.length).toBeGreaterThan(0);
+
+      // Find the chmod call for our state file
+      const stateFileChmod = chmodCalls.find(call => call.path === testFile);
+      expect(stateFileChmod).toBeDefined();
+      expect(stateFileChmod?.mode).toBe(0o600); // Read/write for owner only
+
+      store.dispose();
+    });
+
+    it('should set restrictive permissions (0o600) after sync write', () => {
+      const testDir = path.join(
+        os.tmpdir(),
+        `ztm-perm-test-sync-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      );
+      const testFile = path.join(testDir, 'state.json');
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const { fs: trackingFs, getChmodSyncCalls, clearCalls } = createPermissionTrackingFs();
+
+      const store = new MessageStateStoreImpl(testFile, trackingFs);
+      clearCalls();
+
+      // Trigger a sync write
+      store.setWatermark('perm-sync-test', 'peer1', 1000);
+      store.flush();
+
+      const chmodSyncCalls = getChmodSyncCalls();
+      expect(chmodSyncCalls.length).toBeGreaterThan(0);
+
+      // Find the chmodSync call for our state file
+      const stateFileChmod = chmodSyncCalls.find(call => call.path === testFile);
+      expect(stateFileChmod).toBeDefined();
+      expect(stateFileChmod?.mode).toBe(0o600); // Read/write for owner only
+
+      store.dispose();
+    });
+
+    it('should verify actual file permissions on disk', async () => {
+      const testDir = path.join(
+        os.tmpdir(),
+        `ztm-real-perm-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      );
+      const testFile = path.join(testDir, 'state.json');
+      fs.mkdirSync(testDir, { recursive: true });
+
+      // Create a store and trigger a write
+      const store = new MessageStateStoreImpl(testFile);
+      store.setWatermark('real-perm-test', 'peer1', 1000);
+      await store.flushAsync();
+
+      // Check actual file permissions
+      try {
+        const stats = fs.statSync(testFile);
+        // On Unix-like systems, mode & 0o777 gives us the permission bits
+        // 0o600 = rw------- (read/write for owner only)
+        const mode = stats.mode & 0o777;
+
+        // Verify permissions are 0o600 or more restrictive
+        // More restrictive would be odd (like 0o000), but we accept it
+        expect(mode & 0o077).toBe(0); // No permissions for group/others
+        expect(mode & 0o600).toBe(0o600); // Owner has read+write
+      } catch (error) {
+        // On Windows, stat.mode doesn't work the same way
+        // This is expected - the chmod call exists but Windows handles permissions differently
+        expect(process.platform).toMatch(/win32/);
+      }
+
+      store.dispose();
+    });
+  });
 });

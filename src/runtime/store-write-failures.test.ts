@@ -29,6 +29,7 @@ function createFailingWriteFs(errorType: 'writeFile' | 'mkdir' | 'both'): FileSy
       }
       return realFs.writeFileSync(p, data);
     },
+    chmodSync: (p: string, mode: number) => realFs.chmodSync(p, mode),
     promises: {
       mkdir: async (p: string, opts?: { recursive?: boolean }) => {
         if (errorType === 'mkdir' || errorType === 'both') {
@@ -45,6 +46,7 @@ function createFailingWriteFs(errorType: 'writeFile' | 'mkdir' | 'both'): FileSy
         await realFs.promises.writeFile(p, data);
       },
       access: async (p: string) => realFs.promises.access(p),
+      chmod: async (p: string, mode: number) => realFs.promises.chmod(p, mode),
     },
   };
 }
@@ -339,6 +341,7 @@ describe('MessageStateStore write failures', () => {
           }
           return realFs.writeFileSync(p, data);
         },
+        chmodSync: (p: string, mode: number) => realFs.chmodSync(p, mode),
         promises: {
           mkdir: async (p: string, opts?: { recursive?: boolean }) =>
             realFs.promises.mkdir(p, opts),
@@ -351,6 +354,7 @@ describe('MessageStateStore write failures', () => {
             await realFs.promises.writeFile(p, data);
           },
           access: async (p: string) => realFs.promises.access(p),
+          chmod: async (p: string, mode: number) => realFs.promises.chmod(p, mode),
         },
       };
 

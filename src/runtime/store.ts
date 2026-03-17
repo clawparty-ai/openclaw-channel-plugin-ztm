@@ -25,11 +25,13 @@ export interface FileSystem {
   mkdirSync(path: string, options?: { recursive?: boolean }): void;
   readFileSync(path: string, encoding: string): string;
   writeFileSync(path: string, data: string): void;
+  chmodSync(path: string, mode: number): void;
   promises: {
     mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
     readFile(path: string, encoding: string): Promise<string>;
     writeFile(path: string, data: string): Promise<void>;
     access(path: string): Promise<void>;
+    chmod(path: string, mode: number): Promise<void>;
   };
 }
 
@@ -41,6 +43,7 @@ export const nodeFs: FileSystem = {
   mkdirSync: fs.mkdirSync,
   readFileSync: (p, enc) => fs.readFileSync(p, enc as BufferEncoding),
   writeFileSync: (p, d) => fs.writeFileSync(p, d),
+  chmodSync: (p, mode) => fs.chmodSync(p, mode),
   promises: {
     mkdir: async (path: string, options?: { recursive?: boolean }) => {
       await fs.promises.mkdir(path, options);
@@ -48,6 +51,7 @@ export const nodeFs: FileSystem = {
     readFile: (p: string, enc: string) => fs.promises.readFile(p, enc as BufferEncoding),
     writeFile: (p: string, d: string) => fs.promises.writeFile(p, d),
     access: (p: string) => fs.promises.access(p),
+    chmod: (p: string, mode: number) => fs.promises.chmod(p, mode),
   },
 };
 
@@ -378,6 +382,8 @@ export class MessageStateStoreImpl implements MessageStateStore {
     try {
       await this.fs.promises.mkdir(this.stateDir, { recursive: true });
       await this.fs.promises.writeFile(this.statePath, JSON.stringify(this.data, null, 2));
+      // Set restrictive permissions (read/write for owner only) to protect sensitive state data
+      await this.fs.promises.chmod(this.statePath, 0o600);
       this.dirty = false;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -392,6 +398,8 @@ export class MessageStateStoreImpl implements MessageStateStore {
         this.fs.mkdirSync(this.stateDir, { recursive: true });
       }
       this.fs.writeFileSync(this.statePath, JSON.stringify(this.data, null, 2));
+      // Set restrictive permissions (read/write for owner only) to protect sensitive state data
+      this.fs.chmodSync(this.statePath, 0o600);
       this.dirty = false;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
