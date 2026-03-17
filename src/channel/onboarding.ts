@@ -76,6 +76,10 @@ function createWizardPrompterAdapter(prompter: WizardPrompter): WizardPrompts {
       // OpenClaw doesn't have info
     },
 
+    list(_items: string[], _options?: { prefix?: string; includeCancel?: boolean }): void {
+      // OpenClaw doesn't have list display
+    },
+
     close(): void {
       // No-op for OpenClaw prompter
     },

@@ -93,6 +93,15 @@ export interface WizardPrompts {
   error(text: string): void;
 
   /**
+   * Print a formatted list of items
+   * @param items - Array of items to display
+   * @param options - Optional formatting options
+   * @param options.prefix - Prefix for each item (default: '  [index] ')
+   * @param options.includeCancel - Whether to include a cancel option at index 0 (default: false)
+   */
+  list(items: string[], options?: { prefix?: string; includeCancel?: boolean }): void;
+
+  /**
    * Close the prompt interface
    */
   close(): void;
@@ -210,10 +219,8 @@ export class ConsolePrompts implements WizardPrompts {
     this.separator();
     this.heading(question);
 
-    for (let i = 0; i < options.length; i++) {
-      console.log(`  [${i + 1}] ${labels[i] || String(options[i])}`);
-    }
-    console.log('  [0] Cancel');
+    const items = options.map((_, i) => labels[i] || String(options[i]));
+    this.list(items, { prefix: '  [index] ', includeCancel: true });
 
     const answer = await this._ask('Select', '1');
 
@@ -273,6 +280,26 @@ export class ConsolePrompts implements WizardPrompts {
    */
   info(text: string): void {
     console.log(`\x1b[36mℹ\x1b[0m ${text}`);
+  }
+
+  /**
+   * Print a formatted list of items
+   * @param items - Array of items to display
+   * @param options - Optional formatting options
+   */
+  list(items: string[], options?: { prefix?: string; includeCancel?: boolean }): void {
+    const prefix = options?.prefix ?? '  ';
+    const includeCancel = options?.includeCancel ?? false;
+
+    if (includeCancel) {
+      console.log(`${prefix}[0] Cancel`);
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      const index = includeCancel ? i + 1 : i;
+      const itemPrefix = prefix.replace('index', String(index));
+      console.log(`${itemPrefix}${items[i]}`);
+    }
   }
 }
 
@@ -595,23 +622,26 @@ export class ZTMChatWizard {
     this.prompts.heading('Configuration Summary');
     this.prompts.separator();
 
-    console.log('  Agent URL:', this.config.agentUrl);
-    console.log('  Mesh Name:', this.config.meshName);
-    console.log('  Permit Source:', this.config.permitSource);
-    if (this.config.permitSource === 'server') {
-      console.log('  Permit Server URL:', this.config.permitUrl);
-    } else {
-      console.log('  Permit File Path:', this.config.permitFilePath);
-    }
-    console.log('  Username:', this.config.username);
-    console.log('  DM Policy:', this.config.dmPolicy);
-    console.log('  Allow From:', this.config.allowFrom?.join(', ') || '* (all users)');
-    console.log('  Enable Groups:', this.config.enableGroups ?? false);
-    if (this.config.enableGroups) {
-      console.log('  Group Policy:', this.config.groupPolicy ?? 'allowlist');
-      console.log('  Require Mention:', this.config.requireMention ?? true);
-    }
+    const summaryItems = [
+      `Agent URL: ${this.config.agentUrl}`,
+      `Mesh Name: ${this.config.meshName}`,
+      `Permit Source: ${this.config.permitSource}`,
+      ...(this.config.permitSource === 'server'
+        ? [`Permit Server URL: ${this.config.permitUrl}`]
+        : [`Permit File Path: ${this.config.permitFilePath}`]),
+      `Username: ${this.config.username}`,
+      `DM Policy: ${this.config.dmPolicy}`,
+      `Allow From: ${this.config.allowFrom?.join(', ') || '* (all users)'}`,
+      `Enable Groups: ${this.config.enableGroups ?? false}`,
+      ...(this.config.enableGroups
+        ? [
+            `Group Policy: ${this.config.groupPolicy ?? 'allowlist'}`,
+            `Require Mention: ${this.config.requireMention ?? true}`,
+          ]
+        : []),
+    ];
 
+    this.prompts.list(summaryItems, { prefix: '  • ' });
     this.prompts.separator();
 
     const save = await this.prompts.confirm('Save this configuration?', true);
@@ -704,10 +734,15 @@ export class ZTMChatWizard {
           this.prompts.heading('Pairing Mode Enabled');
           this.prompts.warning('Your bot is in pairing mode.');
           this.prompts.info('To allow users to message you:');
-          console.log('   1. Users send a message to your bot');
-          this.prompts.info('   2. The bot will send them a pairing request');
-          console.log('   3. Approve them: openclaw pairing approve ztm-chat <code>');
-          this.prompts.info('   4. After approval, their messages will be accepted');
+          this.prompts.list(
+            [
+              'Users send a message to your bot',
+              'The bot will send them a pairing request',
+              'Approve them: openclaw pairing approve ztm-chat <code>',
+              'After approval, their messages will be accepted',
+            ],
+            { prefix: '   [index]. ' }
+          );
         }
       } catch (error) {
         const errorMsg = extractErrorMessage(error);

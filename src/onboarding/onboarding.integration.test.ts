@@ -97,6 +97,10 @@ class MockPrompts implements WizardPrompts {
     this.callOrder.push(`error:${text}`);
   }
 
+  list(items: string[], _options?: { prefix?: string; includeCancel?: boolean }): void {
+    this.callOrder.push(`list:${items.length} items`);
+  }
+
   close(): void {
     this.callOrder.push('close');
   }

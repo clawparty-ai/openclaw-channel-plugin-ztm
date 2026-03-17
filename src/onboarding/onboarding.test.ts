@@ -92,6 +92,10 @@ class MockPrompts {
     this.callOrder.push(`error:${text}`);
   }
 
+  list(items: string[], _options?: { prefix?: string; includeCancel?: boolean }): void {
+    this.callOrder.push(`list:${items.length} items`);
+  }
+
   close(): void {
     this.callOrder.push('close');
   }
@@ -1151,6 +1155,7 @@ describe('ZTMChatWizard', () => {
         info(): void {},
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -1364,6 +1369,7 @@ describe('ZTMChatWizard', () => {
         info(): void {},
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -1404,6 +1410,7 @@ describe('ZTMChatWizard', () => {
         info(): void {},
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -1442,6 +1449,7 @@ describe('ZTMChatWizard', () => {
         info(): void {},
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -1503,6 +1511,7 @@ describe('ZTMChatWizard', () => {
         info(): void {},
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -1562,6 +1571,7 @@ describe('ZTMChatWizard', () => {
         },
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -1629,6 +1639,7 @@ describe('ZTMChatWizard', () => {
         info(): void {},
         warning(): void {},
         error(): void {},
+        list(): void {},
         close(): void {},
       };
 
@@ -2126,6 +2137,7 @@ describe('ZTMChatWizard', () => {
         info: vi.fn(),
         warning: vi.fn(),
         error: vi.fn(),
+        list: vi.fn(),
         close: vi.fn(),
       };
 
@@ -2174,6 +2186,7 @@ describe('ZTMChatWizard', () => {
         info: vi.fn(),
         warning: vi.fn(),
         error: vi.fn(),
+        list: vi.fn(),
         close: vi.fn(),
       };
 
@@ -2215,6 +2228,7 @@ describe('ZTMChatWizard', () => {
         info: vi.fn(),
         warning: vi.fn(),
         error: vi.fn(),
+        list: vi.fn(),
         close: vi.fn(),
       };
 
