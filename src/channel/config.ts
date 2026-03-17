@@ -258,6 +258,7 @@ export function resolveZTMChatAccount({
  */
 export function buildChannelConfigSchemaWithHints() {
   // Build schema using OpenClaw's helper
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return buildChannelConfigSchema(ztmChatConfigBaseSchema as any);
+  // Note: ztmChatConfigBaseSchema is a ZodObject which is compatible with ZodTypeAny
+  // Type assertion is needed due to OpenClaw SDK's type signature using deprecated ZodTypeAny
+  return buildChannelConfigSchema(ztmChatConfigBaseSchema);
 }
