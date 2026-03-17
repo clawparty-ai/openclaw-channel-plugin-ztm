@@ -313,6 +313,139 @@ describe('Path Resolution Utilities', () => {
     });
   });
 
+  describe('Security - Path Traversal Protection in Production Code', () => {
+    const account1 = 'account-1';
+
+    describe('resolveOpenclawHome - security', () => {
+      it('should reject path traversal in OPENCLAW_HOME', () => {
+        process.env.OPENCLAW_HOME = '/allowed/../../../etc';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+
+      it('should reject path traversal in HOME', () => {
+        process.env.HOME = '/allowed/../../../etc';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+
+      it('should reject path traversal in USERPROFILE', () => {
+        process.env.USERPROFILE = 'C:\\allowed\\..\\..\\Windows\\System32';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+
+      it('should reject URL-encoded path traversal', () => {
+        process.env.OPENCLAW_HOME = '/allowed/%2e%2e/%2e%2e/etc';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+
+      it('should reject multiple consecutive path traversal sequences', () => {
+        process.env.OPENCLAW_HOME = '/safe/../../../../../etc/passwd';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+
+      it('should reject mixed case URL-encoded traversal', () => {
+        process.env.OPENCLAW_HOME = '/allowed/%2E%2e/%2E%2E/etc';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+
+      it('should reject path traversal with null bytes', () => {
+        process.env.OPENCLAW_HOME = '/allowed/../../../etc\x00';
+        expect(() => resolveOpenclawHome()).toThrow('path traversal detected');
+      });
+    });
+
+    describe('resolveOpenclawStateDir - security', () => {
+      it('should reject path traversal in OPENCLAW_STATE_DIR', () => {
+        process.env.OPENCLAW_STATE_DIR = '/allowed/../../../etc';
+        expect(() => resolveOpenclawStateDir()).toThrow('path traversal detected');
+      });
+
+      it('should reject URL-encoded path traversal', () => {
+        process.env.OPENCLAW_STATE_DIR = '/allowed/%2e%2e/%2e%2e/var/tmp';
+        expect(() => resolveOpenclawStateDir()).toThrow('path traversal detected');
+      });
+
+      it('should reject absolute path traversal', () => {
+        process.env.OPENCLAW_STATE_DIR = '/../../../etc';
+        expect(() => resolveOpenclawStateDir()).toThrow('path traversal detected');
+      });
+
+      it('should reject double-encoded path traversal', () => {
+        process.env.OPENCLAW_STATE_DIR = '/safe/%252e%252e/%252e%252e/etc';
+        expect(() => resolveOpenclawStateDir()).toThrow('path traversal detected');
+      });
+    });
+
+    describe('resolveZTMStateDir - security', () => {
+      it('should reject path traversal in ZTM_STATE_PATH', () => {
+        process.env.ZTM_STATE_PATH = '/allowed/../../../etc/passwd';
+        expect(() => resolveZTMStateDir(account1)).toThrow('path traversal detected');
+      });
+
+      it('should reject path traversal in OPENCLAW_STATE_DIR', () => {
+        process.env.OPENCLAW_STATE_DIR = '/allowed/../../../etc';
+        expect(() => resolveZTMStateDir(account1)).toThrow('path traversal detected');
+      });
+
+      it('should reject URL-encoded path traversal', () => {
+        process.env.ZTM_STATE_PATH = '/allowed/%2e%2e/%2e%2e/etc/passwd';
+        expect(() => resolveZTMStateDir(account1)).toThrow('path traversal detected');
+      });
+
+      it('should reject backslash traversal on Unix', () => {
+        process.env.ZTM_STATE_PATH = 'C:\\..\\..\\Windows\\System32';
+        expect(() => resolveZTMStateDir(account1)).toThrow('path traversal detected');
+      });
+
+      it('should reject mixed slash traversal', () => {
+        process.env.ZTM_STATE_PATH = '/allowed/..\\..\\etc/passwd';
+        expect(() => resolveZTMStateDir(account1)).toThrow('path traversal detected');
+      });
+    });
+
+    describe('resolveStatePath - security', () => {
+      it('should reject path traversal in ZTM_STATE_PATH', () => {
+        process.env.ZTM_STATE_PATH = '/allowed/../../../etc/passwd';
+        expect(() => resolveStatePath(account1)).toThrow('path traversal detected');
+      });
+
+      it('should reject traversal through file extension', () => {
+        process.env.ZTM_STATE_PATH = '/safe/../../../../../etc/shadow';
+        expect(() => resolveStatePath(account1)).toThrow('path traversal detected');
+      });
+    });
+
+    describe('resolvePermitPath - security', () => {
+      it('should reject path traversal in ZTM_STATE_PATH', () => {
+        process.env.ZTM_STATE_PATH = '/allowed/../../../etc/passwd';
+        expect(() => resolvePermitPath(account1)).toThrow('path traversal detected');
+      });
+
+      it('should reject complex traversal patterns', () => {
+        process.env.ZTM_STATE_PATH = './test/../../../etc';
+        expect(() => resolvePermitPath(account1)).toThrow('path traversal detected');
+      });
+    });
+
+    describe('False positive checks - legitimate paths', () => {
+      it('should allow paths with double dots in filename', () => {
+        // This is a legitimate filename, not path traversal
+        process.env.ZTM_STATE_PATH = '/safe/config..backup';
+        // Should not throw - the path is valid
+        expect(() => resolveZTMStateDir(account1)).not.toThrow();
+      });
+
+      it('should allow paths with trailing dots', () => {
+        process.env.ZTM_STATE_PATH = '/safe/directory.';
+        expect(() => resolveZTMStateDir(account1)).not.toThrow();
+      });
+
+      it('should allow paths with multiple dots in name', () => {
+        process.env.ZTM_STATE_PATH = '/safe/file.name.tar.gz';
+        expect(() => resolveZTMStateDir(account1)).not.toThrow();
+      });
+    });
+  });
+
   describe('Multi-account isolation', () => {
     const account1 = 'account-1';
     const account2 = 'account-2';

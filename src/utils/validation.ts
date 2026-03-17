@@ -325,6 +325,9 @@ export function containsPathTraversal(input: string): boolean {
     '%2e%2e%5c', // URL encoded ..\
     '..%2f', // Mixed encoding
     '..%5c', // Mixed encoding
+    '%252e%252e', // Double-encoded ../ (defense against multiple URL decode passes)
+    '%252e%252e%252f', // Double-encoded ../
+    '%252e%252e%255c', // Double-encoded ..\
   ];
 
   const lowerInput = input.toLowerCase();

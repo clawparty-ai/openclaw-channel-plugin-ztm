@@ -85,16 +85,28 @@ function resolvePath(input: string): string {
 export function resolveOpenclawHome(): string {
   // Check explicit OPENCLAW_HOME override
   if (process.env.OPENCLAW_HOME) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(process.env.OPENCLAW_HOME)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     return resolvePath(process.env.OPENCLAW_HOME);
   }
 
   // Fallback to HOME (Unix/Linux/macOS)
   if (process.env.HOME) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(process.env.HOME)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     return resolvePath(process.env.HOME);
   }
 
   // Fallback to USERPROFILE (Windows)
   if (process.env.USERPROFILE) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(process.env.USERPROFILE)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     return resolvePath(process.env.USERPROFILE);
   }
 
@@ -115,6 +127,10 @@ export function resolveOpenclawHome(): string {
 export function resolveOpenclawStateDir(): string {
   // Check explicit OPENCLAW_STATE_DIR override
   if (process.env.OPENCLAW_STATE_DIR) {
+    // Security: Validate against path traversal attacks
+    if (containsPathTraversal(process.env.OPENCLAW_STATE_DIR)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     return resolvePath(process.env.OPENCLAW_STATE_DIR);
   }
 
@@ -140,6 +156,10 @@ export function resolveOpenclawStateDir(): string {
 export function resolveZTMStateDir(accountId: string): string {
   // Check explicit ZTM_STATE_PATH override
   if (process.env.ZTM_STATE_PATH) {
+    // Security: Validate against path traversal attacks BEFORE processing
+    if (containsPathTraversal(process.env.ZTM_STATE_PATH)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
     const resolved = resolvePath(process.env.ZTM_STATE_PATH);
     // If it's a file path, extract the directory
     if (path.extname(resolved)) {
