@@ -29,6 +29,7 @@
  */
 
 import { ZTM_CHANNEL_ID } from '../constants.js';
+import type { LogContext } from '../types/contexts.js';
 
 // ZTM Chat Plugin Logger
 
@@ -53,10 +54,10 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
  * Logger interface for dependency injection
  */
 export interface Logger {
-  debug: (message: string, context?: Record<string, unknown>) => void;
-  info: (message: string, context?: Record<string, unknown>) => void;
-  warn: (message: string, context?: Record<string, unknown>) => void;
-  error: (message: string, context?: Record<string, unknown>) => void;
+  debug: (message: string, context?: LogContext) => void;
+  info: (message: string, context?: LogContext) => void;
+  warn: (message: string, context?: LogContext) => void;
+  error: (message: string, context?: LogContext) => void;
 }
 
 interface LogEntry {
@@ -64,7 +65,7 @@ interface LogEntry {
   level: LogLevel;
   channel: string;
   message: string;
-  context?: Record<string, unknown>;
+  context?: LogContext;
 }
 
 class ZTMChatLogger {

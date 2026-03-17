@@ -15,6 +15,7 @@ import {
   STATE_FLUSH_DEBOUNCE_MS,
   STATE_FLUSH_MAX_DELAY_MS,
 } from '../constants.js';
+import type { AccountWatermarks } from '../types/contexts.js';
 
 /**
  * FileSystem interface for dependency injection (enables testing without real I/O)
@@ -50,9 +51,12 @@ export const nodeFs: FileSystem = {
   },
 };
 
+/**
+ * Message state data structure with strong typing
+ */
 export interface MessageStateData {
-  // Per-account → per-peer → last processed message timestamp
-  accounts: Record<string, Record<string, number>>;
+  /** Per-account watermark data */
+  accounts: Record<string, AccountWatermarks>;
 }
 
 /**

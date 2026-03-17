@@ -13,6 +13,7 @@ import type { ZTMChatConfig } from '../types/config.js';
 import type { AccountRuntimeState } from '../runtime/state.js';
 import type { ZTMChatMessage } from '../types/messaging.js';
 import type { PermitData } from '../types/connectivity.js';
+import type { ConfigObject } from '../types/contexts.js';
 
 /**
  * Logger interface for gateway pipeline operations
@@ -57,7 +58,7 @@ export interface StepContext {
   messageCallback?: (msg: ZTMChatMessage) => Promise<void>;
   log?: GatewayLogger;
   setStatus?: StatusSetter;
-  cfg?: Record<string, unknown>;
+  cfg?: ConfigObject;
 }
 
 /**

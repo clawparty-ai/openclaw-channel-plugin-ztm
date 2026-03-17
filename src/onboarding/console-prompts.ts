@@ -7,7 +7,7 @@
  */
 
 import * as readline from 'readline';
-import type { WizardPrompts } from './onboarding.js';
+import type { WizardPrompts } from './types.js';
 
 /**
  * Console-based prompts implementation

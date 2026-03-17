@@ -6,6 +6,7 @@
  */
 
 import { success, failure, type Result } from './common.js';
+import type { ErrorContext } from './contexts.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Base Error Classes - Provide context and cause for failures
@@ -17,7 +18,7 @@ import { success, failure, type Result } from './common.js';
  */
 export abstract class ZTMError extends Error {
   constructor(
-    public readonly context: Record<string, unknown> = {},
+    public readonly context: ErrorContext = {},
     public readonly cause?: Error
   ) {
     super(cause?.message ?? 'Unknown ZTM error');
