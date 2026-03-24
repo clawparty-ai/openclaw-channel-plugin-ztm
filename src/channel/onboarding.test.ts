@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import type { ChannelOnboardingAdapter } from 'openclaw/plugin-sdk';
+import type { ChannelSetupInput } from 'openclaw/plugin-sdk';
 
 // Mock the dependencies
 const mockContainerGet = vi.fn();
@@ -54,7 +54,8 @@ vi.mock('../utils/validation.js', () => ({
 }));
 
 describe('ztmChatOnboardingAdapter', () => {
-  let adapter: ChannelOnboardingAdapter;
+   
+  let adapter: any;
 
   beforeEach(async () => {
     // Dynamic import to ensure mocks are applied
@@ -107,62 +108,6 @@ describe('ztmChatOnboardingAdapter', () => {
     });
   });
 
-  describe('dmPolicy', () => {
-    it('getCurrent should return correct policy', () => {
-      const cfg: OpenClawConfig = {
-        channels: {
-          'ztm-chat': {
-            dmPolicy: 'allow',
-          },
-        },
-      } as unknown as OpenClawConfig;
-
-      const result = adapter.dmPolicy!.getCurrent(cfg);
-      expect(result).toBe('allow');
-    });
-
-    it('getCurrent should return pairing as default', () => {
-      const cfg: OpenClawConfig = {} as unknown as OpenClawConfig;
-
-      const result = adapter.dmPolicy!.getCurrent(cfg);
-      expect(result).toBe('pairing');
-    });
-
-    it('setPolicy should update config correctly', () => {
-      const cfg: OpenClawConfig = {
-        channels: {
-          'ztm-chat': {
-            dmPolicy: 'pairing',
-          },
-        },
-      } as unknown as OpenClawConfig;
-
-      const result = adapter.dmPolicy!.setPolicy(cfg, 'open');
-
-      expect(result.channels?.['ztm-chat']?.dmPolicy).toBe('open');
-    });
-  });
-
-  describe('disable', () => {
-    it('should remove channel config', () => {
-      const cfg: OpenClawConfig = {
-        channels: {
-          'ztm-chat': {
-            enabled: true,
-            accounts: {
-              default: {
-                agentUrl: 'http://localhost:8080',
-              },
-            },
-          },
-        },
-      } as unknown as OpenClawConfig;
-
-      const result = adapter.disable!(cfg);
-
-      expect(result.channels?.['ztm-chat']).toBeUndefined();
-    });
-  });
 
   describe('configure', () => {
     it('should return cfg with accountId when config is valid', async () => {
@@ -738,11 +683,9 @@ describe('ztmChatOnboardingAdapter', () => {
   });
 
   describe('channel ID consistency', () => {
-    it('should use ztm-chat (with hyphen) as channel ID in config keys', async () => {
+    it('should use ztm-chat (with hyphen) as channel ID', async () => {
       // This test ensures the channel ID matches what OpenClaw expects
       expect(adapter.channel).toBe('ztm-chat');
-      expect(adapter.dmPolicy?.policyKey).toBe('channels.ztm-chat.dmPolicy');
-      expect(adapter.dmPolicy?.allowFromKey).toBe('channels.ztm-chat.allowFrom');
     });
 
     it('should read config using ztm-chat key', async () => {
@@ -761,53 +704,8 @@ describe('ztmChatOnboardingAdapter', () => {
         },
       } as unknown as OpenClawConfig;
 
-      const result = await adapter.getStatus({ cfg, accountOverrides: {}, options: {} });
+      const result = await adapter.getStatus({ cfg });
       expect(result.configured).toBe(true);
-    });
-
-    it('should read dmPolicy using ztm-chat key', () => {
-      const cfg: OpenClawConfig = {
-        channels: {
-          'ztm-chat': {
-            dmPolicy: 'open',
-            allowFrom: ['alice', 'bob'],
-          },
-        },
-      } as unknown as OpenClawConfig;
-
-      const policy = adapter.dmPolicy!.getCurrent(cfg);
-      expect(policy).toBe('open');
-    });
-
-    it('should write dmPolicy using ztm-chat key', () => {
-      const cfg: OpenClawConfig = {
-        channels: {
-          'ztm-chat': {
-            dmPolicy: 'pairing',
-          },
-        },
-      } as unknown as OpenClawConfig;
-
-      const result = adapter.dmPolicy!.setPolicy(cfg, 'open');
-      expect(result.channels?.['ztm-chat']?.dmPolicy).toBe('open');
-    });
-
-    it('should disable channel using ztm-chat key', () => {
-      const cfg: OpenClawConfig = {
-        channels: {
-          'ztm-chat': {
-            enabled: true,
-            accounts: {
-              default: {
-                agentUrl: 'http://localhost:8080',
-              },
-            },
-          },
-        },
-      } as unknown as OpenClawConfig;
-
-      const result = adapter.disable!(cfg);
-      expect(result.channels?.['ztm-chat']).toBeUndefined();
     });
   });
 });

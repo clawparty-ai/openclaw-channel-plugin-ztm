@@ -103,7 +103,6 @@ import {
 } from './gateway.js';
 import { buildAccountSnapshot } from './state.js';
 import { directorySelf, directoryListPeers } from './directory.js';
-import { ztmChatOnboardingAdapter } from './onboarding.js';
 import { ztmChatHeartbeatAdapter } from './heartbeat.js';
 import { createZTMChatAgentTools } from './tools.js';
 import {
@@ -396,11 +395,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Reload Section - Configuration reload handling
   // ---------------------------------------------------------------------------
   reload: { configPrefixes: ['channels.ztm-chat'] },
-
-  // ---------------------------------------------------------------------------
-  // Onboarding Section - Channel onboarding adapter
-  // ---------------------------------------------------------------------------
-  onboarding: ztmChatOnboardingAdapter,
 
   // ---------------------------------------------------------------------------
   // Heartbeat Section - Connection health checking

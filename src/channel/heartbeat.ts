@@ -16,7 +16,7 @@
  * ```
  */
 
-import type { ChannelHeartbeatAdapter } from 'openclaw/plugin-sdk';
+import type { OpenClawConfig } from 'openclaw/plugin-sdk';
 import { container, DEPENDENCIES } from '../di/index.js';
 import type { IApiClientFactory, ILogger } from '../di/index.js';
 import { resolveZTMChatAccount } from './config.js';
@@ -26,15 +26,21 @@ import { ZTMTimeoutError, ZTMApiError } from '../types/errors.js';
 /**
  * Heartbeat adapter for ZTM Chat channel
  */
-export const ztmChatHeartbeatAdapter: ChannelHeartbeatAdapter = {
+export const ztmChatHeartbeatAdapter = {
   /**
    * Check if the ZTM Agent is ready (connected to mesh)
    */
-  checkReady: async ({ cfg, accountId }) => {
+  checkReady: async ({
+    cfg,
+    accountId,
+  }: {
+    cfg?: OpenClawConfig | null;
+    accountId?: string | null;
+  }) => {
     try {
       // Resolve account configuration
       const account = resolveZTMChatAccount({
-        cfg,
+        cfg: cfg ?? undefined,
         accountId: accountId ?? undefined,
       });
       const config = getZTMChatConfig(account);
@@ -98,12 +104,18 @@ export const ztmChatHeartbeatAdapter: ChannelHeartbeatAdapter = {
   /**
    * Resolve recipients for heartbeat notifications
    */
-  resolveRecipients: ({ cfg: _cfg, opts }) => {
+  resolveRecipients: ({
+    cfg: _cfg,
+    opts,
+  }: {
+    cfg: OpenClawConfig;
+    opts?: { to?: string; all?: boolean };
+  }) => {
     // If 'to' is specified, return that specific recipient
     if (opts?.to) {
       return {
         recipients: [opts.to],
-        source: 'explicit',
+        source: 'explicit' as const,
       };
     }
 
@@ -111,15 +123,15 @@ export const ztmChatHeartbeatAdapter: ChannelHeartbeatAdapter = {
     // Note: Full mesh peer discovery requires API integration
     if (opts?.all) {
       return {
-        recipients: [],
-        source: 'mesh',
+        recipients: [] as string[],
+        source: 'mesh' as const,
       };
     }
 
     // Default: return empty recipients
     return {
-      recipients: [],
-      source: 'none',
+      recipients: [] as string[],
+      source: 'none' as const,
     };
   },
 };
