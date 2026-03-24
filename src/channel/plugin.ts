@@ -9,7 +9,7 @@ import {
   buildAccountScopedDmSecurityPolicy,
   createScopedChannelConfigBase,
   createScopedAccountConfigAccessors,
-} from 'openclaw/plugin-sdk/compat';
+} from 'openclaw/plugin-sdk/channel-config-helpers';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import {
   container,
@@ -103,7 +103,6 @@ import {
 } from './gateway.js';
 import { buildAccountSnapshot } from './state.js';
 import { directorySelf, directoryListPeers } from './directory.js';
-import { ztmChatOnboardingAdapter } from './onboarding.js';
 import { ztmChatHeartbeatAdapter } from './heartbeat.js';
 import { createZTMChatAgentTools } from './tools.js';
 import {
@@ -398,11 +397,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   reload: { configPrefixes: ['channels.ztm-chat'] },
 
   // ---------------------------------------------------------------------------
-  // Onboarding Section - Channel onboarding adapter
-  // ---------------------------------------------------------------------------
-  onboarding: ztmChatOnboardingAdapter,
-
-  // ---------------------------------------------------------------------------
   // Heartbeat Section - Connection health checking
   // ---------------------------------------------------------------------------
   heartbeat: ztmChatHeartbeatAdapter,
@@ -510,7 +504,11 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Actions Section - Message operations (not supported in ZTM)
   // ---------------------------------------------------------------------------
   actions: {
-    listActions: () => [],
+    describeMessageTool: ({ cfg: _cfg }) => ({
+      actions: [],
+      capabilities: [],
+      schema: null,
+    }),
     supportsAction: ({ action: _action }) => false,
     handleAction: async ({ action: _action }) => {
       throw new Error(`Action ${_action} not supported for ztm-chat`);

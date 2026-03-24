@@ -7,7 +7,7 @@
 import type { OpenClawConfig } from 'openclaw/plugin-sdk';
 import type { ZTMChatConfig } from '../types/config.js';
 import { resolveZTMChatConfig, getDefaultConfig, mergeAccountConfig } from '../config/index.js';
-import { buildChannelConfigSchema } from 'openclaw/plugin-sdk';
+import { buildChannelConfigSchema } from 'openclaw/plugin-sdk/channel-config-schema';
 import { ztmChatConfigBaseSchema } from '../config/schema.js';
 import { logger } from '../utils/logger.js';
 import { ZTM_CHANNEL_ID, DEFAULT_ACCOUNT_ID } from '../constants.js';

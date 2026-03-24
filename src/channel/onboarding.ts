@@ -1,12 +1,10 @@
 /**
  * ZTM Chat Onboarding Adapter
  * @module channel/onboarding
- * Implements ChannelOnboardingAdapter for standardized onboarding flow
+ * Implements ZTM Chat setup flow using ChannelSetupAdapter pattern
  */
 
-import type { ChannelOnboardingAdapter, DmPolicy } from 'openclaw/plugin-sdk';
-import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import type { WizardPrompter } from 'openclaw/plugin-sdk';
+import type { OpenClawConfig, WizardPrompter } from 'openclaw/plugin-sdk';
 
 import { ZTMChatWizard } from '../onboarding/onboarding.js';
 import type { WizardPrompts } from '../onboarding/onboarding.js';
@@ -148,7 +146,6 @@ function createNoopLogger(): ILogger {
  * - Interactive configuration wizard via `configureInteractive()`
  * - Non-interactive configuration validation via `configure()`
  * - Connection testing and management via `configureWhenConfigured()`
- * - DM policy management for direct message access control
  * - Runtime state initialization via `onAccountRecorded()`
  *
  * @example
@@ -174,25 +171,13 @@ function createNoopLogger(): ILogger {
  *
  * @see {@link https://openclaw.dev/docs/adapters | Adapter Documentation}
  */
-export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
+export const ztmChatOnboardingAdapter = {
   channel: ZTM_CHANNEL_ID,
 
   /**
    * Get onboarding status for ZTM Chat channel.
-   *
-   * @param params - The onboarding status parameters
-   * @param params.cfg - OpenClaw configuration object
-   * @returns Status object containing channel ID, configured flag, and status lines
-   *
-   * @example
-   * ```typescript
-   * const status = await ztmChatOnboardingAdapter.getStatus({ cfg });
-   * console.log(status.configured); // true
-   * console.log(status.statusLines);
-   * // ["Agent: http://localhost:3000", "Username: alice", "Mesh: my-mesh"]
-   * ```
    */
-  getStatus: async ({ cfg }) => {
+  getStatus: async ({ cfg }: { cfg: OpenClawConfig }) => {
     const account = getZTMChatAccount(cfg);
 
     const configured = account !== null;
@@ -219,7 +204,7 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
    * Configure ZTM Chat channel (non-interactive)
    * Validates existing configuration and returns accountId if valid
    */
-  configure: async ({ cfg }) => {
+  configure: async ({ cfg }: { cfg: OpenClawConfig }) => {
     // Validate existing config
     const account = getZTMChatAccount(cfg);
     if (!account) {
@@ -361,49 +346,6 @@ export const ztmChatOnboardingAdapter: ChannelOnboardingAdapter = {
     };
 
     return { cfg: newCfg, accountId };
-  },
-
-  /**
-   * DM policy configuration
-   */
-  dmPolicy: {
-    label: 'ZTM Chat',
-    channel: ZTM_CHANNEL_ID,
-    policyKey: 'channels.ztm-chat.dmPolicy',
-    allowFromKey: 'channels.ztm-chat.allowFrom',
-    getCurrent: (cfg: OpenClawConfig): DmPolicy => {
-      const channels = cfg.channels as Record<string, { dmPolicy?: DmPolicy }> | undefined;
-      return channels?.[ZTM_CHANNEL_ID]?.dmPolicy ?? 'pairing';
-    },
-    setPolicy: (cfg: OpenClawConfig, policy: DmPolicy): OpenClawConfig => {
-      const newCfg = { ...cfg };
-      if (!newCfg.channels) {
-        (newCfg as Record<string, unknown>).channels = {};
-      }
-      const channels = newCfg.channels as Record<string, unknown>;
-
-      if (!channels[ZTM_CHANNEL_ID]) {
-        channels[ZTM_CHANNEL_ID] = {};
-      }
-      const ztmChat = channels[ZTM_CHANNEL_ID] as Record<string, unknown>;
-
-      ztmChat.dmPolicy = policy;
-
-      return newCfg;
-    },
-  },
-
-  /**
-   * Disable ZTM Chat channel
-   */
-  disable: (cfg: OpenClawConfig): OpenClawConfig => {
-    const newCfg = { ...cfg };
-    if (!newCfg.channels) {
-      return newCfg;
-    }
-    const channels = newCfg.channels as Record<string, unknown>;
-    delete channels[ZTM_CHANNEL_ID];
-    return newCfg;
   },
 
   /**

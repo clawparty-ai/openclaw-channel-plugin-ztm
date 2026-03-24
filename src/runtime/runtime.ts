@@ -5,7 +5,7 @@
  */
 
 import type { PluginRuntime } from 'openclaw/plugin-sdk';
-import { createPluginRuntimeStore } from 'openclaw/plugin-sdk/compat';
+import { createPluginRuntimeStore } from 'openclaw/plugin-sdk/runtime-store';
 import { setRuntimeLogger } from '../utils/logger.js';
 
 // ============================================================================
