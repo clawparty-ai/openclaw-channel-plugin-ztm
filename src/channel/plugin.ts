@@ -9,7 +9,7 @@ import {
   buildAccountScopedDmSecurityPolicy,
   createScopedChannelConfigBase,
   createScopedAccountConfigAccessors,
-} from 'openclaw/plugin-sdk/compat';
+} from 'openclaw/plugin-sdk/channel-config-helpers';
 import type { ZTMMessage } from '../api/ztm-api.js';
 import {
   container,
@@ -510,7 +510,11 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   // Actions Section - Message operations (not supported in ZTM)
   // ---------------------------------------------------------------------------
   actions: {
-    listActions: () => [],
+    describeMessageTool: ({ cfg: _cfg }) => ({
+      actions: [],
+      capabilities: [],
+      schema: null,
+    }),
     supportsAction: ({ action: _action }) => false,
     handleAction: async ({ action: _action }) => {
       throw new Error(`Action ${_action} not supported for ztm-chat`);
