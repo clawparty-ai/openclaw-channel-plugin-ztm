@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2026.3.26(2026-03-25)
+
+
+### 🚨 BREAKING CHANGES
+
+- Migrate to OpenClaw v2026.3.23 API (#45) ([0a621a2](0a621a24cdd66d91830d8469f0cb2b7baa87bb8d)) - (Lin Yang)
+
+
+
+### 🚀 Features
+
+
+### 🐛 Bug Fixes
+
+- Add file permission controls for state files ([493d625](493d62566eafba83960bd138ebbb647b8a8edb98)) - (Lin Yang)
+- Add path traversal validation to production path resolution ([552a762](552a76261babd15521bf189ac3140a41a89e37d0)) - (Lin Yang)
+- Handle first release when no previous tag exists ([bf2284b](bf2284bd97e0675382bb8f1fbbcaa97ee2b61da7)) - (Lin Yang)
+- Correct RELEASE_NOTES.md path in publish workflow ([5663dd3](5663dd31ce243de3638ca91ff5e947aba3f23063)) - (Lin Yang)
+
+
+
+### ♻️ Refactor
+
+- Remove unused example-usage documentation file ([e059a27](e059a276f865448e72ffae4ed2dc08118cad9607)) - (Lin Yang)
+- Unify console output through WizardPrompts interface ([a9d5a19](a9d5a196bb840f3db0e4cfd9dc58cc3817dc049c)) - (Lin Yang)
+- Remove unnecessary type assertion in buildChannelConfigSchemaWithHints ([7f961ad](7f961ad462c65807293b91ff0fb2db541f0a5757)) - (Lin Yang)
+- Extract ConsolePrompts to separate module (#37) ([7f88e55](7f88e5595726ec7cf1b47467e2a4736d7e58e285)) - (Lin Yang)
+- Replace Record<string, unknown> with strongly-typed interfaces ([acbd57b](acbd57bc1b32a91d879783f2d2fc9235c3a22903)) - (Lin Yang)
+
+
+
+### 🔨 Build
+
+- Bump lint-staged from 16.3.4 to 16.4.0 (#36) ([9b8c785](9b8c7854346f4b8b58bcdcfc617016ba0e6fbf06)) - (dependabot[bot])
+- Bump @typescript-eslint/parser from 8.57.0 to 8.57.1 (#39) ([b61b34c](b61b34cb4f63571a7b90bb97261cefb93495508f)) - (dependabot[bot])
+- Bump @typescript-eslint/eslint-plugin (#38) ([489f4de](489f4de51ab52749d8af9955ca6df17e362a8b9f)) - (dependabot[bot])
+- Bump music-metadata (#40) ([1670b0a](1670b0ab43b4ec873d6b7fd43b2c795656ecfe46)) - (dependabot[bot])
+- Bump typedoc from 0.28.17 to 0.28.18 (#41) ([db9138b](db9138ba699f0329d2cee72bd45db97758231d5d)) - (dependabot[bot])
+- Bump eslint from 10.0.3 to 10.1.0 (#42) ([0103c58](0103c5808abbc8a69afb6e16aa5e9a4a4cf91941)) - (dependabot[bot])
+
+
+
+
+
+**Full Changelog:** [v2026.3.16...v2026.3.26](https://github.com/clawparty-ai/openclaw-channel-plugin-ztm/compare/v2026.3.16...v2026.3.26)
 ## v2026.3.16(2026-03-15)
 
 

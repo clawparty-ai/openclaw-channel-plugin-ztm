@@ -4,7 +4,7 @@
     "ztm-chat"
   ],
   "name": "ZTM Chat Plugin",
-  "version": "2026.3.16",
+  "version": "2026.3.26",
   "description": "Integrates OpenClaw with ZTM (Zero Trust Mesh) Chat for decentralized P2P messaging",
   "configSchema": {
     "type": "object",
