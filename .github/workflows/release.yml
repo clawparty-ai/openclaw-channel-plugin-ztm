@@ -88,10 +88,10 @@ jobs:
           if [ -z "$PREV_TAG" ]; then
             # First release: generate changelog from beginning of repo
             echo "First release detected, generating full changelog..."
-            git-cliff --config cliff.toml --strip all > /tmp/RELEASE_NOTES.md
+            git-cliff --config cliff.toml --strip all > RELEASE_NOTES.md
           else
             # Subsequent release: generate changelog from previous tag
-            git-cliff --config cliff.toml --strip all -- ${PREV_TAG}..${CURRENT_TAG} > /tmp/RELEASE_NOTES.md
+            git-cliff --config cliff.toml --strip all -- ${PREV_TAG}..${CURRENT_TAG} > RELEASE_NOTES.md
           fi
 
       - name: Create GitHub Release
