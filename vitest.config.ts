@@ -5,6 +5,7 @@ const testConfig = {
     testTimeout: 30000, // 30 seconds default timeout
     pool: 'forks',
     isolate: true, // Enable test isolation for reliable tests
+    exclude: ['**/.worktrees/**', '**/node_modules/**'],
   },
 };
 
