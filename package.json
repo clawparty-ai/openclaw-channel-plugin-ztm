@@ -53,7 +53,7 @@
     "version:plugin": "npx tsx scripts/update-plugin-version.ts"
   },
   "dependencies": {
-    "openclaw": "2026.4.2",
+    "openclaw": "2026.4.5",
     "zod": "4.3.6"
   },
   "devDependencies": {
